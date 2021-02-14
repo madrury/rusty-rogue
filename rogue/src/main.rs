@@ -3,12 +3,10 @@ use specs::prelude::*;
 use specs_derive::Component;
 use std::cmp::{max, min};
 
-
 const XWIDTH: i32 = 80;
 const YWIDTH: i32 = 50;
 const PLAYER_START: (i32, i32) = (40, 25);
 const PLAYER_START_IDX: usize = (40 as usize) * 80 + (25 as usize);
-
 
 struct State {
     ecs: World,
@@ -49,12 +47,12 @@ struct Renderable {
 
 #[derive(PartialEq, Copy, Clone)]
 enum TileType {
-    Wall, Floor
+    Wall,
+    Floor,
 }
 
 #[derive(Component, Debug)]
 struct Player {}
-
 
 fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
@@ -92,17 +90,17 @@ fn new_map() -> Vec<TileType> {
     // Make boundary walls
     for x in 0..XWIDTH {
         map[xy_idx(x, 0)] = TileType::Wall;
-        map[xy_idx(x, YWIDTH-1)] = TileType::Wall;
+        map[xy_idx(x, YWIDTH - 1)] = TileType::Wall;
     }
     for y in 0..YWIDTH {
         map[xy_idx(0, y)] = TileType::Wall;
-        map[xy_idx(XWIDTH-1, y)] = TileType::Wall;
+        map[xy_idx(XWIDTH - 1, y)] = TileType::Wall;
     }
     // Randomly splat a bunch of walls.
     let mut rng = rltk::RandomNumberGenerator::new();
     for _i in 0..400 {
-        let x = rng.roll_dice(1, XWIDTH-1);
-        let y = rng.roll_dice(1, YWIDTH-1);
+        let x = rng.roll_dice(1, XWIDTH - 1);
+        let y = rng.roll_dice(1, YWIDTH - 1);
         let idx = xy_idx(x, y);
         if idx != PLAYER_START_IDX {
             map[idx] = TileType::Wall;
@@ -117,10 +115,22 @@ fn draw_map(map: &[TileType], ctx: &mut Rltk) {
     for tile in map.iter() {
         match tile {
             TileType::Floor => {
-                ctx.set(x, y, RGB::from_f32(0.5, 0.5, 0.5), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
+                ctx.set(
+                    x,
+                    y,
+                    RGB::from_f32(0.5, 0.5, 0.5),
+                    RGB::from_f32(0., 0., 0.),
+                    rltk::to_cp437('.'),
+                );
             }
             TileType::Wall => {
-                ctx.set(x, y, RGB::from_f32(0.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
+                ctx.set(
+                    x,
+                    y,
+                    RGB::from_f32(0.0, 1.0, 0.0),
+                    RGB::from_f32(0., 0., 0.),
+                    rltk::to_cp437('#'),
+                );
             }
         }
         // Move the coordinates
