@@ -11,7 +11,6 @@ mod rectangle;
 pub use rectangle::{Rectangle};
 
 
-
 pub struct State {
     pub ecs: World,
 }
