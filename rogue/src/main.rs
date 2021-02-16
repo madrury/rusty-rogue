@@ -7,6 +7,8 @@ mod map;
 pub use map::*;
 mod player;
 use player::*;
+mod visibility_system;
+use visibility_system::*;
 mod rectangle;
 pub use rectangle::{Rectangle};
 
@@ -23,14 +25,19 @@ impl State {
             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
         }
     }
+    fn run_systems(&mut self) {
+        let mut vis = VisibilitySystem{};
+        vis.run_now(&self.ecs);
+        self.ecs.maintain();
+    }
 }
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
         player_input(self, ctx);
-        let map = self.ecs.fetch::<Map>();
-        draw_map(&map, ctx);
+        self.run_systems();
+        draw_map(&self.ecs, ctx);
         self.render_all(ctx)
     }
 }
@@ -46,6 +53,7 @@ fn main() -> rltk::BError {
     let map = Map::new_rooms_and_corridors();
     gs.ecs.insert(map);
     gs.ecs.register::<Position>();
+    gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
 
@@ -60,6 +68,7 @@ fn main() -> rltk::BError {
             bg: RGB::named(rltk::BLACK),
         })
         .with(Player {})
+        .with(Viewshed {visible_tiles: Vec::new(), range: 8})
         .build();
 
     rltk::main_loop(context, gs)
