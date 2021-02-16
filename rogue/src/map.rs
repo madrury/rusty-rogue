@@ -20,6 +20,7 @@ pub struct Map {
     pub tiles: Vec<TileType>,
     pub rooms: Vec<Rectangle>,
     pub revealed_tiles: Vec<bool>,
+    pub visible_tiles: Vec<bool>,
     pub width: i32,
     pub height: i32
 }
@@ -31,6 +32,7 @@ impl Map {
         let mut map = Map{
            tiles: vec![TileType::Wall; (XWIDTH * YWIDTH) as usize],
            revealed_tiles: vec![false; (XWIDTH * YWIDTH) as usize],
+           visible_tiles: vec![false; (XWIDTH * YWIDTH) as usize],
            rooms: Vec::new(),
            width: XWIDTH,
            height: YWIDTH
@@ -118,30 +120,25 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
     for (idx, tile) in map.tiles.iter().enumerate() {
         let pt = Point::new(idx as i32 % XWIDTH, idx as i32 / XWIDTH);
         if map.revealed_tiles[idx] {
-            draw_tile(pt.x, pt.y, tile, ctx);
+            let visible = map.visible_tiles[idx];
+            draw_tile(pt.x, pt.y, tile, visible, ctx);
         }
     }
 }
 
-fn draw_tile(x: i32, y: i32, tile: &TileType, ctx: &mut Rltk) {
+fn draw_tile(x: i32, y: i32, tile: &TileType, visible: bool, ctx: &mut Rltk) {
+    let glyph;
+    let mut fg;
     match tile {
         TileType::Floor => {
-            ctx.set(
-                x,
-                y,
-                RGB::from_f32(0.5, 0.5, 0.5),
-                RGB::from_f32(0., 0., 0.),
-                rltk::to_cp437('.'),
-            );
+            glyph = rltk::to_cp437('.');
+            fg = RGB::from_f32(0.0, 0.5, 0.5);
         }
         TileType::Wall => {
-            ctx.set(
-                x,
-                y,
-                RGB::from_f32(0.0, 1.0, 0.0),
-                RGB::from_f32(0., 0., 0.),
-                rltk::to_cp437('#'),
-            );
+            glyph = rltk::to_cp437('#');
+            fg = RGB::from_f32(0.0, 1.0, 0.5);
         }
     }
+    if !visible {fg = fg.to_greyscale();}
+    ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
 }
