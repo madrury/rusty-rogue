@@ -17,10 +17,11 @@ pub enum TileType {
 }
 
 pub struct Map {
-    pub tiles : Vec<TileType>,
-    pub rooms : Vec<Rectangle>,
-    pub width : i32,
-    pub height : i32
+    pub tiles: Vec<TileType>,
+    pub rooms: Vec<Rectangle>,
+    pub revealed_tiles: Vec<bool>,
+    pub width: i32,
+    pub height: i32
 }
 
 impl Map {
@@ -29,6 +30,7 @@ impl Map {
 
         let mut map = Map{
            tiles: vec![TileType::Wall; (XWIDTH * YWIDTH) as usize],
+           revealed_tiles: vec![false; (XWIDTH * YWIDTH) as usize],
            rooms: Vec::new(),
            width: XWIDTH,
            height: YWIDTH
@@ -112,18 +114,11 @@ impl Algorithm2D for Map {
 }
 
 pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
-    let mut viewsheds = ecs.write_storage::<Viewshed>();
-    let mut players = ecs.write_storage::<Player>();
     let map = ecs.fetch::<Map>();
-
-    for (_player, viewshed) in (&mut players, &mut viewsheds).join() {
-        let mut idx = 0;
-        for tile in map.tiles.iter() {
-            let pt = Point::new(idx % XWIDTH, idx / XWIDTH);
-            if viewshed.visible_tiles.contains(&pt) {
-                draw_tile(pt.x, pt.y, tile, ctx);
-            }
-            idx +=  1;
+    for (idx, tile) in map.tiles.iter().enumerate() {
+        let pt = Point::new(idx as i32 % XWIDTH, idx as i32 / XWIDTH);
+        if map.revealed_tiles[idx] {
+            draw_tile(pt.x, pt.y, tile, ctx);
         }
     }
 }
