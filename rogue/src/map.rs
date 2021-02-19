@@ -2,7 +2,7 @@ use rltk::{ RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point };
 use specs::prelude::*;
 use std::cmp::{min, max};
 use std::iter::Iterator;
-use super::{Rectangle, Player, Viewshed};
+use super::{Rectangle};
 
 
 const XWIDTH: i32 = 80;
