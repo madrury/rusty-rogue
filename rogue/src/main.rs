@@ -18,18 +18,25 @@ pub struct State {
 }
 
 impl State {
+
     fn render_all(&self, ctx: &mut Rltk) {
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
+        let map = self.ecs.fetch::<Map>();
         for (pos, render) in (&positions, &renderables).join() {
-            ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
+            let idx = map.xy_idx(pos.x, pos.y);
+            if map.visible_tiles[idx] {
+                ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
+            }
         }
     }
+
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
         self.ecs.maintain();
     }
+
 }
 
 impl GameState for State {
@@ -50,15 +57,15 @@ fn main() -> rltk::BError {
         .build()?;
 
     let mut gs = State { ecs: World::new() };
-    let map = Map::new_rooms_and_corridors();
-    gs.ecs.insert(map);
     gs.ecs.register::<Position>();
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
 
+    let map = Map::new_rooms_and_corridors();
+
     // Construct the player entitiy.
-    let (px, py) = gs.ecs.fetch::<Map>().rooms[0].center();
+    let (px, py) = map.rooms[0].center();
     gs.ecs
         .create_entity()
         .with(Position { x: px, y: py })
@@ -75,5 +82,23 @@ fn main() -> rltk::BError {
         })
         .build();
 
+    for room in map.rooms.iter().skip(1) {
+        let (x, y) = room.center();
+        gs.ecs.create_entity()
+            .with(Position {x, y})
+            .with(Renderable {
+                glyph: rltk::to_cp437('g'),
+                fg: RGB::named(rltk::RED),
+                bg: RGB::named(rltk::BLACK),
+            })
+            .with(Viewshed {
+                visible_tiles: Vec::new(),
+                range: 8,
+                dirty: true
+            })
+            .build();
+    }
+
+    gs.ecs.insert(map);
     rltk::main_loop(context, gs)
 }
