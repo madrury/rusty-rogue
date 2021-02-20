@@ -1,4 +1,4 @@
-use rltk::{VirtualKeyCode, Rltk};
+use rltk::{VirtualKeyCode, Rltk, Point};
 use specs::prelude::*;
 use super::{Position, Player, TileType, Map, State, Viewshed, RunState};
 use std::cmp::{min, max};
@@ -8,6 +8,7 @@ pub fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
     let mut players = ecs.write_storage::<Player>();
     let mut positions = ecs.write_storage::<Position>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
+    let mut ppos = ecs.write_resource::<Point>();
     let map = ecs.fetch::<Map>();
 
     for (_player, pos, vs) in (&mut players, &mut positions, &mut viewsheds).join() {
@@ -17,6 +18,8 @@ pub fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
             pos.y = min(79, max(0, pos.y + dy));
             vs.dirty = true;
         }
+        ppos.x = pos.x;
+        ppos.y = pos.y;
     }
 }
 
