@@ -1,6 +1,6 @@
 use specs::prelude::*;
-use super::{Viewshed, Position, Map, Monster};
-use rltk::{field_of_view, Point, console};
+use super::{Viewshed, Monster, Name};
+use rltk::{Point, console};
 
 pub struct MonsterAI {}
 
@@ -9,13 +9,14 @@ impl<'a> System<'a> for MonsterAI {
         ReadExpect<'a, Point>,
         ReadStorage<'a, Viewshed>,
         ReadStorage<'a, Monster>,
+        ReadStorage<'a, Name>
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_pos, viewshed, monster) = data;
-        for (viewshed, _monster) in (&viewshed, &monster).join() {
+        let (player_pos, viewsheds, monsters, names) = data;
+        for (viewshed, _monster, name) in (&viewsheds, &monsters, &names).join() {
             if viewshed.visible_tiles.contains(&*player_pos) {
-                console::log(format!("Monster shouts insults!"));
+                console::log(format!("{} shouts insults!", name.name));
             }
 
         }

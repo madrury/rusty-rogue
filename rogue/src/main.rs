@@ -66,9 +66,10 @@ impl GameState for State {
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple80x50()
+    let mut context = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
         .build()?;
+    context.with_post_scanlines(true);
 
     let mut gs = State {
         ecs: World::new(),
@@ -76,6 +77,7 @@ fn main() -> rltk::BError {
     };
 
     gs.ecs.register::<Position>();
+    gs.ecs.register::<Name>();
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
@@ -99,17 +101,25 @@ fn main() -> rltk::BError {
             range: 8,
             dirty: true
         })
+        .with(Name {name: "Player".to_string()})
         .build();
 
     // Construct monster entities.
     let mut rng = rltk::RandomNumberGenerator::new();
-    for room in map.rooms.iter().skip(1) {
+    for (i, room) in map.rooms.iter().skip(1).enumerate() {
         let (x, y) = room.center();
         let glyph: rltk::FontCharType;
+        let name: String;
         let roll = rng.roll_dice(1, 2);
         match roll {
-            1 => {glyph = rltk::to_cp437('g')}
-            _ => {glyph = rltk::to_cp437('O')}
+            1 => {
+                glyph = rltk::to_cp437('g');
+                name = "Goblin".to_string();
+            }
+            _ => {
+                glyph = rltk::to_cp437('O');
+                name = "Orc".to_string();
+            }
         }
         gs.ecs.create_entity()
             .with(Position {x, y})
@@ -124,6 +134,7 @@ fn main() -> rltk::BError {
                 range: 8,
                 dirty: true
             })
+            .with(Name {name: format!("{} #{}", &name, i)})
             .build();
     }
 
