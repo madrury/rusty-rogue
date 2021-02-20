@@ -9,12 +9,19 @@ mod player;
 use player::*;
 mod visibility_system;
 use visibility_system::*;
+mod monster_ai_system;
+use monster_ai_system::*;
 mod rectangle;
 pub use rectangle::{Rectangle};
 
 
+#[derive(PartialEq, Copy, Clone)]
+pub enum RunState { Paused, Running }
+
+
 pub struct State {
     pub ecs: World,
+    pub state: RunState,
 }
 
 impl State {
@@ -33,7 +40,9 @@ impl State {
 
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem{};
+        let mut mob = MonsterAI{};
         vis.run_now(&self.ecs);
+        mob.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
@@ -42,8 +51,13 @@ impl State {
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
-        player_input(self, ctx);
-        self.run_systems();
+        if self.state == RunState::Running {
+            println!("Running.");
+            self.run_systems();
+            self.state = RunState::Paused;
+        } else {
+            self.state = player_input(self, ctx);
+        }
         draw_map(&self.ecs, ctx);
         self.render_all(ctx)
     }
@@ -56,11 +70,16 @@ fn main() -> rltk::BError {
         .with_title("Roguelike Tutorial")
         .build()?;
 
-    let mut gs = State { ecs: World::new() };
+    let mut gs = State {
+        ecs: World::new(),
+        state: RunState::Running
+    };
+
     gs.ecs.register::<Position>();
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
+    gs.ecs.register::<Monster>();
 
     let map = Map::new_rooms_and_corridors();
 
@@ -82,6 +101,7 @@ fn main() -> rltk::BError {
         })
         .build();
 
+    // Construct monster entities.
     let mut rng = rltk::RandomNumberGenerator::new();
     for room in map.rooms.iter().skip(1) {
         let (x, y) = room.center();
@@ -93,6 +113,7 @@ fn main() -> rltk::BError {
         }
         gs.ecs.create_entity()
             .with(Position {x, y})
+            .with(Monster {})
             .with(Renderable {
                 glyph: glyph,
                 fg: RGB::named(rltk::RED),
