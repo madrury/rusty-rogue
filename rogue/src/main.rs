@@ -52,7 +52,6 @@ impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
         if self.state == RunState::Running {
-            println!("Running.");
             self.run_systems();
             self.state = RunState::Paused;
         } else {
