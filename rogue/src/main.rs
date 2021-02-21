@@ -11,6 +11,8 @@ mod visibility_system;
 use visibility_system::*;
 mod monster_ai_system;
 use monster_ai_system::*;
+mod map_indexing_system;
+use map_indexing_system::*;
 mod rectangle;
 pub use rectangle::{Rectangle};
 
@@ -41,8 +43,10 @@ impl State {
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         let mut mob = MonsterAI{};
+        let mut mis = MapIndexingSystem{};
         vis.run_now(&self.ecs);
         mob.run_now(&self.ecs);
+        mis.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
@@ -81,6 +85,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
     gs.ecs.register::<Monster>();
+    gs.ecs.register::<BlocksTile>();
 
     let map = Map::new_rooms_and_corridors();
 
@@ -134,6 +139,7 @@ fn main() -> rltk::BError {
                 dirty: true
             })
             .with(Name {name: format!("{} #{}", &name, i)})
+            .with(BlocksTile {})
             .build();
     }
 
