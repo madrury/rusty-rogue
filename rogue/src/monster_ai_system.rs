@@ -24,8 +24,7 @@ impl<'a> System<'a> for MonsterAI {
             );
             if viewshed.visible_tiles.contains(&*player_pos) && distance < 1.5 {
                 console::log(format!("{} shouts insults!", name.name));
-                // We're adjacent to the player, so we don't need to move.
-                return;
+                continue;
             }
             let path = rltk::a_star_search(
                 map.xy_idx(pos.x, pos.y) as i32,
@@ -33,9 +32,19 @@ impl<'a> System<'a> for MonsterAI {
                 &mut *map
             );
             if path.success && path.steps.len() > 1 {
-                // (pos.x, pos.y) = map.idx_xy(path.steps[1]);
-                pos.x = path.steps[1] as i32 % map.width;
-                pos.y = path.steps[1] as i32 / map.width;
+                // Move the monster to a new location one step along the path
+                // towards the player.
+                let new_x = path.steps[1] as i32 % map.width;
+                let new_y = path.steps[1] as i32 / map.width;
+                let new_idx = map.xy_idx(new_x, new_y);
+                let old_idx = map.xy_idx(pos.x, pos.y);
+                // We need to update the blocking information *now*, since we do
+                // not want later monsters in the move queue to move into the
+                // same position as this monster.
+                map.blocked[old_idx] = false;
+                map.blocked[new_idx] = true;
+                pos.x = new_x;
+                pos.y = new_y;
                 viewshed.dirty = true;
             }
         }

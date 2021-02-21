@@ -42,12 +42,20 @@ impl State {
 
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem{};
-        let mut mob = MonsterAI{};
-        let mut mis = MapIndexingSystem{};
         vis.run_now(&self.ecs);
+        let mut mob = MonsterAI{};
         mob.run_now(&self.ecs);
+        let mut mis = MapIndexingSystem{};
         mis.run_now(&self.ecs);
         self.ecs.maintain();
+    }
+
+    fn debug_print_positions(&mut self) {
+        let positions = self.ecs.write_storage::<Position>();
+        let names = self.ecs.write_storage::<Name>();
+        for (pos, name) in (&positions, &names).join() {
+            println!("{} is in position {:?}", name.name, *pos)
+        }
     }
 
 }
@@ -57,6 +65,7 @@ impl GameState for State {
         ctx.cls();
         if self.state == RunState::Running {
             self.run_systems();
+            // self.debug_print_positions();
             self.state = RunState::Paused;
         } else {
             self.state = player_input(self, ctx);

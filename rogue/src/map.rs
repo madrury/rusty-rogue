@@ -82,7 +82,7 @@ impl Map {
 
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
-            self.blocked[i] = (*tile == TileType::Wall);
+            self.blocked[i] = *tile == TileType::Wall;
         }
     }
 
@@ -137,6 +137,11 @@ impl BaseMap for Map {
         if self.is_exit_valid(x + 1, y) { exits.push((idx + 1, 1.0));}
         if self.is_exit_valid(x, y - 1) { exits.push((idx - w, 1.0));}
         if self.is_exit_valid(x, y + 1) { exits.push((idx + w, 1.0));}
+        // 1.45 is approximately sqrt(2).
+        if self.is_exit_valid(x - 1, y - 1) { exits.push((idx - w - 1, 1.45));}
+        if self.is_exit_valid(x + 1, y - 1) { exits.push((idx - w + 1, 1.45));}
+        if self.is_exit_valid(x - 1, y + 1) { exits.push((idx + w - 1, 1.45));}
+        if self.is_exit_valid(x + 1, y + 1) { exits.push((idx + w + 1, 1.45));}
         exits
     }
 
