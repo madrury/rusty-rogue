@@ -1,6 +1,6 @@
 # Rusty-Rogue
 
-We're following the [Rust Roguelike Tutorial].
+We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductions.com/).
 
 ## Introduction
 
@@ -19,7 +19,7 @@ We're following the [Rust Roguelike Tutorial].
   - [ ] 2.11. Delving Deeper
   - [ ] 2.12. Difficulty
   - [ ] 2.13. Equipment
-3. Section 2 - [ ] Stretch Goals
+3. Section 2 - Stretch Goals
   - [ ] 3.1. Nice Walls with Bitsets
   - [ ] 3.2. Bloodstains
   - [ ] 3.3. Particle Effects
@@ -27,7 +27,7 @@ We're following the [Rust Roguelike Tutorial].
   - [ ] 3.5. Magic Mapping
   - [ ] 3.6. REX Paint Menu
   - [ ] 3.7. Simple Traps
-4. Section 3 - [ ] Generating Maps
+4. Section 3 - Generating Maps
   - [ ] 4.1. Refactor Map Building
   - [ ] 4.2. Map Building Test Harness
   - [ ] 4.3. BSP Room Dungeons
@@ -48,7 +48,7 @@ We're following the [Rust Roguelike Tutorial].
   - [ ] 4.18. Doors
   - [ ] 4.19. Decouple map size from screen size
   - [ ] 4.20. Section 3 Conclusion
-5. Section 4 - [ ] Making A Game
+5. Section 4 - Making A Game
   - [ ] 5.1. Design Document
   - [ ] 5.2. Raw Files, Data- [ ]Driven Design
   - [ ] 5.3. Data- [ ]Driven Spawn Tables
