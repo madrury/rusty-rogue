@@ -64,3 +64,27 @@ pub struct CombatStats {
     pub defense: i32,
     pub power: i32
 }
+
+// Signals that the entity has entered into melee combat with a chosen target.
+#[derive(Component)]
+pub struct WantsToMelee {
+    pub target: Entity
+}
+
+// Signals that the entity has damage queued, but not applied.
+#[derive(Component)]
+pub struct SufferDamage {
+    pub amounts: Vec<i32>
+}
+
+impl SufferDamage {
+    pub fn new_damage(store: &mut WriteStorage<SufferDamage>, victim: Entity, amount: i32) {
+        if let Some(suffering) = store.get_mut(victim) {
+            suffering.amounts.push(amount);
+        } else {
+            let dmg = SufferDamage{ amounts: vec![amount] };
+            store.insert(victim, dmg)
+                .expect("Unable to insert SufferDamage component.");
+        }
+    }
+}

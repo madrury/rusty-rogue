@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{Viewshed, Monster, MonsterMovementAI, Name, Position, Map};
+use super::{Viewshed, Monster, MonsterMovementAI, Name, Position, Map, WantsToMelee};
 use rltk::{Point, RandomNumberGenerator};
 
 pub struct MonsterMovementSystem {
@@ -43,40 +43,51 @@ impl<'a> System<'a> for MonsterMovementSystem {
 
     type SystemData = (
         WriteExpect<'a, Map>,
-        ReadExpect<'a, Point>,
+        ReadExpect<'a, Point>, // Player position.
+        ReadExpect<'a, Entity>, // Player entity.
+        Entities<'a>,
         WriteStorage<'a, Viewshed>,
         ReadStorage<'a, Monster>,
         WriteStorage<'a, MonsterMovementAI>,
         ReadStorage<'a, Name>,
-        WriteStorage<'a, Position>
+        WriteStorage<'a, Position>,
+        WriteStorage<'a, WantsToMelee>
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut map, player_pos, mut viewsheds, monsters, mut movement_ais, names, mut pos) = data;
-        for  entitiy_data in (&mut viewsheds, &monsters, &mut movement_ais, &names, &mut pos).join() {
-            let (mut viewshed, _monster, mut movement_ai, _name, mut pos) = entitiy_data;
+        let (
+            mut map,
+            player_pos,
+            player,
+            entities,
+            mut viewsheds,
+            monsters,
+            mut movement_ais,
+            names,
+            mut pos,
+            mut wants_to_melee
+        ) = data;
+
+        let iter = (&entities, &mut viewsheds, &monsters, &mut movement_ais, &names, &mut pos).join();
+        for  (entity, mut viewshed, _monster, movement_ai, _name, mut pos) in iter {
             let in_viewshed = viewshed.visible_tiles.contains(&*player_pos);
             let keep_following = movement_ai.do_keep_following();
             let next_to_player = rltk::DistanceAlg::Pythagoras.distance2d(
                 Point::new(pos.x, pos.y),
                 *player_pos
             ) < 1.5;
+            // Monster next to player branch:
+            //   If we're already next to player, we enter into melee combat.
+            if next_to_player {
+                wants_to_melee
+                    .insert(entity, WantsToMelee{target: *player})
+                    .expect("Failed to insert player as melee target.");
+                continue;
             // Monster seeking player branch:
             //   This branch is taken if the monster is currently seeking the
             //   player, i.e., the monster is currently attempting to move towards
             //   the player until they are adjacent.
-            if  (in_viewshed || keep_following) && !next_to_player {
-                // let distance = rltk::DistanceAlg::Pythagoras.distance2d(
-                //     Point::new(pos.x, pos.y),
-                //     *player_pos
-                // );
-                // TODO: This does not belong here, this is an attack.
-                // if distance < 1.5 {
-                //     console::log(format!("{} shouts insults!", name.name));
-                //     continue;
-                // }
-                // Calculate the shortest path to the player, and move exactly
-                // one step towards them.
+            } else if in_viewshed || keep_following {
                 let path = rltk::a_star_search(
                     map.xy_idx(pos.x, pos.y) as i32,
                     map.xy_idx(player_pos.x, player_pos.y) as i32,

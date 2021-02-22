@@ -11,6 +11,10 @@ mod visibility_system;
 use visibility_system::*;
 mod monster_ai_system;
 use monster_ai_system::*;
+mod melee_combat_system;
+use melee_combat_system::*;
+mod damage_system;
+use damage_system::*;
 mod map_indexing_system;
 use map_indexing_system::*;
 mod rectangle;
@@ -48,6 +52,11 @@ impl State {
         vis.run_now(&self.ecs);
         let mut mob = MonsterMovementSystem{};
         mob.run_now(&self.ecs);
+        let mut melee = MeleeCombatSystem{};
+        melee.run_now(&self.ecs);
+        let mut dmg = DamageSystem{};
+        dmg.run_now(&self.ecs);
+        DamageSystem::clean_up_the_dead(&mut self.ecs);
         let mut mis = MapIndexingSystem{};
         mis.run_now(&self.ecs);
         self.ecs.maintain();
@@ -99,6 +108,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<CombatStats>();
+    gs.ecs.register::<WantsToMelee>();
+    gs.ecs.register::<SufferDamage>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<BlocksTile>();
 
@@ -106,7 +117,7 @@ fn main() -> rltk::BError {
 
     // Construct the player entitiy.
     let (px, py) = map.rooms[0].center();
-    gs.ecs
+    let player = gs.ecs
         .create_entity()
         .with(Position { x: px, y: py })
         .with(Renderable {
@@ -178,6 +189,7 @@ fn main() -> rltk::BError {
 
     gs.ecs.insert(map);
     gs.ecs.insert(Point::new(px, py));
+    gs.ecs.insert(player);
 
     rltk::main_loop(context, gs)
 }
