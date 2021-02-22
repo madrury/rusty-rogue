@@ -116,5 +116,4 @@ impl<'a> System<'a> for MonsterMovementSystem {
             }
         }
     }
-
 }

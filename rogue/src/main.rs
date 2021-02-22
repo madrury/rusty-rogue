@@ -21,15 +21,19 @@ mod rectangle;
 pub use rectangle::{Rectangle};
 
 // Render all entities all the time.
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_RENDER_ALL: bool = false;
 
 
-#[derive(PartialEq, Copy, Clone)]
-pub enum RunState { Paused, Running }
+#[derive(PartialEq, Copy, Clone, Debug)]
+pub enum RunState {
+    PreGame,
+    AwaitingInput,
+    PlayerTurn,
+    MonsterTurn
+}
 
 pub struct State {
     pub ecs: World,
-    pub state: RunState,
 }
 
 impl State {
@@ -47,7 +51,29 @@ impl State {
         }
     }
 
-    fn run_systems(&mut self) {
+    fn run_map_indexing_system(&mut self) {
+        let mut mis = MapIndexingSystem{};
+        mis.run_now(&self.ecs);
+        self.ecs.maintain();
+    }
+
+    fn run_pregame_systems(&mut self) {
+        let mut vis = VisibilitySystem{};
+        vis.run_now(&self.ecs);
+    }
+
+    fn run_player_turn_systems(&mut self) {
+        let mut vis = VisibilitySystem{};
+        vis.run_now(&self.ecs);
+        let mut melee = MeleeCombatSystem{};
+        melee.run_now(&self.ecs);
+        let mut dmg = DamageSystem{};
+        dmg.run_now(&self.ecs);
+        DamageSystem::clean_up_the_dead(&mut self.ecs);
+        self.ecs.maintain();
+    }
+
+    fn run_monster_turn_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
         let mut mob = MonsterMovementSystem{};
@@ -57,8 +83,6 @@ impl State {
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
-        let mut mis = MapIndexingSystem{};
-        mis.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
@@ -75,13 +99,34 @@ impl State {
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
-        if self.state == RunState::Running {
-            self.run_systems();
-            // self.debug_print_positions();
-            self.state = RunState::Paused;
-        } else {
-            self.state = player_input(self, ctx);
+        let mut newrunstate;
+        {
+            let runstate = self.ecs.fetch::<RunState>();
+            newrunstate = *runstate;
         }
+
+        match newrunstate {
+            RunState::PreGame => {
+                self.run_pregame_systems();
+                self.run_map_indexing_system();
+                newrunstate = RunState::AwaitingInput;
+            }
+            RunState::AwaitingInput => {
+                newrunstate = player_input(self, ctx);
+            }
+            RunState::PlayerTurn => {
+                self.run_player_turn_systems();
+                self.run_map_indexing_system();
+                newrunstate = RunState::MonsterTurn;
+            }
+            RunState::MonsterTurn => {
+                self.run_monster_turn_systems();
+                self.run_map_indexing_system();
+                newrunstate = RunState::AwaitingInput;
+            }
+        }
+        let mut runwriter = self.ecs.write_resource::<RunState>();
+        *runwriter = newrunstate;
         draw_map(&self.ecs, ctx);
         self.render_all(ctx)
     }
@@ -91,14 +136,13 @@ impl GameState for State {
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let mut context = RltkBuilder::simple80x50()
-        .with_fps_cap(30.0)
+        .with_fps_cap(60.0)
         .with_title("Roguelike Tutorial")
         .build()?;
     context.with_post_scanlines(true);
 
     let mut gs = State {
         ecs: World::new(),
-        state: RunState::Running
     };
 
     gs.ecs.register::<Player>();
@@ -190,6 +234,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(map);
     gs.ecs.insert(Point::new(px, py));
     gs.ecs.insert(player);
+    gs.ecs.insert(RunState::PreGame);
 
     rltk::main_loop(context, gs)
 }

@@ -8,6 +8,7 @@ use super::{Rectangle};
 const XWIDTH: i32 = 80;
 const YWIDTH: i32 = 50;
 const MAX_IDX: usize = (XWIDTH as usize) * (YWIDTH as usize);
+const DEBUG_DRAW_ALL: bool = false;
 
 
 #[derive(PartialEq, Copy, Clone)]
@@ -171,7 +172,7 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
     let map = ecs.fetch::<Map>();
     for (idx, tile) in map.tiles.iter().enumerate() {
         let pt = Point::new(idx as i32 % XWIDTH, idx as i32 / XWIDTH);
-        if map.revealed_tiles[idx] {
+        if map.revealed_tiles[idx] || DEBUG_DRAW_ALL {
             let visible = map.visible_tiles[idx];
             draw_tile(pt.x, pt.y, tile, visible, ctx);
         }

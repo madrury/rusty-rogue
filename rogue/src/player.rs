@@ -43,7 +43,7 @@ pub fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
 pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     match ctx.key {
         None => {
-            return RunState::Paused
+            return RunState::AwaitingInput
         }
         Some(key) => match key {
             VirtualKeyCode::Left | VirtualKeyCode::H
@@ -67,5 +67,5 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             _   => {}
         }
     }
-    RunState::Running
+    RunState::PlayerTurn
 }
