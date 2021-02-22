@@ -28,6 +28,9 @@ pub struct Renderable {
     pub bg: RGB,
 }
 
+#[derive(Component)]
+pub struct BlocksTile {}
+
 #[derive(Component, Debug)]
 pub struct Player {}
 
@@ -55,4 +58,9 @@ impl MonsterMovementAI {
 }
 
 #[derive(Component)]
-pub struct BlocksTile {}
+pub struct CombatStats {
+    pub max_hp: i32,
+    pub hp: i32,
+    pub defense: i32,
+    pub power: i32
+}
