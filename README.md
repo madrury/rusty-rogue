@@ -11,7 +11,7 @@ We're following the [Rust Roguelike Tutorial].
   - [x] 2.3. A More Interesting Map
   - [x] 2.4. Field of View
   - [x] 2.5. Monsters
-  - [ ] 2.6. Dealing Damage
+  - [x] 2.6. Dealing Damage
   - [ ] 2.7. User Interface
   - [ ] 2.8. Items and Inventory
   - [ ] 2.9. Ranged Scrolls/Targeting
