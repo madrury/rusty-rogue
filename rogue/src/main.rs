@@ -17,9 +17,11 @@ mod rectangle;
 pub use rectangle::{Rectangle};
 
 
+const DEBUG_RENDER_ALL: bool = true;
+
+
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState { Paused, Running }
-
 
 pub struct State {
     pub ecs: World,
@@ -34,7 +36,7 @@ impl State {
         let map = self.ecs.fetch::<Map>();
         for (pos, render) in (&positions, &renderables).join() {
             let idx = map.xy_idx(pos.x, pos.y);
-            if map.visible_tiles[idx] {
+            if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
             }
         }
@@ -43,7 +45,7 @@ impl State {
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
-        let mut mob = MonsterAI{};
+        let mut mob = MonsterMovementSystem{};
         mob.run_now(&self.ecs);
         let mut mis = MapIndexingSystem{};
         mis.run_now(&self.ecs);
@@ -95,6 +97,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
     gs.ecs.register::<Monster>();
+    gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<BlocksTile>();
 
     let map = Map::new_rooms_and_corridors();
@@ -149,6 +152,12 @@ fn main() -> rltk::BError {
                 dirty: true
             })
             .with(Name {name: format!("{} #{}", &name, i)})
+            .with(MonsterMovementAI {
+                only_follow_within_viewshed: true,
+                no_visibility_wander: true,
+                lost_visibility_keep_following_turns_max: 2,
+                lost_visibility_keep_following_turns_remaining: 2,
+            })
             .with(BlocksTile {})
             .build();
     }

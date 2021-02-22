@@ -35,4 +35,24 @@ pub struct Player {}
 pub struct Monster {}
 
 #[derive(Component)]
+pub struct MonsterMovementAI {
+    pub only_follow_within_viewshed: bool,
+    pub no_visibility_wander: bool,
+    pub lost_visibility_keep_following_turns_max: i32,
+    pub lost_visibility_keep_following_turns_remaining: i32
+}
+
+impl MonsterMovementAI {
+    pub fn reset_keep_following(&mut self) {
+        self.lost_visibility_keep_following_turns_remaining = self.lost_visibility_keep_following_turns_max
+    }
+    pub fn do_keep_following(&self) -> bool {
+        self.lost_visibility_keep_following_turns_remaining > 0
+    }
+    pub fn decrement_keep_following(&mut self) {
+        self.lost_visibility_keep_following_turns_remaining -= 1
+    }
+}
+
+#[derive(Component)]
 pub struct BlocksTile {}
