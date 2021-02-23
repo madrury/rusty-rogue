@@ -7,6 +7,8 @@ mod map;
 pub use map::*;
 mod player;
 use player::*;
+mod gui;
+use gui::*;
 mod visibility_system;
 use visibility_system::*;
 mod monster_ai_system;
@@ -86,6 +88,7 @@ impl State {
         self.ecs.maintain();
     }
 
+    #[allow(dead_code)]
     fn debug_print_positions(&mut self) {
         let positions = self.ecs.write_storage::<Position>();
         let names = self.ecs.write_storage::<Name>();
@@ -97,6 +100,7 @@ impl State {
 }
 
 impl GameState for State {
+
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
         let mut newrunstate;
@@ -128,18 +132,20 @@ impl GameState for State {
         let mut runwriter = self.ecs.write_resource::<RunState>();
         *runwriter = newrunstate;
         draw_map(&self.ecs, ctx);
-        self.render_all(ctx)
+        self.render_all(ctx);
+        self::draw_ui(&self.ecs, ctx);
     }
+
 }
 
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let mut context = RltkBuilder::simple80x50()
+    let context = RltkBuilder::simple80x50()
         .with_fps_cap(60.0)
         .with_title("Roguelike Tutorial")
         .build()?;
-    context.with_post_scanlines(true);
+    // context.with_post_scanlines(true);
 
     let mut gs = State {
         ecs: World::new(),
