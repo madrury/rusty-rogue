@@ -1,6 +1,6 @@
 use rltk::{ RGB, Rltk, Console };
 use specs::prelude::*;
-use super::{CombatStats, Player};
+use super::{CombatStats, Player, GameLog};
 
 
 const XPOSITION: i32 = 0;
@@ -13,6 +13,8 @@ const HEALTH_TEXT_YPOSITION: i32 = 43;
 const HEALTH_BAR_XPOSITION: i32 = 28;
 const HEALTH_BAR_YPOSITION: i32 = 43;
 const HEALTH_BAR_WIDTH: i32 = 51;
+
+const N_LOG_LINES: i32 = 3;
 
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
@@ -42,5 +44,10 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         );
     }
 
-
+    let log = ecs.fetch::<GameLog>();
+    for (i, s) in log.entries.iter().rev().enumerate() {
+        if i < N_LOG_LINES as usize {
+            ctx.print(2, YPOSITION as usize + i + 1, s)
+        }
+    }
 }

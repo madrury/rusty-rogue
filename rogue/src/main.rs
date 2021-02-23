@@ -19,8 +19,8 @@ mod damage_system;
 use damage_system::*;
 mod map_indexing_system;
 use map_indexing_system::*;
-mod rectangle;
-pub use rectangle::{Rectangle};
+mod gamelog;
+use gamelog::{GameLog};
 
 // Render all entities all the time.
 const DEBUG_RENDER_ALL: bool = false;
@@ -238,6 +238,7 @@ fn main() -> rltk::BError {
     }
 
     gs.ecs.insert(map);
+    gs.ecs.insert(GameLog::new());
     gs.ecs.insert(Point::new(px, py));
     gs.ecs.insert(player);
     gs.ecs.insert(RunState::PreGame);

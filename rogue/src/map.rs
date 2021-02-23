@@ -2,7 +2,7 @@ use rltk::{ RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point };
 use specs::prelude::*;
 use std::cmp::{min, max};
 use std::iter::Iterator;
-use super::{Rectangle};
+// use super::{Rectangle};
 
 
 const XWIDTH: i32 = 80;
@@ -194,4 +194,24 @@ fn draw_tile(x: i32, y: i32, tile: &TileType, visible: bool, ctx: &mut Rltk) {
     }
     if !visible {fg = fg.to_greyscale();}
     ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
+}
+
+
+pub struct Rectangle {
+    pub x1: i32,
+    pub x2: i32,
+    pub y1: i32,
+    pub y2: i32
+}
+
+impl Rectangle {
+    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Rectangle {
+        Rectangle{x1: x, x2: x + w, y1: y, y2: y + h}
+    }
+    pub fn intersect(&self, other: &Rectangle) -> bool {
+        self.x1 <= other.x2 && self.x2 >= other.x1 && self.y1 <= other.y2 && self.y2 >= other.y1
+    }
+    pub fn center(&self) -> (i32, i32) {
+        ((self.x1 + self.x2)/2, (self.y1 + self.y2)/2)
+    }
 }
