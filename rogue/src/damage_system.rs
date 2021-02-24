@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{CombatStats, SufferDamage, Player};
+use super::{CombatStats, SufferDamage, Player, Name, GameLog};
 
 pub struct DamageSystem {}
 
@@ -11,6 +11,8 @@ impl DamageSystem {
           //the line below.
             let combat_stats = ecs.read_storage::<CombatStats>();
             let players = ecs.read_storage::<Player>();
+            let names = ecs.read_storage::<Name>();
+            let mut log = ecs.write_resource::<GameLog>();
             let entities = ecs.entities();
             for (entity, stats) in (&entities, &combat_stats).join() {
                 if stats.hp <= 0 {
@@ -19,7 +21,13 @@ impl DamageSystem {
                     let player = players.get(entity);
                     match player {
                         Some(_) => println!("You are dead."),
-                        None => dead.push(entity)
+                        None => {
+                            let victim = names.get(entity);
+                            if let Some(victim) = victim {
+                                log.entries.push(format!("{} is dead.", victim.name));
+                            }
+                            dead.push(entity);
+                        }
                     }
                 }
             }

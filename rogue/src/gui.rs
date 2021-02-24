@@ -14,7 +14,7 @@ const HEALTH_BAR_XPOSITION: i32 = 28;
 const HEALTH_BAR_YPOSITION: i32 = 43;
 const HEALTH_BAR_WIDTH: i32 = 51;
 
-const N_LOG_LINES: i32 = 3;
+const N_LOG_LINES: i32 = 5;
 
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {

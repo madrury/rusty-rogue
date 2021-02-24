@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{CombatStats, WantsToMelee, Name, SufferDamage};
+use super::{CombatStats, WantsToMelee, Name, SufferDamage, GameLog};
 
 pub struct MeleeCombatSystem {}
 
@@ -12,6 +12,7 @@ pub struct MeleeCombatSystem {}
 impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
         Entities<'a>,
+        WriteExpect<'a, GameLog>,
         WriteStorage<'a, WantsToMelee>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, CombatStats>,
@@ -19,7 +20,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (entities, mut wants_melee, names, combat_stats, mut damagees) = data;
+        let (entities, mut log, mut wants_melee, names, combat_stats, mut damagees) = data;
         let iter = (&entities, &wants_melee, &names, &combat_stats).join();
         for (entity, melee, name, stats) in iter {
             let target = melee.target;
@@ -31,9 +32,14 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 let target_name = names.get(target).unwrap();
                 let damage = i32::max(0, stats.power - target_stats.defense);
                 if damage == 0 {
-                    println!("{} is unable to damage {}.", &name.name, &target_name.name);
+                    // println!("{} is unable to damage {}.", &name.name, &target_name.name);
+                    log.entries.push(
+                        format!("{} is unable to damage {}.", &name.name, &target_name.name)
+                    );
                 } else {
-                    println!("{} hits {} for {} hp.", &name.name, &target_name.name, damage);
+                    log.entries.push(
+                        format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
+                    );
                     SufferDamage::new_damage(&mut damagees, melee.target, damage);
                 }
             }
