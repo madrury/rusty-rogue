@@ -1,5 +1,5 @@
 use super::{CombatStats, GameLog, Map, Name, Player, Position};
-use rltk::{Console, Point, Rltk, RGB};
+use rltk::{Point, Rltk, RGB};
 use specs::prelude::*;
 
 const XPOSITION: i32 = 0;
@@ -14,6 +14,7 @@ const HEALTH_BAR_YPOSITION: i32 = 43;
 const HEALTH_BAR_WIDTH: i32 = 51;
 
 const N_LOG_LINES: i32 = 5;
+
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Draw the outline for the gui: A rectangle at the bottom of the console.
@@ -105,7 +106,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                     RGB::named(rltk::GREY),
                     s,
                 );
-                let padding = (width - s.len() as i32);
+                let padding = width - s.len() as i32;
                 for i in 0..padding {
                     ctx.print_color(
                         arrow_pos.x - i,
@@ -136,7 +137,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                     RGB::named(rltk::GREY),
                     s,
                 );
-                let padding = (width - s.len() as i32);
+                let padding = width - s.len() as i32;
                 for i in 0..padding {
                     ctx.print_color(
                         arrow_pos.x + i,
