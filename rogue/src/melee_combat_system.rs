@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{CombatStats, WantsToMelee, Name, SufferDamage, GameLog};
+use super::{CombatStats, MeleeAttack, Name, ApplyMeleeDamage, GameLog};
 
 pub struct MeleeCombatSystem {}
 
@@ -13,15 +13,15 @@ impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
         Entities<'a>,
         WriteExpect<'a, GameLog>,
-        WriteStorage<'a, WantsToMelee>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, CombatStats>,
-        WriteStorage<'a, SufferDamage>
+        WriteStorage<'a, MeleeAttack>,
+        WriteStorage<'a, ApplyMeleeDamage>
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (entities, mut log, mut wants_melee, names, combat_stats, mut damagees) = data;
-        let iter = (&entities, &wants_melee, &names, &combat_stats).join();
+        let (entities, mut log, names, combat_stats, mut melee_attack, mut damagees) = data;
+        let iter = (&entities, &melee_attack, &names, &combat_stats).join();
         for (entity, melee, name, stats) in iter {
             let target = melee.target;
             // As a rule, entities cannot target themselves in melee combat.
@@ -40,10 +40,10 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     log.entries.push(
                         format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
                     );
-                    SufferDamage::new_damage(&mut damagees, melee.target, damage);
+                    ApplyMeleeDamage::new_damage(&mut damagees, melee.target, damage);
                 }
             }
         }
-        wants_melee.clear();
+        melee_attack.clear();
     }
 }

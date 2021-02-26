@@ -24,6 +24,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
 
     let combat_stats = ecs.read_storage::<CombatStats>();
     let players = ecs.read_storage::<Player>();
+
     for (_player, stats) in (&players, &combat_stats).join() {
         let health = format!(" HP: {} / {} ", stats.hp, stats.max_hp);
         ctx.print_color(

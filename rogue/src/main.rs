@@ -158,8 +158,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<CombatStats>();
-    gs.ecs.register::<WantsToMelee>();
-    gs.ecs.register::<SufferDamage>();
+    gs.ecs.register::<MeleeAttack>();
+    gs.ecs.register::<ApplyMeleeDamage>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<BlocksTile>();
 
