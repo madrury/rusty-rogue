@@ -1,10 +1,11 @@
-use rltk::{GameState, Rltk, RGB, Point};
+use rltk::{GameState, Rltk, Point};
 use specs::prelude::*;
 
 mod components;
 pub use components::*;
 mod map;
 pub use map::*;
+mod spawner;
 mod player;
 use player::*;
 mod gui;
@@ -165,83 +166,20 @@ fn main() -> rltk::BError {
 
     let map = Map::new_rooms_and_corridors();
 
-    // Construct the player entitiy.
     let (px, py) = map.rooms[0].center();
-    let player = gs.ecs
-        .create_entity()
-        .with(Position { x: px, y: py })
-        .with(Renderable {
-            glyph: rltk::to_cp437('@'),
-            fg: RGB::named(rltk::YELLOW),
-            bg: RGB::named(rltk::BLACK),
-        })
-        .with(Player {})
-        .with(Viewshed {
-            visible_tiles: Vec::new(),
-            range: 8,
-            dirty: true
-        })
-        .with(Name {name: "Player".to_string()})
-        .with(CombatStats {
-            max_hp: 30,
-            hp: 30,
-            defense: 2,
-            power: 5
-        })
-        .build();
+    let player = spawner::spawn_player(&mut gs.ecs, px, py);
+    gs.ecs.insert(player);
 
-    // Construct monster entities.
-    let mut rng = rltk::RandomNumberGenerator::new();
-    for (i, room) in map.rooms.iter().skip(1).enumerate() {
-        let (x, y) = room.center();
-        let glyph: rltk::FontCharType;
-        let name: String;
-        let roll = rng.roll_dice(1, 2);
-        match roll {
-            1 => {
-                glyph = rltk::to_cp437('g');
-                name = "Goblin".to_string();
-            }
-            _ => {
-                glyph = rltk::to_cp437('O');
-                name = "Orc".to_string();
-            }
-        }
-        gs.ecs.create_entity()
-            .with(Position {x, y})
-            .with(Monster {})
-            .with(Renderable {
-                glyph: glyph,
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-            })
-            .with(Viewshed {
-                visible_tiles: Vec::new(),
-                range: 8,
-                dirty: true
-            })
-            .with(Name {name: format!("{} #{}", &name, i)})
-            .with(MonsterMovementAI {
-                only_follow_within_viewshed: true,
-                no_visibility_wander: true,
-                lost_visibility_keep_following_turns_max: 2,
-                lost_visibility_keep_following_turns_remaining: 2,
-            })
-            .with(CombatStats {
-                max_hp: 16,
-                hp: 16,
-                defense: 1,
-                power: 4
-            })
-            .with(BlocksTile {})
-            .build();
+    gs.ecs.insert(rltk::RandomNumberGenerator::new());
+    for room in map.rooms.iter().skip(1) {
+        let (x,y) = room.center();
+        spawner::spawn_random_monster(&mut gs.ecs, x, y);
     }
 
     gs.ecs.insert(map);
-    gs.ecs.insert(GameLog::new());
-    gs.ecs.insert(Point::new(px, py));
-    gs.ecs.insert(player);
     gs.ecs.insert(RunState::PreGame);
+    gs.ecs.insert(GameLog::new());
+    gs.ecs.insert(Point::new(px, py)); // Player position.
 
     rltk::main_loop(context, gs)
 }
