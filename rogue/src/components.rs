@@ -83,6 +83,11 @@ pub struct CombatStats {
     pub defense: i32,
     pub power: i32
 }
+impl CombatStats {
+    pub fn take_damage(&mut self, damage: i32) {
+        self.hp = i32::max(0, self.hp - damage)
+    }
+}
 
 // Signaling Components
 // These components are used when processing changes to game state to signal
