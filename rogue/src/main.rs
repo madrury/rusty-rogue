@@ -34,7 +34,8 @@ pub enum RunState {
     PreGame,
     AwaitingInput,
     PlayerTurn,
-    MonsterTurn
+    MonsterTurn,
+    ShowInventory,
 }
 
 pub struct State {
@@ -108,6 +109,10 @@ impl GameState for State {
 
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
+        draw_map(&self.ecs, ctx);
+        self.render_all(ctx);
+        self::draw_ui(&self.ecs, ctx);
+
         let mut newrunstate;
         {
             let runstate = self.ecs.fetch::<RunState>();
@@ -133,12 +138,23 @@ impl GameState for State {
                 self.run_map_indexing_system();
                 newrunstate = RunState::AwaitingInput;
             }
+            RunState::ShowInventory => {
+                let result = gui::show_inventory(&mut self.ecs, ctx);
+                match result {
+                    ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    ItemMenuResult::NoResponse => {},
+                    ItemMenuResult::Selected {item: item} => {
+                        let mut log = self.ecs.fetch_mut::<GameLog>();
+                        let names = self.ecs.read_storage::<Name>();
+                        let name = &names.get(item).unwrap().name;
+                        log.entries.push(format!("You attempt to use {}.", *name));
+                        newrunstate = RunState::AwaitingInput;
+                    }
+                }
+            }
         }
         let mut runwriter = self.ecs.write_resource::<RunState>();
         *runwriter = newrunstate;
-        draw_map(&self.ecs, ctx);
-        self.render_all(ctx);
-        self::draw_ui(&self.ecs, ctx);
     }
 
 }

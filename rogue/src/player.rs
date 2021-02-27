@@ -20,6 +20,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::B => try_move_player(-1, 1, &mut gs.ecs),
             VirtualKeyCode::Z => try_move_player(0, 0, &mut gs.ecs),
             VirtualKeyCode::G => pickup_item(&mut gs.ecs),
+            VirtualKeyCode::I => return RunState::ShowInventory,
             _ => {}
         },
     }
