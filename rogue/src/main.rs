@@ -18,6 +18,8 @@ mod melee_combat_system;
 use melee_combat_system::*;
 mod damage_system;
 use damage_system::*;
+mod inventory_system;
+use inventory_system::*;
 mod map_indexing_system;
 use map_indexing_system::*;
 mod gamelog;
@@ -68,6 +70,8 @@ impl State {
     fn run_player_turn_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
+        let mut pickups = ItemCollectionSystem{};
+        pickups.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
@@ -157,13 +161,15 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Name>();
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Monster>();
+    gs.ecs.register::<Renderable>();
+    gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<ApplyMeleeDamage>();
-    gs.ecs.register::<Renderable>();
-    gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<Item>();
+    gs.ecs.register::<WantsToPickupItem>();
+    gs.ecs.register::<InBackpack>();
     gs.ecs.register::<HealingPotion>();
 
     let map = Map::new_rooms_and_corridors();

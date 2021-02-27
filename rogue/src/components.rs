@@ -59,6 +59,12 @@ pub struct Renderable {
     pub bg: RGB,
 }
 
+// Component for a held item. Points to the entity that owns it.
+#[derive(Component)]
+pub struct InBackpack {
+    pub owner: Entity
+}
+
 // Comonent holding data determining a monster's movement behaviour.
 #[derive(Component)]
 pub struct MonsterMovementAI {
@@ -113,12 +119,22 @@ pub struct WantsToMeleeAttack {
     pub target: Entity
 }
 
+// Signals that an entity wants to pick up an item.
+#[derive(Component)]
+pub struct WantsToPickupItem {
+    pub by: Entity,
+    pub item: Entity
+}
+
 // Signals that the entity has damage queued, but not applied.
 #[derive(Component)]
 pub struct ApplyMeleeDamage {
     pub amounts: Vec<i32>
 }
 impl ApplyMeleeDamage {
+    // Since the ApplyMeleeDamage component can contain *multiple* instances of
+    // damage, we need to distinguish the case of the first instance of damage
+    // from the subsequent. This function encapsulates this switch.
     pub fn new_damage(store: &mut WriteStorage<ApplyMeleeDamage>, victim: Entity, amount: i32) {
         if let Some(suffering) = store.get_mut(victim) {
             suffering.amounts.push(amount);
