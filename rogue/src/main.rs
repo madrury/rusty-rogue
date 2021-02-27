@@ -159,10 +159,12 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<CombatStats>();
-    gs.ecs.register::<MeleeAttack>();
+    gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<ApplyMeleeDamage>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<BlocksTile>();
+    gs.ecs.register::<Item>();
+    gs.ecs.register::<HealingPotion>();
 
     let map = Map::new_rooms_and_corridors();
     let (px, py) = map.rooms[0].center();

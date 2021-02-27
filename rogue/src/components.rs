@@ -4,24 +4,30 @@ use rltk::{RGB};
 
 
 // Binary Components:
-// These components indicate something by their presence or absence.
+// These components indicate something, the type of entity or some binary
+// behaviour, by their presence or absence.
+//------------------------------------------------------------------
 
 // The singular entity with this component is the player.
-#[derive(Component, Debug)]
+#[derive(Component)]
 pub struct Player {}
 
 // An entity with this component is a monster.
-#[derive(Component, Debug)]
+#[derive(Component)]
 pub struct Monster {}
 
-// Component whose presence indicates that the entity blocks the tile they
-// occupy.
+// An entity with this component is an item.
+#[derive(Component)]
+pub struct Item {}
+
+// An entity with this component blocks the tile that it occupies.
 #[derive(Component)]
 pub struct BlocksTile {}
 
 
 // Data Components:
 // These components have some data associated with them.
+//------------------------------------------------------------------
 
 // Component for all entities that have a position within the map.
 #[derive(Component, Debug)]
@@ -89,13 +95,21 @@ impl CombatStats {
     }
 }
 
+// A healing potion: restores and entities HP.
+#[derive(Component)]
+pub struct HealingPotion {
+    // No data, all healing potions restore all HP.
+}
+
+
 // Signaling Components
+//------------------------------------------------------------------
 // These components are used when processing changes to game state to signal
 // that some change needs to occur.
 
 // Signals that the entity has entered into melee combat with a chosen target.
 #[derive(Component)]
-pub struct MeleeAttack {
+pub struct WantsToMeleeAttack {
     pub target: Entity
 }
 

@@ -1,6 +1,6 @@
 use rltk::{VirtualKeyCode, Rltk, Point};
 use specs::prelude::*;
-use super::{Position, Player, Map, State, Viewshed, CombatStats, RunState, MeleeAttack};
+use super::{Position, Player, Map, State, Viewshed, CombatStats, RunState, WantsToMeleeAttack};
 use std::cmp::{min, max};
 
 
@@ -8,7 +8,7 @@ pub fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
     let mut players = ecs.write_storage::<Player>();
     let mut positions = ecs.write_storage::<Position>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
-    let mut wants_to_melee = ecs.write_storage::<MeleeAttack>();
+    let mut wants_to_melee = ecs.write_storage::<WantsToMeleeAttack>();
     let combat_stats = ecs.read_storage::<CombatStats>();
     let mut ppos = ecs.write_resource::<Point>();
     let entities = ecs.entities();
@@ -23,7 +23,7 @@ pub fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
                 None => {}
                 Some(_t) => {
                     wants_to_melee
-                        .insert(entity, MeleeAttack {target: *potential_target})
+                        .insert(entity, WantsToMeleeAttack {target: *potential_target})
                         .expect("Insert of WantsToMelee into ECS failed.");
                     return; // Do not move after attacking.
                 }

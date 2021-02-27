@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{CombatStats, MeleeAttack, Name, ApplyMeleeDamage, GameLog};
+use super::{CombatStats, WantsToMeleeAttack, Name, ApplyMeleeDamage, GameLog};
 
 pub struct MeleeCombatSystem {}
 
@@ -15,7 +15,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         WriteExpect<'a, GameLog>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, CombatStats>,
-        WriteStorage<'a, MeleeAttack>,
+        WriteStorage<'a, WantsToMeleeAttack>,
         WriteStorage<'a, ApplyMeleeDamage>
     );
 

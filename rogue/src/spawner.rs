@@ -1,6 +1,6 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
-    Renderable, Viewshed, MAP_WIDTH,
+    Renderable, Viewshed, Item, HealingPotion, MAP_WIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -38,33 +38,64 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
 // Populate a room with monsters and items.
 pub fn spawn_room(ecs: &mut World, room: &Rectangle) {
     let num_monsters: i32;
+    let num_items: i32;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         num_monsters = rng.roll_dice(1, MAX_MONSTERS_IN_ROOM + 1) - 1;
+        num_items = rng.roll_dice(1, MAX_ITEMS_IN_ROOM + 1) - 1;
     }
 
-    let mut monster_spawn_idxs: Vec<usize> = Vec::new();
-    for _i in 1..=num_monsters {
-        let mut added = false;
-        while !added {
-            let (x, y) = room.random_point(ecs);
-            let idx = ((y * MAP_WIDTH) as usize) + x as usize;
-            if !monster_spawn_idxs.contains(&idx) {
-                monster_spawn_idxs.push(idx);
-                added = true;
-            }
-        }
-    }
+    // Spawn all the monsters.
+    // let mut monster_spawn_idxs: Vec<usize> = Vec::new();
+    // for _i in 1..=num_monsters {
+    //     let mut added = false;
+    //     while !added {
+    //         let (x, y) = room.random_point(ecs);
+    //         let idx = ((y * MAP_WIDTH) as usize) + x as usize;
+    //         if !monster_spawn_idxs.contains(&idx) {
+    //             monster_spawn_idxs.push(idx);
+    //             added = true;
+    //         }
+    //     }
+    // }
 
-    let mut monster_spawn_points: Vec<(i32, i32)> = Vec::new();
-    for idx in monster_spawn_idxs.iter() {
-        let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
-        monster_spawn_points.push((x, y))
-    }
+    // let mut monster_spawn_points: Vec<(i32, i32)> = Vec::new();
+    // for idx in monster_spawn_idxs.iter() {
+    //     let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
+    //     monster_spawn_points.push((x, y))
+    // }
+    let monster_spawn_points = generate_spawn_points(ecs, num_monsters, room);
+    let item_spawn_points = generate_spawn_points(ecs, num_items, room);
 
     for (x, y) in monster_spawn_points.iter() {
         spawn_random_monster(ecs, *x, *y);
     }
+    for (x, y) in item_spawn_points.iter() {
+        health_potion(ecs, *x, *y);
+    }
+}
+
+fn generate_spawn_points(ecs: &mut World, n: i32, room: &Rectangle) -> Vec<(i32, i32)> {
+    // First generate some random indexes.
+    let mut spawn_idxs: Vec<usize> = Vec::new();
+    for _i in 1..=n {
+        let mut added = false;
+        while !added {
+            let (x, y) = room.random_point(ecs);
+            let idx = ((y * MAP_WIDTH) as usize) + x as usize;
+            if !spawn_idxs.contains(&idx) {
+                spawn_idxs.push(idx);
+                added = true;
+            }
+        }
+    }
+    // Then convert these to points.
+    let mut spawn_points: Vec<(i32, i32)> = Vec::new();
+    for idx in spawn_idxs.iter() {
+        let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
+        spawn_points.push((x, y))
+    }
+    spawn_points
 }
 
 // Spawns a random monster at a specified location.
@@ -175,4 +206,21 @@ fn goblin(ecs: &mut World, x: i32, y: i32) {
             },
         },
     )
+}
+
+//----------------------------------------------------------------------------
+// Individual Item Spawning Logic
+//----------------------------------------------------------------------------
+fn health_potion(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+    .with(Position {x, y})
+    .with(Renderable {
+        glyph: rltk::to_cp437('¿'),
+        fg: RGB::named(rltk::MAGENTA),
+        bg: RGB::named(rltk::BLACK),
+    })
+    .with(Name {name: "Potion of Healing".to_string()})
+    .with(Item {})
+    .with(HealingPotion {})
+    .build();
 }

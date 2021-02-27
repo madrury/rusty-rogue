@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{Viewshed, Monster, MonsterMovementAI, Name, Position, Map, MeleeAttack};
+use super::{Viewshed, Monster, MonsterMovementAI, Name, Position, Map, WantsToMeleeAttack};
 use rltk::{Point, RandomNumberGenerator};
 
 pub struct MonsterMovementSystem {
@@ -51,7 +51,7 @@ impl<'a> System<'a> for MonsterMovementSystem {
         WriteStorage<'a, MonsterMovementAI>,
         ReadStorage<'a, Name>,
         WriteStorage<'a, Position>,
-        WriteStorage<'a, MeleeAttack>
+        WriteStorage<'a, WantsToMeleeAttack>
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -80,7 +80,7 @@ impl<'a> System<'a> for MonsterMovementSystem {
             //   If we're already next to player, we enter into melee combat.
             if next_to_player {
                 melee_attack
-                    .insert(entity, MeleeAttack {target: *player})
+                    .insert(entity, WantsToMeleeAttack {target: *player})
                     .expect("Failed to insert player as melee target.");
                 continue;
             // Monster seeking player branch:
