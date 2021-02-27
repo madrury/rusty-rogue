@@ -16,6 +16,7 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
+            order: 0
         })
         .with(Player {})
         .with(Viewshed {
@@ -151,6 +152,7 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
             glyph: data.glyph,
             fg: data.color,
             bg: RGB::named(rltk::BLACK),
+            order: 1
         })
         .with(Viewshed {
             visible_tiles: Vec::new(),
@@ -218,6 +220,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
         glyph: rltk::to_cp437('¿'),
         fg: RGB::named(rltk::MAGENTA),
         bg: RGB::named(rltk::BLACK),
+        order: 2,
     })
     .with(Name {name: "Potion of Healing".to_string()})
     .with(Item {})

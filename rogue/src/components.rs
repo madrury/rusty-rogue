@@ -57,6 +57,7 @@ pub struct Renderable {
     pub glyph: rltk::FontCharType,
     pub fg: RGB,
     pub bg: RGB,
+    pub order: i32,
 }
 
 // Component for a held item. Points to the entity that owns it.
