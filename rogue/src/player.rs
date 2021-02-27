@@ -1,5 +1,5 @@
 use super::{
-    CombatStats, GameLog, Item, Map, Player, Position, RunState, State, Viewshed,
+    CombatStats, GameLog, PickUpable, Map, Player, Position, RunState, State, Viewshed,
     WantsToMeleeAttack, WantsToPickupItem,
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
@@ -74,14 +74,14 @@ fn pickup_item(ecs: &mut World) {
     let ppos = ecs.fetch::<Point>(); // Player position.
     let player = ecs.fetch::<Entity>();
     let entities = ecs.entities();
-    let items = ecs.read_storage::<Item>();
+    let pickupables = ecs.read_storage::<PickUpable>();
     let positions = ecs.read_storage::<Position>();
     let mut log = ecs.fetch_mut::<GameLog>();
 
     let mut target_item: Option<Entity> = None;
-    for (ientity, _item, pos) in (&entities, &items, &positions).join() {
+    for (entity, _pu, pos) in (&entities, &pickupables, &positions).join() {
         if pos.x == ppos.x && pos.y == ppos.y {
-            target_item = Some(ientity);
+            target_item = Some(entity);
             break;
         }
     }

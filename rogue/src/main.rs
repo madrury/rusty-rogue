@@ -144,9 +144,9 @@ impl GameState for State {
             RunState::ShowInventory => {
                 let result = gui::show_inventory(&mut self.ecs, ctx);
                 match result {
-                    ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
-                    ItemMenuResult::NoResponse => {},
-                    ItemMenuResult::Selected {item: item} => {
+                    MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    MenuResult::NoResponse => {},
+                    MenuResult::Selected {item: item} => {
                         let mut intent = self.ecs.write_storage::<WantsToUseItem>();
                         intent.insert(
                             *self.ecs.fetch::<Entity>(),
@@ -187,7 +187,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<ApplyMeleeDamage>();
-    gs.ecs.register::<Item>();
+    gs.ecs.register::<Useable>();
+    gs.ecs.register::<PickUpable>();
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<InBackpack>();

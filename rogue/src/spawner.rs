@@ -1,12 +1,12 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
-    Renderable, Viewshed, Item, Consumable, ProvidesHealing, MAP_WIDTH,
+    Renderable, Viewshed, PickUpable, Useable, Consumable, ProvidesHealing, MAP_WIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
 
 const MAX_MONSTERS_IN_ROOM: i32 = 4;
-const MAX_ITEMS_IN_ROOM: i32 = 2;
+const MAX_ITEMS_IN_ROOM: i32 = 4;
 
 // Spawn the player in the center of the first room.
 pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
@@ -223,7 +223,8 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
         order: 2,
     })
     .with(Name {name: "Potion of Healing".to_string()})
-    .with(Item {})
+    .with(PickUpable {})
+    .with(Useable {})
     .with(Consumable {})
     .with(ProvidesHealing {})
     .build();

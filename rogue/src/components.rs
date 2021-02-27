@@ -16,9 +16,13 @@ pub struct Player {}
 #[derive(Component)]
 pub struct Monster {}
 
-// An entity with this component is an item.
+// An entity with this component can be picked up.
 #[derive(Component)]
-pub struct Item {}
+pub struct PickUpable {}
+
+// An entity with this component can be picked up.
+#[derive(Component)]
+pub struct Useable {}
 
 // An entity with this component blocks the tile that it occupies.
 #[derive(Component)]

@@ -1,5 +1,5 @@
-use super::{CombatStats, GameLog, InBackpack, Map, Name, Player, Position};
-use rltk::{Point, Rltk, RGB, VirtualKeyCode};
+use super::{CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Useable};
+use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
 const XPOSITION: i32 = 0;
@@ -159,68 +159,108 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     }
 }
 
+//----------------------------------------------------------------------------
 // Item Menu
 //----------------------------------------------------------------------------
-
 const ITEM_MENU_X_POSITION: i32 = 15;
 const ITEM_MENU_Y_POSTION: i32 = 25;
 const ITEM_MENU_WIDTH: i32 = 31;
 
-pub enum ItemMenuResult {
+pub enum MenuResult {
     Cancel,
     NoResponse,
     Selected { item: Entity },
 }
 
-pub fn show_inventory(ecs: &mut World, ctx: &mut Rltk) -> ItemMenuResult {
+pub fn show_inventory(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     let player_entity = ecs.fetch::<Entity>();
     let names = ecs.read_storage::<Name>();
     let inbackpacks = ecs.read_storage::<InBackpack>();
+    let useables = ecs.read_storage::<Useable>();
     let entities = ecs.entities();
 
-    let inventory = (&inbackpacks, &names)
+    let inventory = (&inbackpacks, &useables, &names)
         .join()
-        .filter(|(item, _name)| item.owner == *player_entity);
+        .filter(|(item, _use, _name)| item.owner == *player_entity);
     let count = inventory.count();
 
     let mut y = ITEM_MENU_Y_POSTION - (count / 2) as i32;
 
     // Draw the outline of the menu, and the helper text.
-    ctx.draw_box(ITEM_MENU_X_POSITION, y - 2, ITEM_MENU_WIDTH, (count + 3) as i32, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
-    ctx.print_color(ITEM_MENU_X_POSITION + 3, y - 2, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Inventory");
-    ctx.print_color(ITEM_MENU_X_POSITION + 3, y + count as i32 + 1, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "ESCAPE to cancel");
+    ctx.draw_box(
+        ITEM_MENU_X_POSITION,
+        y - 2,
+        ITEM_MENU_WIDTH,
+        (count + 3) as i32,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+    );
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y - 2,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Usable Items",
+    );
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y + count as i32 + 1,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Press ESC to cancel",
+    );
 
-    let inventory = (&entities, &inbackpacks, &names)
+    let inventory = (&entities, &inbackpacks, &names, &useables)
         .join()
-        .filter(|(_e, item, _name)| item.owner == *player_entity)
+        .filter(|(_e, item, _name, _use)| item.owner == *player_entity)
         .enumerate();
-    let mut usable: Vec<Entity> = Vec::new();
-    for (i, (entity, _pack, name)) in inventory {
+    // Iterate through all items in the player's backpack with the Useable component and:
+    //   - Draw an inventory selection for that item.
+    //   - Add the item to a vector for later lookup upon selection.
+    let mut useable: Vec<Entity> = Vec::new();
+    for (i, (entity, _pack, name, _use)) in inventory {
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
-        ctx.set(ITEM_MENU_X_POSITION + 1, y, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), rltk::to_cp437('('));
-        ctx.set(ITEM_MENU_X_POSITION + 2, y, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), selection_char);
-        ctx.set(ITEM_MENU_X_POSITION + 3, y, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), rltk::to_cp437(')'));
+        ctx.set(
+            ITEM_MENU_X_POSITION + 1,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437('('),
+        );
+        ctx.set(
+            ITEM_MENU_X_POSITION + 2,
+            y,
+            RGB::named(rltk::YELLOW),
+            RGB::named(rltk::BLACK),
+            selection_char,
+        );
+        ctx.set(
+            ITEM_MENU_X_POSITION + 3,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437(')'),
+        );
         ctx.print(ITEM_MENU_X_POSITION + 5, y, &name.name.to_string());
-        usable.push(entity);
+        useable.push(entity);
         y += 1;
     }
 
+    // If we've got input, we can get to using the item.
     match ctx.key {
-        None => ItemMenuResult::NoResponse,
-        Some(key) => {
-            match key {
-                VirtualKeyCode::Escape => ItemMenuResult::Cancel,
-                _ => {
-                    let selection = rltk::letter_to_option(key);
-                    if selection > -1 && selection < count as i32 {
-                        return ItemMenuResult::Selected {
-                            item: usable[selection as usize]
-                        }
-                    }
-                    ItemMenuResult::NoResponse
+        None => MenuResult::NoResponse,
+        Some(key) => match key {
+            VirtualKeyCode::Escape => MenuResult::Cancel,
+            _ => {
+                let selection = rltk::letter_to_option(key);
+                if selection > -1 && selection < count as i32 {
+                    return MenuResult::Selected {
+                        item: useable[selection as usize],
+                    };
                 }
+                MenuResult::NoResponse
             }
-        }
+        },
     }
 }
