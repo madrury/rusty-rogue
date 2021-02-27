@@ -126,6 +126,12 @@ pub struct WantsToPickupItem {
     pub item: Entity
 }
 
+// Signals that the owning entity wants to drink a potion.
+#[derive(Component)]
+pub struct WantsToDrinkPotion {
+    pub potion: Entity,
+}
+
 // Signals that the entity has damage queued, but not applied.
 #[derive(Component)]
 pub struct ApplyMeleeDamage {

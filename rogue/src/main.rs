@@ -73,6 +73,8 @@ impl State {
         vis.run_now(&self.ecs);
         let mut pickups = ItemCollectionSystem{};
         pickups.run_now(&self.ecs);
+        let mut potions = PotionUseSystem{};
+        potions.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
@@ -102,7 +104,6 @@ impl State {
             println!("{} is in position {:?}", name.name, *pos)
         }
     }
-
 }
 
 impl GameState for State {
@@ -144,11 +145,12 @@ impl GameState for State {
                     ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     ItemMenuResult::NoResponse => {},
                     ItemMenuResult::Selected {item: item} => {
-                        let mut log = self.ecs.fetch_mut::<GameLog>();
-                        let names = self.ecs.read_storage::<Name>();
-                        let name = &names.get(item).unwrap().name;
-                        log.entries.push(format!("You attempt to use {}.", *name));
-                        newrunstate = RunState::AwaitingInput;
+                        let mut intent = self.ecs.write_storage::<WantsToDrinkPotion>();
+                        intent.insert(
+                            *self.ecs.fetch::<Entity>(),
+                            WantsToDrinkPotion{potion: item}
+                        ).expect("Unable to insert intent to drink potion.");
+                        newrunstate = RunState::PlayerTurn;
                     }
                 }
             }
@@ -187,6 +189,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<HealingPotion>();
+    gs.ecs.register::<WantsToDrinkPotion>();
 
     let map = Map::new_rooms_and_corridors();
     let (px, py) = map.rooms[0].center();
