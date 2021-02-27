@@ -24,6 +24,14 @@ pub struct Item {}
 #[derive(Component)]
 pub struct BlocksTile {}
 
+// An entity with this component is consumed upon use.
+#[derive(Component)]
+pub struct Consumable {}
+
+// An entity with this component, when used, restores all of the users hp.
+#[derive(Component)]
+pub struct ProvidesHealing {}
+
 
 // Data Components:
 // These components have some data associated with them.
@@ -102,11 +110,6 @@ impl CombatStats {
     }
 }
 
-// A healing potion: restores and entities HP.
-#[derive(Component)]
-pub struct HealingPotion {
-    // No data, all healing potions restore all HP.
-}
 
 
 // Signaling Components
@@ -127,10 +130,10 @@ pub struct WantsToPickupItem {
     pub item: Entity
 }
 
-// Signals that the owning entity wants to drink a potion.
+// Signals that the owning entity wants to use an item.
 #[derive(Component)]
-pub struct WantsToDrinkPotion {
-    pub potion: Entity,
+pub struct WantsToUseItem {
+    pub item: Entity,
 }
 
 // Signals that the entity has damage queued, but not applied.

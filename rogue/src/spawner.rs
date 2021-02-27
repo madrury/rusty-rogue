@@ -1,6 +1,6 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
-    Renderable, Viewshed, Item, HealingPotion, MAP_WIDTH,
+    Renderable, Viewshed, Item, Consumable, ProvidesHealing, MAP_WIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -224,6 +224,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
     })
     .with(Name {name: "Potion of Healing".to_string()})
     .with(Item {})
-    .with(HealingPotion {})
+    .with(Consumable {})
+    .with(ProvidesHealing {})
     .build();
 }
