@@ -5,9 +5,9 @@ use std::iter::Iterator;
 // use super::{Rectangle};
 
 
-const XWIDTH: i32 = 80;
-const YWIDTH: i32 = 43;
-const MAP_SIZE: usize = (XWIDTH as usize) * (YWIDTH as usize);
+pub const MAP_WIDTH: i32 = 80;
+pub const MAP_HEIGHT: i32 = 43;
+pub const MAP_SIZE: usize = (MAP_WIDTH as usize) * (MAP_HEIGHT as usize);
 const DEBUG_DRAW_ALL: bool = false;
 
 
@@ -39,8 +39,8 @@ impl Map {
            tile_content: vec![Vec::new(); MAP_SIZE],
            blocked: vec![false; MAP_SIZE],
            rooms: Vec::new(),
-           width: XWIDTH,
-           height: YWIDTH
+           width: MAP_WIDTH,
+           height: MAP_HEIGHT
         };
 
         const MAX_ROOMS: i32 = 30;
@@ -51,8 +51,8 @@ impl Map {
         for _ in 0..MAX_ROOMS {
             let w = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
             let h = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
-            let x = rng.roll_dice(1, XWIDTH - w - 1) - 1;
-            let y = rng.roll_dice(1, YWIDTH - h - 1) - 1;
+            let x = rng.roll_dice(1, MAP_WIDTH - w - 1) - 1;
+            let y = rng.roll_dice(1, MAP_HEIGHT - h - 1) - 1;
             let new_room = Rectangle::new(x, y, w, h);
             // Try to place our new room on the map.
             let ok_to_place = map.rooms.iter().all(|other| !new_room.intersect(other));
@@ -171,7 +171,7 @@ impl Algorithm2D for Map {
 pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
     let map = ecs.fetch::<Map>();
     for (idx, tile) in map.tiles.iter().enumerate() {
-        let pt = Point::new(idx as i32 % XWIDTH, idx as i32 / XWIDTH);
+        let pt = Point::new(idx as i32 % MAP_WIDTH, idx as i32 / MAP_WIDTH);
         if map.revealed_tiles[idx] || DEBUG_DRAW_ALL {
             let visible = map.visible_tiles[idx];
             draw_tile(pt.x, pt.y, tile, visible, ctx);
@@ -213,5 +213,13 @@ impl Rectangle {
     }
     pub fn center(&self) -> (i32, i32) {
         ((self.x1 + self.x2)/2, (self.y1 + self.y2)/2)
+    }
+    pub fn random_point(&self, ecs: &mut World) -> (i32, i32) {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        let room_width = i32::abs(self.x1 - self.x2);
+        let room_height = i32::abs(self.y1 - self.y2);
+        let x = self.x1 + rng.roll_dice(1, room_width);
+        let y = self.y1 + rng.roll_dice(1, room_height);
+        (x, y)
     }
 }

@@ -165,15 +165,16 @@ fn main() -> rltk::BError {
     gs.ecs.register::<BlocksTile>();
 
     let map = Map::new_rooms_and_corridors();
-
     let (px, py) = map.rooms[0].center();
+
+    // Spawning the player is deterministic, so no RNG is needed.
     let player = spawner::spawn_player(&mut gs.ecs, px, py);
     gs.ecs.insert(player);
 
+    // We need to insert the RNG here so spawning logic can make use of it.
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     for room in map.rooms.iter().skip(1) {
-        let (x,y) = room.center();
-        spawner::spawn_random_monster(&mut gs.ecs, x, y);
+        spawner::spawn_room(&mut gs.ecs, room);
     }
 
     gs.ecs.insert(map);
