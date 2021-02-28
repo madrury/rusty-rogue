@@ -35,7 +35,8 @@ pub enum RunState {
     AwaitingInput,
     PlayerTurn,
     MonsterTurn,
-    ShowInventory,
+    ShowUseInventory,
+    ShowThrowInventory,
 }
 
 pub struct State {
@@ -141,8 +142,23 @@ impl GameState for State {
                 self.run_map_indexing_system();
                 newrunstate = RunState::AwaitingInput;
             }
-            RunState::ShowInventory => {
-                let result = gui::show_inventory(&mut self.ecs, ctx);
+            RunState::ShowUseInventory => {
+                let result = gui::show_inventory::<Useable>(&mut self.ecs, ctx, "Useable");
+                match result {
+                    MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    MenuResult::NoResponse => {},
+                    MenuResult::Selected {item: item} => {
+                        let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                        intent.insert(
+                            *self.ecs.fetch::<Entity>(),
+                            WantsToUseItem{item: item}
+                        ).expect("Unable to insert intent to drink potion.");
+                        newrunstate = RunState::PlayerTurn;
+                    }
+                }
+            }
+            RunState::ShowThrowInventory => {
+                let result = gui::show_inventory::<Throwable>(&mut self.ecs, ctx, "Throwable");
                 match result {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},
@@ -188,6 +204,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<ApplyMeleeDamage>();
     gs.ecs.register::<Useable>();
+    gs.ecs.register::<Throwable>();
     gs.ecs.register::<PickUpable>();
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<WantsToPickupItem>();

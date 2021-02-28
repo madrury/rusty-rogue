@@ -24,6 +24,10 @@ pub struct PickUpable {}
 #[derive(Component)]
 pub struct Useable {}
 
+// An entity with this component can be thrown.
+#[derive(Component)]
+pub struct Throwable {}
+
 // An entity with this component blocks the tile that it occupies.
 #[derive(Component)]
 pub struct BlocksTile {}

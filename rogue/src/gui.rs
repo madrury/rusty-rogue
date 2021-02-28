@@ -172,16 +172,16 @@ pub enum MenuResult {
     Selected { item: Entity },
 }
 
-pub fn show_inventory(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
+pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &str) -> MenuResult {
     let player_entity = ecs.fetch::<Entity>();
     let names = ecs.read_storage::<Name>();
     let inbackpacks = ecs.read_storage::<InBackpack>();
-    let useables = ecs.read_storage::<Useable>();
+    let doables = ecs.read_storage::<T>();
     let entities = ecs.entities();
 
-    let inventory = (&inbackpacks, &useables, &names)
+    let inventory = (&inbackpacks, &doables, &names)
         .join()
-        .filter(|(item, _use, _name)| item.owner == *player_entity);
+        .filter(|(item, _use, _do)| item.owner == *player_entity);
     let count = inventory.count();
 
     let mut y = ITEM_MENU_Y_POSTION - (count / 2) as i32;
@@ -200,7 +200,7 @@ pub fn show_inventory(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         y - 2,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
-        "Usable Items",
+        format!("{} Items", typestr),
     );
     ctx.print_color(
         ITEM_MENU_X_POSITION + 3,
@@ -210,9 +210,9 @@ pub fn show_inventory(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         "Press ESC to cancel",
     );
 
-    let inventory = (&entities, &inbackpacks, &names, &useables)
+    let inventory = (&entities, &inbackpacks, &names, &doables)
         .join()
-        .filter(|(_e, item, _name, _use)| item.owner == *player_entity)
+        .filter(|(_e, item, _name, _do)| item.owner == *player_entity)
         .enumerate();
     // Iterate through all items in the player's backpack with the Useable component and:
     //   - Draw an inventory selection for that item.
