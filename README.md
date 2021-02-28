@@ -13,8 +13,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] 2.5. Monsters
   - [x] 2.6. Dealing Damage
   - [x] 2.7. User Interface
-  - [ ] 2.8. Items and Inventory
-  - [ ] 2.9. Ranged Scrolls/Targeting
+  - [x] 2.8. Items and Inventory
+  - [x] 2.9. Ranged Scrolls/Targeting
   - [ ] 2.10. Saving and Loading
   - [ ] 2.11. Delving Deeper
   - [ ] 2.12. Difficulty
