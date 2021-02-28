@@ -73,17 +73,18 @@ impl<'a> System<'a> for MonsterMovementSystem {
         let iter = (&entities, &mut viewsheds, &monsters, &mut movement_ais, &names, &mut pos).join();
         for  (entity, mut viewshed, _monster, movement_ai, _name, mut pos) in iter {
 
-            //Check for status effects that would prevent the monster from
-            //taking actions.
+            // Check for status effects that would prevent the monster from
+            // taking actions.
+            //----------------------------------------------------------------
+            // The monster has the frozen status, and cannot take actions.
             let is_frozen = status_frozen.get_mut(entity);
             if let Some(is_frozen) = is_frozen {
                 if is_frozen.remaining_turns <= 0 {
                     status_frozen.remove(entity);
-                    continue;
                 } else {
                     &is_frozen.tick();
-                    continue;
                 }
+                continue;
             }
 
             // The monster is free to take actions.
@@ -93,7 +94,6 @@ impl<'a> System<'a> for MonsterMovementSystem {
                 Point::new(pos.x, pos.y),
                 *player_pos
             ) < 1.5;
-            // The monster has the frozen status, and cannot take any action.
             // Monster next to player branch:
             //   If we're already next to player, we enter into melee combat.
             if next_to_player {
