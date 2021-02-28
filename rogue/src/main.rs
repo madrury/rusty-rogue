@@ -14,6 +14,8 @@ mod visibility_system;
 use visibility_system::*;
 mod monster_ai_system;
 use monster_ai_system::*;
+mod status_system;
+use status_system::*;
 mod melee_combat_system;
 use melee_combat_system::*;
 mod damage_system;
@@ -96,6 +98,8 @@ impl State {
         mob.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
+        let mut status = MonsterStatusSystem{};
+        status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);

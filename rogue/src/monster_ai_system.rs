@@ -78,12 +78,12 @@ impl<'a> System<'a> for MonsterMovementSystem {
             //----------------------------------------------------------------
             // The monster has the frozen status, and cannot take actions.
             let is_frozen = status_frozen.get_mut(entity);
-            if let Some(is_frozen) = is_frozen {
-                if is_frozen.remaining_turns <= 0 {
-                    status_frozen.remove(entity);
-                } else {
-                    &is_frozen.tick();
-                }
+            if let Some(_) = is_frozen {
+                // if is_frozen.remaining_turns <= 0 {
+                //     status_frozen.remove(entity);
+                // } else {
+                //     &is_frozen.tick();
+                // }
                 continue;
             }
 

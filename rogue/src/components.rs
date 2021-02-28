@@ -100,19 +100,6 @@ pub struct InflictsFreezingWhenThrown {
     pub turns: i32
 }
 
-// Component indicating the entity is frozen.
-#[derive(Component)]
-pub struct StatusIsFrozen {
-    pub remaining_turns: i32
-}
-impl StatusIsFrozen {
-    pub fn is_frozen(self) -> bool {
-        self.remaining_turns > 0
-    }
-    pub fn tick(&mut self) {
-        self.remaining_turns -= 1
-    }
-}
 
 // Comonent holding data determining a monster's movement behaviour.
 #[derive(Component)]
@@ -150,6 +137,56 @@ impl CombatStats {
     }
 }
 
+// Status Effect Components
+//------------------------------------------------------------------
+
+// Component indicating the entity is frozen.
+#[derive(Component)]
+pub struct StatusIsFrozen {
+    pub remaining_turns: i32
+}
+impl StatusIsFrozen {
+    pub fn new_status(store: &mut WriteStorage<StatusIsFrozen>, victim: Entity, turns: i32) {
+        if let Some(frozen) = store.get_mut(victim) {
+            frozen.remaining_turns = turns;
+        } else {
+            let frozen = StatusIsFrozen{remaining_turns: turns};
+            store.insert(victim, frozen)
+                .expect("Unable to insert StatusIsFrozen component.");
+        }
+    }
+    pub fn is_frozen(self) -> bool {
+        self.remaining_turns > 0
+    }
+    pub fn tick(&mut self) {
+        self.remaining_turns -= 1
+    }
+}
+
+// Component indicating the entity is burning.
+#[derive(Component)]
+pub struct StatusIsBurning {
+    pub remaining_turns: i32,
+    pub tick_damage: i32,
+}
+impl StatusIsBurning {
+    pub fn new_status(store: &mut WriteStorage<StatusIsBurning>, victim: Entity, turns: i32, dmg: i32) {
+        if let Some(burning) = store.get_mut(victim) {
+            burning.remaining_turns = turns;
+            burning.tick_damage = i32::max(dmg, burning.tick_damage);
+        } else {
+            let burning = StatusIsBurning{remaining_turns: turns, tick_damage: dmg};
+            store.insert(victim, burning)
+                .expect("Unable to insert StatusIsBurning component.");
+        }
+    }
+    pub fn is_burning(self) -> bool {
+        self.remaining_turns > 0
+    }
+    pub fn tick(&mut self) {
+        self.remaining_turns -= 1
+    }
+}
 
 
 // Signaling Components
