@@ -227,6 +227,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ProvidesHealing>();
     gs.ecs.register::<AreaOfEffectWhenThrown>();
     gs.ecs.register::<InflictsDamageWhenThrown>();
+    gs.ecs.register::<InflictsFreezingWhenThrown>();
+    gs.ecs.register::<StatusIsFrozen>();
 
     let map = Map::new_rooms_and_corridors();
     let (px, py) = map.rooms[0].center();

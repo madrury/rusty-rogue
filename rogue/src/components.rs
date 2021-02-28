@@ -94,6 +94,26 @@ pub struct AreaOfEffectWhenThrown {
     pub radius: i32
 }
 
+// Component for items that inflict the frozen status.
+#[derive(Component)]
+pub struct InflictsFreezingWhenThrown {
+    pub turns: i32
+}
+
+// Component indicating the entity is frozen.
+#[derive(Component)]
+pub struct StatusIsFrozen {
+    pub remaining_turns: i32
+}
+impl StatusIsFrozen {
+    pub fn is_frozen(self) -> bool {
+        self.remaining_turns > 0
+    }
+    pub fn tick(&mut self) {
+        self.remaining_turns -= 1
+    }
+}
+
 // Comonent holding data determining a monster's movement behaviour.
 #[derive(Component)]
 pub struct MonsterMovementAI {

@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{Viewshed, Monster, MonsterMovementAI, Name, Position, Map, WantsToMeleeAttack};
+use super::{Viewshed, Monster, MonsterMovementAI, Name, Position, Map, WantsToMeleeAttack, StatusIsFrozen};
 use rltk::{Point, RandomNumberGenerator};
 
 pub struct MonsterMovementSystem {
@@ -46,12 +46,13 @@ impl<'a> System<'a> for MonsterMovementSystem {
         ReadExpect<'a, Point>, // Player position.
         ReadExpect<'a, Entity>, // Player entity.
         Entities<'a>,
+        WriteStorage<'a, StatusIsFrozen>,
         WriteStorage<'a, Viewshed>,
         ReadStorage<'a, Monster>,
         WriteStorage<'a, MonsterMovementAI>,
         ReadStorage<'a, Name>,
         WriteStorage<'a, Position>,
-        WriteStorage<'a, WantsToMeleeAttack>
+        WriteStorage<'a, WantsToMeleeAttack>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -60,22 +61,39 @@ impl<'a> System<'a> for MonsterMovementSystem {
             player_pos,
             player,
             entities,
+            mut status_frozen,
             mut viewsheds,
             monsters,
             mut movement_ais,
             names,
             mut pos,
-            mut melee_attack
+            mut melee_attack,
         ) = data;
 
         let iter = (&entities, &mut viewsheds, &monsters, &mut movement_ais, &names, &mut pos).join();
         for  (entity, mut viewshed, _monster, movement_ai, _name, mut pos) in iter {
+
+            //Check for status effects that would prevent the monster from
+            //taking actions.
+            let is_frozen = status_frozen.get_mut(entity);
+            if let Some(is_frozen) = is_frozen {
+                if is_frozen.remaining_turns <= 0 {
+                    status_frozen.remove(entity);
+                    continue;
+                } else {
+                    &is_frozen.tick();
+                    continue;
+                }
+            }
+
+            // The monster is free to take actions.
             let in_viewshed = viewshed.visible_tiles.contains(&*player_pos);
             let keep_following = movement_ai.do_keep_following();
             let next_to_player = rltk::DistanceAlg::Pythagoras.distance2d(
                 Point::new(pos.x, pos.y),
                 *player_pos
             ) < 1.5;
+            // The monster has the frozen status, and cannot take any action.
             // Monster next to player branch:
             //   If we're already next to player, we enter into melee combat.
             if next_to_player {

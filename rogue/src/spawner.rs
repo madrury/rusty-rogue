@@ -1,7 +1,7 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
     Renderable, Viewshed, PickUpable, Useable, Throwable, Consumable, ProvidesHealing,
-    AreaOfEffectWhenThrown, InflictsDamageWhenThrown, MAP_WIDTH,
+    AreaOfEffectWhenThrown, InflictsDamageWhenThrown, InflictsFreezingWhenThrown, MAP_WIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -99,11 +99,12 @@ pub fn spawn_random_item(ecs: &mut World, x: i32, y: i32) {
     let roll: i32;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        roll = rng.roll_dice(1, 2);
+        roll = rng.roll_dice(1, 3);
     }
     match roll {
         1 => health_potion(ecs, x, y),
-        _ => fire_potion(ecs, x, y),
+        2 => fire_potion(ecs, x, y),
+        _ => freezing_potion(ecs, x, y)
     }
 }
 
@@ -213,7 +214,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Position {x, y})
     .with(Renderable {
         glyph: rltk::to_cp437('¿'),
-        fg: RGB::named(rltk::MAGENTA),
+        fg: RGB::named(rltk::RED),
         bg: RGB::named(rltk::BLACK),
         order: 2,
     })
@@ -231,7 +232,7 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Position {x, y})
     .with(Renderable {
         glyph: rltk::to_cp437('¿'),
-        fg: RGB::named(rltk::MAGENTA),
+        fg: RGB::named(rltk::ORANGE),
         bg: RGB::named(rltk::BLACK),
         order: 2,
     })
@@ -241,5 +242,24 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Consumable {})
     .with(AreaOfEffectWhenThrown {radius: 3})
     .with(InflictsDamageWhenThrown {damage: 20})
+    .build();
+}
+
+fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+    .with(Position {x, y})
+    .with(Renderable {
+        glyph: rltk::to_cp437('¿'),
+        fg: RGB::named(rltk::LIGHT_BLUE),
+        bg: RGB::named(rltk::BLACK),
+        order: 2,
+    })
+    .with(Name {name: "Potion of Freezing".to_string()})
+    .with(PickUpable {})
+    .with(Throwable {})
+    .with(Consumable {})
+    .with(AreaOfEffectWhenThrown {radius: 3})
+    .with(InflictsDamageWhenThrown {damage: 10})
+    .with(InflictsFreezingWhenThrown {turns: 8})
     .build();
 }

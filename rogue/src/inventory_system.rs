@@ -1,7 +1,8 @@
 use super::{
     Map, Point, CombatStats, GameLog, ProvidesHealing, InBackpack, Name,
     Position, WantsToUseItem, WantsToPickupItem, WantsToThrowItem,
-    Consumable, InflictsDamageWhenThrown, AreaOfEffectWhenThrown, ApplyDamage
+    Consumable, InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
+    AreaOfEffectWhenThrown, ApplyDamage, StatusIsFrozen
 };
 use specs::prelude::*;
 
@@ -112,8 +113,10 @@ impl<'a> System<'a> for ItemThrowSystem {
         WriteStorage<'a, CombatStats>,
         ReadStorage<'a, ProvidesHealing>,
         ReadStorage<'a, InflictsDamageWhenThrown>,
+        WriteStorage<'a, InflictsFreezingWhenThrown>,
         ReadStorage<'a, AreaOfEffectWhenThrown>,
         WriteStorage<'a, ApplyDamage>,
+        WriteStorage<'a, StatusIsFrozen>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -126,9 +129,11 @@ impl<'a> System<'a> for ItemThrowSystem {
             mut wants_throw,
             mut combat_stats,
             healing,
-            damages,
+            does_damage,
+            does_freeze,
             aoes,
             mut apply_damages,
+            mut is_frozen
         ) = data;
 
         for do_throw in (&wants_throw).join() {
@@ -154,7 +159,7 @@ impl<'a> System<'a> for ItemThrowSystem {
 
                 // Component: InflictsDamageWhenThrown
                 let stats = combat_stats.get_mut(*target);
-                let item_damages = damages.get(do_throw.item);
+                let item_damages = does_damage.get(do_throw.item);
                 if let (Some(item_damages), Some(_stats)) = (item_damages, stats) {
                     ApplyDamage::new_damage(&mut apply_damages, *target, item_damages.damage);
                     log.entries.push(format!(
@@ -162,6 +167,19 @@ impl<'a> System<'a> for ItemThrowSystem {
                         names.get(do_throw.item).unwrap().name,
                         names.get(*target).unwrap().name,
                         item_damages.damage
+                    ))
+                }
+
+                // Component: InflictsFreezingWhenThrown
+                let item_freezes = does_freeze.get(do_throw.item);
+                if let Some(item_freezes) = item_freezes {
+                    is_frozen
+                        .insert(*target, StatusIsFrozen{remaining_turns: item_freezes.turns})
+                        .expect("Unable to insert frozen status.");
+                    log.entries.push(format!(
+                        "You throw the {}, freezing {} in place.",
+                        names.get(do_throw.item).unwrap().name,
+                        names.get(*target).unwrap().name,
                     ))
                 }
 
