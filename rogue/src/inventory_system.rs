@@ -136,13 +136,15 @@ impl<'a> System<'a> for ItemThrowSystem {
             mut is_frozen
         ) = data;
 
-        for do_throw in (&wants_throw).join() {
+        for (thrower, do_throw) in (&entities, &wants_throw).join() {
             let target_point = do_throw.target;
             let aoe = aoes.get(do_throw.item);
 
-            // Loop through all the entities in the target tile, and apply the
-            // effects of the thrown item.
-            let targets = find_targets(&*map, target_point, aoe);
+            let targets: Vec<&Entity> = find_targets(&*map, target_point, aoe)
+                .into_iter()
+                .filter(|&e| *e != thrower)
+                .collect();
+
             for target in targets {
 
                 // Component: ProvidesHealing.
@@ -171,11 +173,10 @@ impl<'a> System<'a> for ItemThrowSystem {
                 }
 
                 // Component: InflictsFreezingWhenThrown
+                let stats = combat_stats.get_mut(*target);
                 let item_freezes = does_freeze.get(do_throw.item);
-                if let Some(item_freezes) = item_freezes {
-                    is_frozen
-                        .insert(*target, StatusIsFrozen{remaining_turns: item_freezes.turns})
-                        .expect("Unable to insert frozen status.");
+                if let (Some(item_freezes), Some(_stats)) = (item_freezes, stats) {
+                    StatusIsFrozen::new_status(&mut is_frozen, *target, item_freezes.turns);
                     log.entries.push(format!(
                         "You throw the {}, freezing {} in place.",
                         names.get(do_throw.item).unwrap().name,
