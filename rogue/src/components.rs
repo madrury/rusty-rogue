@@ -1,6 +1,6 @@
 use specs::prelude::*;
 use specs_derive::*;
-use rltk::{RGB};
+use rltk::{RGB, Point};
 
 
 // Binary Components:
@@ -142,6 +142,13 @@ pub struct WantsToPickupItem {
 #[derive(Component)]
 pub struct WantsToUseItem {
     pub item: Entity,
+}
+
+// Signals that the owning entity wants to throw an item.
+#[derive(Component)]
+pub struct WantsToThrowItem {
+    pub item: Entity,
+    pub target: Point,
 }
 
 // Signals that the entity has damage queued, but not applied.

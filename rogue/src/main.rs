@@ -37,6 +37,7 @@ pub enum RunState {
     MonsterTurn,
     ShowUseInventory,
     ShowThrowInventory,
+    ShowTargeting {range: i32, item: Entity},
 }
 
 pub struct State {
@@ -76,8 +77,10 @@ impl State {
         vis.run_now(&self.ecs);
         let mut pickups = ItemCollectionSystem{};
         pickups.run_now(&self.ecs);
-        let mut items = ItemUseSystem{};
-        items.run_now(&self.ecs);
+        let mut uses = ItemUseSystem{};
+        uses.run_now(&self.ecs);
+        let mut throws = ItemThrowSystem{};
+        throws.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
@@ -115,7 +118,6 @@ impl GameState for State {
         ctx.cls();
         draw_map(&self.ecs, ctx);
         self.render_all(ctx);
-        self::draw_ui(&self.ecs, ctx);
 
         let mut newrunstate;
         {
@@ -147,12 +149,12 @@ impl GameState for State {
                 match result {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},
-                    MenuResult::Selected {item: item} => {
+                    MenuResult::Selected {item} => {
                         let mut intent = self.ecs.write_storage::<WantsToUseItem>();
                         intent.insert(
-                            *self.ecs.fetch::<Entity>(),
+                            *self.ecs.fetch::<Entity>(), // Player.
                             WantsToUseItem{item: item}
-                        ).expect("Unable to insert intent to drink potion.");
+                        ).expect("Unable to insert intent to use item.");
                         newrunstate = RunState::PlayerTurn;
                     }
                 }
@@ -162,12 +164,21 @@ impl GameState for State {
                 match result {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},
-                    MenuResult::Selected {item: item} => {
-                        let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                    MenuResult::Selected {item} => {
+                        newrunstate = RunState::ShowTargeting {range: 4, item: item};
+                    }
+                }
+            }
+            RunState::ShowTargeting {range, item} => {
+                match gui::ranged_target(&mut self.ecs, ctx, range) {
+                    TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    TargetingResult::NoResponse => {},
+                    TargetingResult::Selected {pos} => {
+                        let mut intent = self.ecs.write_storage::<WantsToThrowItem>();
                         intent.insert(
-                            *self.ecs.fetch::<Entity>(),
-                            WantsToUseItem{item: item}
-                        ).expect("Unable to insert intent to drink potion.");
+                            *self.ecs.fetch::<Entity>(), // Player.
+                            WantsToThrowItem {item: item, target: pos}
+                        ).expect("Unable to insert intent to throw item.");
                         newrunstate = RunState::PlayerTurn;
                     }
                 }
@@ -175,8 +186,9 @@ impl GameState for State {
         }
         let mut runwriter = self.ecs.write_resource::<RunState>();
         *runwriter = newrunstate;
-    }
 
+        self::draw_ui(&self.ecs, ctx);
+    }
 }
 
 
@@ -211,6 +223,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<WantsToUseItem>();
+    gs.ecs.register::<WantsToThrowItem>();
     gs.ecs.register::<ProvidesHealing>();
 
     let map = Map::new_rooms_and_corridors();

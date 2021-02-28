@@ -1,4 +1,4 @@
-use super::{CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Useable};
+use super::{CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Viewshed};
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
@@ -263,4 +263,68 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
             }
         },
     }
+}
+
+//----------------------------------------------------------------------------
+// Targeting system.
+//----------------------------------------------------------------------------
+
+pub enum TargetingResult {
+    Cancel,
+    NoResponse,
+    Selected { pos: Point },
+}
+
+pub fn ranged_target(ecs : &mut World, ctx : &mut Rltk, range : i32) -> TargetingResult {
+    let player_entity = ecs.fetch::<Entity>();
+    let player_pos = ecs.fetch::<Point>();
+    let viewsheds = ecs.read_storage::<Viewshed>();
+
+    ctx.print_color(5, 0, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Select Target:");
+
+    // Highlight available target cells
+    let mut available_cells = Vec::new();
+    let visible = viewsheds.get(*player_entity);
+    if let Some(visible) = visible {
+        for idx in visible.visible_tiles.iter() {
+            let distance = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, *idx);
+            if distance <= range as f32 {
+                ctx.set_bg(idx.x, idx.y, RGB::named(rltk::BLUE));
+                available_cells.push(idx);
+            }
+        }
+    } else {
+        return TargetingResult::Cancel;
+    }
+
+    // Draw mouse cursor and check for clicks within range.
+    let mouse_pos = ctx.mouse_pos();
+    let mut valid_target = false;
+    for idx in available_cells.iter() {
+        if idx.x == mouse_pos.0 && idx.y == mouse_pos.1 {
+            valid_target = true;
+        }
+    }
+    if valid_target {
+        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::CYAN));
+        if ctx.left_click {
+            return TargetingResult::Selected {pos: Point{x: mouse_pos.0, y: mouse_pos.1}};
+        }
+    } else {
+        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::RED));
+        if ctx.left_click {
+            return TargetingResult::Cancel;
+        }
+    }
+
+    // Let the player ESC out.
+    if let Some(key) = ctx.key {
+        match key {
+            VirtualKeyCode::Escape => {return TargetingResult::Cancel;},
+            _ => {return TargetingResult::NoResponse;}
+        }
+    }
+
+    // Nothing happened, nothing changes.
+    TargetingResult::NoResponse
 }
