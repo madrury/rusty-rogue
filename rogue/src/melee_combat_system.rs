@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{CombatStats, WantsToMeleeAttack, Name, ApplyMeleeDamage, GameLog};
+use super::{CombatStats, WantsToMeleeAttack, Name, ApplyDamage, GameLog};
 
 pub struct MeleeCombatSystem {}
 
@@ -16,7 +16,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Name>,
         ReadStorage<'a, CombatStats>,
         WriteStorage<'a, WantsToMeleeAttack>,
-        WriteStorage<'a, ApplyMeleeDamage>
+        WriteStorage<'a, ApplyDamage>
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -40,7 +40,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     log.entries.push(
                         format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
                     );
-                    ApplyMeleeDamage::new_damage(&mut damagees, melee.target, damage);
+                    ApplyDamage::new_damage(&mut damagees, melee.target, damage);
                 }
             }
         }

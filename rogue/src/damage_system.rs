@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{CombatStats, ApplyMeleeDamage, Player, Name, GameLog};
+use super::{CombatStats, ApplyDamage, Player, Name, GameLog};
 
 pub struct DamageSystem {}
 
@@ -43,7 +43,7 @@ impl DamageSystem {
 impl<'a> System<'a> for DamageSystem {
     type SystemData = (
         WriteStorage<'a, CombatStats>,
-        WriteStorage<'a, ApplyMeleeDamage>
+        WriteStorage<'a, ApplyDamage>
     );
 
     fn run(&mut self, data: Self::SystemData) {

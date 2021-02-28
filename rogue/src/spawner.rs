@@ -1,6 +1,7 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
-    Renderable, Viewshed, PickUpable, Useable, Throwable, Consumable, ProvidesHealing, MAP_WIDTH,
+    Renderable, Viewshed, PickUpable, Useable, Throwable, Consumable, ProvidesHealing,
+    AreaOfEffectWhenThrown, InflictsDamageWhenThrown, MAP_WIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -46,25 +47,6 @@ pub fn spawn_room(ecs: &mut World, room: &Rectangle) {
         num_items = rng.roll_dice(1, MAX_ITEMS_IN_ROOM + 1) - 1;
     }
 
-    // Spawn all the monsters.
-    // let mut monster_spawn_idxs: Vec<usize> = Vec::new();
-    // for _i in 1..=num_monsters {
-    //     let mut added = false;
-    //     while !added {
-    //         let (x, y) = room.random_point(ecs);
-    //         let idx = ((y * MAP_WIDTH) as usize) + x as usize;
-    //         if !monster_spawn_idxs.contains(&idx) {
-    //             monster_spawn_idxs.push(idx);
-    //             added = true;
-    //         }
-    //     }
-    // }
-
-    // let mut monster_spawn_points: Vec<(i32, i32)> = Vec::new();
-    // for idx in monster_spawn_idxs.iter() {
-    //     let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
-    //     monster_spawn_points.push((x, y))
-    // }
     let monster_spawn_points = generate_spawn_points(ecs, num_monsters, room);
     let item_spawn_points = generate_spawn_points(ecs, num_items, room);
 
@@ -72,7 +54,7 @@ pub fn spawn_room(ecs: &mut World, room: &Rectangle) {
         spawn_random_monster(ecs, *x, *y);
     }
     for (x, y) in item_spawn_points.iter() {
-        health_potion(ecs, *x, *y);
+        spawn_random_item(ecs, *x, *y);
     }
 }
 
@@ -109,6 +91,19 @@ pub fn spawn_random_monster(ecs: &mut World, x: i32, y: i32) {
     match roll {
         1 => orc(ecs, x, y),
         _ => goblin(ecs, x, y),
+    }
+}
+
+// Spawns a random item at a specified location.
+pub fn spawn_random_item(ecs: &mut World, x: i32, y: i32) {
+    let roll: i32;
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        roll = rng.roll_dice(1, 2);
+    }
+    match roll {
+        1 => health_potion(ecs, x, y),
+        _ => fire_potion(ecs, x, y),
     }
 }
 
@@ -228,5 +223,23 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Throwable {})
     .with(Consumable {})
     .with(ProvidesHealing {})
+    .build();
+}
+
+fn fire_potion(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+    .with(Position {x, y})
+    .with(Renderable {
+        glyph: rltk::to_cp437('¿'),
+        fg: RGB::named(rltk::MAGENTA),
+        bg: RGB::named(rltk::BLACK),
+        order: 2,
+    })
+    .with(Name {name: "Potion of Fire".to_string()})
+    .with(PickUpable {})
+    .with(Throwable {})
+    .with(Consumable {})
+    .with(AreaOfEffectWhenThrown {radius: 3})
+    .with(InflictsDamageWhenThrown {damage: 20})
     .build();
 }

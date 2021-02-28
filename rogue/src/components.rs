@@ -82,6 +82,18 @@ pub struct InBackpack {
     pub owner: Entity
 }
 
+// Component for items or spells that inflict damage when thrown or cast.
+#[derive(Component)]
+pub struct InflictsDamageWhenThrown {
+    pub damage: i32
+}
+
+// Component for items or spells with an area of effect.
+#[derive(Component)]
+pub struct AreaOfEffectWhenThrown {
+    pub radius: i32
+}
+
 // Comonent holding data determining a monster's movement behaviour.
 #[derive(Component)]
 pub struct MonsterMovementAI {
@@ -153,18 +165,18 @@ pub struct WantsToThrowItem {
 
 // Signals that the entity has damage queued, but not applied.
 #[derive(Component)]
-pub struct ApplyMeleeDamage {
+pub struct ApplyDamage {
     pub amounts: Vec<i32>
 }
-impl ApplyMeleeDamage {
+impl ApplyDamage {
     // Since the ApplyMeleeDamage component can contain *multiple* instances of
     // damage, we need to distinguish the case of the first instance of damage
     // from the subsequent. This function encapsulates this switch.
-    pub fn new_damage(store: &mut WriteStorage<ApplyMeleeDamage>, victim: Entity, amount: i32) {
+    pub fn new_damage(store: &mut WriteStorage<ApplyDamage>, victim: Entity, amount: i32) {
         if let Some(suffering) = store.get_mut(victim) {
             suffering.amounts.push(amount);
         } else {
-            let dmg = ApplyMeleeDamage{ amounts: vec![amount] };
+            let dmg = ApplyDamage{ amounts: vec![amount] };
             store.insert(victim, dmg)
                 .expect("Unable to insert SufferDamage component.");
         }

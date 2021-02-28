@@ -214,7 +214,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<WantsToMeleeAttack>();
-    gs.ecs.register::<ApplyMeleeDamage>();
+    gs.ecs.register::<ApplyDamage>();
     gs.ecs.register::<Useable>();
     gs.ecs.register::<Throwable>();
     gs.ecs.register::<PickUpable>();
@@ -225,6 +225,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToUseItem>();
     gs.ecs.register::<WantsToThrowItem>();
     gs.ecs.register::<ProvidesHealing>();
+    gs.ecs.register::<AreaOfEffectWhenThrown>();
+    gs.ecs.register::<InflictsDamageWhenThrown>();
 
     let map = Map::new_rooms_and_corridors();
     let (px, py) = map.rooms[0].center();
