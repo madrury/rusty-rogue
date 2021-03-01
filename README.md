@@ -2,10 +2,15 @@
 
 We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductions.com/).
 
-## Introduction
+## Stuff We've added not from the tutorial:
 
-1. Building for the Web
-2. Section 1 - Hello Rust
+  - A status effects system.
+  - An animation system.
+
+## Progress in tutorial:
+
+#### 1. Building for the Web
+#### 2. Section 1 - Hello Rust
   - [x] 2.1. Entities and Components
   - [x] 2.2. Walking A Map
   - [x] 2.3. A More Interesting Map
@@ -19,7 +24,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] 2.11. Delving Deeper
   - [ ] 2.12. Difficulty
   - [ ] 2.13. Equipment
-3. Section 2 - Stretch Goals
+#### 3. Section 2 - Stretch Goals
   - [ ] 3.1. Nice Walls with Bitsets
   - [ ] 3.2. Bloodstains
   - [ ] 3.3. Particle Effects
@@ -27,7 +32,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] 3.5. Magic Mapping
   - [ ] 3.6. REX Paint Menu
   - [ ] 3.7. Simple Traps
-4. Section 3 - Generating Maps
+#### 4. Section 3 - Generating Maps
   - [ ] 4.1. Refactor Map Building
   - [ ] 4.2. Map Building Test Harness
   - [ ] 4.3. BSP Room Dungeons
@@ -48,7 +53,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] 4.18. Doors
   - [ ] 4.19. Decouple map size from screen size
   - [ ] 4.20. Section 3 Conclusion
-5. Section 4 - Making A Game
+#### 5. Section 4 - Making A Game
   - [ ] 5.1. Design Document
   - [ ] 5.2. Raw Files, Data- [ ]Driven Design
   - [ ] 5.3. Data- [ ]Driven Spawn Tables
