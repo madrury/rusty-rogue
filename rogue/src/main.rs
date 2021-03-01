@@ -1,3 +1,5 @@
+use std::{thread, time};
+
 use rltk::{GameState, Rltk, Point};
 use specs::prelude::*;
 
@@ -164,6 +166,9 @@ impl GameState for State {
                 newrunstate = RunState::MonsterTurn;
             }
             RunState::MonsterTurn => {
+                // We add a quick pause at the start of a monster turn, which
+                // helps with game feel.
+                thread::sleep(time::Duration::from_millis(50));
                 self.run_monster_turn_systems();
                 self.run_map_indexing_system();
                 newrunstate = RunState::AwaitingInput;

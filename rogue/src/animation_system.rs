@@ -118,8 +118,8 @@ fn make_healing_animation(x: i32, y: i32, fg: RGB, bg: RGB, glyph: rltk::FontCha
             fg: *color,
             bg: bg,
             glyph: *glyph,
-            lifetime: 50.0, // ms
-            delay: 50.0 * (i as f32)
+            lifetime: 100.0, // ms
+            delay: 100.0 * (i as f32)
         })
     }
     particles
