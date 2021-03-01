@@ -4,7 +4,19 @@ use super::{
     ParticleBuilder, ParticleRequest
 };
 
+//----------------------------------------------------------------------------
+// Systems for handing Animation request.
+//
+// This system handles requests from entities to play an animation. It is meant
+// to allow these requests at a higher level of abstraction than each entity
+// needing to request the individual particles that make up the animation.
+//
+// To request an animation, the entity contructs the appropriate
+// AnimationRequest and pushes it to the AnimationBuilder buffer.
+//----------------------------------------------------------------------------
 
+// An individual request fon an animation. This enumerates over all possible
+// game animations.
 pub enum AnimationRequest {
     MeleeAttack {
         x: i32,
@@ -13,7 +25,8 @@ pub enum AnimationRequest {
         glyph: rltk::FontCharType
     }
 }
-
+//  A buffer for holding current animation requests. Added to the ECS as a
+//  resource, so any entity may access it.
 pub struct AnimationBuilder {
     requests: Vec<AnimationRequest>,
 }
@@ -29,6 +42,8 @@ impl AnimationBuilder {
 }
 
 
+// Handles grabbing AnimationREquests from the AnimationBuilder buffer, and
+// converting them into the individual constituent ParticleRequests.
 pub struct AnimationInitSystem {}
 
 impl<'a> System<'a> for AnimationInitSystem {
@@ -52,6 +67,7 @@ impl<'a> System<'a> for AnimationInitSystem {
     }
 }
 
+// A melee attack animation. The targeted entity flashes briefly.
 fn make_melee_animation(x: i32, y: i32, bg: RGB, glyph: rltk::FontCharType) -> Vec<ParticleRequest> {
     let mut particles = Vec::new();
     let color_cycle = [
