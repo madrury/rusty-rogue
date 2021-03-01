@@ -6,6 +6,7 @@ use super::{GameLog, Name, Monster, StatusIsFrozen, StatusIsBurning, ApplyDamage
 
 pub struct MonsterStatusSystem {}
 
+// A system to update and apply effects of status ailments/buffs on monsters.
 impl<'a> System<'a> for MonsterStatusSystem {
 
     type SystemData = (
@@ -64,26 +65,31 @@ impl<'a> System<'a> for MonsterStatusSystem {
     }
 }
 
-
+//----------------------------------------------------------------------------
+// Status Glyphs.
+// Helper utilities to construct glyphs indicating status effects.
+//   - Burning: ♠
+//   - Frozen:  ♦
+//----------------------------------------------------------------------------
 pub struct StatusIndicatorGlyph {
     pub glyph: rltk::FontCharType,
     pub color: RGB
 }
 
+// Retrns a vector of StatusIdicatorGlyphs for all status effects currently
+// affecting a given entity.
 pub fn get_status_indicators(ecs: &World, entity: &Entity) -> Vec<StatusIndicatorGlyph> {
     let mut indicators = Vec::new();
 
     let frozens = ecs.read_storage::<StatusIsFrozen>();
     if let Some(_) = frozens.get(*entity) {
         indicators.push(
-            // Glyph 4 is ♦.
             StatusIndicatorGlyph {glyph: rltk::to_cp437('♦'), color: RGB::named(rltk::LIGHT_BLUE)}
         )
     }
     let burnings = ecs.read_storage::<StatusIsBurning>();
     if let Some(_) = burnings.get(*entity) {
         indicators.push(
-            // Glyph 6 is ♠.
             StatusIndicatorGlyph {glyph: rltk::to_cp437('♠'), color: RGB::named(rltk::ORANGE)}
         )
     }

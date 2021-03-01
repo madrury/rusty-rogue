@@ -213,6 +213,10 @@ impl<'a> System<'a> for ItemThrowSystem {
     }
 }
 
+// Helper function to find all targets of a given thrown item.
+//   - Base Case: Find all entites at the given position.
+//   - AOE Case: Find all entities within a given viewshed (defined by a radius)
+//     of a given position.
 fn find_targets<'a>(map: &'a Map, pt: Point, aoe: Option<&AreaOfEffectWhenThrown>) -> Vec<&'a Entity> {
     let mut targets: Vec<&Entity> = Vec::new();
     let idx = map.xy_idx(pt.x, pt.y);

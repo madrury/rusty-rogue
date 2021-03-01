@@ -198,11 +198,11 @@ impl GameState for State {
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple80x50()
+    let mut context = RltkBuilder::simple80x50()
         .with_fps_cap(60.0)
         .with_title("Roguelike Tutorial")
         .build()?;
-    // context.with_post_scanlines(true);
+    context.with_post_scanlines(true);
 
     let mut gs = State {
         ecs: World::new(),
@@ -212,20 +212,19 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Position>();
     gs.ecs.register::<Name>();
     gs.ecs.register::<Viewshed>();
-    gs.ecs.register::<Monster>();
-    gs.ecs.register::<Renderable>();
     gs.ecs.register::<BlocksTile>();
+    gs.ecs.register::<Monster>();
     gs.ecs.register::<MonsterMovementAI>();
+    gs.ecs.register::<Renderable>();
     gs.ecs.register::<CombatStats>();
-    gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<ApplyDamage>();
     gs.ecs.register::<Useable>();
     gs.ecs.register::<Throwable>();
     gs.ecs.register::<PickUpable>();
     gs.ecs.register::<Consumable>();
-    gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<InBackpack>();
-    gs.ecs.register::<Consumable>();
+    gs.ecs.register::<WantsToMeleeAttack>();
+    gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<WantsToUseItem>();
     gs.ecs.register::<WantsToThrowItem>();
     gs.ecs.register::<ProvidesHealing>();
