@@ -24,6 +24,8 @@ mod inventory_system;
 use inventory_system::*;
 mod map_indexing_system;
 use map_indexing_system::*;
+mod particle_system;
+use particle_system::*;
 mod gamelog;
 use gamelog::{GameLog};
 
@@ -87,6 +89,10 @@ impl State {
         melee.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut new_particles = ParticleInitSystem{};
+        new_particles.run_now(&self.ecs);
+        let mut particles = ParticleRenderSystem{};
+        particles.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
@@ -102,6 +108,10 @@ impl State {
         status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut new_particles = ParticleInitSystem{};
+        new_particles.run_now(&self.ecs);
+        let mut particles = ParticleRenderSystem{};
+        particles.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
@@ -120,6 +130,7 @@ impl GameState for State {
 
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
+        update_particle_lifetimes(&mut self.ecs, ctx);
         draw_map(&self.ecs, ctx);
         self.render_all(ctx);
 
@@ -234,6 +245,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsBurningWhenThrown>();
     gs.ecs.register::<StatusIsFrozen>();
     gs.ecs.register::<StatusIsBurning>();
+    gs.ecs.register::<ParticleLifetime>();
 
     let map = Map::new_rooms_and_corridors();
     let (px, py) = map.rooms[0].center();
@@ -251,6 +263,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(map);
     gs.ecs.insert(RunState::PreGame);
     gs.ecs.insert(GameLog::new());
+    gs.ecs.insert(ParticleBuilder::new());
     gs.ecs.insert(Point::new(px, py)); // Player position.
 
     rltk::main_loop(context, gs)

@@ -1,5 +1,8 @@
 use specs::prelude::*;
-use super::{CombatStats, WantsToMeleeAttack, Name, ApplyDamage, GameLog};
+use super::{
+    CombatStats, WantsToMeleeAttack, Name, ApplyDamage, GameLog, Renderable, Position,
+    ParticleRequest, ParticleBuilder
+};
 
 pub struct MeleeCombatSystem {}
 
@@ -13,14 +16,28 @@ impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
         Entities<'a>,
         WriteExpect<'a, GameLog>,
+        WriteExpect<'a, ParticleBuilder>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, CombatStats>,
         WriteStorage<'a, WantsToMeleeAttack>,
-        WriteStorage<'a, ApplyDamage>
+        WriteStorage<'a, ApplyDamage>,
+        WriteStorage<'a, Position>,
+        ReadStorage<'a, Renderable>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (entities, mut log, names, combat_stats, mut melee_attack, mut damagees) = data;
+        let (
+            entities,
+            mut log,
+            mut particle_buffer,
+            names,
+            combat_stats,
+            mut melee_attack,
+            mut damagees,
+            positions,
+            renderables
+        ) = data;
+
         let iter = (&entities, &melee_attack, &names, &combat_stats).join();
         for (entity, melee, name, stats) in iter {
             let target = melee.target;
@@ -40,9 +57,44 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
                     );
                     ApplyDamage::new_damage(&mut damagees, melee.target, damage);
+                    // Spawn a particle for a quick animation.
+                    let pos = positions.get(melee.target);
+                    let render = renderables.get(melee.target);
+                    if let(Some(pos), Some(render)) = (pos, render) {
+                        particle_buffer.request(ParticleRequest {
+                            x: pos.x,
+                            y: pos.y,
+                            fg: rltk::RGB::named(rltk::WHITE),
+                            bg: render.bg,
+                            glyph: render.glyph,
+                            lifetime: 200.0,
+                            delay: 0.0 // ms
+                        })
+                    }
                 }
             }
         }
         melee_attack.clear();
     }
+}
+
+fn make_melee_animation(pos: Position, render: Renderable) -> Vec<ParticleRequest> {
+    let mut v = Vec::new();
+    let color_cycle = [
+        rltk::RGB::named(rltk::WHITE),
+        rltk::RGB::named(rltk::RED),
+        rltk::RGB::named(rltk::WHITE)
+    ];
+    for (i, color) in color_cycle.iter().enumerate() {
+        v.push(ParticleRequest {
+            x: pos.x,
+            y: pos.y,
+            fg: rltk::RGB::named(rltk::WHITE),
+            bg: render.bg,
+            glyph: render.glyph,
+            lifetime: 100.0, // ms
+            delay: 100.0 * i as f32
+        })
+    }
+    v
 }

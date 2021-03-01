@@ -143,6 +143,18 @@ impl CombatStats {
     }
 }
 
+#[derive(Component)]
+pub struct ParticleLifetime {
+    pub lifetime : f32,
+    pub delay: f32,
+    pub displayed: bool,
+    pub x: i32,
+    pub y: i32,
+    pub fg: RGB,
+    pub bg: RGB,
+    pub glyph: rltk::FontCharType
+}
+
 // Status Effect Components
 //------------------------------------------------------------------
 
