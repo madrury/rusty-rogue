@@ -70,7 +70,8 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
 
 
 fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
-    let BG_COLOR = RGB::named(rltk::DIM_GREY);
+    let bg_color = RGB::named(rltk::DIM_GREY);
+
     let map = ecs.fetch::<Map>();
     let names = ecs.read_storage::<Name>();
     let positions = ecs.read_storage::<Position>();
@@ -120,7 +121,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                     left_x,
                     y,
                     RGB::named(rltk::WHITE),
-                    BG_COLOR,
+                    bg_color,
                     s,
                 );
                 // Print indicators for the entities current status.
@@ -129,7 +130,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                         left_x + s.len() as i32 + i as i32,
                         y,
                         ind.color,
-                        BG_COLOR,
+                        bg_color,
                         ind.glyph,
                     );
                 }
@@ -139,7 +140,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                         arrow_pos.x - i,
                         y,
                         RGB::named(rltk::WHITE),
-                        BG_COLOR,
+                        bg_color,
                         &" ".to_string(),
                     );
                 }
@@ -149,7 +150,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                 arrow_pos.x,
                 arrow_pos.y,
                 RGB::named(rltk::WHITE),
-                BG_COLOR,
+                bg_color,
                 rltk::to_cp437('→')
             );
         // Tooltip is on the left half of the screen, so render the tooltip to
@@ -165,7 +166,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                     left_x,
                     y,
                     RGB::named(rltk::WHITE),
-                    BG_COLOR,
+                    bg_color,
                     s,
                 );
                 // Print indicators for the entities current status.
@@ -174,7 +175,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                         left_x + s.len() as i32 + i as i32,
                         y,
                         ind.color,
-                        BG_COLOR,
+                        bg_color,
                         ind.glyph,
                     );
                 }
@@ -184,7 +185,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                         arrow_pos.x + i,
                         y,
                         RGB::named(rltk::WHITE),
-                        BG_COLOR,
+                        bg_color,
                         &" ".to_string(),
                     );
                 }
@@ -194,7 +195,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                 arrow_pos.x,
                 arrow_pos.y,
                 RGB::named(rltk::WHITE),
-                BG_COLOR,
+                bg_color,
                 rltk::to_cp437('←')
             );
         }
