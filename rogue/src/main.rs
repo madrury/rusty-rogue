@@ -26,6 +26,8 @@ mod map_indexing_system;
 use map_indexing_system::*;
 mod particle_system;
 use particle_system::*;
+mod animation_system;
+use animation_system::*;
 mod gamelog;
 use gamelog::{GameLog};
 
@@ -89,10 +91,10 @@ impl State {
         melee.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut new_animations = AnimationInitSystem{};
+        new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
-        let mut particles = ParticleRenderSystem{};
-        particles.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
@@ -108,6 +110,8 @@ impl State {
         status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut new_animations = AnimationInitSystem{};
+        new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
@@ -134,9 +138,10 @@ impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
         update_particle_lifetimes(&mut self.ecs, ctx);
-        self.run_particle_render_systems();
         draw_map(&self.ecs, ctx);
         self.render_all(ctx);
+        self.run_particle_render_systems();
+        self::draw_ui(&self.ecs, ctx);
 
         let mut newrunstate;
         {
@@ -206,7 +211,6 @@ impl GameState for State {
         let mut runwriter = self.ecs.write_resource::<RunState>();
         *runwriter = newrunstate;
 
-        self::draw_ui(&self.ecs, ctx);
     }
 }
 
@@ -267,6 +271,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(map);
     gs.ecs.insert(RunState::PreGame);
     gs.ecs.insert(GameLog::new());
+    gs.ecs.insert(AnimationBuilder::new());
     gs.ecs.insert(ParticleBuilder::new());
     gs.ecs.insert(Point::new(px, py)); // Player position.
 
