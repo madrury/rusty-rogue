@@ -110,10 +110,13 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
-        let mut particles = ParticleRenderSystem{};
-        particles.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
+    }
+
+    fn run_particle_render_systems(&mut self) {
+        let mut particles = ParticleRenderSystem{};
+        particles.run_now(&self.ecs);
     }
 
     #[allow(dead_code)]
@@ -131,6 +134,7 @@ impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
         update_particle_lifetimes(&mut self.ecs, ctx);
+        self.run_particle_render_systems();
         draw_map(&self.ecs, ctx);
         self.render_all(ctx);
 

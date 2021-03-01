@@ -61,15 +61,9 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     let pos = positions.get(melee.target);
                     let render = renderables.get(melee.target);
                     if let(Some(pos), Some(render)) = (pos, render) {
-                        particle_buffer.request(ParticleRequest {
-                            x: pos.x,
-                            y: pos.y,
-                            fg: rltk::RGB::named(rltk::WHITE),
-                            bg: render.bg,
-                            glyph: render.glyph,
-                            lifetime: 200.0,
-                            delay: 0.0 // ms
-                        })
+                        particle_buffer.request_many(
+                            make_melee_animation(pos, render)
+                        )
                     }
                 }
             }
@@ -78,22 +72,22 @@ impl<'a> System<'a> for MeleeCombatSystem {
     }
 }
 
-fn make_melee_animation(pos: Position, render: Renderable) -> Vec<ParticleRequest> {
+fn make_melee_animation(pos: &Position, render: &Renderable) -> Vec<ParticleRequest> {
     let mut v = Vec::new();
     let color_cycle = [
         rltk::RGB::named(rltk::WHITE),
         rltk::RGB::named(rltk::RED),
-        rltk::RGB::named(rltk::WHITE)
+        rltk::RGB::named(rltk::WHITE),
     ];
     for (i, color) in color_cycle.iter().enumerate() {
         v.push(ParticleRequest {
             x: pos.x,
             y: pos.y,
-            fg: rltk::RGB::named(rltk::WHITE),
+            fg: *color,
             bg: render.bg,
             glyph: render.glyph,
-            lifetime: 100.0, // ms
-            delay: 100.0 * i as f32
+            lifetime: 50.0, // ms
+            delay: 50.0 * (i as f32)
         })
     }
     v
