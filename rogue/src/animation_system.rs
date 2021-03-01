@@ -23,8 +23,16 @@ pub enum AnimationRequest {
         y: i32,
         bg: RGB,
         glyph: rltk::FontCharType
+    },
+    Healing {
+        x: i32,
+        y: i32,
+        fg: RGB,
+        bg: RGB,
+        glyph: rltk::FontCharType
     }
 }
+
 //  A buffer for holding current animation requests. Added to the ECS as a
 //  resource, so any entity may access it.
 pub struct AnimationBuilder {
@@ -59,7 +67,9 @@ impl<'a> System<'a> for AnimationInitSystem {
             particle_builder.request_many(
                 match request {
                     AnimationRequest::MeleeAttack {x, y, bg, glyph}
-                        => make_melee_animation(*x, *y, *bg, *glyph)
+                        => make_melee_animation(*x, *y, *bg, *glyph),
+                    AnimationRequest::Healing {x, y, fg, bg, glyph}
+                        => make_healing_animation(*x, *y, *fg, *bg, *glyph)
                 }
             )
         }
@@ -82,6 +92,32 @@ fn make_melee_animation(x: i32, y: i32, bg: RGB, glyph: rltk::FontCharType) -> V
             fg: *color,
             bg: bg,
             glyph: glyph,
+            lifetime: 50.0, // ms
+            delay: 50.0 * (i as f32)
+        })
+    }
+    particles
+}
+
+fn make_healing_animation(x: i32, y: i32, fg: RGB, bg: RGB, glyph: rltk::FontCharType) -> Vec<ParticleRequest> {
+    let mut particles = Vec::new();
+    let color_cycle = [
+        rltk::RGB::named(rltk::RED),
+        fg,
+        rltk::RGB::named(rltk::RED),
+    ];
+    let glyph_cycle = [
+        rltk::to_cp437('♥'),
+        glyph,
+        rltk::to_cp437('♥')
+    ];
+    for (i, (color, glyph)) in color_cycle.iter().zip(glyph_cycle.iter()).enumerate() {
+        particles.push(ParticleRequest {
+            x: x,
+            y: y,
+            fg: *color,
+            bg: bg,
+            glyph: *glyph,
             lifetime: 50.0, // ms
             delay: 50.0 * (i as f32)
         })

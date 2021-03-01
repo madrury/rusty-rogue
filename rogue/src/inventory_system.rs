@@ -1,7 +1,8 @@
 use super::{
-    Map, Point, CombatStats, GameLog, ProvidesHealing, InBackpack, Name,
-    Position, WantsToUseItem, WantsToPickupItem, WantsToThrowItem,
-    Consumable, InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
+    Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
+    ProvidesHealing, InBackpack, Name, Renderable, Position, WantsToUseItem,
+    WantsToPickupItem, WantsToThrowItem, Consumable,
+    InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
     InflictsBurningWhenThrown, AreaOfEffectWhenThrown, ApplyDamage,
     StatusIsFrozen, StatusIsBurning
 };
@@ -51,7 +52,10 @@ impl<'a> System<'a> for ItemUseSystem {
         Entities<'a>,
         ReadExpect<'a, Entity>,
         WriteExpect<'a, GameLog>,
+        WriteExpect<'a, AnimationBuilder>,
         ReadStorage<'a, Name>,
+        ReadStorage<'a, Renderable>,
+        ReadStorage<'a, Position>,
         ReadStorage<'a, Consumable>,
         WriteStorage<'a, WantsToUseItem>,
         ReadStorage<'a, ProvidesHealing>,
@@ -63,7 +67,10 @@ impl<'a> System<'a> for ItemUseSystem {
             entities,
             player,
             mut log,
+            mut animation_builder,
             names,
+            renderables,
+            positions,
             consumables,
             mut wants_use,
             healing,
@@ -74,13 +81,20 @@ impl<'a> System<'a> for ItemUseSystem {
 
             // Component: ProvidesHealing.
             let item_heals = healing.get(do_use.item);
+            let name = names.get(entity);
+            let pos = positions.get(entity);
+            let render = renderables.get(entity);
             if let Some(_) = item_heals {
                 stats.hp = stats.max_hp; // TODO: This probably should be a system call.
-                if entity == *player {
+                if let Some(name) = name {
                     log.entries.push(format!(
-                        "You drink the {}.",
+                        "{} drink's the {}.",
+                        name.name,
                         names.get(do_use.item).unwrap().name,
                     ));
+                }
+                if let(Some(pos), Some(render)) = (pos, render) {
+                    animation_builder.request(make_healing_animation(pos, render))
                 }
             }
 
@@ -108,7 +122,10 @@ impl<'a> System<'a> for ItemThrowSystem {
         Entities<'a>,
         ReadExpect<'a, Map>,
         WriteExpect<'a, GameLog>,
+        WriteExpect<'a, AnimationBuilder>,
         ReadStorage<'a, Name>,
+        ReadStorage<'a, Renderable>,
+        ReadStorage<'a, Position>,
         ReadStorage<'a, Consumable>,
         WriteStorage<'a, WantsToThrowItem>,
         WriteStorage<'a, CombatStats>,
@@ -127,7 +144,10 @@ impl<'a> System<'a> for ItemThrowSystem {
             entities,
             map,
             mut log,
+            mut animation_builder,
             names,
+            renderables,
+            positions,
             consumables,
             mut wants_throw,
             mut combat_stats,
@@ -154,6 +174,8 @@ impl<'a> System<'a> for ItemThrowSystem {
 
                 // Component: ProvidesHealing.
                 let stats = combat_stats.get_mut(*target);
+                let pos = positions.get(*target);
+                let render = renderables.get(*target);
                 let item_heals = healing.get(do_throw.item);
                 if let (Some(_), Some(stats)) = (item_heals, stats) {
                     stats.hp = stats.max_hp; // TODO: This probably should be a system call.
@@ -161,7 +183,10 @@ impl<'a> System<'a> for ItemThrowSystem {
                         "You throw the {}, healing {}.",
                         names.get(do_throw.item).unwrap().name,
                         names.get(*target).unwrap().name,
-                    ))
+                    ));
+                    if let(Some(pos), Some(render)) = (pos, render) {
+                        animation_builder.request(make_healing_animation(pos, render))
+                    }
                 }
 
                 // Component: InflictsDamageWhenThrown
@@ -240,4 +265,14 @@ fn find_targets<'a>(map: &'a Map, pt: Point, aoe: Option<&AreaOfEffectWhenThrown
         }
     }
     targets
+}
+
+fn make_healing_animation(pos: &Position, render: &Renderable) -> AnimationRequest {
+    AnimationRequest::Healing {
+        x: pos.x,
+        y: pos.y,
+        fg: render.fg,
+        bg: render.bg,
+        glyph: render.glyph,
+    }
 }
