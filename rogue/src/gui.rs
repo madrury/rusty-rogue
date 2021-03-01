@@ -1,4 +1,7 @@
-use super::{CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Viewshed};
+use super::{
+    CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Viewshed,
+    StatusIndicatorGlyph, get_status_indicators
+};
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
@@ -64,7 +67,10 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     draw_tooltips(ecs, ctx);
 }
 
+
+
 fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
+    let BG_COLOR = RGB::named(rltk::DIM_GREY);
     let map = ecs.fetch::<Map>();
     let names = ecs.read_storage::<Name>();
     let positions = ecs.read_storage::<Position>();
@@ -74,44 +80,66 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
         return;
     }
 
-    // Grab the names of the entities at the mouse position,
+    // Grab info about the entities at the mouse positions:
+    //   - Names
+    //   - Glyphs representing current status effects.
     let mut tooltip: Vec<String> = Vec::new();
-    for (name, pos) in (&names, &positions).join() {
+    let mut status_indicators: Vec<Vec<StatusIndicatorGlyph>> = Vec::new();
+    for (entity, name, pos) in (&ecs.entities(), &names, &positions).join() {
         let idx = map.xy_idx(pos.x, pos.y);
         if pos.x == mpos.0 && pos.y == mpos.1 && map.visible_tiles[idx] {
             tooltip.push(name.name.to_string());
+            status_indicators.push(get_status_indicators(&ecs, &entity))
         }
     }
 
     // Draw the tooltip.
     if !tooltip.is_empty() {
+
+        // Calculate the width needed to draw the tooltip. We need to fit the
+        // text (entity names), and status indicators.
         let mut width: i32 = 0;
-        for s in tooltip.iter() {
-            if width < s.len() as i32 {
-                width = s.len() as i32;
+        for (s, inds) in tooltip.iter().zip(status_indicators.iter()) {
+            if width < s.len() as i32 + inds.len() as i32 {
+                width = s.len() as i32 + inds.len() as i32;
             }
         }
+        // Buffer room for spacing and an arrow charecter.
         width += 2;
 
+        // Cursor is on the right half of the screen, so render the tooltip to
+        // the left.
+        // (NAME OF ENTITY)(STATUS GLYPHS) →ENTITY
         if mpos.0 > map.width / 2 {
             let arrow_pos = Point::new(mpos.0 - 1, mpos.1);
             let left_x = mpos.0 - width;
             let mut y = mpos.1;
-            for s in tooltip.iter() {
+            for (s, inds) in tooltip.iter().zip(status_indicators.iter()) {
+                // Print the entities name.
                 ctx.print_color(
                     left_x,
                     y,
                     RGB::named(rltk::WHITE),
-                    RGB::named(rltk::GREY),
+                    BG_COLOR,
                     s,
                 );
-                let padding = width - s.len() as i32;
+                // Print indicators for the entities current status.
+                for (i, ind) in inds.iter().enumerate() {
+                    ctx.set(
+                        left_x + s.len() as i32 + i as i32,
+                        y,
+                        ind.color,
+                        BG_COLOR,
+                        ind.glyph,
+                    );
+                }
+                let padding = width - s.len() as i32 - inds.len() as i32;
                 for i in 0..padding {
                     ctx.print_color(
                         arrow_pos.x - i,
                         y,
                         RGB::named(rltk::WHITE),
-                        RGB::named(rltk::GREY),
+                        BG_COLOR,
                         &" ".to_string(),
                     );
                 }
@@ -121,28 +149,42 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                 arrow_pos.x,
                 arrow_pos.y,
                 RGB::named(rltk::WHITE),
-                RGB::named(rltk::GREY),
-                26,
+                BG_COLOR,
+                rltk::to_cp437('→')
             );
+        // Tooltip is on the left half of the screen, so render the tooltip to
+        // the right.
+        // (ENTITY)← (NAME OF ENTITY)(STATUS GLYPHS)
         } else {
             let arrow_pos = Point::new(mpos.0 + 1, mpos.1);
             let left_x = mpos.0 + 3;
             let mut y = mpos.1;
-            for s in tooltip.iter() {
+            for (s, inds) in tooltip.iter().zip(status_indicators.iter()) {
+                // Print the entities name.
                 ctx.print_color(
                     left_x,
                     y,
                     RGB::named(rltk::WHITE),
-                    RGB::named(rltk::GREY),
+                    BG_COLOR,
                     s,
                 );
-                let padding = width - s.len() as i32;
+                // Print indicators for the entities current status.
+                for (i, ind) in inds.iter().enumerate() {
+                    ctx.set(
+                        left_x + s.len() as i32 + i as i32,
+                        y,
+                        ind.color,
+                        BG_COLOR,
+                        ind.glyph,
+                    );
+                }
+                let padding = width - s.len() as i32 - inds.len() as i32;
                 for i in 0..padding {
                     ctx.print_color(
                         arrow_pos.x + i,
                         y,
                         RGB::named(rltk::WHITE),
-                        RGB::named(rltk::GREY),
+                        BG_COLOR,
                         &" ".to_string(),
                     );
                 }
@@ -152,8 +194,8 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                 arrow_pos.x,
                 arrow_pos.y,
                 RGB::named(rltk::WHITE),
-                RGB::named(rltk::GREY),
-                27,
+                BG_COLOR,
+                rltk::to_cp437('←')
             );
         }
     }
