@@ -1,7 +1,8 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
     Renderable, Viewshed, PickUpable, Useable, Throwable, Consumable, ProvidesHealing,
-    AreaOfEffectWhenThrown, InflictsDamageWhenThrown, InflictsFreezingWhenThrown, MAP_WIDTH,
+    AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
+    InflictsFreezingWhenThrown, InflictsBurningWhenThrown, MAP_WIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -241,7 +242,8 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Throwable {})
     .with(Consumable {})
     .with(AreaOfEffectWhenThrown {radius: 3})
-    .with(InflictsDamageWhenThrown {damage: 20})
+    .with(InflictsDamageWhenThrown {damage: 10})
+    .with(InflictsBurningWhenThrown {turns: 4, tick_damage: 2})
     .build();
 }
 
@@ -260,6 +262,6 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Consumable {})
     .with(AreaOfEffectWhenThrown {radius: 3})
     .with(InflictsDamageWhenThrown {damage: 10})
-    .with(InflictsFreezingWhenThrown {turns: 8})
+    .with(InflictsFreezingWhenThrown {turns: 6})
     .build();
 }

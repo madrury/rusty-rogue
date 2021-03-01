@@ -232,7 +232,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<AreaOfEffectWhenThrown>();
     gs.ecs.register::<InflictsDamageWhenThrown>();
     gs.ecs.register::<InflictsFreezingWhenThrown>();
+    gs.ecs.register::<InflictsBurningWhenThrown>();
     gs.ecs.register::<StatusIsFrozen>();
+    gs.ecs.register::<StatusIsBurning>();
 
     let map = Map::new_rooms_and_corridors();
     let (px, py) = map.rooms[0].center();

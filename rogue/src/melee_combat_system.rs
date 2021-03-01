@@ -32,7 +32,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 let target_name = names.get(target).unwrap();
                 let damage = i32::max(0, stats.power - target_stats.defense);
                 if damage == 0 {
-                    // println!("{} is unable to damage {}.", &name.name, &target_name.name);
                     log.entries.push(
                         format!("{} is unable to damage {}.", &name.name, &target_name.name)
                     );

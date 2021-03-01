@@ -2,7 +2,8 @@ use super::{
     Map, Point, CombatStats, GameLog, ProvidesHealing, InBackpack, Name,
     Position, WantsToUseItem, WantsToPickupItem, WantsToThrowItem,
     Consumable, InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
-    AreaOfEffectWhenThrown, ApplyDamage, StatusIsFrozen
+    InflictsBurningWhenThrown, AreaOfEffectWhenThrown, ApplyDamage,
+    StatusIsFrozen, StatusIsBurning
 };
 use specs::prelude::*;
 
@@ -114,9 +115,11 @@ impl<'a> System<'a> for ItemThrowSystem {
         ReadStorage<'a, ProvidesHealing>,
         ReadStorage<'a, InflictsDamageWhenThrown>,
         WriteStorage<'a, InflictsFreezingWhenThrown>,
+        WriteStorage<'a, InflictsBurningWhenThrown>,
         ReadStorage<'a, AreaOfEffectWhenThrown>,
         WriteStorage<'a, ApplyDamage>,
         WriteStorage<'a, StatusIsFrozen>,
+        WriteStorage<'a, StatusIsBurning>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -131,9 +134,11 @@ impl<'a> System<'a> for ItemThrowSystem {
             healing,
             does_damage,
             does_freeze,
+            does_burn,
             aoes,
             mut apply_damages,
-            mut is_frozen
+            mut is_frozen,
+            mut is_burning,
         ) = data;
 
         for (thrower, do_throw) in (&entities, &wants_throw).join() {
@@ -179,6 +184,18 @@ impl<'a> System<'a> for ItemThrowSystem {
                     StatusIsFrozen::new_status(&mut is_frozen, *target, item_freezes.turns);
                     log.entries.push(format!(
                         "You throw the {}, freezing {} in place.",
+                        names.get(do_throw.item).unwrap().name,
+                        names.get(*target).unwrap().name,
+                    ))
+                }
+
+                // Component: InflictsBurningWhenThrown
+                let stats = combat_stats.get_mut(*target);
+                let item_burns = does_burn.get(do_throw.item);
+                if let (Some(item_burns), Some(_stats)) = (item_burns, stats) {
+                    StatusIsBurning::new_status(&mut is_burning, *target, item_burns.turns, item_burns.tick_damage);
+                    log.entries.push(format!(
+                        "You throw the {}, stting {} ablaze.",
                         names.get(do_throw.item).unwrap().name,
                         names.get(*target).unwrap().name,
                     ))

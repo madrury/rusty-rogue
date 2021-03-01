@@ -100,6 +100,12 @@ pub struct InflictsFreezingWhenThrown {
     pub turns: i32
 }
 
+// Component for items that inflict the burning status.
+#[derive(Component)]
+pub struct InflictsBurningWhenThrown {
+    pub turns: i32,
+    pub tick_damage: i32
+}
 
 // Comonent holding data determining a monster's movement behaviour.
 #[derive(Component)]
