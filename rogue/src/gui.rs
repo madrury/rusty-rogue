@@ -68,7 +68,11 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
 }
 
 
-
+//----------------------------------------------------------------------------
+// Tooltips.MenuResult
+// Gives information about an entity when the mouse cursor is over it. Displays
+// the eneity's name and any status effects they are currenly under.
+//----------------------------------------------------------------------------
 fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let bg_color = RGB::named(rltk::DIM_GREY);
 
@@ -203,7 +207,10 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
 }
 
 //----------------------------------------------------------------------------
-// Item Menu
+// Inventory Menus
+// Allows the selection of an item to use/throw it. This method is generic over
+// a component type. The menu will display the entities in the player's backpack
+// with that component.
 //----------------------------------------------------------------------------
 const ITEM_MENU_X_POSITION: i32 = 15;
 const ITEM_MENU_Y_POSTION: i32 = 25;
@@ -310,8 +317,8 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
 
 //----------------------------------------------------------------------------
 // Targeting system.
+// Allows the selection of a target with the mouse.
 //----------------------------------------------------------------------------
-
 pub enum TargetingResult {
     Cancel,
     NoResponse,
