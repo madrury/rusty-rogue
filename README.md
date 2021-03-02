@@ -27,7 +27,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
 #### 3. Section 2 - Stretch Goals
   - [ ] 3.1. Nice Walls with Bitsets
   - [ ] 3.2. Bloodstains
-  - [ ] 3.3. Particle Effects
+  - [x] 3.3. Particle Effects
   - [ ] 3.4. Hunger Clock
   - [ ] 3.5. Magic Mapping
   - [ ] 3.6. REX Paint Menu
