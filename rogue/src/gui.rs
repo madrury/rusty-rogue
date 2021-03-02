@@ -1,6 +1,6 @@
 use super::{
     CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Viewshed,
-    StatusIndicatorGlyph, get_status_indicators
+    StatusIndicatorGlyph, Renderable, get_status_indicators
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -18,6 +18,10 @@ const HEALTH_BAR_WIDTH: i32 = 51;
 
 const N_LOG_LINES: i32 = 5;
 
+//----------------------------------------------------------------------------
+// Headsup UI.
+// Displays player state information (HP), and the game log.
+//----------------------------------------------------------------------------
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Draw the outline for the gui: A rectangle at the bottom of the console.
     ctx.draw_box(
@@ -67,9 +71,8 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     draw_tooltips(ecs, ctx);
 }
 
-
 //----------------------------------------------------------------------------
-// Tooltips.MenuResult
+// Tooltips.
 // Gives information about an entity when the mouse cursor is over it. Displays
 // the eneity's name and any status effects they are currenly under.
 //----------------------------------------------------------------------------
@@ -227,6 +230,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
     let names = ecs.read_storage::<Name>();
     let inbackpacks = ecs.read_storage::<InBackpack>();
     let doables = ecs.read_storage::<T>();
+    let renderables = ecs.read_storage::<Renderable>();
     let entities = ecs.entities();
 
     let inventory = (&inbackpacks, &doables, &names)
@@ -269,6 +273,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
     //   - Add the item to a vector for later lookup upon selection.
     let mut useable: Vec<Entity> = Vec::new();
     for (i, (entity, _pack, name, _use)) in inventory {
+        let render = renderables.get(entity);
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
         ctx.set(
@@ -292,7 +297,24 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
             RGB::named(rltk::BLACK),
             rltk::to_cp437(')'),
         );
-        ctx.print(ITEM_MENU_X_POSITION + 5, y, &name.name.to_string());
+        // Draw the item glyph if one exists.
+        match render {
+            Some(render) => ctx.set(
+                ITEM_MENU_X_POSITION + 4,
+                y,
+                render.fg,
+                RGB::named(rltk::BLACK),
+                render.glyph,
+            ),
+            None => ctx.set(
+                ITEM_MENU_X_POSITION + 4,
+                y,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437(' '),
+            )
+        }
+        ctx.print(ITEM_MENU_X_POSITION + 6, y, &name.name.to_string());
         useable.push(entity);
         y += 1;
     }

@@ -37,9 +37,9 @@ use gamelog::{GameLog};
 const DEBUG_RENDER_ALL: bool = false;
 
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum RunState {
-    MainMenu {selection: MenuResult},
+    // MainMenu {selection: MenuSelection},
     PreGame,
     AwaitingInput,
     PlayerTurn,
