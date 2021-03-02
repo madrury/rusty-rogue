@@ -61,7 +61,7 @@ pub struct Name {
 // Component for all entities that have a field of view.
 #[derive(Component, Debug)]
 pub struct Viewshed {
-    pub visible_tiles: Vec<rltk::Point>,
+    pub visible_tiles: Vec<Point>,
     pub range: i32,
     // Flag indicating if the entities field of view needs to be recomputed.
     pub dirty: bool,
@@ -70,9 +70,9 @@ pub struct Viewshed {
 // Component for all entities that need to be rendered on the console.
 #[derive(Component)]
 pub struct Renderable {
-    pub glyph: rltk::FontCharType,
     pub fg: RGB,
     pub bg: RGB,
+    pub glyph: rltk::FontCharType,
     pub order: i32,
 }
 
@@ -105,6 +105,16 @@ pub struct InflictsFreezingWhenThrown {
 pub struct InflictsBurningWhenThrown {
     pub turns: i32,
     pub tick_damage: i32
+}
+
+// Component for items that create an area of effect animation when
+// thrown.
+#[derive(Component)]
+pub struct AreaOfEffectAnimationWhenThrown {
+    pub radius: i32,
+    pub fg: RGB,
+    pub bg: RGB,
+    pub glyph: rltk::FontCharType
 }
 
 // Comonent holding data determining a monster's movement behaviour.

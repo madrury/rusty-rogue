@@ -3,8 +3,9 @@ use super::{
     ProvidesHealing, InBackpack, Name, Renderable, Position, WantsToUseItem,
     WantsToPickupItem, WantsToThrowItem, Consumable,
     InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
-    InflictsBurningWhenThrown, AreaOfEffectWhenThrown, ApplyDamage,
-    StatusIsFrozen, StatusIsBurning
+    InflictsBurningWhenThrown, AreaOfEffectWhenThrown,
+    AreaOfEffectAnimationWhenThrown, ApplyDamage, StatusIsFrozen,
+    StatusIsBurning
 };
 use specs::prelude::*;
 
@@ -50,7 +51,6 @@ impl<'a> System<'a> for ItemUseSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         Entities<'a>,
-        ReadExpect<'a, Entity>,
         WriteExpect<'a, GameLog>,
         WriteExpect<'a, AnimationBuilder>,
         ReadStorage<'a, Name>,
@@ -65,7 +65,6 @@ impl<'a> System<'a> for ItemUseSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (
             entities,
-            player,
             mut log,
             mut animation_builder,
             names,
@@ -94,7 +93,13 @@ impl<'a> System<'a> for ItemUseSystem {
                     ));
                 }
                 if let(Some(pos), Some(render)) = (pos, render) {
-                    animation_builder.request(make_healing_animation(pos, render))
+                    animation_builder.request(AnimationRequest::Healing {
+                        x: pos.x,
+                        y: pos.y,
+                        fg: render.fg,
+                        bg: render.bg,
+                        glyph: render.glyph,
+                    })
                 }
             }
 
@@ -134,6 +139,7 @@ impl<'a> System<'a> for ItemThrowSystem {
         WriteStorage<'a, InflictsFreezingWhenThrown>,
         WriteStorage<'a, InflictsBurningWhenThrown>,
         ReadStorage<'a, AreaOfEffectWhenThrown>,
+        ReadStorage<'a, AreaOfEffectAnimationWhenThrown>,
         WriteStorage<'a, ApplyDamage>,
         WriteStorage<'a, StatusIsFrozen>,
         WriteStorage<'a, StatusIsBurning>,
@@ -156,11 +162,14 @@ impl<'a> System<'a> for ItemThrowSystem {
             does_freeze,
             does_burn,
             aoes,
+            aoe_animations,
             mut apply_damages,
             mut is_frozen,
             mut is_burning,
         ) = data;
 
+        // The WantsToThrowItem object (do_throw below), has references to the
+        // targeted position and the thrown item.
         for (thrower, do_throw) in (&entities, &wants_throw).join() {
             let target_point = do_throw.target;
             let aoe = aoes.get(do_throw.item);
@@ -185,7 +194,13 @@ impl<'a> System<'a> for ItemThrowSystem {
                         names.get(*target).unwrap().name,
                     ));
                     if let(Some(pos), Some(render)) = (pos, render) {
-                        animation_builder.request(make_healing_animation(pos, render))
+                        animation_builder.request(AnimationRequest::Healing {
+                            x: pos.x,
+                            y: pos.y,
+                            fg: render.fg,
+                            bg: render.bg,
+                            glyph: render.glyph,
+                        })
                     }
                 }
 
@@ -227,6 +242,20 @@ impl<'a> System<'a> for ItemThrowSystem {
                 }
 
             }
+
+            // Component: AreaOfEffectAnimationWhenThrown
+            let has_aoe_animation = aoe_animations.get(do_throw.item);
+            if let Some(has_aoe_animation) = has_aoe_animation {
+                animation_builder.request(AnimationRequest::AreaOfEffect {
+                    x: target_point.x,
+                    y: target_point.y,
+                    fg: has_aoe_animation.fg,
+                    bg: has_aoe_animation.bg,
+                    glyph: has_aoe_animation.glyph,
+                    radius: has_aoe_animation.radius
+                })
+            }
+
             // If the item was single use, clean it up.
             let consumable = consumables.get(do_throw.item);
             if let Some(_) = consumable {
@@ -256,8 +285,8 @@ fn find_targets<'a>(map: &'a Map, pt: Point, aoe: Option<&AreaOfEffectWhenThrown
             blast_tiles.retain(
                 |p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1
             );
-            for tile_idx in blast_tiles.iter() {
-                let idx = map.xy_idx(tile_idx.x, tile_idx.y);
+            for tile in blast_tiles.iter() {
+                let idx = map.xy_idx(tile.x, tile.y);
                 for target in map.tile_content[idx].iter() {
                     targets.push(target);
                 }
@@ -265,14 +294,4 @@ fn find_targets<'a>(map: &'a Map, pt: Point, aoe: Option<&AreaOfEffectWhenThrown
         }
     }
     targets
-}
-
-fn make_healing_animation(pos: &Position, render: &Renderable) -> AnimationRequest {
-    AnimationRequest::Healing {
-        x: pos.x,
-        y: pos.y,
-        fg: render.fg,
-        bg: render.bg,
-        glyph: render.glyph,
-    }
 }

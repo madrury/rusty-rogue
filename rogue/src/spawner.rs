@@ -2,7 +2,8 @@ use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
     Renderable, Viewshed, PickUpable, Useable, Throwable, Consumable, ProvidesHealing,
     AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
-    InflictsFreezingWhenThrown, InflictsBurningWhenThrown, MAP_WIDTH,
+    InflictsFreezingWhenThrown, InflictsBurningWhenThrown, AreaOfEffectAnimationWhenThrown,
+     MAP_WIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -241,9 +242,15 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(PickUpable {})
     .with(Throwable {})
     .with(Consumable {})
-    .with(AreaOfEffectWhenThrown {radius: 3})
     .with(InflictsDamageWhenThrown {damage: 10})
-    .with(InflictsBurningWhenThrown {turns: 4, tick_damage: 2})
+    .with(InflictsBurningWhenThrown {turns: 4, tick_damage: 4})
+    .with(AreaOfEffectWhenThrown {radius: 2})
+    .with(AreaOfEffectAnimationWhenThrown {
+        radius: 2,
+        fg: RGB::named(rltk::ORANGE),
+        bg: RGB::named(rltk::RED),
+        glyph: rltk::to_cp437('^')
+    })
     .build();
 }
 
@@ -260,8 +267,14 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     .with(PickUpable {})
     .with(Throwable {})
     .with(Consumable {})
-    .with(AreaOfEffectWhenThrown {radius: 3})
     .with(InflictsDamageWhenThrown {damage: 10})
     .with(InflictsFreezingWhenThrown {turns: 6})
+    .with(AreaOfEffectWhenThrown {radius: 2})
+    .with(AreaOfEffectAnimationWhenThrown {
+        radius: 2,
+        fg: RGB::named(rltk::WHITE),
+        bg: RGB::named(rltk::LIGHT_BLUE),
+        glyph: rltk::to_cp437('*')
+    })
     .build();
 }

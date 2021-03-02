@@ -222,11 +222,10 @@ impl GameState for State {
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let mut context = RltkBuilder::simple80x50()
+    let context = RltkBuilder::simple80x50()
         .with_fps_cap(60.0)
         .with_title("Roguelike Tutorial")
         .build()?;
-    context.with_post_scanlines(true);
 
     let mut gs = State {
         ecs: World::new(),
@@ -259,6 +258,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusIsFrozen>();
     gs.ecs.register::<StatusIsBurning>();
     gs.ecs.register::<ParticleLifetime>();
+    gs.ecs.register::<AreaOfEffectAnimationWhenThrown>();
 
     let map = Map::new_rooms_and_corridors();
     let (px, py) = map.rooms[0].center();
