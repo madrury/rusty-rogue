@@ -28,24 +28,27 @@ pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
     let save_exists = super::save_load::does_save_exist();
     let runstate = ecs.fetch::<RunState>();
 
-    ctx.print_color_centered(15, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Rusty Roguelike");
+    ctx.print_color_centered(10, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Rusty Roguelike");
 
     if let RunState::MainMenu {current} = *runstate {
         if current == MainMenuSelection::NewGame {
-            ctx.print_color_centered(22, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Begin New Game");
+            ctx.draw_box(20, 18, 40, 4, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
+            ctx.print_color_centered(20, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Begin New Game");
         } else {
-            ctx.print_color_centered(22, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Begin New Game");
+            ctx.print_color_centered(20, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Begin New Game");
         }
 
         if save_exists {
             if current == MainMenuSelection::LoadGame {
-                ctx.print_color_centered(24, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Load Game");
+                ctx.draw_box(20, 21, 40, 4, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
+                ctx.print_color_centered(23, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Load Game");
             } else {
-                ctx.print_color_centered(24, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Load Game");
+                ctx.print_color_centered(23, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Load Game");
             }
         }
 
         if current == MainMenuSelection::Quit {
+            ctx.draw_box(20, 24, 40, 4, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
             ctx.print_color_centered(26, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Quit");
         } else {
             ctx.print_color_centered(26, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Quit");
