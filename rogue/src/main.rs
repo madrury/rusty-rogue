@@ -46,7 +46,7 @@ pub enum RunState {
     MonsterTurn,
     ShowUseInventory,
     ShowThrowInventory,
-    ShowTargeting {range: i32, item: Entity},
+    ShowTargeting {range: i32, radius: Option<i32>, item: Entity},
 }
 
 pub struct State {
@@ -195,12 +195,16 @@ impl GameState for State {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},
                     MenuResult::Selected {item} => {
-                        newrunstate = RunState::ShowTargeting {range: 4, item: item};
+                        // We need the area of effect radius of the item to draw
+                        // the targeting system.
+                        let aoes = self.ecs.read_storage::<AreaOfEffectWhenThrown>();
+                        let radius = aoes.get(item).map(|x| x.radius);
+                        newrunstate = RunState::ShowTargeting {range: 6, item: item, radius: radius};
                     }
                 }
             }
-            RunState::ShowTargeting {range, item} => {
-                match gui::ranged_target(&mut self.ecs, ctx, range) {
+            RunState::ShowTargeting {range, item, radius} => {
+                match gui::ranged_target(&mut self.ecs, ctx, range, radius) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
                     TargetingResult::NoResponse => {},
                     TargetingResult::Selected {pos} => {

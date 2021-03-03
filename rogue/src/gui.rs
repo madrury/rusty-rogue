@@ -333,7 +333,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
                 }
                 MenuResult::NoResponse
             }
-        },
+        }
     }
 }
 
@@ -347,40 +347,54 @@ pub enum TargetingResult {
     Selected { pos: Point },
 }
 
-pub fn ranged_target(ecs : &mut World, ctx : &mut Rltk, range : i32) -> TargetingResult {
+pub fn ranged_target(ecs : &mut World, ctx : &mut Rltk, range : i32, radius: Option<i32>) -> TargetingResult {
     let player_entity = ecs.fetch::<Entity>();
     let player_pos = ecs.fetch::<Point>();
+    let map = ecs.fetch::<Map>();
     let viewsheds = ecs.read_storage::<Viewshed>();
+
+    let mouse_pos = ctx.mouse_pos();
+    let mouse_pos_point = Point {x: mouse_pos.0, y: mouse_pos.1};
 
     ctx.print_color(5, 0, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Select Target:");
 
-    // Highlight available target cells
-    let mut available_cells = Vec::new();
-    let visible = viewsheds.get(*player_entity);
-    if let Some(visible) = visible {
-        for idx in visible.visible_tiles.iter() {
-            let distance = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, *idx);
-            if distance <= range as f32 {
-                ctx.set_bg(idx.x, idx.y, RGB::named(rltk::LIME));
-                available_cells.push(idx);
+    // Draw the targeting system.
+    // We want to communicate both the avalable throwing range around the
+    // player, and any area of effect of the item shown. To that end, we render
+    // a circle around the player. Then, if the mouse cursor is within the range
+    // and the item has an area of effect, we also draw the aoe range.
+    let mut available_cells = Vec::new(); // Container for the points withing range.
+    // This is a safe unwrap, since the player *always* has a viewshed.
+    let visible = viewsheds.get(*player_entity).unwrap();
+    let mouse_within_range = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, mouse_pos_point) <= range as f32;
+    for point in visible.visible_tiles.iter() {
+        let dplayer = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, *point);
+        // The tile is within the throwable range.
+        if dplayer <= range as f32 {
+            ctx.set_bg(point.x, point.y, RGB::named(rltk::LIGHT_GREY));
+            available_cells.push(point);
+        }
+        // When Some(radius), the item has an area of effect, so we highlight
+        // the aoe range as well.
+        if let Some(radius) = radius {
+            let blast = rltk::field_of_view(mouse_pos_point, radius, &*map);
+            if mouse_within_range && blast.contains(point) {
+                ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
             }
         }
-    } else {
-        return TargetingResult::Cancel;
     }
 
     // Draw mouse cursor and check for clicks within range.
-    let mouse_pos = ctx.mouse_pos();
     let mut valid_target = false;
-    for idx in available_cells.iter() {
-        if idx.x == mouse_pos.0 && idx.y == mouse_pos.1 {
+    for pt in available_cells.iter() {
+        if pt.x == mouse_pos.0 && pt.y == mouse_pos.1 {
             valid_target = true;
         }
     }
     if valid_target {
-        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::CYAN));
+        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::YELLOW));
         if ctx.left_click {
-            return TargetingResult::Selected {pos: Point{x: mouse_pos.0, y: mouse_pos.1}};
+            return TargetingResult::Selected {pos: mouse_pos_point};
         }
     } else {
         ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::RED));
