@@ -1,13 +1,13 @@
-use std::{thread, time};
-
 use rltk::{GameState, Rltk, Point};
 use specs::prelude::*;
+use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
 
 mod components;
 pub use components::*;
 mod map;
 pub use map::*;
 mod spawner;
+mod save_load;
 mod player;
 use player::*;
 mod gui;
@@ -40,6 +40,7 @@ const DEBUG_RENDER_ALL: bool = false;
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
     MainMenu {current: MainMenuSelection},
+    SaveGame,
     PreGame,
     AwaitingInput,
     PlayerTurn,
@@ -150,6 +151,7 @@ impl GameState for State {
         // Guard against rendering the game map if we are in the main menu.
         match newrunstate {
             RunState::MainMenu {..} => {},
+            // We're playng the game.
             _ => {
                 update_particle_lifetimes(&mut self.ecs, ctx);
                 draw_map(&self.ecs, ctx);
@@ -159,7 +161,6 @@ impl GameState for State {
              }
         }
 
-        // Second match: We're playng the game.
         match newrunstate {
             RunState::MainMenu {..} => {
                 let result = gui::main_menu(&mut self.ecs, ctx);
@@ -168,11 +169,20 @@ impl GameState for State {
                         newrunstate = RunState::MainMenu {current},
                     MainMenuResult::Selected {selected} => match selected {
                         MainMenuSelection::NewGame => newrunstate = RunState::PreGame,
-                        MainMenuSelection::LoadGame => newrunstate = RunState::PreGame,
+                        MainMenuSelection::LoadGame => {
+                            save_load::load_game(&mut self.ecs);
+                            newrunstate = RunState::AwaitingInput;
+                        }
                         MainMenuSelection::Quit => std::process::exit(0)
                     }
                 }
             }
+            RunState::SaveGame {} => {
+                save_load::save_game(&mut self.ecs);
+                newrunstate = RunState::MainMenu {
+                    current: MainMenuSelection::LoadGame
+                };
+            },
             RunState::PreGame => {
                 self.run_pregame_systems();
                 self.run_map_indexing_system();
@@ -234,7 +244,6 @@ impl GameState for State {
                     }
                 }
             }
-            _ => {}
         }
 
         let mut runwriter = self.ecs.write_resource::<RunState>();
@@ -253,6 +262,10 @@ fn main() -> rltk::BError {
     let mut gs = State {
         ecs: World::new(),
     };
+
+    gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
+    gs.ecs.register::<SimpleMarker<SerializeMe>>();
+    gs.ecs.register::<SerializationHelper>();
 
     gs.ecs.register::<Player>();
     gs.ecs.register::<Position>();

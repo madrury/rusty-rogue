@@ -1,9 +1,11 @@
 use super::{
-    BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
-    Renderable, Viewshed, PickUpable, Useable, Throwable, Consumable, ProvidesHealing,
-    AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
-    InflictsFreezingWhenThrown, InflictsBurningWhenThrown, AreaOfEffectAnimationWhenThrown,
-     MAP_WIDTH,
+    BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player,
+    Position, Rectangle, Renderable, Viewshed, PickUpable, Useable,
+    Throwable, Consumable, ProvidesHealing, AreaOfEffectWhenThrown,
+    InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
+    InflictsBurningWhenThrown, AreaOfEffectAnimationWhenThrown,
+    SimpleMarker, SerializeMe, MarkedBuilder,
+    MAP_WIDTH
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -36,6 +38,7 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             defense: 2,
             power: 5,
         })
+        .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }
 
@@ -163,6 +166,7 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
         .with(data.movement_ai)
         .with(data.combat_stats)
         .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
@@ -225,7 +229,9 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Useable {})
     .with(Throwable {})
     .with(Consumable {})
+    // TODO: We probably want a component for triggering the healing animation.
     .with(ProvidesHealing {})
+    .marked::<SimpleMarker<SerializeMe>>()
     .build();
 }
 
@@ -251,6 +257,7 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
         bg: RGB::named(rltk::RED),
         glyph: rltk::to_cp437('^')
     })
+    .marked::<SimpleMarker<SerializeMe>>()
     .build();
 }
 
@@ -276,5 +283,6 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
         bg: RGB::named(rltk::LIGHT_BLUE),
         glyph: rltk::to_cp437('*')
     })
+    .marked::<SimpleMarker<SerializeMe>>()
     .build();
 }

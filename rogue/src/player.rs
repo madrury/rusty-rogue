@@ -22,6 +22,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::G => pickup_item(&mut gs.ecs),
             VirtualKeyCode::I => return RunState::ShowUseInventory,
             VirtualKeyCode::T => return RunState::ShowThrowInventory,
+            VirtualKeyCode::Escape => return RunState::SaveGame,
             _ => {}
         },
     }

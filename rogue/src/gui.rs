@@ -5,20 +5,6 @@ use super::{
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
-const XPOSITION: i32 = 0;
-const YPOSITION: i32 = 43;
-const BOXWIDTH: i32 = 79;
-const BOXHEIGHT: i32 = 6;
-
-const HEALTH_TEXT_XPOSITION: i32 = 12;
-const HEALTH_TEXT_YPOSITION: i32 = 43;
-const HEALTH_BAR_XPOSITION: i32 = 28;
-const HEALTH_BAR_YPOSITION: i32 = 43;
-const HEALTH_BAR_WIDTH: i32 = 51;
-
-const N_LOG_LINES: i32 = 5;
-
-
 #[derive(PartialEq, Copy, Clone)]
 pub enum MainMenuSelection {
     NewGame,
@@ -32,11 +18,14 @@ pub enum MainMenuResult {
      Selected {selected: MainMenuSelection}
 }
 
-// pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
-//     MainMenuResult::Selected {selected: MainMenuSelection::NewGame}
-// }
-
+//----------------------------------------------------------------------------
+// Main menu, where the player can select between:
+//   - New Game.
+//   - Load Game.
+//   - Quit.
+//----------------------------------------------------------------------------
 pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
+    let save_exists = super::save_load::does_save_exist();
     let runstate = ecs.fetch::<RunState>();
 
     ctx.print_color_centered(15, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Rusty Roguelike");
@@ -48,10 +37,12 @@ pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
             ctx.print_color_centered(22, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Begin New Game");
         }
 
-        if current == MainMenuSelection::LoadGame {
-            ctx.print_color_centered(24, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Load Game");
-        } else {
-            ctx.print_color_centered(24, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Load Game");
+        if save_exists {
+            if current == MainMenuSelection::LoadGame {
+                ctx.print_color_centered(24, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Load Game");
+            } else {
+                ctx.print_color_centered(24, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Load Game");
+            }
         }
 
         if current == MainMenuSelection::Quit {
@@ -67,7 +58,7 @@ pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
                     VirtualKeyCode::Escape => {
                         return MainMenuResult::NoSelection {current: MainMenuSelection::Quit}}
                     VirtualKeyCode::Up => {
-                        let selection;
+                        let mut selection;
                         match current {
                             MainMenuSelection::NewGame =>
                                 selection = MainMenuSelection::Quit,
@@ -76,10 +67,13 @@ pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
                             MainMenuSelection::Quit =>
                                 selection = MainMenuSelection::LoadGame
                         }
+                        if selection == MainMenuSelection::LoadGame && !save_exists {
+                            selection = MainMenuSelection::NewGame;
+                        }
                         return MainMenuResult::NoSelection {current: selection}
                     }
                     VirtualKeyCode::Down => {
-                        let selection;
+                        let mut selection;
                         match current {
                             MainMenuSelection::NewGame =>
                                 selection = MainMenuSelection::LoadGame,
@@ -87,6 +81,9 @@ pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
                                 selection = MainMenuSelection::Quit,
                             MainMenuSelection::Quit =>
                                 selection = MainMenuSelection::NewGame
+                        }
+                        if selection == MainMenuSelection::LoadGame && !save_exists {
+                            selection = MainMenuSelection::Quit;
                         }
                         return MainMenuResult::NoSelection {current: selection}
                     }
@@ -105,6 +102,20 @@ pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
 // Headsup UI.
 // Displays player state information (HP), and the game log.
 //----------------------------------------------------------------------------
+const XPOSITION: i32 = 0;
+const YPOSITION: i32 = 43;
+const BOXWIDTH: i32 = 79;
+const BOXHEIGHT: i32 = 6;
+
+const HEALTH_TEXT_XPOSITION: i32 = 12;
+const HEALTH_TEXT_YPOSITION: i32 = 43;
+const HEALTH_BAR_XPOSITION: i32 = 28;
+const HEALTH_BAR_YPOSITION: i32 = 43;
+const HEALTH_BAR_WIDTH: i32 = 51;
+
+const N_LOG_LINES: i32 = 5;
+
+
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Draw the outline for the gui: A rectangle at the bottom of the console.
     ctx.draw_box(

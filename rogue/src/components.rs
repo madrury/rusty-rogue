@@ -1,6 +1,18 @@
 use specs::prelude::*;
 use specs_derive::*;
+use specs::saveload::{ConvertSaveload, Marker};
+use specs::error::NoError;
+use serde::{Serialize, Deserialize};
 use rltk::{RGB, Point};
+
+
+// Marker for entities serialized when saving the game.
+pub struct SerializeMe;
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct SerializationHelper {
+    pub map: super::map::Map
+}
 
 
 // Binary Components:
@@ -9,35 +21,35 @@ use rltk::{RGB, Point};
 //------------------------------------------------------------------
 
 // The singular entity with this component is the player.
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Player {}
 
 // An entity with this component is a monster.
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Monster {}
 
 // An entity with this component can be picked up.
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct PickUpable {}
 
 // An entity with this component can be picked up.
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Useable {}
 
 // An entity with this component can be thrown.
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
 
 // An entity with this component blocks the tile that it occupies.
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct BlocksTile {}
 
 // An entity with this component is consumed upon use.
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Consumable {}
 
 // An entity with this component, when used, restores all of the users hp.
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct ProvidesHealing {}
 
 
@@ -46,20 +58,20 @@ pub struct ProvidesHealing {}
 //------------------------------------------------------------------
 
 // Component for all entities that have a position within the map.
-#[derive(Component, Debug)]
+#[derive(Component, ConvertSaveload, Clone, Debug)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
 }
 
 // Component for all named enetities.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Name {
     pub name: String
 }
 
 // Component for all entities that have a field of view.
-#[derive(Component, Debug)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Viewshed {
     pub visible_tiles: Vec<Point>,
     pub range: i32,
@@ -68,7 +80,7 @@ pub struct Viewshed {
 }
 
 // Component for all entities that need to be rendered on the console.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Renderable {
     pub fg: RGB,
     pub bg: RGB,
@@ -77,31 +89,31 @@ pub struct Renderable {
 }
 
 // Component for a held item. Points to the entity that owns it.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct InBackpack {
     pub owner: Entity
 }
 
 // Component for items or spells that inflict damage when thrown or cast.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsDamageWhenThrown {
     pub damage: i32
 }
 
 // Component for items or spells with an area of effect.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct AreaOfEffectWhenThrown {
     pub radius: i32
 }
 
 // Component for items that inflict the frozen status.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsFreezingWhenThrown {
     pub turns: i32
 }
 
 // Component for items that inflict the burning status.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsBurningWhenThrown {
     pub turns: i32,
     pub tick_damage: i32
@@ -109,7 +121,7 @@ pub struct InflictsBurningWhenThrown {
 
 // Component for items that create an area of effect animation when
 // thrown.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct AreaOfEffectAnimationWhenThrown {
     pub radius: i32,
     pub fg: RGB,
@@ -118,7 +130,7 @@ pub struct AreaOfEffectAnimationWhenThrown {
 }
 
 // Comonent holding data determining a monster's movement behaviour.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct MonsterMovementAI {
     pub only_follow_within_viewshed: bool,
     pub no_visibility_wander: bool,
@@ -138,7 +150,7 @@ impl MonsterMovementAI {
 }
 
 // Component holding the combat statistics of an entity.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct CombatStats {
     // Health.
     pub max_hp: i32,
@@ -169,7 +181,7 @@ pub struct ParticleLifetime {
 //------------------------------------------------------------------
 
 // Component indicating the entity is frozen.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct StatusIsFrozen {
     pub remaining_turns: i32
 }
@@ -192,7 +204,7 @@ impl StatusIsFrozen {
 }
 
 // Component indicating the entity is burning.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct StatusIsBurning {
     pub remaining_turns: i32,
     pub tick_damage: i32,
@@ -223,33 +235,33 @@ impl StatusIsBurning {
 // that some change needs to occur.
 
 // Signals that the entity has entered into melee combat with a chosen target.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToMeleeAttack {
     pub target: Entity
 }
 
 // Signals that an entity wants to pick up an item.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToPickupItem {
     pub by: Entity,
     pub item: Entity
 }
 
 // Signals that the owning entity wants to use an item.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToUseItem {
     pub item: Entity,
 }
 
 // Signals that the owning entity wants to throw an item.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToThrowItem {
     pub item: Entity,
     pub target: Point,
 }
 
 // Signals that the entity has damage queued, but not applied.
-#[derive(Component)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct ApplyDamage {
     pub amounts: Vec<i32>
 }

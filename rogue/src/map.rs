@@ -1,4 +1,5 @@
-use rltk::{ RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point };
+use rltk::{RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point};
+use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::cmp::{min, max};
 use std::iter::Iterator;
@@ -11,21 +12,24 @@ pub const MAP_SIZE: usize = (MAP_WIDTH as usize) * (MAP_HEIGHT as usize);
 const DEBUG_DRAW_ALL: bool = false;
 
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum TileType {
     Wall,
     Floor,
 }
 
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Map {
     pub tiles: Vec<TileType>,
     pub rooms: Vec<Rectangle>,
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
-    pub tile_content: Vec<Vec<Entity>>,
     pub width: i32,
     pub height: i32,
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
+    pub tile_content: Vec<Vec<Entity>>,
 }
 
 impl Map {
@@ -196,7 +200,7 @@ fn draw_tile(x: i32, y: i32, tile: &TileType, visible: bool, ctx: &mut Rltk) {
     ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
 }
 
-
+#[derive(PartialEq, Default, Clone, Serialize, Deserialize)]
 pub struct Rectangle {
     pub x1: i32,
     pub x2: i32,
