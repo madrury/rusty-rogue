@@ -37,9 +37,9 @@ use gamelog::{GameLog};
 const DEBUG_RENDER_ALL: bool = false;
 
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
-    // MainMenu {selection: MenuSelection},
+    MainMenu {current: MainMenuSelection},
     PreGame,
     AwaitingInput,
     PlayerTurn,
@@ -140,11 +140,6 @@ impl GameState for State {
 
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
-        update_particle_lifetimes(&mut self.ecs, ctx);
-        draw_map(&self.ecs, ctx);
-        self.render_all(ctx);
-        self.run_particle_render_systems();
-        self::draw_ui(&self.ecs, ctx);
 
         let mut newrunstate;
         {
@@ -152,7 +147,32 @@ impl GameState for State {
             newrunstate = *runstate;
         }
 
+        // Guard against rendering the game map if we are in the main menu.
         match newrunstate {
+            RunState::MainMenu {..} => {},
+            _ => {
+                update_particle_lifetimes(&mut self.ecs, ctx);
+                draw_map(&self.ecs, ctx);
+                self.render_all(ctx);
+                self.run_particle_render_systems();
+                self::draw_ui(&self.ecs, ctx)
+             }
+        }
+
+        // Second match: We're playng the game.
+        match newrunstate {
+            RunState::MainMenu {..} => {
+                let result = gui::main_menu(&mut self.ecs, ctx);
+                match result {
+                    MainMenuResult::NoSelection {current} =>
+                        newrunstate = RunState::MainMenu {current},
+                    MainMenuResult::Selected {selected} => match selected {
+                        MainMenuSelection::NewGame => newrunstate = RunState::PreGame,
+                        MainMenuSelection::LoadGame => newrunstate = RunState::PreGame,
+                        MainMenuSelection::Quit => std::process::exit(0)
+                    }
+                }
+            }
             RunState::PreGame => {
                 self.run_pregame_systems();
                 self.run_map_indexing_system();
@@ -167,9 +187,6 @@ impl GameState for State {
                 newrunstate = RunState::MonsterTurn;
             }
             RunState::MonsterTurn => {
-                // We add a quick pause at the start of a monster turn, which
-                // helps with game feel.
-                thread::sleep(time::Duration::from_millis(50));
                 self.run_monster_turn_systems();
                 self.run_map_indexing_system();
                 newrunstate = RunState::AwaitingInput;
@@ -217,10 +234,11 @@ impl GameState for State {
                     }
                 }
             }
+            _ => {}
         }
+
         let mut runwriter = self.ecs.write_resource::<RunState>();
         *runwriter = newrunstate;
-
     }
 }
 
@@ -228,7 +246,7 @@ impl GameState for State {
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::simple80x50()
-        .with_fps_cap(60.0)
+        // .with_fps_cap(120.0)
         .with_title("Roguelike Tutorial")
         .build()?;
 
@@ -279,7 +297,9 @@ fn main() -> rltk::BError {
     }
 
     gs.ecs.insert(map);
-    gs.ecs.insert(RunState::PreGame);
+    gs.ecs.insert(
+        RunState::MainMenu {current: MainMenuSelection::NewGame}
+    );
     gs.ecs.insert(GameLog::new());
     gs.ecs.insert(AnimationBuilder::new());
     gs.ecs.insert(ParticleBuilder::new());

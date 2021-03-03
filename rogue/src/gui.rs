@@ -1,5 +1,5 @@
 use super::{
-    CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Viewshed,
+    RunState, CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Viewshed,
     StatusIndicatorGlyph, Renderable, get_status_indicators
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
@@ -17,6 +17,89 @@ const HEALTH_BAR_YPOSITION: i32 = 43;
 const HEALTH_BAR_WIDTH: i32 = 51;
 
 const N_LOG_LINES: i32 = 5;
+
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum MainMenuSelection {
+    NewGame,
+    LoadGame,
+    Quit
+}
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum MainMenuResult {
+     NoSelection {current: MainMenuSelection},
+     Selected {selected: MainMenuSelection}
+}
+
+// pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
+//     MainMenuResult::Selected {selected: MainMenuSelection::NewGame}
+// }
+
+pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
+    let runstate = ecs.fetch::<RunState>();
+
+    ctx.print_color_centered(15, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Rusty Roguelike");
+
+    if let RunState::MainMenu {current} = *runstate {
+        if current == MainMenuSelection::NewGame {
+            ctx.print_color_centered(22, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Begin New Game");
+        } else {
+            ctx.print_color_centered(22, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Begin New Game");
+        }
+
+        if current == MainMenuSelection::LoadGame {
+            ctx.print_color_centered(24, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Load Game");
+        } else {
+            ctx.print_color_centered(24, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Load Game");
+        }
+
+        if current == MainMenuSelection::Quit {
+            ctx.print_color_centered(26, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Quit");
+        } else {
+            ctx.print_color_centered(26, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Quit");
+        }
+
+        match ctx.key {
+            None => return MainMenuResult::NoSelection{current: current},
+            Some(key) => {
+                match key {
+                    VirtualKeyCode::Escape => {
+                        return MainMenuResult::NoSelection {current: MainMenuSelection::Quit}}
+                    VirtualKeyCode::Up => {
+                        let selection;
+                        match current {
+                            MainMenuSelection::NewGame =>
+                                selection = MainMenuSelection::Quit,
+                            MainMenuSelection::LoadGame =>
+                                selection = MainMenuSelection::NewGame,
+                            MainMenuSelection::Quit =>
+                                selection = MainMenuSelection::LoadGame
+                        }
+                        return MainMenuResult::NoSelection {current: selection}
+                    }
+                    VirtualKeyCode::Down => {
+                        let selection;
+                        match current {
+                            MainMenuSelection::NewGame =>
+                                selection = MainMenuSelection::LoadGame,
+                            MainMenuSelection::LoadGame =>
+                                selection = MainMenuSelection::Quit,
+                            MainMenuSelection::Quit =>
+                                selection = MainMenuSelection::NewGame
+                        }
+                        return MainMenuResult::NoSelection {current: selection}
+                    }
+                    VirtualKeyCode::Return =>
+                        return MainMenuResult::Selected {selected: current},
+                    _ =>
+                        return MainMenuResult::NoSelection {current: current}
+                }
+            }
+        }
+    }
+    MainMenuResult::NoSelection {current: MainMenuSelection::NewGame }
+}
 
 //----------------------------------------------------------------------------
 // Headsup UI.
