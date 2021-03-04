@@ -1,10 +1,15 @@
 use super::{
-    CombatStats, GameLog, PickUpable, Map, Player, Position, RunState, State, Viewshed,
-    WantsToMeleeAttack, WantsToPickupItem, TileType
+    CombatStats, GameLog, PickUpable, Map, Player, Monster, Position,
+    RunState, State, Viewshed, WantsToMeleeAttack, WantsToPickupItem,
+    TileType
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 use std::cmp::{max, min};
+
+
+const WAIT_HEAL_AMOUNT: i32 = 1;
+
 
 pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     match ctx.key {
@@ -18,7 +23,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::U => try_move_player(1, -1, &mut gs.ecs),
             VirtualKeyCode::N => try_move_player(1, 1, &mut gs.ecs),
             VirtualKeyCode::B => try_move_player(-1, 1, &mut gs.ecs),
-            VirtualKeyCode::Z => try_move_player(0, 0, &mut gs.ecs),
+            VirtualKeyCode::Z => skip_turn(&mut gs.ecs),
             VirtualKeyCode::G => pickup_item(&mut gs.ecs),
             VirtualKeyCode::I => return RunState::ShowUseInventory,
             VirtualKeyCode::T => return RunState::ShowThrowInventory,
@@ -77,7 +82,30 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
     }
 }
 
-pub fn try_next_level(ecs: &mut World) -> bool {
+fn skip_turn(ecs: &mut World) {
+    let player = ecs.fetch::<Entity>();
+    let viewsheds = ecs.read_storage::<Viewshed>();
+    let monsters = ecs.read_storage::<Monster>();
+    let map = ecs.fetch::<Map>();
+
+    // Check for monsters nearby, we can't heal if there are any.
+    let mut can_heal = true;
+    let pviewshed = viewsheds.get(*player).unwrap(); // The player always has a viewshed.
+    for tile in pviewshed.visible_tiles.iter() {
+        let idx = map.xy_idx(tile.x, tile.y);
+        for entity in map.tile_content[idx].iter() {
+            can_heal &= monsters.get(*entity).is_none();
+        }
+    }
+
+    if can_heal {
+        let mut stats = ecs.write_storage::<CombatStats>();
+        let mut pstats = stats.get_mut(*player).unwrap(); // The player always has stats.
+        pstats.heal_amount(WAIT_HEAL_AMOUNT);
+    }
+}
+
+fn try_next_level(ecs: &mut World) -> bool {
     let ppos = ecs.fetch::<Point>();
     let map = ecs.fetch::<Map>();
     let pidx = map.xy_idx(ppos.x, ppos.y);

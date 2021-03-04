@@ -128,26 +128,6 @@ impl State {
         particles.run_now(&self.ecs);
     }
 
-    fn entities_to_delete_when_descending(&mut self) -> Vec<Entity> {
-        // This is our keeplist. Eveything but the player and what they are
-        // holding is going to be removed.
-        let entities = self.ecs.entities();
-        let player = self.ecs.read_storage::<Player>();
-        let backpack = self.ecs.read_storage::<InBackpack>();
-        let player_entity = self.ecs.fetch::<Entity>();
-
-        let mut to_delete: Vec<Entity> = Vec::new();
-        for entity in entities.join() {
-            let delete_me = player.get(entity).is_none()
-                && backpack.get(entity).is_none();
-                && backpack.get(entity).map_or(true, |b| b.owner != *player_entity);
-            if delete_me {
-                to_delete.push(entity);
-            }
-        }
-        to_delete
-    }
-
     fn descend_level(&mut self) {
         let to_delete = self.entities_to_delete_when_descending();
         for target in to_delete {
@@ -188,9 +168,28 @@ impl State {
             pvs.dirty = true;
         }
 
-        // Notify the player and give them some health
         let mut log = self.ecs.fetch_mut::<gamelog::GameLog>();
         log.entries.push("You descend.".to_string());
+    }
+
+    fn entities_to_delete_when_descending(&mut self) -> Vec<Entity> {
+        // This is our keeplist. Eveything but the player and what they are
+        // holding is going to be removed.
+        let entities = self.ecs.entities();
+        let player = self.ecs.read_storage::<Player>();
+        let backpack = self.ecs.read_storage::<InBackpack>();
+        let player_entity = self.ecs.fetch::<Entity>();
+
+        let mut to_delete: Vec<Entity> = Vec::new();
+        for entity in entities.join() {
+            let delete_me = player.get(entity).is_none()
+                && backpack.get(entity).is_none();
+                && backpack.get(entity).map_or(true, |b| b.owner != *player_entity);
+            if delete_me {
+                to_delete.push(entity);
+            }
+        }
+        to_delete
     }
 
     #[allow(dead_code)]

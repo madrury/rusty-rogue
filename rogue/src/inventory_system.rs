@@ -84,7 +84,7 @@ impl<'a> System<'a> for ItemUseSystem {
             let pos = positions.get(entity);
             let render = renderables.get(entity);
             if let Some(_) = item_heals {
-                stats.hp = stats.max_hp; // TODO: This probably should be a system call.
+                stats.full_heal();
                 if let Some(name) = name {
                     log.entries.push(format!(
                         "{} drink's the {}.",
@@ -187,7 +187,7 @@ impl<'a> System<'a> for ItemThrowSystem {
                 let render = renderables.get(*target);
                 let item_heals = healing.get(do_throw.item);
                 if let (Some(_), Some(stats)) = (item_heals, stats) {
-                    stats.hp = stats.max_hp; // TODO: This probably should be a system call.
+                    stats.full_heal(); // TODO: This probably should be a system call.
                     log.entries.push(format!(
                         "You throw the {}, healing {}.",
                         names.get(do_throw.item).unwrap().name,

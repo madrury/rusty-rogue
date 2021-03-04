@@ -163,6 +163,12 @@ impl CombatStats {
     pub fn take_damage(&mut self, damage: i32) {
         self.hp = i32::max(0, self.hp - damage)
     }
+    pub fn full_heal(&mut self) {
+        self.hp = self.max_hp
+    }
+    pub fn heal_amount(&mut self, amount: i32) {
+        self.hp = i32::min(self.max_hp, self.hp + amount)
+    }
 }
 
 #[derive(Component)]
