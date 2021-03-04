@@ -22,7 +22,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] 2.9. Ranged Scrolls/Targeting
   - [x] 2.10. Saving and Loading
   - [x] 2.11. Delving Deeper
-  - [ ] 2.12. Difficulty
+  - [x] 2.12. Difficulty
   - [ ] 2.13. Equipment
 #### 3. Section 2 - Stretch Goals
   - [ ] 3.1. Nice Walls with Bitsets
