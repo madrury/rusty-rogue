@@ -1,6 +1,6 @@
 use super::{
     CombatStats, GameLog, PickUpable, Map, Player, Position, RunState, State, Viewshed,
-    WantsToMeleeAttack, WantsToPickupItem,
+    WantsToMeleeAttack, WantsToPickupItem, TileType
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
@@ -23,6 +23,11 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::I => return RunState::ShowUseInventory,
             VirtualKeyCode::T => return RunState::ShowThrowInventory,
             VirtualKeyCode::Escape => return RunState::SaveGame,
+            VirtualKeyCode::Period => {
+                if try_next_level(&mut gs.ecs) {
+                    return RunState::NextLevel
+                }
+            }
             _ => {}
         },
     }
@@ -69,6 +74,19 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
         }
         ppos.x = pos.x;
         ppos.y = pos.y;
+    }
+}
+
+pub fn try_next_level(ecs: &mut World) -> bool {
+    let ppos = ecs.fetch::<Point>();
+    let map = ecs.fetch::<Map>();
+    let pidx = map.xy_idx(ppos.x, ppos.y);
+    if map.tiles[pidx] == TileType::DownStairs {
+        true
+    } else {
+        let mut gamelog = ecs.fetch_mut::<GameLog>();
+        gamelog.entries.push("There is no way down from here.".to_string());
+        false
     }
 }
 

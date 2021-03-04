@@ -9,13 +9,14 @@ use std::iter::Iterator;
 pub const MAP_WIDTH: i32 = 80;
 pub const MAP_HEIGHT: i32 = 43;
 pub const MAP_SIZE: usize = (MAP_WIDTH as usize) * (MAP_HEIGHT as usize);
-const DEBUG_DRAW_ALL: bool = false;
+const DEBUG_DRAW_ALL: bool = true;
 
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum TileType {
     Wall,
     Floor,
+    DownStairs
 }
 
 #[derive(Default, Clone, Serialize, Deserialize)]
@@ -79,6 +80,10 @@ impl Map {
                 map.rooms.push(new_room)
             }
         }
+        // Place downward stairs.
+        let stairs_position = map.rooms[map.rooms.len()-1].center();
+        let stairs_idx = map.xy_idx(stairs_position.0, stairs_position.1);
+        map.tiles[stairs_idx] = TileType::DownStairs;
         map
     }
 
@@ -198,9 +203,13 @@ fn draw_tile(x: i32, y: i32, tile: &TileType, visible: bool, ctx: &mut Rltk) {
             glyph = rltk::to_cp437('#');
             fg = RGB::from_f32(0.0, 1.0, 0.5);
         }
+        TileType::DownStairs => {
+            glyph = rltk::to_cp437('>');
+            fg = RGB::from_f32(1.0, 1.0, 0.0);
+        }
     }
     if !visible {fg = fg.to_greyscale();}
-    ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
+    ctx.set(x, y, fg, RGB::from_f32(0.0, 0.0, 0.0), glyph);
 }
 
 #[derive(PartialEq, Default, Clone, Serialize, Deserialize)]

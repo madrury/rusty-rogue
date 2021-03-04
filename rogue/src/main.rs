@@ -48,6 +48,7 @@ pub enum RunState {
     ShowUseInventory,
     ShowThrowInventory,
     ShowTargeting {range: i32, radius: Option<i32>, item: Entity},
+    NextLevel
 }
 
 pub struct State {
@@ -125,6 +126,71 @@ impl State {
     fn run_particle_render_systems(&mut self) {
         let mut particles = ParticleRenderSystem{};
         particles.run_now(&self.ecs);
+    }
+
+    fn entities_to_delete_when_descending(&mut self) -> Vec<Entity> {
+        // This is our keeplist. Eveything but the player and what they are
+        // holding is going to be removed.
+        let entities = self.ecs.entities();
+        let player = self.ecs.read_storage::<Player>();
+        let backpack = self.ecs.read_storage::<InBackpack>();
+        let player_entity = self.ecs.fetch::<Entity>();
+
+        let mut to_delete: Vec<Entity> = Vec::new();
+        for entity in entities.join() {
+            let delete_me = player.get(entity).is_none()
+                && backpack.get(entity).is_none();
+                && backpack.get(entity).map_or(true, |b| b.owner != *player_entity);
+            if delete_me {
+                to_delete.push(entity);
+            }
+        }
+        to_delete
+    }
+
+    fn descend_level(&mut self) {
+        let to_delete = self.entities_to_delete_when_descending();
+        for target in to_delete {
+            self.ecs.delete_entity(target)
+                .expect("Unable to delete entity when descending.");
+        }
+
+        // Create the new Map object and replace the resource in the ECS.
+        let newmap;
+        {
+            let mut map_resource = self.ecs.write_resource::<Map>();
+            let depth = map_resource.depth;
+            *map_resource = Map::new_rooms_and_corridors(depth + 1);
+            newmap = map_resource.clone();
+        }
+
+        for room in newmap.rooms.iter().skip(1) {
+            spawner::spawn_room(&mut self.ecs, room);
+        }
+
+        // Spawn the player in the new map, and replace the associated resources
+        // in the ECS.
+        let (px, py) = newmap.rooms[0].center();
+        let mut ppos = self.ecs.write_resource::<Point>();
+        *ppos = Point::new(px, py);
+        let mut positions = self.ecs.write_storage::<Position>();
+        let player = self.ecs.fetch::<Entity>();
+        let player_position = positions.get_mut(*player);
+        if let Some(player_position) = player_position {
+            player_position.x = px;
+            player_position.y = py;
+        }
+
+        // We're in a new position, so our field of view is dirty.
+        let mut viewsheds = self.ecs.write_storage::<Viewshed>();
+        let pvs = viewsheds.get_mut(*player);
+        if let Some(pvs) = pvs {
+            pvs.dirty = true;
+        }
+
+        // Notify the player and give them some health
+        let mut log = self.ecs.fetch_mut::<gamelog::GameLog>();
+        log.entries.push("You descend.".to_string());
     }
 
     #[allow(dead_code)]
@@ -243,6 +309,10 @@ impl GameState for State {
                         newrunstate = RunState::PlayerTurn;
                     }
                 }
+            }
+            RunState::NextLevel => {
+                self.descend_level();
+                newrunstate = RunState::PreGame;
             }
         }
 
