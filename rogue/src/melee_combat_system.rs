@@ -1,7 +1,7 @@
 use specs::prelude::*;
 use super::{
-    CombatStats, WantsToMeleeAttack, Name, ApplyDamage, GameLog, Renderable, Position,
-    AnimationBuilder, AnimationRequest
+    Map, TileType, CombatStats, WantsToMeleeAttack, Name, ApplyDamage,
+    GameLog, Renderable, Position, AnimationBuilder, AnimationRequest
 };
 
 pub struct MeleeCombatSystem {}
@@ -15,6 +15,7 @@ pub struct MeleeCombatSystem {}
 impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
         Entities<'a>,
+        WriteExpect<'a, Map>,
         WriteExpect<'a, GameLog>,
         WriteExpect<'a, AnimationBuilder>,
         ReadStorage<'a, Name>,
@@ -28,6 +29,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (
             entities,
+            mut map,
             mut log,
             mut animation_builder,
             names,
@@ -57,24 +59,25 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
                     );
                     ApplyDamage::new_damage(&mut damagees, melee.target, damage);
-                    // Spawn a particle for a quick animation.
+                    // Animate the damage with a flash, and render a bloodstain
+                    // where the damage was inflicted.
                     let pos = positions.get(melee.target);
                     let render = renderables.get(melee.target);
                     if let(Some(pos), Some(render)) = (pos, render) {
-                        animation_builder.request(make_melee_animation(pos, render))
+                        animation_builder.request(
+                            AnimationRequest::MeleeAttack {
+                                x: pos.x,
+                                y: pos.y,
+                                bg: render.bg,
+                                glyph: render.glyph,
+                            }
+                        );
+                        let idx = map.xy_idx(pos.x, pos.y);
+                        map.tiles[idx] = TileType::BloodStain
                     }
                 }
             }
         }
         melee_attack.clear();
-    }
-}
-
-fn make_melee_animation(pos: &Position, render: &Renderable) -> AnimationRequest {
-    AnimationRequest::MeleeAttack {
-        x: pos.x,
-        y: pos.y,
-        bg: render.bg,
-        glyph: render.glyph,
     }
 }

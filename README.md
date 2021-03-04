@@ -26,7 +26,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] 2.13. Equipment
 #### 3. Section 2 - Stretch Goals
   - [ ] 3.1. Nice Walls with Bitsets
-  - [ ] 3.2. Bloodstains
+  - [x] 3.2. Bloodstains
   - [x] 3.3. Particle Effects
   - [ ] 3.4. Hunger Clock
   - [ ] 3.5. Magic Mapping

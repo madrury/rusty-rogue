@@ -16,6 +16,7 @@ const DEBUG_DRAW_ALL: bool = false;
 pub enum TileType {
     Wall,
     Floor,
+    BloodStain,
     DownStairs
 }
 
@@ -197,11 +198,15 @@ fn draw_tile(x: i32, y: i32, tile: &TileType, visible: bool, ctx: &mut Rltk) {
     match tile {
         TileType::Floor => {
             glyph = rltk::to_cp437('.');
-            fg = RGB::from_f32(0.5, 0.5, 0.0);
+            fg = RGB::from_f32(0.66, 0.66, 0.25);
+        }
+        TileType::BloodStain => {
+            glyph = rltk::to_cp437('.');
+            fg = RGB::from_f32(0.5, 0.0, 0.0);
         }
         TileType::Wall => {
             glyph = rltk::to_cp437('#');
-            fg = RGB::from_f32(1.0, 0.9, 0.0);
+            fg = RGB::from_f32(1.00, 1.00, 0.50);
         }
         TileType::DownStairs => {
             glyph = rltk::to_cp437('>');
