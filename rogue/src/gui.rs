@@ -5,6 +5,13 @@ use super::{
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
+
+//----------------------------------------------------------------------------
+// Main menu, where the player can select between:
+//   - New Game.
+//   - Load Game.
+//   - Quit.
+//----------------------------------------------------------------------------
 #[derive(PartialEq, Copy, Clone)]
 pub enum MainMenuSelection {
     NewGame,
@@ -18,12 +25,6 @@ pub enum MainMenuResult {
      Selected {selected: MainMenuSelection}
 }
 
-//----------------------------------------------------------------------------
-// Main menu, where the player can select between:
-//   - New Game.
-//   - Load Game.
-//   - Quit.
-//----------------------------------------------------------------------------
 pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
     let save_exists = super::save_load::does_save_exist();
     let runstate = ecs.fetch::<RunState>();
@@ -128,6 +129,17 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         BOXHEIGHT,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
+    );
+
+    // Display the current dungeon level.
+    let map = ecs.fetch::<Map>();
+    let depth = format!("Depth: {}", map.depth);
+    ctx.print_color(
+        XPOSITION+2,
+        YPOSITION,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        &depth
     );
 
     // Draw the players healthbar at the top of the gui.
