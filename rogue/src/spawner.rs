@@ -5,13 +5,13 @@ use super::{
     InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
     InflictsBurningWhenThrown, AreaOfEffectAnimationWhenThrown,
     SimpleMarker, SerializeMe, MarkedBuilder,
-    MAP_WIDTH
+    MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
 
 const MAX_MONSTERS_IN_ROOM: i32 = 4;
-const MAX_ITEMS_IN_ROOM: i32 = 4;
+const MAX_ITEMS_IN_ROOM: i32 = 2;
 
 // Spawn the player in the center of the first room.
 pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
@@ -63,6 +63,7 @@ pub fn spawn_room(ecs: &mut World, room: &Rectangle) {
     }
 }
 
+// Returns a vector of positions in a room to spawn entities.
 fn generate_spawn_points(ecs: &mut World, n: i32, room: &Rectangle) -> Vec<(i32, i32)> {
     // First generate some random indexes.
     let mut spawn_idxs: Vec<usize> = Vec::new();
@@ -87,35 +88,62 @@ fn generate_spawn_points(ecs: &mut World, n: i32, room: &Rectangle) -> Vec<(i32,
 }
 
 // Spawns a random monster at a specified location.
+#[derive(Clone, Copy)]
+enum MonsterType {
+    None,
+    Goblin,
+    Orc
+}
 pub fn spawn_random_monster(ecs: &mut World, x: i32, y: i32) {
-    let roll: i32;
+    let monster: Option<MonsterType>;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        roll = rng.roll_dice(1, 2);
+        // TODO: Make this table in a less stupid place.
+        monster = random_table::RandomTable::new()
+            .insert(MonsterType::Goblin, 50)
+            .insert(MonsterType::Orc, 20)
+            .insert(MonsterType::None, 30)
+            .roll(&mut rng);
     }
-    match roll {
-        1 => orc(ecs, x, y),
-        _ => goblin(ecs, x, y),
+    match monster {
+        Some(MonsterType::Orc) => orc(ecs, x, y),
+        Some(MonsterType::Goblin) => goblin(ecs, x, y),
+        _ => {}
     }
 }
 
 // Spawns a random item at a specified location.
+#[derive(Clone, Copy)]
+enum ItemType {
+    None,
+    HealthPotion,
+    FirePotion,
+    FreezingPotion
+}
 pub fn spawn_random_item(ecs: &mut World, x: i32, y: i32) {
-    let roll: i32;
+    let item: Option<ItemType>;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        roll = rng.roll_dice(1, 3);
+        // TODO: Make this table in a less stupid place.
+        item = random_table::RandomTable::new()
+            .insert(ItemType::HealthPotion, 20)
+            .insert(ItemType::FirePotion, 20)
+            .insert(ItemType::FreezingPotion, 20)
+            .insert(ItemType::None, 60)
+            .roll(&mut rng);
     }
-    match roll {
-        1 => health_potion(ecs, x, y),
-        2 => fire_potion(ecs, x, y),
-        _ => freezing_potion(ecs, x, y)
+    match item {
+        Some(ItemType::HealthPotion) => health_potion(ecs, x, y),
+        Some(ItemType::FirePotion) => fire_potion(ecs, x, y),
+        Some(ItemType::FreezingPotion) => freezing_potion(ecs, x, y),
+        _ => {}
     }
 }
 
 //----------------------------------------------------------------------------
 // Individual Monster Spawning Logic
 //----------------------------------------------------------------------------
+
 struct MonsterSpawnData<S: ToString> {
     x: i32,
     y: i32,

@@ -8,6 +8,7 @@ mod map;
 pub use map::*;
 mod spawner;
 mod save_load;
+mod random_table;
 mod player;
 use player::*;
 mod gui;
