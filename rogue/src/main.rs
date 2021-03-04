@@ -296,7 +296,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<AreaOfEffectAnimationWhenThrown>();
 
-    let map = Map::new_rooms_and_corridors();
+    let map = Map::new_rooms_and_corridors(1);
     let (px, py) = map.rooms[0].center();
 
     // Spawning the player is deterministic, so no RNG is needed.

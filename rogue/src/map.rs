@@ -20,13 +20,15 @@ pub enum TileType {
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Map {
+    pub width: i32,
+    pub height: i32,
+    pub depth: i32,
     pub tiles: Vec<TileType>,
     pub rooms: Vec<Rectangle>,
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
-    pub width: i32,
-    pub height: i32,
+
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     pub tile_content: Vec<Vec<Entity>>,
@@ -34,17 +36,18 @@ pub struct Map {
 
 impl Map {
 
-    pub fn new_rooms_and_corridors() -> Map {
+    pub fn new_rooms_and_corridors(depth: i32) -> Map {
 
         let mut map = Map{
+           width: MAP_WIDTH,
+           height: MAP_HEIGHT,
+           depth: depth,
            tiles: vec![TileType::Wall; MAP_SIZE],
+           rooms: Vec::new(),
            revealed_tiles: vec![false; MAP_SIZE],
            visible_tiles: vec![false; MAP_SIZE],
-           tile_content: vec![Vec::new(); MAP_SIZE],
            blocked: vec![false; MAP_SIZE],
-           rooms: Vec::new(),
-           width: MAP_WIDTH,
-           height: MAP_HEIGHT
+           tile_content: vec![Vec::new(); MAP_SIZE],
         };
 
         const MAX_ROOMS: i32 = 30;
