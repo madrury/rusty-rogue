@@ -9,7 +9,7 @@ use std::iter::Iterator;
 pub const MAP_WIDTH: i32 = 80;
 pub const MAP_HEIGHT: i32 = 43;
 pub const MAP_SIZE: usize = (MAP_WIDTH as usize) * (MAP_HEIGHT as usize);
-const DEBUG_DRAW_ALL: bool = true;
+const DEBUG_DRAW_ALL: bool = false;
 
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]

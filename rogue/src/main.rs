@@ -138,15 +138,16 @@ impl State {
 
         // Create the new Map object and replace the resource in the ECS.
         let newmap;
+        let depth;
         {
             let mut map_resource = self.ecs.write_resource::<Map>();
-            let depth = map_resource.depth;
+            depth = map_resource.depth;
             *map_resource = Map::new_rooms_and_corridors(depth + 1);
             newmap = map_resource.clone();
         }
 
         for room in newmap.rooms.iter().skip(1) {
-            spawner::spawn_room(&mut self.ecs, room);
+            spawner::spawn_room(&mut self.ecs, room, depth + 1);
         }
 
         // Spawn the player in the new map, and replace the associated resources
@@ -376,7 +377,7 @@ fn main() -> rltk::BError {
     // We need to insert the RNG here so spawning logic can make use of it.
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     for room in map.rooms.iter().skip(1) {
-        spawner::spawn_room(&mut gs.ecs, room);
+        spawner::spawn_room(&mut gs.ecs, room, 1);
     }
 
     gs.ecs.insert(map);

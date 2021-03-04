@@ -43,23 +43,23 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
 }
 
 // Populate a room with monsters and items.
-pub fn spawn_room(ecs: &mut World, room: &Rectangle) {
+pub fn spawn_room(ecs: &mut World, room: &Rectangle, depth: i32) {
     let num_monsters: i32;
     let num_items: i32;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        num_monsters = rng.roll_dice(1, MAX_MONSTERS_IN_ROOM + 1) - 1;
-        num_items = rng.roll_dice(1, MAX_ITEMS_IN_ROOM + 1) - 1;
+        num_monsters = rng.roll_dice(1, MAX_MONSTERS_IN_ROOM + 1) + depth;
+        num_items = rng.roll_dice(1, MAX_ITEMS_IN_ROOM + 1) + depth / 2;
     }
 
     let monster_spawn_points = generate_spawn_points(ecs, num_monsters, room);
     let item_spawn_points = generate_spawn_points(ecs, num_items, room);
 
     for (x, y) in monster_spawn_points.iter() {
-        spawn_random_monster(ecs, *x, *y);
+        spawn_random_monster(ecs, *x, *y, depth);
     }
     for (x, y) in item_spawn_points.iter() {
-        spawn_random_item(ecs, *x, *y);
+        spawn_random_item(ecs, *x, *y, depth);
     }
 }
 
@@ -94,15 +94,15 @@ enum MonsterType {
     Goblin,
     Orc
 }
-pub fn spawn_random_monster(ecs: &mut World, x: i32, y: i32) {
+fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let monster: Option<MonsterType>;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
-            .insert(MonsterType::Goblin, 50)
-            .insert(MonsterType::Orc, 20)
-            .insert(MonsterType::None, 30)
+            .insert(MonsterType::Goblin, 25)
+            .insert(MonsterType::Orc, 5 + 5 * depth)
+            .insert(MonsterType::None, 70 - depth)
             .roll(&mut rng);
     }
     match monster {
@@ -120,16 +120,16 @@ enum ItemType {
     FirePotion,
     FreezingPotion
 }
-pub fn spawn_random_item(ecs: &mut World, x: i32, y: i32) {
+fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let item: Option<ItemType>;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
             .insert(ItemType::HealthPotion, 20)
-            .insert(ItemType::FirePotion, 20)
-            .insert(ItemType::FreezingPotion, 20)
-            .insert(ItemType::None, 60)
+            .insert(ItemType::FirePotion, 5 + depth)
+            .insert(ItemType::FreezingPotion, 5 + depth)
+            .insert(ItemType::None, 60 - 2 * depth)
             .roll(&mut rng);
     }
     match item {

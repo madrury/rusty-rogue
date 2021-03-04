@@ -1,6 +1,8 @@
 use rltk::RandomNumberGenerator;
 
-pub struct RandomEntry<T> {
+
+// An entry in a random spawn table. See RandomTable below.
+pub struct RandomEntry<T: Copy> {
     item: T,
     weight: i32
 }
@@ -10,8 +12,11 @@ impl<T: Copy> RandomEntry<T> {
     }
 }
 
+// A table of generic objects of a given type with associated weights. This
+// table supports a sampling function (roll) which selects a (copy of) a random
+// object from the table with the given weights.
 #[derive(Default)]
-pub struct RandomTable<T> {
+pub struct RandomTable<T: Copy> {
     entries: Vec<RandomEntry<T>>,
     total_weight: i32
 }
@@ -31,10 +36,9 @@ impl<T: Copy> RandomTable<T> {
         if self.total_weight == 0 {
             return None
         }
-        let mut roll = rng.roll_dice(1, self.total_weight - 1) - 1;
-        let index: usize = 0;
 
-        for (idx, entry) in self.entries.iter().enumerate() {
+        let mut roll = rng.roll_dice(1, self.total_weight - 1) - 1;
+        for entry in &self.entries {
             if roll < entry.weight {
                 return Some(entry.item)
             }
