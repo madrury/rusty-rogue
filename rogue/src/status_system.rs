@@ -51,7 +51,7 @@ impl<'a> System<'a> for MonsterStatusSystem {
             let burning = status_burning.get_mut(entity);
             if let Some(burning) = burning {
                 if burning.remaining_turns <= 0 {
-                    status_frozen.remove(entity);
+                    status_burning.remove(entity);
                     log.entries.push(
                         format!("{}'s blaze is extinguished.", names.get(entity).unwrap().name)
                     )
