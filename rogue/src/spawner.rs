@@ -170,10 +170,10 @@ const DEFAULT_MOVEMENT_AI: MonsterMovementAI = MonsterMovementAI {
     lost_visibility_keep_following_turns_remaining: 2,
 };
 const DEFAULT_COMBAT_STATS: CombatStats = CombatStats {
-    max_hp: 16,
-    hp: 16,
+    max_hp: 15,
+    hp: 15,
     defense: 1,
-    power: 4,
+    power: 3,
 };
 
 // Spawn a generic monster.
@@ -205,16 +205,17 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
         .build();
 }
 
-// Individual monster types: Orc.
-fn orc(ecs: &mut World, x: i32, y: i32) {
+
+// Individual monster types: Goblin.
+fn goblin(ecs: &mut World, x: i32, y: i32) {
     spawn_monster(
         ecs,
         MonsterSpawnData {
             x: x,
             y: y,
-            name: "Orc",
-            glyph: rltk::to_cp437('O'),
-            color: RGB::named(rltk::RED),
+            name: "Goblin",
+            glyph: rltk::to_cp437('g'),
+            color: RGB::named(rltk::CORAL),
             view_range: DEFAULT_VIEW_RANGE,
             movement_ai: MonsterMovementAI {
                 ..DEFAULT_MOVEMENT_AI
@@ -226,21 +227,24 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
     )
 }
 
-// Individual monster types: Goblin.
-fn goblin(ecs: &mut World, x: i32, y: i32) {
+// Individual monster types: Orc.
+fn orc(ecs: &mut World, x: i32, y: i32) {
     spawn_monster(
         ecs,
         MonsterSpawnData {
             x: x,
             y: y,
-            name: "Goblin",
-            glyph: rltk::to_cp437('g'),
-            color: RGB::named(rltk::RED),
+            name: "Orc",
+            glyph: rltk::to_cp437('O'),
+            color: RGB::named(rltk::YELLOW_GREEN),
             view_range: DEFAULT_VIEW_RANGE,
             movement_ai: MonsterMovementAI {
                 ..DEFAULT_MOVEMENT_AI
             },
             combat_stats: CombatStats {
+                max_hp: 20,
+                hp: 20,
+                power: 5,
                 ..DEFAULT_COMBAT_STATS
             },
         },
@@ -340,7 +344,7 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(GrantsMeleeAttackBonus {bonus: 2})
         .with(Throwable {})
         .with(Consumable {})
-        .with(InflictsDamageWhenThrown {damage: 10})
+        .with(InflictsDamageWhenThrown {damage: 15})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

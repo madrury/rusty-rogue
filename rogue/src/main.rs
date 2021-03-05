@@ -104,6 +104,8 @@ impl State {
         uses.run_now(&self.ecs);
         let mut throws = ItemThrowSystem{};
         throws.run_now(&self.ecs);
+        let mut removes = ItemRemoveSystem{};
+        removes.run_now(&self.ecs);
         let mut equips = ItemEquipSystem{};
         equips.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
@@ -307,12 +309,25 @@ impl GameState for State {
                     MenuResult::NoResponse => {},
                     MenuResult::Selected {item} => {
                         let equippables = self.ecs.read_storage::<Equippable>();
+                        let equipped = self.ecs.read_storage::<Equipped>();
+                        let player_entity = self.ecs.read_resource::<Entity>();
                         let equipment = equippables.get(item).unwrap();
-                        let mut intent = self.ecs.write_storage::<WantsToEquipItem>();
-                        intent.insert(
-                            *self.ecs.fetch::<Entity>(), // Player.
-                            WantsToEquipItem {item: item, slot: equipment.slot}
-                        ).expect("Unable to insert intent to use item.");
+                        let is_equipped = equipped
+                            .get(item)
+                            .map_or(false, |e| e.owner == *player_entity);
+                        if is_equipped {
+                            let mut intent = self.ecs.write_storage::<WantsToRemoveItem>();
+                            intent.insert(
+                                *self.ecs.fetch::<Entity>(), // Player.
+                                WantsToRemoveItem {item: item, slot: equipment.slot}
+                            ).expect("Unable to insert intent to remove item.");
+                        } else {
+                            let mut intent = self.ecs.write_storage::<WantsToEquipItem>();
+                            intent.insert(
+                                *self.ecs.fetch::<Entity>(), // Player.
+                                WantsToEquipItem {item: item, slot: equipment.slot}
+                            ).expect("Unable to insert intent to equip item.");
+                        }
                         newrunstate = RunState::PlayerTurn;
                     }
                 }
@@ -428,6 +443,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToUseItem>();
     gs.ecs.register::<WantsToThrowItem>();
     gs.ecs.register::<WantsToEquipItem>();
+    gs.ecs.register::<WantsToRemoveItem>();
     gs.ecs.register::<ProvidesHealing>();
     gs.ecs.register::<AreaOfEffectWhenThrown>();
     gs.ecs.register::<InflictsDamageWhenThrown>();

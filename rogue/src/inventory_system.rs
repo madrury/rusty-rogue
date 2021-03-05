@@ -1,11 +1,11 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
     ProvidesHealing, InBackpack, Name, Renderable, Position, WantsToUseItem,
-    WantsToPickupItem, WantsToThrowItem, WantsToEquipItem, Equipped,
-    Consumable, InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
-    InflictsBurningWhenThrown, AreaOfEffectWhenThrown,
-    AreaOfEffectAnimationWhenThrown, ApplyDamage, StatusIsFrozen,
-    StatusIsBurning
+    WantsToPickupItem, WantsToThrowItem, WantsToEquipItem, WantsToRemoveItem,
+    Equipped, Consumable, InflictsDamageWhenThrown,
+    InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
+    AreaOfEffectWhenThrown, AreaOfEffectAnimationWhenThrown, ApplyDamage,
+    StatusIsFrozen, StatusIsBurning
 };
 use specs::prelude::*;
 
@@ -300,8 +300,8 @@ fn find_targets<'a>(map: &'a Map, pt: Point, aoe: Option<&AreaOfEffectWhenThrown
 pub struct ItemEquipSystem {}
 
 // Searches for WantsToEquipItem compoents and then processes the results
-// by attaching an Equipped component to the item poitning to the equipper
-// entity.
+// by attaching an Equipped component to the item. This component contains a
+// reference to the equipper entity.
 impl<'a> System<'a> for ItemEquipSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
@@ -342,5 +342,42 @@ impl<'a> System<'a> for ItemEquipSystem {
             log.entries.push(format!("{} equipped the {}.", name.name, item_name.name));
         }
         wants_equip.clear();
+    }
+}
+
+
+pub struct ItemRemoveSystem {}
+
+// Searches for WantsToEquipItem compoents and then processes the results
+// by attaching an Equipped component to the item. This component contains a
+// reference to the equipper entity.
+impl<'a> System<'a> for ItemRemoveSystem {
+    #[allow(clippy::type_complexity)]
+    type SystemData = (
+        Entities<'a>,
+        WriteExpect<'a, GameLog>,
+        ReadStorage<'a, Name>,
+        WriteStorage<'a, WantsToRemoveItem>,
+        WriteStorage<'a, Equipped>,
+    );
+
+    fn run(&mut self, data: Self::SystemData) {
+        let (
+            entities,
+            mut log,
+            names,
+            mut wants_remove,
+            mut equipped,
+        ) = data;
+
+        for (remover, do_remove) in (&entities, &wants_remove).join() {
+            let item_name = names.get(do_remove.item).unwrap();
+            let remover_name = names.get(remover).unwrap();
+            equipped.remove(do_remove.item);
+            log.entries.push(format!(
+                "{} reomves {}.", remover_name.name, item_name.name
+            ))
+        }
+        wants_remove.clear();
     }
 }

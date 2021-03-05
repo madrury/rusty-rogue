@@ -419,7 +419,6 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
     let mut useable: Vec<Entity> = Vec::new();
     for (i, (item, _pack, name, _use)) in inventory {
         let render = renderables.get(item);
-        let is_equipped = equipped.get(item).map_or(false, |e| e.owner == *player);
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
         ctx.set(
@@ -463,6 +462,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
 
         // Render the item name, with a color indicating if the item is
         // equipped.
+        let is_equipped = equipped.get(item).map_or(false, |e| e.owner == *player);
         let text_fg = if is_equipped {
             RGB::named(rltk::GREEN)
         } else {

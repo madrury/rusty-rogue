@@ -298,9 +298,16 @@ pub struct WantsToThrowItem {
     pub target: Point,
 }
 
-// Signals that the owning entity wants to throw an item.
+// Signals that the owning entity wants to equip an item.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToEquipItem {
+    pub item: Entity,
+    pub slot: EquipmentSlot,
+}
+
+// Signals that the owning entity wants to remove an equipped an item.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct WantsToRemoveItem {
     pub item: Entity,
     pub slot: EquipmentSlot,
 }
