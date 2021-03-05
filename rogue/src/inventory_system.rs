@@ -49,28 +49,32 @@ pub struct ItemUseSystem {}
 // looking for vatious effect encoding components on the item:
 //    ProvidesHealing: Restores all of the using entities hp.
 //
+#[derive(SystemData)]
+pub struct UseItemSystemData<'a> {
+    entities: Entities<'a>,
+    map: ReadExpect<'a, Map>,
+    log: WriteExpect<'a, GameLog>,
+    animation_builder: WriteExpect<'a, AnimationBuilder>,
+    rng: WriteExpect<'a, RandomNumberGenerator>,
+    names: ReadStorage<'a, Name>,
+    renderables: ReadStorage<'a, Renderable>,
+    positions: WriteStorage<'a, Position>,
+    viewsheds: WriteStorage<'a, Viewshed>,
+    consumables: ReadStorage<'a, Consumable>,
+    wants_use: WriteStorage<'a, WantsToUseItem>,
+    increases_hp: ReadStorage<'a, IncreasesMaxHpWhenUsed>,
+    healing: ReadStorage<'a, ProvidesFullHealing>,
+    teleports: ReadStorage<'a, MovesToRandomPosition>,
+    combat_stats: WriteStorage<'a, CombatStats>,
+}
+
 impl<'a> System<'a> for ItemUseSystem {
-    #[allow(clippy::type_complexity)]
-    type SystemData = (
-        Entities<'a>,
-        ReadExpect<'a, Map>,
-        WriteExpect<'a, GameLog>,
-        WriteExpect<'a, AnimationBuilder>,
-        WriteExpect<'a, RandomNumberGenerator>,
-        ReadStorage<'a, Name>,
-        ReadStorage<'a, Renderable>,
-        WriteStorage<'a, Position>,
-        WriteStorage<'a, Viewshed>,
-        ReadStorage<'a, Consumable>,
-        WriteStorage<'a, WantsToUseItem>,
-        ReadStorage<'a, IncreasesMaxHpWhenUsed>,
-        ReadStorage<'a, ProvidesFullHealing>,
-        ReadStorage<'a, MovesToRandomPosition>,
-        WriteStorage<'a, CombatStats>,
-    );
+
+    type SystemData = UseItemSystemData<'a>;
 
     fn run(&mut self, data: Self::SystemData) {
-        let (
+
+        let UseItemSystemData {
             entities,
             map,
             mut log,
@@ -86,7 +90,7 @@ impl<'a> System<'a> for ItemUseSystem {
             healing,
             teleports,
             mut combat_stats,
-        ) = data;
+        } = data;
 
         for (entity, do_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
 
