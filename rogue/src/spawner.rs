@@ -1,7 +1,7 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player,
     Position, Rectangle, Renderable, Viewshed, PickUpable, Useable,
-    Equippable, Throwable, Consumable, ProvidesHealing,
+    Equippable, EquipmentSlot, Throwable, Consumable, ProvidesHealing,
     AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
     InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
     AreaOfEffectAnimationWhenThrown, SimpleMarker, SerializeMe,
@@ -121,6 +121,7 @@ enum ItemType {
     FirePotion,
     FreezingPotion,
     Dagger,
+    LeatherArmor,
 }
 fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let item: Option<ItemType>;
@@ -132,6 +133,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::FirePotion, 5 + depth)
             .insert(ItemType::FreezingPotion, 5 + depth)
             .insert(ItemType::Dagger, 1000)
+            .insert(ItemType::LeatherArmor, 1000)
             .insert(ItemType::None, 60 - 2 * depth)
             .roll(&mut rng);
     }
@@ -140,6 +142,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::FirePotion) => fire_potion(ecs, x, y),
         Some(ItemType::FreezingPotion) => freezing_potion(ecs, x, y),
         Some(ItemType::Dagger) => dagger(ecs, x, y),
+        Some(ItemType::LeatherArmor) => leather_armor(ecs, x, y),
         Some(ItemType::None) => {},
         None => {}
     }
@@ -331,16 +334,32 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('↑'),
-            fg: RGB::named(rltk::CYAN),
+            fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
             order: 2
         })
         .with(Name {name : "Dagger".to_string()})
         .with(PickUpable {})
-        .with(Equippable {})
+        .with(Equippable {slot: EquipmentSlot::Melee})
         .with(Throwable {})
         .with(Consumable {})
         .with(InflictsDamageWhenThrown {damage: 20})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn leather_armor(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437(']'),
+            fg: RGB::named(rltk::YELLOW),
+            bg: RGB::named(rltk::BLACK),
+            order: 2
+        })
+        .with(Name {name : "Leather Armor".to_string()})
+        .with(PickUpable {})
+        .with(Equippable {slot: EquipmentSlot::Armor})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

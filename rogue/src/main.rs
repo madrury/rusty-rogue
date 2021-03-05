@@ -48,6 +48,7 @@ pub enum RunState {
     MonsterTurn,
     ShowUseInventory,
     ShowThrowInventory,
+    ShowEquipInventory,
     ShowTargetingMouse {
         range: i32,
         radius: Option<i32>,
@@ -103,6 +104,8 @@ impl State {
         uses.run_now(&self.ecs);
         let mut throws = ItemThrowSystem{};
         throws.run_now(&self.ecs);
+        let mut equips = ItemEquipSystem{};
+        equips.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
@@ -294,6 +297,23 @@ impl GameState for State {
                     }
                 }
             }
+            RunState::ShowEquipInventory => {
+                let result = gui::show_inventory::<Equippable>(&mut self.ecs, ctx, "Equippable");
+                match result {
+                    MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    MenuResult::NoResponse => {},
+                    MenuResult::Selected {item} => {
+                        let equippables = self.ecs.read_storage::<Equippable>();
+                        let equipment = equippables.get(item).unwrap();
+                        let mut intent = self.ecs.write_storage::<WantsToEquipItem>();
+                        intent.insert(
+                            *self.ecs.fetch::<Entity>(), // Player.
+                            WantsToEquipItem {item: item, slot: equipment.slot}
+                        ).expect("Unable to insert intent to use item.");
+                        newrunstate = RunState::PlayerTurn;
+                    }
+                }
+            }
             RunState::ShowThrowInventory => {
                 let result = gui::show_inventory::<Throwable>(&mut self.ecs, ctx, "Throwable");
                 match result {
@@ -399,10 +419,12 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<Equippable>();
     gs.ecs.register::<InBackpack>();
+    gs.ecs.register::<Equipped>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<WantsToUseItem>();
     gs.ecs.register::<WantsToThrowItem>();
+    gs.ecs.register::<WantsToEquipItem>();
     gs.ecs.register::<ProvidesHealing>();
     gs.ecs.register::<AreaOfEffectWhenThrown>();
     gs.ecs.register::<InflictsDamageWhenThrown>();

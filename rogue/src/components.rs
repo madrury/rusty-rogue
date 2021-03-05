@@ -40,10 +40,6 @@ pub struct Useable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
 
-// An entity with this component can be equipped.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Equippable {}
-
 // An entity with this component blocks the tile that it occupies.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct BlocksTile {}
@@ -57,6 +53,8 @@ pub struct Consumable {}
 pub struct ProvidesHealing {}
 
 
+
+//------------------------------------------------------------------
 // Data Components:
 // These components have some data associated with them.
 //------------------------------------------------------------------
@@ -92,10 +90,27 @@ pub struct Renderable {
     pub order: i32,
 }
 
+// An entity with this component can be equipped.
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
+pub enum EquipmentSlot {
+    Melee, Armor
+}
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Equippable {
+    pub slot: EquipmentSlot
+}
+
 // Component for a held item. Points to the entity that owns it.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InBackpack {
     pub owner: Entity
+}
+
+// Component for a equipped item. Points to the entity that has it equipped.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct Equipped {
+    pub owner: Entity,
+    pub slot: EquipmentSlot
 }
 
 // Component for items or spells that inflict damage when thrown or cast.
@@ -187,6 +202,7 @@ pub struct ParticleLifetime {
     pub glyph: rltk::FontCharType
 }
 
+//------------------------------------------------------------------
 // Status Effect Components
 //------------------------------------------------------------------
 
@@ -243,6 +259,7 @@ impl StatusIsBurning {
 //------------------------------------------------------------------
 // These components are used when processing changes to game state to signal
 // that some change needs to occur.
+//------------------------------------------------------------------
 
 // Signals that the entity has entered into melee combat with a chosen target.
 #[derive(Component, ConvertSaveload, Clone)]
@@ -268,6 +285,13 @@ pub struct WantsToUseItem {
 pub struct WantsToThrowItem {
     pub item: Entity,
     pub target: Point,
+}
+
+// Signals that the owning entity wants to throw an item.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct WantsToEquipItem {
+    pub item: Entity,
+    pub slot: EquipmentSlot,
 }
 
 // Signals that the entity has damage queued, but not applied.

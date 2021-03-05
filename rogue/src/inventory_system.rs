@@ -1,8 +1,8 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
     ProvidesHealing, InBackpack, Name, Renderable, Position, WantsToUseItem,
-    WantsToPickupItem, WantsToThrowItem, Consumable,
-    InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
+    WantsToPickupItem, WantsToThrowItem, WantsToEquipItem, Equipped,
+    Consumable, InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
     InflictsBurningWhenThrown, AreaOfEffectWhenThrown,
     AreaOfEffectAnimationWhenThrown, ApplyDamage, StatusIsFrozen,
     StatusIsBurning
@@ -294,4 +294,54 @@ fn find_targets<'a>(map: &'a Map, pt: Point, aoe: Option<&AreaOfEffectWhenThrown
         }
     }
     targets
+}
+
+
+pub struct ItemEquipSystem {}
+
+// Searches for WantsToUseItem compoents and then processes the results by
+// looking for vatious effect encoding components on the item:
+//    ProvidesHealing: Restores all of the using entities hp.
+//
+impl<'a> System<'a> for ItemEquipSystem {
+    #[allow(clippy::type_complexity)]
+    type SystemData = (
+        Entities<'a>,
+        WriteExpect<'a, GameLog>,
+        ReadStorage<'a, Name>,
+        WriteStorage<'a, WantsToEquipItem>,
+        WriteStorage<'a, Equipped>,
+    );
+
+    fn run(&mut self, data: Self::SystemData) {
+        let (
+            entities,
+            mut log,
+            names,
+            mut wants_equip,
+            mut equipped,
+        ) = data;
+        // Remove any already equipped items.
+        let mut already_equipped: Vec<Entity> = Vec::new();
+        for (equipper, do_equip) in (&entities, &wants_equip).join() {
+            already_equipped.extend(
+                (&entities, &equipped)
+                    .join()
+                    .filter(|(item, eqp)| eqp.owner == equipper && eqp.slot == do_equip.slot)
+                    .map(|(item, eqp)| item)
+            )
+        }
+        for item in already_equipped {
+            equipped.remove(item);
+        }
+        // Weild the equipment.
+        for (equipper, do_equip, name) in (&entities, &wants_equip, &names).join() {
+            let item_name = names.get(do_equip.item).unwrap();
+            equipped.
+                insert(do_equip.item, Equipped {owner: equipper, slot: do_equip.slot})
+                .expect("Failed to equip item.");
+            log.entries.push(format!("{} equipped the {}.", name.name, item_name.name));
+        }
+        wants_equip.clear();
+    }
 }
