@@ -40,7 +40,6 @@ pub enum AnimationRequest {
     Teleportation {
         x: i32,
         y: i32,
-        fg: RGB,
         bg: RGB,
     }
 }
@@ -95,12 +94,8 @@ impl<'a> System<'a> for AnimationInitSystem {
                     glyph,
                     radius,
                 } => make_aoe_animation(&*map, *x, *y, *fg, *bg, *glyph, *radius),
-                AnimationRequest::Teleportation {
-                    x,
-                    y,
-                    fg,
-                    bg,
-                } => make_teleportation_animation(*x, *y, *fg, *bg),
+                AnimationRequest::Teleportation {x, y, bg}
+                    => make_teleportation_animation(*x, *y, *bg),
             })
         }
         animation_builder.requests.clear();
@@ -195,7 +190,6 @@ fn make_aoe_animation(
 fn make_teleportation_animation(
     x: i32,
     y: i32,
-    fg: RGB,
     bg: RGB,
 ) -> Vec<ParticleRequest> {
     let mut particles = Vec::new();

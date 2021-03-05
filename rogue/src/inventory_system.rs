@@ -138,11 +138,11 @@ impl<'a> System<'a> for ItemUseSystem {
             let item_teleports = teleports.get(do_use.item);
             if let Some(_) = item_teleports {
                 let new_pos = map.random_unblocked_point(10, &mut *rng);
-                let mut pos = positions.get_mut(entity);
+                let pos = positions.get_mut(entity);
                 if let (Some(pos), Some(new_pos)) = (pos, new_pos) {
                     pos.x = new_pos.0;
                     pos.y = new_pos.1;
-                    let mut viewshed = viewsheds.get_mut(entity);
+                    let viewshed = viewsheds.get_mut(entity);
                     if let Some(viewshed) = viewshed {
                         viewshed.dirty = true;
                     }
@@ -155,7 +155,6 @@ impl<'a> System<'a> for ItemUseSystem {
                         animation_builder.request(AnimationRequest::Teleportation {
                             x: pos.x,
                             y: pos.y,
-                            fg: render.fg,
                             bg: render.bg,
                         })
                     }

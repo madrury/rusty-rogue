@@ -38,9 +38,12 @@ impl<'a> System<'a> for MonsterStatusSystem {
             if let Some(frozen) = frozen {
                 if frozen.remaining_turns <= 0 {
                     status_frozen.remove(entity);
-                    log.entries.push(
-                        format!("{} is np longer frozen.", names.get(entity).unwrap().name)
-                    )
+                    let name = names.get(entity);
+                    if let Some(name) = name {
+                        log.entries.push(
+                            format!("{} is np longer frozen.", name.name)
+                        )
+                    }
                 } else {
                     frozen.tick();
                 }
@@ -52,9 +55,12 @@ impl<'a> System<'a> for MonsterStatusSystem {
             if let Some(burning) = burning {
                 if burning.remaining_turns <= 0 {
                     status_burning.remove(entity);
-                    log.entries.push(
-                        format!("{}'s blaze is extinguished.", names.get(entity).unwrap().name)
-                    )
+                    let name = names.get(entity);
+                    if let Some(name) = name {
+                        log.entries.push(
+                            format!("{} is np longer frozen.", name.name)
+                        )
+                    }
                 } else {
                     ApplyDamage::new_damage(&mut damages, entity, burning.tick_damage);
                     burning.tick();
