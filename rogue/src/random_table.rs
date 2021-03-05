@@ -29,7 +29,7 @@ impl<T: Copy> RandomTable<T> {
     }
     pub fn insert(mut self, item: T, weight: i32) -> RandomTable<T> {
         self.total_weight += weight;
-        self.entries.push(RandomEntry {item, weight});
+        self.entries.push(RandomEntry::new(item, weight));
         self
     }
     pub fn roll(&self, rng: &mut RandomNumberGenerator) -> Option<T> {

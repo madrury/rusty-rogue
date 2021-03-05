@@ -132,8 +132,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::HealthPotion, 20)
             .insert(ItemType::FirePotion, 5 + depth)
             .insert(ItemType::FreezingPotion, 5 + depth)
-            .insert(ItemType::Dagger, 1000)
-            .insert(ItemType::LeatherArmor, 1000)
+            .insert(ItemType::Dagger, 5 + depth)
+            .insert(ItemType::LeatherArmor, 5 + depth)
             .insert(ItemType::None, 60 - 2 * depth)
             .roll(&mut rng);
     }
@@ -149,9 +149,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
 }
 
 //----------------------------------------------------------------------------
-// Individual Monster Spawning Logic
+// Individual Monsters
 //----------------------------------------------------------------------------
-
 struct MonsterSpawnData<S: ToString> {
     x: i32,
     y: i32,
@@ -206,9 +205,6 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
         .build();
 }
 
-//----------------------------------------------------------------------------
-// Individual Monsters
-//----------------------------------------------------------------------------
 // Individual monster types: Orc.
 fn orc(ecs: &mut World, x: i32, y: i32) {
     spawn_monster(
@@ -341,10 +337,10 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(Name {name : "Dagger".to_string()})
         .with(PickUpable {})
         .with(Equippable {slot: EquipmentSlot::Melee})
-        .with(GrantsMeleeAttackBonus {bonus: 100})
+        .with(GrantsMeleeAttackBonus {bonus: 2})
         .with(Throwable {})
         .with(Consumable {})
-        .with(InflictsDamageWhenThrown {damage: 20})
+        .with(InflictsDamageWhenThrown {damage: 10})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
@@ -361,7 +357,7 @@ fn leather_armor(ecs: &mut World, x: i32, y: i32) {
         .with(Name {name : "Leather Armor".to_string()})
         .with(PickUpable {})
         .with(Equippable {slot: EquipmentSlot::Armor})
-        .with(GrantsMeleeDefenseBonus {bonus: 100})
+        .with(GrantsMeleeDefenseBonus {bonus: 1})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

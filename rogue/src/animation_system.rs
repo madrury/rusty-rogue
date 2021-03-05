@@ -55,7 +55,7 @@ impl AnimationBuilder {
     }
 }
 
-// Handles grabbing AnimationREquests from the AnimationBuilder buffer, and
+// Handles grabbing AnimationRequests from the AnimationBuilder buffer, and
 // converting them into the individual constituent ParticleRequests.
 pub struct AnimationInitSystem {}
 

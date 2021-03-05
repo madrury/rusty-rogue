@@ -101,7 +101,7 @@ fn skip_turn(ecs: &mut World) {
 
     if can_heal {
         let mut stats = ecs.write_storage::<CombatStats>();
-        let mut pstats = stats.get_mut(*player).unwrap(); // The player always has stats.
+        let pstats = stats.get_mut(*player).unwrap(); // The player always has stats.
         pstats.heal_amount(WAIT_HEAL_AMOUNT);
     }
 }

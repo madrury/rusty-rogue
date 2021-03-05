@@ -326,8 +326,8 @@ impl<'a> System<'a> for ItemEquipSystem {
             already_equipped.extend(
                 (&entities, &equipped)
                     .join()
-                    .filter(|(item, eqp)| eqp.owner == equipper && eqp.slot == do_equip.slot)
-                    .map(|(item, eqp)| item)
+                    .filter(|(_item, eqp)| eqp.owner == equipper && eqp.slot == do_equip.slot)
+                    .map(|(item, _eqp)| item)
             )
         }
         for item in already_equipped {

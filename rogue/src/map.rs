@@ -213,7 +213,7 @@ fn draw_tile(x: i32, y: i32, tile: &TileType, visible: bool, ctx: &mut Rltk) {
             fg = RGB::from_f32(1.0, 1.0, 0.0);
         }
     }
-    if !visible {fg = fg.to_greyscale();}
+    if !visible {fg = RGB::from_f32(0.5, 0.5, 0.5);}
     ctx.set(x, y, fg, RGB::from_f32(0.0, 0.0, 0.0), glyph);
 }
 
