@@ -1,10 +1,9 @@
 use super::{
-    RunState, CombatStats, GameLog, InBackpack, Map, Name, Player, Position, Viewshed,
-    StatusIndicatorGlyph, Renderable, get_status_indicators
+    get_status_indicators, CombatStats, GameLog, InBackpack, Map, Name, Player, Position,
+    Renderable, RunState, StatusIndicatorGlyph, Viewshed,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
-
 
 //----------------------------------------------------------------------------
 // Main menu, where the player can select between:
@@ -16,90 +15,136 @@ use specs::prelude::*;
 pub enum MainMenuSelection {
     NewGame,
     LoadGame,
-    Quit
+    Quit,
 }
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum MainMenuResult {
-     NoSelection {current: MainMenuSelection},
-     Selected {selected: MainMenuSelection}
+    NoSelection { current: MainMenuSelection },
+    Selected { selected: MainMenuSelection },
 }
 
 pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
     let save_exists = super::save_load::does_save_exist();
     let runstate = ecs.fetch::<RunState>();
 
-    ctx.print_color_centered(10, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Rusty Roguelike");
+    ctx.print_color_centered(
+        10,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Rusty Roguelike",
+    );
 
-    if let RunState::MainMenu {current} = *runstate {
+    if let RunState::MainMenu { current } = *runstate {
         if current == MainMenuSelection::NewGame {
-            ctx.draw_box(20, 18, 40, 4, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
-            ctx.print_color_centered(20, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Begin New Game");
+            ctx.draw_box(
+                20,
+                18,
+                40,
+                4,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+            );
+            ctx.print_color_centered(
+                20,
+                RGB::named(rltk::YELLOW),
+                RGB::named(rltk::BLACK),
+                "Begin New Game",
+            );
         } else {
-            ctx.print_color_centered(20, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Begin New Game");
+            ctx.print_color_centered(
+                20,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                "Begin New Game",
+            );
         }
 
         if save_exists {
             if current == MainMenuSelection::LoadGame {
-                ctx.draw_box(20, 21, 40, 4, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
-                ctx.print_color_centered(23, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Load Game");
+                ctx.draw_box(
+                    20,
+                    21,
+                    40,
+                    4,
+                    RGB::named(rltk::WHITE),
+                    RGB::named(rltk::BLACK),
+                );
+                ctx.print_color_centered(
+                    23,
+                    RGB::named(rltk::YELLOW),
+                    RGB::named(rltk::BLACK),
+                    "Load Game",
+                );
             } else {
-                ctx.print_color_centered(23, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Load Game");
+                ctx.print_color_centered(
+                    23,
+                    RGB::named(rltk::WHITE),
+                    RGB::named(rltk::BLACK),
+                    "Load Game",
+                );
             }
         }
 
         if current == MainMenuSelection::Quit {
-            ctx.draw_box(20, 24, 40, 4, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK));
-            ctx.print_color_centered(26, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Quit");
+            ctx.draw_box(
+                20,
+                24,
+                40,
+                4,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+            );
+            ctx.print_color_centered(
+                26,
+                RGB::named(rltk::YELLOW),
+                RGB::named(rltk::BLACK),
+                "Quit",
+            );
         } else {
             ctx.print_color_centered(26, RGB::named(rltk::WHITE), RGB::named(rltk::BLACK), "Quit");
         }
 
         match ctx.key {
-            None => return MainMenuResult::NoSelection{current: current},
-            Some(key) => {
-                match key {
-                    VirtualKeyCode::Escape => {
-                        return MainMenuResult::NoSelection {current: MainMenuSelection::Quit}}
-                    VirtualKeyCode::Up => {
-                        let mut selection;
-                        match current {
-                            MainMenuSelection::NewGame =>
-                                selection = MainMenuSelection::Quit,
-                            MainMenuSelection::LoadGame =>
-                                selection = MainMenuSelection::NewGame,
-                            MainMenuSelection::Quit =>
-                                selection = MainMenuSelection::LoadGame
-                        }
-                        if selection == MainMenuSelection::LoadGame && !save_exists {
-                            selection = MainMenuSelection::NewGame;
-                        }
-                        return MainMenuResult::NoSelection {current: selection}
+            None => return MainMenuResult::NoSelection { current: current },
+            Some(key) => match key {
+                VirtualKeyCode::Escape => {
+                    return MainMenuResult::NoSelection {
+                        current: MainMenuSelection::Quit,
                     }
-                    VirtualKeyCode::Down => {
-                        let mut selection;
-                        match current {
-                            MainMenuSelection::NewGame =>
-                                selection = MainMenuSelection::LoadGame,
-                            MainMenuSelection::LoadGame =>
-                                selection = MainMenuSelection::Quit,
-                            MainMenuSelection::Quit =>
-                                selection = MainMenuSelection::NewGame
-                        }
-                        if selection == MainMenuSelection::LoadGame && !save_exists {
-                            selection = MainMenuSelection::Quit;
-                        }
-                        return MainMenuResult::NoSelection {current: selection}
-                    }
-                    VirtualKeyCode::Return =>
-                        return MainMenuResult::Selected {selected: current},
-                    _ =>
-                        return MainMenuResult::NoSelection {current: current}
                 }
-            }
+                VirtualKeyCode::Up => {
+                    let mut selection;
+                    match current {
+                        MainMenuSelection::NewGame => selection = MainMenuSelection::Quit,
+                        MainMenuSelection::LoadGame => selection = MainMenuSelection::NewGame,
+                        MainMenuSelection::Quit => selection = MainMenuSelection::LoadGame,
+                    }
+                    if selection == MainMenuSelection::LoadGame && !save_exists {
+                        selection = MainMenuSelection::NewGame;
+                    }
+                    return MainMenuResult::NoSelection { current: selection };
+                }
+                VirtualKeyCode::Down => {
+                    let mut selection;
+                    match current {
+                        MainMenuSelection::NewGame => selection = MainMenuSelection::LoadGame,
+                        MainMenuSelection::LoadGame => selection = MainMenuSelection::Quit,
+                        MainMenuSelection::Quit => selection = MainMenuSelection::NewGame,
+                    }
+                    if selection == MainMenuSelection::LoadGame && !save_exists {
+                        selection = MainMenuSelection::Quit;
+                    }
+                    return MainMenuResult::NoSelection { current: selection };
+                }
+                VirtualKeyCode::Return => return MainMenuResult::Selected { selected: current },
+                _ => return MainMenuResult::NoSelection { current: current },
+            },
         }
     }
-    MainMenuResult::NoSelection {current: MainMenuSelection::NewGame }
+    MainMenuResult::NoSelection {
+        current: MainMenuSelection::NewGame,
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -119,7 +164,6 @@ const HEALTH_BAR_WIDTH: i32 = 51;
 
 const N_LOG_LINES: i32 = 5;
 
-
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Draw the outline for the gui: A rectangle at the bottom of the console.
     ctx.draw_box(
@@ -135,11 +179,11 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let map = ecs.fetch::<Map>();
     let depth = format!("Depth: {}", map.depth);
     ctx.print_color(
-        XPOSITION+2,
+        XPOSITION + 2,
         YPOSITION,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
-        &depth
+        &depth,
     );
 
     // Draw the players healthbar at the top of the gui.
@@ -212,7 +256,6 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
 
     // Draw the tooltip.
     if !tooltip.is_empty() {
-
         // Calculate the width needed to draw the tooltip. We need to fit the
         // text (entity names), and status indicators.
         let mut width: i32 = 0;
@@ -233,13 +276,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
             let mut y = mpos.1;
             for (s, inds) in tooltip.iter().zip(status_indicators.iter()) {
                 // Print the entities name.
-                ctx.print_color(
-                    left_x,
-                    y,
-                    RGB::named(rltk::WHITE),
-                    bg_color,
-                    s,
-                );
+                ctx.print_color(left_x, y, RGB::named(rltk::WHITE), bg_color, s);
                 // Print indicators for the entities current status.
                 for (i, ind) in inds.iter().enumerate() {
                     ctx.set(
@@ -267,7 +304,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                 arrow_pos.y,
                 RGB::named(rltk::WHITE),
                 bg_color,
-                rltk::to_cp437('→')
+                rltk::to_cp437('→'),
             );
         // Tooltip is on the left half of the screen, so render the tooltip to
         // the right.
@@ -278,13 +315,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
             let mut y = mpos.1;
             for (s, inds) in tooltip.iter().zip(status_indicators.iter()) {
                 // Print the entities name.
-                ctx.print_color(
-                    left_x,
-                    y,
-                    RGB::named(rltk::WHITE),
-                    bg_color,
-                    s,
-                );
+                ctx.print_color(left_x, y, RGB::named(rltk::WHITE), bg_color, s);
                 // Print indicators for the entities current status.
                 for (i, ind) in inds.iter().enumerate() {
                     ctx.set(
@@ -312,7 +343,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
                 arrow_pos.y,
                 RGB::named(rltk::WHITE),
                 bg_color,
-                rltk::to_cp437('←')
+                rltk::to_cp437('←'),
             );
         }
     }
@@ -421,7 +452,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
                 RGB::named(rltk::WHITE),
                 RGB::named(rltk::BLACK),
                 rltk::to_cp437(' '),
-            )
+            ),
         }
         ctx.print(ITEM_MENU_X_POSITION + 6, y, &name.name.to_string());
         useable.push(entity);
@@ -442,7 +473,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
                 }
                 MenuResult::NoResponse
             }
-        }
+        },
     }
 }
 
@@ -453,13 +484,30 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
 pub enum TargetingResult {
     Cancel,
     NoResponse,
-    Selected { pos: Point },
+    SwitchModality,
+    Selected {pos: Point},
+    MoveCursor {pos: Point}
 }
 
-pub fn ranged_target(ecs : &mut World, ctx : &mut Rltk, range : i32, radius: Option<i32>) -> TargetingResult {
+pub fn ranged_target_mouse(
+    ecs: &mut World,
+    ctx: &mut Rltk,
+    range: i32,
+    radius: Option<i32>,
+) -> TargetingResult {
+    ctx.print_color(
+        5,
+        0,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Select Target:",
+    );
+
     let mouse_pos = ctx.mouse_pos();
-    let mouse_pos_point = Point {x: mouse_pos.0, y: mouse_pos.1};
-    ctx.print_color(5, 0, RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK), "Select Target:");
+    let mouse_pos_point = Point {
+        x: mouse_pos.0,
+        y: mouse_pos.1,
+    };
     // Compute the vactor of cells within range and draw the targeting
     // recepticle.
     let available_cells = draw_targeting_system(ecs, ctx, range, radius, &mouse_pos_point);
@@ -471,9 +519,11 @@ pub fn ranged_target(ecs : &mut World, ctx : &mut Rltk, range : i32, radius: Opt
         }
     }
     if valid_target {
-        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::YELLOW));
+        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::GREEN));
         if ctx.left_click {
-            return TargetingResult::Selected {pos: mouse_pos_point};
+            return TargetingResult::Selected {
+                pos: mouse_pos_point,
+            };
         }
     } else {
         ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::RED));
@@ -484,11 +534,72 @@ pub fn ranged_target(ecs : &mut World, ctx : &mut Rltk, range : i32, radius: Opt
     // Let the player ESC out.
     if let Some(key) = ctx.key {
         match key {
-            VirtualKeyCode::Escape => {return TargetingResult::Cancel;},
-            _ => {return TargetingResult::NoResponse;}
+            VirtualKeyCode::Escape => return TargetingResult::Cancel,
+            VirtualKeyCode::Tab => return TargetingResult::SwitchModality,
+            _ => return TargetingResult::NoResponse,
         }
     }
     // Nothing happened, nothing changes.
+    TargetingResult::NoResponse
+}
+
+pub fn ranged_target_keyboard(
+    ecs: &mut World,
+    ctx: &mut Rltk,
+    range: i32,
+    radius: Option<i32>,
+    current: Option<Point>
+) -> TargetingResult {
+    ctx.print_color(
+        5,
+        0,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Select Target:",
+    );
+
+    let cursor: Point;
+    let ppos = ecs.read_resource::<Point>();
+    match current {
+        Some(current) => cursor = current,
+        None => cursor = Point {x: ppos.x, y: ppos.y}
+    }
+    // Compute the vactor of cells within range and draw the targeting
+    // recepticle.
+    let available_cells = draw_targeting_system(ecs, ctx, range, radius, &cursor);
+    // Draw mouse cursor and check for clicks within range.
+    let mut valid_target = false;
+    for pt in available_cells.iter() {
+        if *pt == cursor {
+            valid_target = true;
+        }
+    }
+    if valid_target {
+        ctx.set_bg(cursor.x, cursor.y, RGB::named(rltk::GREEN));
+    } else {
+        ctx.set_bg(cursor.x, cursor.y, RGB::named(rltk::RED));
+    }
+    // Let the player ESC out.
+    if let Some(key) = ctx.key {
+        match key {
+            VirtualKeyCode::Escape => return TargetingResult::Cancel,
+            VirtualKeyCode::Tab => return TargetingResult::SwitchModality,
+            VirtualKeyCode::Return => return TargetingResult::Selected {pos: cursor},
+            VirtualKeyCode::Left | VirtualKeyCode::H =>
+                return TargetingResult::MoveCursor {pos: Point {x: cursor.x - 1, y: cursor.y}},
+            VirtualKeyCode::Right | VirtualKeyCode::L =>
+                return TargetingResult::MoveCursor {pos: Point {x: cursor.x + 1, y: cursor.y}},
+            VirtualKeyCode::Up | VirtualKeyCode::K =>
+                return TargetingResult::MoveCursor {pos: Point {x: cursor.x, y: cursor.y - 1}},
+            VirtualKeyCode::Down | VirtualKeyCode::J =>
+                return TargetingResult::MoveCursor {pos: Point {x: cursor.x, y: cursor.y + 1}},
+            // VirtualKeyCode::Y => try_move_player(-1, -1, &mut gs.ecs),
+            // VirtualKeyCode::U => try_move_player(1, -1, &mut gs.ecs),
+            // VirtualKeyCode::N => try_move_player(1, 1, &mut gs.ecs),
+            // VirtualKeyCode::B => try_move_player(-1, 1, &mut gs.ecs),
+            _ => return TargetingResult::NoResponse,
+        }
+    }
     TargetingResult::NoResponse
 }
 
@@ -498,11 +609,11 @@ pub fn ranged_target(ecs : &mut World, ctx : &mut Rltk, range : i32, radius: Opt
 // around the player. Then, if the current targeted postion is within the range
 // and the item has an area of effect, we also draw the aoe range.
 fn draw_targeting_system(
-    ecs : &World,
-    ctx : &mut Rltk,
-    range : i32,
+    ecs: &World,
+    ctx: &mut Rltk,
+    range: i32,
     radius: Option<i32>,
-    target: &Point
+    target: &Point,
 ) -> Vec<Point> {
     let viewsheds = ecs.read_storage::<Viewshed>();
     let player = ecs.read_resource::<Entity>();
@@ -512,7 +623,8 @@ fn draw_targeting_system(
     let mut available_cells = Vec::new();
     // This is a safe unwrap, since the player *always* has a viewshed.
     let visible = viewsheds.get(*player).unwrap();
-    let mouse_within_range = rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *target) <= range as f32;
+    let mouse_within_range =
+        rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *target) <= range as f32;
     for point in visible.visible_tiles.iter() {
         let dplayer = rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *point);
         // The tile is within the throwable range.

@@ -48,7 +48,17 @@ pub enum RunState {
     MonsterTurn,
     ShowUseInventory,
     ShowThrowInventory,
-    ShowTargeting {range: i32, radius: Option<i32>, item: Entity},
+    ShowTargetingMouse {
+        range: i32,
+        radius: Option<i32>,
+        item: Entity
+    },
+    ShowTargetingKeyboard {
+        range: i32,
+        radius: Option<i32>,
+        item: Entity,
+        current: Option<Point>
+    },
     NextLevel
 }
 
@@ -293,14 +303,22 @@ impl GameState for State {
                         // the targeting system.
                         let aoes = self.ecs.read_storage::<AreaOfEffectWhenThrown>();
                         let radius = aoes.get(item).map(|x| x.radius);
-                        newrunstate = RunState::ShowTargeting {range: 6, item: item, radius: radius};
+                        newrunstate = RunState::ShowTargetingMouse {
+                            range: 6,
+                            item: item,
+                            radius: radius
+                        };
                     }
                 }
             }
-            RunState::ShowTargeting {range, item, radius} => {
-                match gui::ranged_target(&mut self.ecs, ctx, range, radius) {
+            RunState::ShowTargetingMouse {range, item, radius} => {
+                match gui::ranged_target_mouse(&mut self.ecs, ctx, range, radius) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
-                    TargetingResult::NoResponse => {},
+                    TargetingResult::SwitchModality => {
+                        newrunstate = RunState::ShowTargetingKeyboard {
+                            range: range, item: item, radius: radius, current: None
+                        }
+                    }
                     TargetingResult::Selected {pos} => {
                         let mut intent = self.ecs.write_storage::<WantsToThrowItem>();
                         intent.insert(
@@ -308,7 +326,32 @@ impl GameState for State {
                             WantsToThrowItem {item: item, target: pos}
                         ).expect("Unable to insert intent to throw item.");
                         newrunstate = RunState::PlayerTurn;
-                    }
+                    },
+                    _ => {},
+                }
+            }
+            RunState::ShowTargetingKeyboard {range, item, radius, current} => {
+                match gui::ranged_target_keyboard(&mut self.ecs, ctx, range, radius, current) {
+                    TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    TargetingResult::SwitchModality => {
+                        newrunstate = RunState::ShowTargetingMouse {
+                            range: range, item: item, radius: radius
+                        }
+                    },
+                    TargetingResult::MoveCursor {pos} => {
+                        newrunstate = RunState::ShowTargetingKeyboard {
+                            range: range, item: item, radius: radius, current: Some(pos)
+                        }
+                    },
+                    TargetingResult::Selected {pos} => {
+                        let mut intent = self.ecs.write_storage::<WantsToThrowItem>();
+                        intent.insert(
+                            *self.ecs.fetch::<Entity>(), // Player.
+                            WantsToThrowItem {item: item, target: pos}
+                        ).expect("Unable to insert intent to throw item.");
+                        newrunstate = RunState::PlayerTurn;
+                    },
+                    TargetingResult::NoResponse => {},
                 }
             }
             RunState::NextLevel => {
