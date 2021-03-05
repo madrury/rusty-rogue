@@ -365,6 +365,8 @@ pub enum MenuResult {
     Selected { item: Entity },
 }
 
+// The inventory menu is generic over a type parameter. This supports different
+// menus for items with different tags.
 pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &str) -> MenuResult {
     let player_entity = ecs.fetch::<Entity>();
     let names = ecs.read_storage::<Name>();
@@ -489,6 +491,7 @@ pub enum TargetingResult {
     MoveCursor {pos: Point}
 }
 
+// Select a target witin a range using the mouse.
 pub fn ranged_target_mouse(
     ecs: &mut World,
     ctx: &mut Rltk,
@@ -543,6 +546,7 @@ pub fn ranged_target_mouse(
     TargetingResult::NoResponse
 }
 
+// Select a target witin a range using the keyboard.
 pub fn ranged_target_keyboard(
     ecs: &mut World,
     ctx: &mut Rltk,
@@ -593,10 +597,6 @@ pub fn ranged_target_keyboard(
                 return TargetingResult::MoveCursor {pos: Point {x: cursor.x, y: cursor.y - 1}},
             VirtualKeyCode::Down | VirtualKeyCode::J =>
                 return TargetingResult::MoveCursor {pos: Point {x: cursor.x, y: cursor.y + 1}},
-            // VirtualKeyCode::Y => try_move_player(-1, -1, &mut gs.ecs),
-            // VirtualKeyCode::U => try_move_player(1, -1, &mut gs.ecs),
-            // VirtualKeyCode::N => try_move_player(1, 1, &mut gs.ecs),
-            // VirtualKeyCode::B => try_move_player(-1, 1, &mut gs.ecs),
             _ => return TargetingResult::NoResponse,
         }
     }

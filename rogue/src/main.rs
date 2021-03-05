@@ -238,6 +238,7 @@ impl GameState for State {
              }
         }
 
+        // The big switch.
         match newrunstate {
             RunState::MainMenu {..} => {
                 let result = gui::main_menu(&mut self.ecs, ctx);
@@ -396,6 +397,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Throwable>();
     gs.ecs.register::<PickUpable>();
     gs.ecs.register::<Consumable>();
+    gs.ecs.register::<Equippable>();
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToPickupItem>();

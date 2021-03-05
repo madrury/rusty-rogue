@@ -40,6 +40,10 @@ pub struct Useable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
 
+// An entity with this component can be equipped.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Equippable {}
+
 // An entity with this component blocks the tile that it occupies.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct BlocksTile {}

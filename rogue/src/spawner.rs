@@ -1,10 +1,11 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player,
     Position, Rectangle, Renderable, Viewshed, PickUpable, Useable,
-    Throwable, Consumable, ProvidesHealing, AreaOfEffectWhenThrown,
-    InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
-    InflictsBurningWhenThrown, AreaOfEffectAnimationWhenThrown,
-    SimpleMarker, SerializeMe, MarkedBuilder,
+    Equippable, Throwable, Consumable, ProvidesHealing,
+    AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
+    InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
+    AreaOfEffectAnimationWhenThrown, SimpleMarker, SerializeMe,
+    MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -118,7 +119,8 @@ enum ItemType {
     None,
     HealthPotion,
     FirePotion,
-    FreezingPotion
+    FreezingPotion,
+    Dagger,
 }
 fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let item: Option<ItemType>;
@@ -129,6 +131,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::HealthPotion, 20)
             .insert(ItemType::FirePotion, 5 + depth)
             .insert(ItemType::FreezingPotion, 5 + depth)
+            .insert(ItemType::Dagger, 1000)
             .insert(ItemType::None, 60 - 2 * depth)
             .roll(&mut rng);
     }
@@ -136,7 +139,9 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::HealthPotion) => health_potion(ecs, x, y),
         Some(ItemType::FirePotion) => fire_potion(ecs, x, y),
         Some(ItemType::FreezingPotion) => freezing_potion(ecs, x, y),
-        _ => {}
+        Some(ItemType::Dagger) => dagger(ecs, x, y),
+        Some(ItemType::None) => {},
+        None => {}
     }
 }
 
@@ -198,6 +203,9 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
         .build();
 }
 
+//----------------------------------------------------------------------------
+// Individual Monsters
+//----------------------------------------------------------------------------
 // Individual monster types: Orc.
 fn orc(ecs: &mut World, x: i32, y: i32) {
     spawn_monster(
@@ -241,7 +249,7 @@ fn goblin(ecs: &mut World, x: i32, y: i32) {
 }
 
 //----------------------------------------------------------------------------
-// Individual Item Spawning Logic
+// Individual Items
 //----------------------------------------------------------------------------
 fn health_potion(ecs: &mut World, x: i32, y: i32) {
     ecs.create_entity()
@@ -313,4 +321,26 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     })
     .marked::<SimpleMarker<SerializeMe>>()
     .build();
+}
+
+//----------------------------------------------------------------------------
+// Individual Equipment
+//----------------------------------------------------------------------------
+fn dagger(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('↑'),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            order: 2
+        })
+        .with(Name {name : "Dagger".to_string()})
+        .with(PickUpable {})
+        .with(Equippable {})
+        .with(Throwable {})
+        .with(Consumable {})
+        .with(InflictsDamageWhenThrown {damage: 20})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
 }
