@@ -500,7 +500,7 @@ pub fn ranged_target_mouse(
         0,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
-        "Select Target:",
+        "Select a Target With the Mouse:",
     );
 
     let mouse_pos = ctx.mouse_pos();
@@ -555,7 +555,7 @@ pub fn ranged_target_keyboard(
         0,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
-        "Select Target:",
+        "Select a Target With the Keyboard:",
     );
 
     let cursor: Point;

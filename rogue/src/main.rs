@@ -303,10 +303,11 @@ impl GameState for State {
                         // the targeting system.
                         let aoes = self.ecs.read_storage::<AreaOfEffectWhenThrown>();
                         let radius = aoes.get(item).map(|x| x.radius);
-                        newrunstate = RunState::ShowTargetingMouse {
+                        newrunstate = RunState::ShowTargetingKeyboard {
                             range: 6,
                             item: item,
-                            radius: radius
+                            radius: radius,
+                            current: None
                         };
                     }
                 }
