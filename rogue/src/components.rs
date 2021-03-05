@@ -138,6 +138,18 @@ pub struct InflictsBurningWhenThrown {
     pub tick_damage: i32
 }
 
+// Component for items that grant a MeleeAttackBonus
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct GrantsMeleeAttackBonus {
+    pub bonus: i32
+}
+
+// Component for items that grant a MeleeAttackBonus
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct GrantsMeleeDefenseBonus {
+    pub bonus: i32
+}
+
 // Component for items that create an area of effect animation when
 // thrown.
 #[derive(Component, ConvertSaveload, Clone)]

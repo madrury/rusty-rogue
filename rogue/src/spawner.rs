@@ -4,8 +4,8 @@ use super::{
     Equippable, EquipmentSlot, Throwable, Consumable, ProvidesHealing,
     AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
     InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
-    AreaOfEffectAnimationWhenThrown, SimpleMarker, SerializeMe,
-    MarkedBuilder,
+    AreaOfEffectAnimationWhenThrown, GrantsMeleeAttackBonus,
+    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -341,6 +341,7 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(Name {name : "Dagger".to_string()})
         .with(PickUpable {})
         .with(Equippable {slot: EquipmentSlot::Melee})
+        .with(GrantsMeleeAttackBonus {bonus: 100})
         .with(Throwable {})
         .with(Consumable {})
         .with(InflictsDamageWhenThrown {damage: 20})
@@ -360,6 +361,7 @@ fn leather_armor(ecs: &mut World, x: i32, y: i32) {
         .with(Name {name : "Leather Armor".to_string()})
         .with(PickUpable {})
         .with(Equippable {slot: EquipmentSlot::Armor})
+        .with(GrantsMeleeDefenseBonus {bonus: 100})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

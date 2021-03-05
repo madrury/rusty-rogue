@@ -1,7 +1,8 @@
 use specs::prelude::*;
 use super::{
     Map, TileType, CombatStats, WantsToMeleeAttack, Name, ApplyDamage,
-    GameLog, Renderable, Position, AnimationBuilder, AnimationRequest
+    GameLog, Renderable, Position, AnimationBuilder, AnimationRequest,
+    Equipped, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus
 };
 
 pub struct MeleeCombatSystem {}
@@ -20,6 +21,9 @@ impl<'a> System<'a> for MeleeCombatSystem {
         WriteExpect<'a, AnimationBuilder>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, CombatStats>,
+        ReadStorage<'a, Equipped>,
+        ReadStorage<'a, GrantsMeleeAttackBonus>,
+        ReadStorage<'a, GrantsMeleeDefenseBonus>,
         WriteStorage<'a, WantsToMeleeAttack>,
         WriteStorage<'a, ApplyDamage>,
         WriteStorage<'a, Position>,
@@ -34,22 +38,36 @@ impl<'a> System<'a> for MeleeCombatSystem {
             mut animation_builder,
             names,
             combat_stats,
-            mut melee_attack,
+            equipped,
+            attack_bonuses,
+            defense_bonuses,
+            mut melee_attacks,
             mut damagees,
             positions,
             renderables
         ) = data;
 
-        let iter = (&entities, &melee_attack, &names, &combat_stats).join();
-        for (entity, melee, name, stats) in iter {
+        let iter = (&entities, &melee_attacks, &names, &combat_stats).join();
+        for (attacker, melee, name, stats) in iter {
             let target = melee.target;
             // As a rule, entities cannot target themselves in melee combat.
             // This happens if, for example, the player passes a turn.
-            if entity == target {continue;}
+            if attacker == target {continue;}
             let target_stats = combat_stats.get(target).unwrap();
             if target_stats.hp > 0 {
+
                 let target_name = names.get(target).unwrap();
-                let damage = i32::max(0, stats.power - target_stats.defense);
+                let attack_bonus: i32 = (&entities, &attack_bonuses, &equipped)
+                    .join()
+                    .filter(|(_e, _ab, eq)| eq.owner == attacker)
+                    .map(|(_e, ab, _eq)| ab.bonus)
+                    .sum();
+                let defense_bonus: i32 = (&entities, &defense_bonuses, &equipped)
+                    .join()
+                    .filter(|(_e, _ab, eq)| eq.owner == target)
+                    .map(|(_e, ab, _eq)| ab.bonus)
+                    .sum();
+                let damage = i32::max(0, stats.power + attack_bonus - target_stats.defense - defense_bonus);
                 if damage == 0 {
                     log.entries.push(
                         format!("{} is unable to damage {}.", &name.name, &target_name.name)
@@ -78,6 +96,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 }
             }
         }
-        melee_attack.clear();
+        melee_attacks.clear();
     }
 }

@@ -193,6 +193,7 @@ impl State {
         let entities = self.ecs.entities();
         let player = self.ecs.read_storage::<Player>();
         let backpack = self.ecs.read_storage::<InBackpack>();
+        let equipped = self.ecs.read_storage::<Equipped>();
         let player_entity = self.ecs.fetch::<Entity>();
 
         let mut to_delete: Vec<Entity> = Vec::new();
@@ -200,6 +201,8 @@ impl State {
             let delete_me = player.get(entity).is_none()
                 && backpack.get(entity).is_none();
                 && backpack.get(entity).map_or(true, |b| b.owner != *player_entity);
+                && equipped.get(entity).is_none();
+                && equipped.get(entity).map_or(true, |e| e.owner != *player_entity);
             if delete_me {
                 to_delete.push(entity);
             }
@@ -430,6 +433,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsDamageWhenThrown>();
     gs.ecs.register::<InflictsFreezingWhenThrown>();
     gs.ecs.register::<InflictsBurningWhenThrown>();
+    gs.ecs.register::<GrantsMeleeAttackBonus>();
+    gs.ecs.register::<GrantsMeleeDefenseBonus>();
     gs.ecs.register::<StatusIsFrozen>();
     gs.ecs.register::<StatusIsBurning>();
     gs.ecs.register::<ParticleLifetime>();

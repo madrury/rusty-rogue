@@ -299,10 +299,9 @@ fn find_targets<'a>(map: &'a Map, pt: Point, aoe: Option<&AreaOfEffectWhenThrown
 
 pub struct ItemEquipSystem {}
 
-// Searches for WantsToUseItem compoents and then processes the results by
-// looking for vatious effect encoding components on the item:
-//    ProvidesHealing: Restores all of the using entities hp.
-//
+// Searches for WantsToEquipItem compoents and then processes the results
+// by attaching an Equipped component to the item poitning to the equipper
+// entity.
 impl<'a> System<'a> for ItemEquipSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
