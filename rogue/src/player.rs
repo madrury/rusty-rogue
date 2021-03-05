@@ -53,6 +53,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
     for (entity, _player, pos, vs) in
         (&entities, &mut players, &mut positions, &mut viewsheds).join()
     {
+        let current_idx = map.xy_idx(pos.x, pos.y);
         let destination_idx = map.xy_idx(pos.x + dx, pos.y + dy);
 
         for potential_target in map.tile_content[destination_idx].iter() {
@@ -74,6 +75,9 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
         }
         // Move the player if the destination is not blocked.
         if !map.blocked[destination_idx] {
+            // The blocked array updates in the map_indexing_system. We don't
+            // need to update it now, since no other entities are moving at the
+            // moment.
             pos.x = min(79, max(0, pos.x + dx));
             pos.y = min(79, max(0, pos.y + dy));
             vs.dirty = true;

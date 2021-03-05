@@ -22,13 +22,7 @@ impl<'a> System<'a> for MapIndexingSystem {
 
         for (pos, entity) in (&positions, &entities).join() {
             let idx = map.xy_idx(pos.x, pos.y);
-            // If the entity blocks...
-            let _p : Option<&BlocksTile> = blockers.get(entity);
-            if let Some(_p) = _p {
-                map.blocked[idx] = true;
-            }
-            // Push the entity to the appropriate slot in in the tile_content
-            // map vector.
+            map.blocked[idx] = blockers.get(entity).is_some();
             map.tile_content[idx].push(entity);
         }
     }
