@@ -310,8 +310,8 @@ impl GameState for State {
                     MenuResult::Selected {item} => {
                         let equippables = self.ecs.read_storage::<Equippable>();
                         let equipped = self.ecs.read_storage::<Equipped>();
+                        let equipment = equippables.get(item).unwrap(); // We can only get here if the item is equippable.
                         let player_entity = self.ecs.read_resource::<Entity>();
-                        let equipment = equippables.get(item).unwrap();
                         let is_equipped = equipped
                             .get(item)
                             .map_or(false, |e| e.owner == *player_entity);
