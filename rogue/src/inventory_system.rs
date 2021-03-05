@@ -160,39 +160,47 @@ pub struct ItemThrowSystem {}
 // finding targets in the selected position, and then looking for vatious effect
 // encoding components on the item:
 //    ProvidesHealing: Restores all of the using entities hp.
+#[derive(SystemData)]
+pub struct ThrowItemSystemData<'a> {
+        entities: Entities<'a>,
+        map: ReadExpect<'a, Map>,
+        log: WriteExpect<'a, GameLog>,
+        animation_builder: WriteExpect<'a, AnimationBuilder>,
+        rng: WriteExpect<'a, RandomNumberGenerator>,
+        names: ReadStorage<'a, Name>,
+        renderables: ReadStorage<'a, Renderable>,
+        positions: WriteStorage<'a, Position>,
+        viewsheds: WriteStorage<'a, Viewshed>,
+        consumables: ReadStorage<'a, Consumable>,
+        wants_throw: WriteStorage<'a, WantsToThrowItem>,
+        combat_stats: WriteStorage<'a, CombatStats>,
+        healing: ReadStorage<'a, ProvidesFullHealing>,
+        does_damage: ReadStorage<'a, InflictsDamageWhenThrown>,
+        does_freeze: WriteStorage<'a, InflictsFreezingWhenThrown>,
+        does_burn: WriteStorage<'a, InflictsBurningWhenThrown>,
+        aoes: ReadStorage<'a, AreaOfEffectWhenThrown>,
+        aoe_animations: ReadStorage<'a, AreaOfEffectAnimationWhenThrown>,
+        apply_damages: WriteStorage<'a, ApplyDamage>,
+        teleports: ReadStorage<'a, MovesToRandomPosition>,
+        is_frozen: WriteStorage<'a, StatusIsFrozen>,
+        is_burning: WriteStorage<'a, StatusIsBurning>,
+}
+
 impl<'a> System<'a> for ItemThrowSystem {
-    #[allow(clippy::type_complexity)]
-    type SystemData = (
-        Entities<'a>,
-        ReadExpect<'a, Map>,
-        WriteExpect<'a, GameLog>,
-        WriteExpect<'a, AnimationBuilder>,
-        ReadStorage<'a, Name>,
-        ReadStorage<'a, Renderable>,
-        ReadStorage<'a, Position>,
-        ReadStorage<'a, Consumable>,
-        WriteStorage<'a, WantsToThrowItem>,
-        WriteStorage<'a, CombatStats>,
-        ReadStorage<'a, ProvidesFullHealing>,
-        ReadStorage<'a, InflictsDamageWhenThrown>,
-        WriteStorage<'a, InflictsFreezingWhenThrown>,
-        WriteStorage<'a, InflictsBurningWhenThrown>,
-        ReadStorage<'a, AreaOfEffectWhenThrown>,
-        ReadStorage<'a, AreaOfEffectAnimationWhenThrown>,
-        WriteStorage<'a, ApplyDamage>,
-        WriteStorage<'a, StatusIsFrozen>,
-        WriteStorage<'a, StatusIsBurning>,
-    );
+
+    type SystemData = ThrowItemSystemData<'a>;
 
     fn run(&mut self, data: Self::SystemData) {
-        let (
+        let ThrowItemSystemData {
             entities,
             map,
             mut log,
             mut animation_builder,
+            mut rng,
             names,
             renderables,
-            positions,
+            mut positions,
+            mut viewsheds,
             consumables,
             mut wants_throw,
             mut combat_stats,
@@ -203,9 +211,10 @@ impl<'a> System<'a> for ItemThrowSystem {
             aoes,
             aoe_animations,
             mut apply_damages,
+            teleports,
             mut is_frozen,
             mut is_burning,
-        ) = data;
+        } = data;
 
         // The WantsToThrowItem object (do_throw below), has references to the
         // targeted position and the thrown item.
@@ -221,10 +230,10 @@ impl<'a> System<'a> for ItemThrowSystem {
             for target in targets {
 
                 // Component: ProvidesHealing.
+                let item_heals = healing.get(do_throw.item);
                 let stats = combat_stats.get_mut(*target);
                 let pos = positions.get(*target);
                 let render = renderables.get(*target);
-                let item_heals = healing.get(do_throw.item);
                 if let (Some(_), Some(stats)) = (item_heals, stats) {
                     stats.full_heal(); // TODO: This probably should be a system call.
                     log.entries.push(format!(
@@ -240,6 +249,21 @@ impl<'a> System<'a> for ItemThrowSystem {
                             bg: render.bg,
                             glyph: render.glyph,
                         })
+                    }
+                }
+
+                // Compontnet: MovesToRandomPosition
+                let item_teleports = teleports.get(do_throw.item);
+                let target_name = names.get(*target).unwrap();
+                let mut target_pos = positions.get_mut(*target).unwrap();
+                let mut target_viewshed = viewsheds.get_mut(*target).unwrap();
+                if let Some(_) = item_teleports {
+                    let new_pos = map.random_unblocked_point(10, &mut *rng);
+                    if let Some(new_pos) = new_pos {
+                        target_pos.x = new_pos.0;
+                        target_pos.y = new_pos.1;
+                        target_viewshed.dirty = true;
+                        log.entries.push(format!("The {} vanishes!", target_name.name));
                     }
                 }
 
