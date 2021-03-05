@@ -53,7 +53,6 @@ pub struct Consumable {}
 pub struct ProvidesHealing {}
 
 
-
 //------------------------------------------------------------------
 // Data Components:
 // These components have some data associated with them.

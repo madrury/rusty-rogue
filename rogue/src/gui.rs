@@ -407,16 +407,19 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
         "Press ESC to cancel",
     );
 
+    // Iterate through all items in the player's backpack with the Useable component and:
+    //   - Draw an inventory selection letter for that item: (a), (b), (c), etc...
+    //   - Add the item to a vector for later lookup upon selection.
     let inventory = (&entities, &inbackpacks, &names, &doables)
         .join()
         .filter(|(_e, inpack, _name, _do)| inpack.owner == *player)
         .enumerate();
-    // Iterate through all items in the player's backpack with the Useable component and:
-    //   - Draw an inventory selection for that item.
-    //   - Add the item to a vector for later lookup upon selection.
+    // Vector to keep track of the positions of items in the inventory. When the
+    // player selects an item, we need to retrieve that associated item entity.
     let mut useable: Vec<Entity> = Vec::new();
     for (i, (item, _pack, name, _use)) in inventory {
         let render = renderables.get(item);
+        let is_equipped = equipped.get(item).map_or(false, |e| e.owner == *player);
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
         ctx.set(
@@ -457,16 +460,22 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
                 rltk::to_cp437(' '),
             ),
         }
-        // If the item is equipped, change the bg color on the item glyph.
-        let is_equipped = equipped.get(item).map_or(false, |e| e.owner == *player);
-        if is_equipped {
-            ctx.set_bg(
-                ITEM_MENU_X_POSITION + 4,
-                y,
-                RGB::named(rltk::GREEN),
-            )
-        }
-        ctx.print(ITEM_MENU_X_POSITION + 6, y, &name.name.to_string());
+
+        // Render the item name, with a color indicating if the item is
+        // equipped.
+        let text_fg = if is_equipped {
+            RGB::named(rltk::GREEN)
+        } else {
+            RGB::named(rltk::WHITE)
+        };
+        ctx.print_color(
+            ITEM_MENU_X_POSITION + 6,
+            y,
+            text_fg,
+            RGB::named(rltk::BLACK),
+            &name.name.to_string()
+        );
+
         useable.push(item);
         y += 1;
     }
