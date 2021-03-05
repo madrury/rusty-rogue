@@ -1,6 +1,6 @@
 use super::{
     get_status_indicators, CombatStats, GameLog, InBackpack, Map, Name, Player, Position,
-    Renderable, RunState, StatusIndicatorGlyph, Viewshed,
+    Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -368,16 +368,17 @@ pub enum MenuResult {
 // The inventory menu is generic over a type parameter. This supports different
 // menus for items with different tags.
 pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &str) -> MenuResult {
-    let player_entity = ecs.fetch::<Entity>();
+    let player = ecs.fetch::<Entity>();
     let names = ecs.read_storage::<Name>();
     let inbackpacks = ecs.read_storage::<InBackpack>();
+    let equipped = ecs.read_storage::<Equipped>();
     let doables = ecs.read_storage::<T>();
     let renderables = ecs.read_storage::<Renderable>();
     let entities = ecs.entities();
 
     let inventory = (&inbackpacks, &doables, &names)
         .join()
-        .filter(|(item, _use, _do)| item.owner == *player_entity);
+        .filter(|(item, _use, _do)| item.owner == *player);
     let count = inventory.count();
 
     let mut y = ITEM_MENU_Y_POSTION - (count / 2) as i32;
@@ -408,14 +409,14 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
 
     let inventory = (&entities, &inbackpacks, &names, &doables)
         .join()
-        .filter(|(_e, item, _name, _do)| item.owner == *player_entity)
+        .filter(|(_e, inpack, _name, _do)| inpack.owner == *player)
         .enumerate();
     // Iterate through all items in the player's backpack with the Useable component and:
     //   - Draw an inventory selection for that item.
     //   - Add the item to a vector for later lookup upon selection.
     let mut useable: Vec<Entity> = Vec::new();
-    for (i, (entity, _pack, name, _use)) in inventory {
-        let render = renderables.get(entity);
+    for (i, (item, _pack, name, _use)) in inventory {
+        let render = renderables.get(item);
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
         ctx.set(
@@ -456,8 +457,17 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
                 rltk::to_cp437(' '),
             ),
         }
+        // If the item is equipped, change the bg color on the item glyph.
+        let is_equipped = equipped.get(item).map_or(false, |e| e.owner == *player);
+        if is_equipped {
+            ctx.set_bg(
+                ITEM_MENU_X_POSITION + 4,
+                y,
+                RGB::named(rltk::GREEN),
+            )
+        }
         ctx.print(ITEM_MENU_X_POSITION + 6, y, &name.name.to_string());
-        useable.push(entity);
+        useable.push(item);
         y += 1;
     }
 
