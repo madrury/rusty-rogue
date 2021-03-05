@@ -18,7 +18,7 @@ const MAX_ITEMS_IN_ROOM: i32 = 2;
 // Spawn the player in the center of the first room.
 pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
     ecs.create_entity()
-        .with(Position { x: px, y: py })
+        .with(Position {x: px, y: py})
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
@@ -137,8 +137,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
             .insert(ItemType::HealthPotion, 20)
-            .insert(ItemType::TeleportationPotion, 200)
-            .insert(ItemType::FirePotion, 5 + depth)
+            .insert(ItemType::TeleportationPotion, 100 + depth)
+            .insert(ItemType::FirePotion, 200 + depth)
             .insert(ItemType::FreezingPotion, 5 + depth)
             .insert(ItemType::Dagger, 5 + depth)
             .insert(ItemType::LeatherArmor, 5 + depth)
@@ -340,7 +340,7 @@ fn teleportation_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Position {x, y})
     .with(Renderable {
         glyph: rltk::to_cp437('¿'),
-        fg: RGB::named(rltk::DARK_VIOLET),
+        fg: RGB::named(rltk::MEDIUM_PURPLE),
         bg: RGB::named(rltk::BLACK),
         order: 2,
     })

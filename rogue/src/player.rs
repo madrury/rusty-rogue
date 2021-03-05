@@ -81,6 +81,8 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
             pos.y = min(79, max(0, pos.y + dy));
             vs.dirty = true;
         }
+        // IMPORTANT: Keeps the players Position component synchronized with
+        // their position as a resource in the ECS.
         ppos.x = pos.x;
         ppos.y = pos.y;
     }

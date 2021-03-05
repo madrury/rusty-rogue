@@ -34,8 +34,10 @@ impl<'a> System<'a> for ItemCollectionSystem {
                 .insert(pickup.item, InBackpack { owner: pickup.by })
                 .expect("Unable to insert item in backpack.");
             if pickup.by == *player {
-                let name = &names.get(pickup.item).unwrap().name;
-                log.entries.push(format!("You pickup the {}", *name))
+                let name = &names.get(pickup.item);
+                if let Some(name) = name {
+                    log.entries.push(format!("You pickup the {}", name.name))
+                }
             }
         }
         pickups.clear();
@@ -52,6 +54,8 @@ pub struct ItemUseSystem {}
 #[derive(SystemData)]
 pub struct UseItemSystemData<'a> {
     entities: Entities<'a>,
+    player: ReadExpect<'a, Entity>,
+    player_position: WriteExpect<'a, Point>,
     map: ReadExpect<'a, Map>,
     log: WriteExpect<'a, GameLog>,
     animation_builder: WriteExpect<'a, AnimationBuilder>,
@@ -76,6 +80,8 @@ impl<'a> System<'a> for ItemUseSystem {
 
         let UseItemSystemData {
             entities,
+            player,
+            mut player_position,
             map,
             mut log,
             mut animation_builder,
@@ -104,18 +110,19 @@ impl<'a> System<'a> for ItemUseSystem {
 
             // Component: ProvidesFullHealing.
             let item_heals = healing.get(do_use.item);
-            let name = names.get(entity);
-            let pos = positions.get(entity);
-            let render = renderables.get(entity);
             if let Some(_) = item_heals {
                 stats.full_heal();
-                if let Some(name) = name {
+                let name = names.get(entity);
+                let item_name = names.get(do_use.item);
+                if let (Some(name), Some(item_name)) = (name, item_name) {
                     log.entries.push(format!(
                         "{} drink's the {}.",
                         name.name,
-                        names.get(do_use.item).unwrap().name,
+                        item_name.name
                     ));
                 }
+                let pos = positions.get(entity);
+                let render = renderables.get(entity);
                 if let(Some(pos), Some(render)) = (pos, render) {
                     animation_builder.request(AnimationRequest::Healing {
                         x: pos.x,
@@ -129,16 +136,36 @@ impl<'a> System<'a> for ItemUseSystem {
 
             // Compontnet: MovesToRandomPosition
             let item_teleports = teleports.get(do_use.item);
-            let name = names.get(entity).unwrap();
-            let mut pos = positions.get_mut(entity).unwrap();
-            let mut viewshed = viewsheds.get_mut(entity).unwrap();
             if let Some(_) = item_teleports {
                 let new_pos = map.random_unblocked_point(10, &mut *rng);
-                if let Some(new_pos) = new_pos {
+                let mut pos = positions.get_mut(entity);
+                if let (Some(pos), Some(new_pos)) = (pos, new_pos) {
                     pos.x = new_pos.0;
                     pos.y = new_pos.1;
-                    viewshed.dirty = true;
-                    log.entries.push(format!("{} vanishes!", name.name));
+                    let mut viewshed = viewsheds.get_mut(entity);
+                    if let Some(viewshed) = viewshed {
+                        viewshed.dirty = true;
+                    }
+                    let name = names.get(entity);
+                    if let Some(name) = name {
+                        log.entries.push(format!("{} vanishes!", name.name));
+                    }
+                    let render = renderables.get(entity);
+                    if let Some(render) = render {
+                        animation_builder.request(AnimationRequest::Teleportation {
+                            x: pos.x,
+                            y: pos.y,
+                            fg: render.fg,
+                            bg: render.bg,
+                        })
+                    }
+                    // If the using entity is the player, we have to keep the
+                    // player's position synchronized in both their Position
+                    // component AND their position as a resource in the ECS.
+                    if entity == *player {
+                        player_position.x = new_pos.0;
+                        player_position.y = new_pos.1;
+                    }
                 }
             }
 
@@ -228,19 +255,22 @@ impl<'a> System<'a> for ItemThrowSystem {
                 .collect();
 
             for target in targets {
-
                 // Component: ProvidesHealing.
                 let item_heals = healing.get(do_throw.item);
                 let stats = combat_stats.get_mut(*target);
-                let pos = positions.get(*target);
-                let render = renderables.get(*target);
                 if let (Some(_), Some(stats)) = (item_heals, stats) {
-                    stats.full_heal(); // TODO: This probably should be a system call.
-                    log.entries.push(format!(
-                        "You throw the {}, healing {}.",
-                        names.get(do_throw.item).unwrap().name,
-                        names.get(*target).unwrap().name,
-                    ));
+                    stats.full_heal();
+                    let item_name = names.get(do_throw.item);
+                    let target_name = names.get(*target);
+                    if let (Some(item_name), Some(target_name)) = (item_name, target_name) {
+                        log.entries.push(format!(
+                            "You throw the {}, healing {}.",
+                            item_name.name,
+                            target_name.name
+                        ));
+                    }
+                    let pos = positions.get(*target);
+                    let render = renderables.get(*target);
                     if let(Some(pos), Some(render)) = (pos, render) {
                         animation_builder.request(AnimationRequest::Healing {
                             x: pos.x,
@@ -251,61 +281,71 @@ impl<'a> System<'a> for ItemThrowSystem {
                         })
                     }
                 }
-
                 // Compontnet: MovesToRandomPosition
                 let item_teleports = teleports.get(do_throw.item);
-                let target_name = names.get(*target).unwrap();
-                let mut target_pos = positions.get_mut(*target).unwrap();
-                let mut target_viewshed = viewsheds.get_mut(*target).unwrap();
-                if let Some(_) = item_teleports {
+                let target_pos = positions.get_mut(*target);
+                if let (Some(_), Some(tpos)) = (item_teleports, target_pos) {
                     let new_pos = map.random_unblocked_point(10, &mut *rng);
                     if let Some(new_pos) = new_pos {
-                        target_pos.x = new_pos.0;
-                        target_pos.y = new_pos.1;
-                        target_viewshed.dirty = true;
-                        log.entries.push(format!("The {} vanishes!", target_name.name));
+                        tpos.x = new_pos.0;
+                        tpos.y = new_pos.1;
+                        let target_viewshed = viewsheds.get_mut(*target);
+                        if let Some(tviewshed) = target_viewshed {
+                            tviewshed.dirty = true;
+                        }
+                        let target_name = names.get(*target);
+                        if let Some(tname) = target_name {
+                            log.entries.push(format!("The {} vanishes!", tname.name));
+                        }
                     }
                 }
-
                 // Component: InflictsDamageWhenThrown
                 let stats = combat_stats.get_mut(*target);
                 let item_damages = does_damage.get(do_throw.item);
                 if let (Some(item_damages), Some(_stats)) = (item_damages, stats) {
                     ApplyDamage::new_damage(&mut apply_damages, *target, item_damages.damage);
-                    log.entries.push(format!(
-                        "You throw the {}, dealing {} {} damage.",
-                        names.get(do_throw.item).unwrap().name,
-                        names.get(*target).unwrap().name,
-                        item_damages.damage
-                    ))
+                    let item_name = names.get(do_throw.item);
+                    let target_name = names.get(*target);
+                    if let (Some(item_name), Some(target_name)) = (item_name, target_name) {
+                        log.entries.push(format!(
+                            "You throw the {}, dealing {} {} damage.",
+                            item_name.name,
+                            target_name.name,
+                            item_damages.damage
+                        ))
+                    }
                 }
-
                 // Component: InflictsFreezingWhenThrown
                 let stats = combat_stats.get_mut(*target);
                 let item_freezes = does_freeze.get(do_throw.item);
                 if let (Some(item_freezes), Some(_stats)) = (item_freezes, stats) {
                     StatusIsFrozen::new_status(&mut is_frozen, *target, item_freezes.turns);
-                    log.entries.push(format!(
-                        "You throw the {}, freezing {} in place.",
-                        names.get(do_throw.item).unwrap().name,
-                        names.get(*target).unwrap().name,
-                    ))
+                    let item_name = names.get(do_throw.item);
+                    let target_name = names.get(*target);
+                    if let (Some(item_name), Some(target_name)) = (item_name, target_name) {
+                        log.entries.push(format!(
+                            "You throw the {}, freezing {} in place.",
+                            item_name.name,
+                            target_name.name,
+                        ))
+                    }
                 }
-
                 // Component: InflictsBurningWhenThrown
                 let stats = combat_stats.get_mut(*target);
                 let item_burns = does_burn.get(do_throw.item);
                 if let (Some(item_burns), Some(_stats)) = (item_burns, stats) {
                     StatusIsBurning::new_status(&mut is_burning, *target, item_burns.turns, item_burns.tick_damage);
-                    log.entries.push(format!(
-                        "You throw the {}, stting {} ablaze.",
-                        names.get(do_throw.item).unwrap().name,
-                        names.get(*target).unwrap().name,
-                    ))
+                    let item_name = names.get(do_throw.item);
+                    let target_name = names.get(*target);
+                    if let (Some(item_name), Some(target_name)) = (item_name, target_name) {
+                        log.entries.push(format!(
+                            "You throw the {}, stting {} ablaze.",
+                            item_name.name,
+                            target_name.name,
+                        ))
+                    }
                 }
-
             }
-
             // Component: AreaOfEffectAnimationWhenThrown
             let has_aoe_animation = aoe_animations.get(do_throw.item);
             if let Some(has_aoe_animation) = has_aoe_animation {
@@ -398,11 +438,13 @@ impl<'a> System<'a> for ItemEquipSystem {
         }
         // Weild the equipment.
         for (equipper, do_equip, name) in (&entities, &wants_equip, &names).join() {
-            let item_name = names.get(do_equip.item).unwrap();
             equipped.
                 insert(do_equip.item, Equipped {owner: equipper, slot: do_equip.slot})
                 .expect("Failed to equip item.");
-            log.entries.push(format!("{} equipped the {}.", name.name, item_name.name));
+            let item_name = names.get(do_equip.item);
+            if let Some(item_name) = item_name {
+                log.entries.push(format!("{} equipped the {}.", name.name, item_name.name));
+            }
         }
         wants_equip.clear();
     }
@@ -434,12 +476,14 @@ impl<'a> System<'a> for ItemRemoveSystem {
         ) = data;
 
         for (remover, do_remove) in (&entities, &wants_remove).join() {
-            let item_name = names.get(do_remove.item).unwrap();
-            let remover_name = names.get(remover).unwrap();
             equipped.remove(do_remove.item);
-            log.entries.push(format!(
-                "{} reomves {}.", remover_name.name, item_name.name
-            ))
+            let item_name = names.get(do_remove.item);
+            let remover_name = names.get(remover);
+            if let (Some(item_name), Some(remover_name)) = (item_name, remover_name) {
+                log.entries.push(format!(
+                    "{} reomves {}.", remover_name.name, item_name.name
+                ))
+            }
         }
         wants_remove.clear();
     }

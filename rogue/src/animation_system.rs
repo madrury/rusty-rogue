@@ -37,6 +37,12 @@ pub enum AnimationRequest {
         glyph: rltk::FontCharType,
         radius: i32,
     },
+    Teleportation {
+        x: i32,
+        y: i32,
+        fg: RGB,
+        bg: RGB,
+    }
 }
 
 //  A buffer for holding current animation requests. Added to the ECS as a
@@ -71,7 +77,7 @@ impl<'a> System<'a> for AnimationInitSystem {
         let (map, mut animation_builder, mut particle_builder) = data;
         for request in animation_builder.requests.iter() {
             particle_builder.request_many(match request {
-                AnimationRequest::MeleeAttack { x, y, bg, glyph } => {
+                AnimationRequest::MeleeAttack {x, y, bg, glyph} => {
                     make_melee_animation(*x, *y, *bg, *glyph)
                 }
                 AnimationRequest::Healing {
@@ -89,6 +95,12 @@ impl<'a> System<'a> for AnimationInitSystem {
                     glyph,
                     radius,
                 } => make_aoe_animation(&*map, *x, *y, *fg, *bg, *glyph, *radius),
+                AnimationRequest::Teleportation {
+                    x,
+                    y,
+                    fg,
+                    bg,
+                } => make_teleportation_animation(*x, *y, *fg, *bg),
             })
         }
         animation_builder.requests.clear();
@@ -174,6 +186,30 @@ fn make_aoe_animation(
                 delay: 100.0 * (i as f32),
             })
         }
+    }
+    particles
+}
+
+
+// A healing animation. A heart flashes quickly.
+fn make_teleportation_animation(
+    x: i32,
+    y: i32,
+    fg: RGB,
+    bg: RGB,
+) -> Vec<ParticleRequest> {
+    let mut particles = Vec::new();
+    let glyph_cycle = [rltk::to_cp437('░'), rltk::to_cp437(' '), rltk::to_cp437('░')];
+    for (i, glyph) in glyph_cycle.iter().enumerate() {
+        particles.push(ParticleRequest {
+            x: x,
+            y: y,
+            fg: rltk::RGB::named(rltk::MEDIUM_PURPLE),
+            bg: bg,
+            glyph: *glyph,
+            lifetime: 100.0, // ms
+            delay: 100.0 * (i as f32),
+        })
     }
     particles
 }
