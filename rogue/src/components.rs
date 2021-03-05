@@ -52,6 +52,11 @@ pub struct Consumable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct ProvidesFullHealing {}
 
+// An entity with this component, when used, teleports the user to a random
+// position.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct MovesToRandomPosition {}
+
 
 //------------------------------------------------------------------
 // Data Components:
@@ -321,7 +326,11 @@ pub struct WantsToRemoveItem {
     pub slot: EquipmentSlot,
 }
 
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct WantsToMoveToRandomPosition {}
+
 // Signals that the entity has damage queued, but not applied.
+// TODO: Rename to WantsToTakeDamage to keep naming consistent.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct ApplyDamage {
     pub amounts: Vec<i32>

@@ -4,8 +4,9 @@ use super::{
     Equippable, EquipmentSlot, Throwable, Consumable, ProvidesFullHealing,
     IncreasesMaxHpWhenUsed, AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
     InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
-    AreaOfEffectAnimationWhenThrown, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
+    AreaOfEffectAnimationWhenThrown, MovesToRandomPosition,
+    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus, SimpleMarker,
+    SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -53,8 +54,13 @@ pub fn spawn_room(ecs: &mut World, room: &Rectangle, depth: i32) {
         num_items = rng.roll_dice(1, MAX_ITEMS_IN_ROOM + 1) + depth / 2;
     }
 
-    let monster_spawn_points = generate_spawn_points(ecs, num_monsters, room);
-    let item_spawn_points = generate_spawn_points(ecs, num_items, room);
+    let monster_spawn_points;
+    let item_spawn_points;
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        monster_spawn_points = generate_spawn_points(num_monsters, room, &mut *rng);
+        item_spawn_points = generate_spawn_points(num_items, room, &mut *rng);
+    }
 
     for (x, y) in monster_spawn_points.iter() {
         spawn_random_monster(ecs, *x, *y, depth);
@@ -65,13 +71,13 @@ pub fn spawn_room(ecs: &mut World, room: &Rectangle, depth: i32) {
 }
 
 // Returns a vector of positions in a room to spawn entities.
-fn generate_spawn_points(ecs: &mut World, n: i32, room: &Rectangle) -> Vec<(i32, i32)> {
+fn generate_spawn_points(n: i32, room: &Rectangle, rng: &mut RandomNumberGenerator) -> Vec<(i32, i32)> {
     // First generate some random indexes.
     let mut spawn_idxs: Vec<usize> = Vec::new();
     for _i in 1..=n {
         let mut added = false;
         while !added {
-            let (x, y) = room.random_point(ecs);
+            let (x, y) = room.random_point(rng);
             let idx = ((y * MAP_WIDTH) as usize) + x as usize;
             if !spawn_idxs.contains(&idx) {
                 spawn_idxs.push(idx);
@@ -118,6 +124,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
 enum ItemType {
     None,
     HealthPotion,
+    TeleportationPotion,
     FirePotion,
     FreezingPotion,
     Dagger,
@@ -129,7 +136,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
-            .insert(ItemType::HealthPotion, 200)
+            .insert(ItemType::HealthPotion, 20)
+            .insert(ItemType::TeleportationPotion, 200)
             .insert(ItemType::FirePotion, 5 + depth)
             .insert(ItemType::FreezingPotion, 5 + depth)
             .insert(ItemType::Dagger, 5 + depth)
@@ -139,6 +147,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
     }
     match item {
         Some(ItemType::HealthPotion) => health_potion(ecs, x, y),
+        Some(ItemType::TeleportationPotion) => teleportation_potion(ecs, x, y),
         Some(ItemType::FirePotion) => fire_potion(ecs, x, y),
         Some(ItemType::FreezingPotion) => freezing_potion(ecs, x, y),
         Some(ItemType::Dagger) => dagger(ecs, x, y),
@@ -322,6 +331,25 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
         bg: RGB::named(rltk::LIGHT_BLUE),
         glyph: rltk::to_cp437('*')
     })
+    .marked::<SimpleMarker<SerializeMe>>()
+    .build();
+}
+
+fn teleportation_potion(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+    .with(Position {x, y})
+    .with(Renderable {
+        glyph: rltk::to_cp437('¿'),
+        fg: RGB::named(rltk::DARK_VIOLET),
+        bg: RGB::named(rltk::BLACK),
+        order: 2,
+    })
+    .with(Name {name: "Potion of Teleportation".to_string()})
+    .with(PickUpable {})
+    .with(Useable {})
+    .with(Throwable {})
+    .with(Consumable {})
+    .with(MovesToRandomPosition {})
     .marked::<SimpleMarker<SerializeMe>>()
     .build();
 }

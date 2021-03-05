@@ -1,12 +1,13 @@
+use rltk::RandomNumberGenerator;
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
-    InBackpack, Name, Renderable, Position, WantsToUseItem,
+    InBackpack, Name, Renderable, Position, Viewshed, WantsToUseItem,
     WantsToPickupItem, WantsToThrowItem, WantsToEquipItem, WantsToRemoveItem,
-    Equipped, Consumable, ProvidesFullHealing, IncreasesMaxHpWhenUsed,
-    InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
-    InflictsBurningWhenThrown, AreaOfEffectWhenThrown,
-    AreaOfEffectAnimationWhenThrown, ApplyDamage, StatusIsFrozen,
-    StatusIsBurning
+    Equipped, Consumable, ProvidesFullHealing, MovesToRandomPosition,
+    IncreasesMaxHpWhenUsed, InflictsDamageWhenThrown,
+    InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
+    AreaOfEffectWhenThrown, AreaOfEffectAnimationWhenThrown, ApplyDamage,
+    StatusIsFrozen, StatusIsBurning
 };
 use specs::prelude::*;
 
@@ -52,43 +53,52 @@ impl<'a> System<'a> for ItemUseSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         Entities<'a>,
+        ReadExpect<'a, Map>,
         WriteExpect<'a, GameLog>,
         WriteExpect<'a, AnimationBuilder>,
+        WriteExpect<'a, RandomNumberGenerator>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, Renderable>,
-        ReadStorage<'a, Position>,
+        WriteStorage<'a, Position>,
+        WriteStorage<'a, Viewshed>,
         ReadStorage<'a, Consumable>,
         WriteStorage<'a, WantsToUseItem>,
         ReadStorage<'a, IncreasesMaxHpWhenUsed>,
         ReadStorage<'a, ProvidesFullHealing>,
+        ReadStorage<'a, MovesToRandomPosition>,
         WriteStorage<'a, CombatStats>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
         let (
             entities,
+            map,
             mut log,
             mut animation_builder,
+            mut rng,
             names,
             renderables,
-            positions,
+            mut positions,
+            mut viewsheds,
             consumables,
             mut wants_use,
             increases_hp,
             healing,
+            teleports,
             mut combat_stats,
         ) = data;
 
         for (entity, do_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
 
             // Component: IncreasesMaxHpWhenUsed
-            let item_increases_hp =increases_hp.get(do_use.item);
+            //  NOTE: This needs to come BEFORE any healing, so the healing knows
+            //  about the new maximum hp.
+            let item_increases_hp = increases_hp.get(do_use.item);
             if let Some(item_increases_hp) = item_increases_hp {
                 stats.increase_max_hp(item_increases_hp.amount);
             }
 
             // Component: ProvidesFullHealing.
-            //   When used, this item heals the user fully.
             let item_heals = healing.get(do_use.item);
             let name = names.get(entity);
             let pos = positions.get(entity);
@@ -110,6 +120,21 @@ impl<'a> System<'a> for ItemUseSystem {
                         bg: render.bg,
                         glyph: render.glyph,
                     })
+                }
+            }
+
+            // Compontnet: MovesToRandomPosition
+            let item_teleports = teleports.get(do_use.item);
+            let name = names.get(entity).unwrap();
+            let mut pos = positions.get_mut(entity).unwrap();
+            let mut viewshed = viewsheds.get_mut(entity).unwrap();
+            if let Some(_) = item_teleports {
+                let new_pos = map.random_unblocked_point(10, &mut *rng);
+                if let Some(new_pos) = new_pos {
+                    pos.x = new_pos.0;
+                    pos.y = new_pos.1;
+                    viewshed.dirty = true;
+                    log.entries.push(format!("{} vanishes!", name.name));
                 }
             }
 

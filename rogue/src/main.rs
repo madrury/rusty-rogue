@@ -444,8 +444,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToThrowItem>();
     gs.ecs.register::<WantsToEquipItem>();
     gs.ecs.register::<WantsToRemoveItem>();
+    gs.ecs.register::<WantsToMoveToRandomPosition>();
     gs.ecs.register::<ProvidesFullHealing>();
     gs.ecs.register::<IncreasesMaxHpWhenUsed>();
+    gs.ecs.register::<MovesToRandomPosition>();
     gs.ecs.register::<AreaOfEffectWhenThrown>();
     gs.ecs.register::<InflictsDamageWhenThrown>();
     gs.ecs.register::<InflictsFreezingWhenThrown>();

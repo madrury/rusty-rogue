@@ -96,6 +96,27 @@ impl Map {
         (idx as i32 % self.width, idx as i32 / self.width)
     }
 
+    pub fn random_point(&self, rng: &mut RandomNumberGenerator) -> (i32, i32) {
+        let rand_room_idx;
+        {
+            // let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+            let n_rooms = self.rooms.len() as i32;
+            rand_room_idx = rng.roll_dice(1, n_rooms) - 1;
+        }
+        self.rooms[rand_room_idx as usize].random_point(rng)
+    }
+
+    pub fn random_unblocked_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
+        for _ in 0..n_tries {
+            let pt = self.random_point(rng);
+            let idx = self.xy_idx(pt.0, pt.1);
+            if !self.blocked[idx] {
+                return Some(pt);
+            }
+        }
+        return None;
+    }
+
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.blocked[i] = *tile == TileType::Wall;
@@ -235,8 +256,8 @@ impl Rectangle {
     pub fn center(&self) -> (i32, i32) {
         ((self.x1 + self.x2)/2, (self.y1 + self.y2)/2)
     }
-    pub fn random_point(&self, ecs: &mut World) -> (i32, i32) {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+    pub fn random_point(&self, rng: &mut RandomNumberGenerator) -> (i32, i32) {
+        // let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         let room_width = i32::abs(self.x1 - self.x2);
         let room_height = i32::abs(self.y1 - self.y2);
         let x = self.x1 + rng.roll_dice(1, room_width);
