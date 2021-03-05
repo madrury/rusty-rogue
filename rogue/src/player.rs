@@ -53,9 +53,8 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
     for (entity, _player, pos, vs) in
         (&entities, &mut players, &mut positions, &mut viewsheds).join()
     {
-        let current_idx = map.xy_idx(pos.x, pos.y);
         let destination_idx = map.xy_idx(pos.x + dx, pos.y + dy);
-
+        // Initiate a melee attack if the requested position is blocked.
         for potential_target in map.tile_content[destination_idx].iter() {
             let target = combat_stats.get(*potential_target);
             match target {

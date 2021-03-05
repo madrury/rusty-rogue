@@ -50,7 +50,7 @@ pub struct Consumable {}
 
 // An entity with this component, when used, restores all of the users hp.
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct ProvidesHealing {}
+pub struct ProvidesFullHealing {}
 
 
 //------------------------------------------------------------------
@@ -110,6 +110,12 @@ pub struct InBackpack {
 pub struct Equipped {
     pub owner: Entity,
     pub slot: EquipmentSlot
+}
+
+// Component for items that increase the user's maximum hp.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct IncreasesMaxHpWhenUsed {
+    pub amount: i32
 }
 
 // Component for items or spells that inflict damage when thrown or cast.
@@ -198,6 +204,9 @@ impl CombatStats {
     }
     pub fn heal_amount(&mut self, amount: i32) {
         self.hp = i32::min(self.max_hp, self.hp + amount)
+    }
+    pub fn increase_max_hp(&mut self, amount: i32) {
+        self.max_hp += amount;
     }
 }
 

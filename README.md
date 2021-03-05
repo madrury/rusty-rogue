@@ -1,16 +1,30 @@
 # Rusty-Rogue
 
-We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductions.com/).
+We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductions.com/) and adding new stuff along the way.
 
-## Stuff We've added not from the tutorial:
+## Additional Stuff We've Planned Or Added:
 
-  - A status effects system.
-  - An animation system.
+  - [x] A status effects system.
+  - [x] The Burning status effect. ♠
+  - [x] The Frozen status effect. ♦
+  - [x] An animation system.
+  - [x] A throwing system.
+  - [x] Thrown potions. ¿
+  - [x] Thrown weapons. ↑
+  - [x] A potion of Freezing. ¿♦
+  - [] A potion of Teleportation.
+  - [x] An equipping system.
+  - [] A magic system.
+  - [] A spell of fireball. ♠
+  - [] A spell of fireblast. ♠
+  - [] A spell of icespike. ♦
+  - [] A spell of iceblast. ♦
+  - [x] An AOE display when targeting.
+  - [x] Keyboard controls when targeting.
 
-## Progress in tutorial:
+## Progress In Tutorial:
 
-#### 1. Building for the Web
-#### 2. Section 1 - Hello Rust
+#### Section 1 - Hello Rust
   - [x] 2.1. Entities and Components
   - [x] 2.2. Walking A Map
   - [x] 2.3. A More Interesting Map
@@ -24,7 +38,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] 2.11. Delving Deeper
   - [x] 2.12. Difficulty
   - [x] 2.13. Equipment
-#### 3. Section 2 - Stretch Goals
+#### Section 2 - Stretch Goals
   - [ ] 3.1. Nice Walls with Bitsets
   - [x] 3.2. Bloodstains
   - [x] 3.3. Particle Effects
@@ -32,7 +46,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] 3.5. Magic Mapping
   - [ ] 3.6. REX Paint Menu
   - [ ] 3.7. Simple Traps
-#### 4. Section 3 - Generating Maps
+#### Section 3 - Generating Maps
   - [ ] 4.1. Refactor Map Building
   - [ ] 4.2. Map Building Test Harness
   - [ ] 4.3. BSP Room Dungeons
@@ -53,7 +67,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] 4.18. Doors
   - [ ] 4.19. Decouple map size from screen size
   - [ ] 4.20. Section 3 Conclusion
-#### 5. Section 4 - Making A Game
+#### Section 4 - Making A Game
   - [ ] 5.1. Design Document
   - [ ] 5.2. Raw Files, Data- [ ]Driven Design
   - [ ] 5.3. Data- [ ]Driven Spawn Tables

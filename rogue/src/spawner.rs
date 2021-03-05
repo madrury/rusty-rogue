@@ -1,8 +1,8 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player,
     Position, Rectangle, Renderable, Viewshed, PickUpable, Useable,
-    Equippable, EquipmentSlot, Throwable, Consumable, ProvidesHealing,
-    AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
+    Equippable, EquipmentSlot, Throwable, Consumable, ProvidesFullHealing,
+    IncreasesMaxHpWhenUsed, AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
     InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
     AreaOfEffectAnimationWhenThrown, GrantsMeleeAttackBonus,
     GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
@@ -129,7 +129,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
-            .insert(ItemType::HealthPotion, 20)
+            .insert(ItemType::HealthPotion, 200)
             .insert(ItemType::FirePotion, 5 + depth)
             .insert(ItemType::FreezingPotion, 5 + depth)
             .insert(ItemType::Dagger, 5 + depth)
@@ -205,7 +205,6 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
         .build();
 }
 
-
 // Individual monster types: Goblin.
 fn goblin(ecs: &mut World, x: i32, y: i32) {
     spawn_monster(
@@ -269,7 +268,8 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Throwable {})
     .with(Consumable {})
     // TODO: We probably want a component for triggering the healing animation.
-    .with(ProvidesHealing {})
+    .with(ProvidesFullHealing {})
+    .with(IncreasesMaxHpWhenUsed {amount: 5})
     .marked::<SimpleMarker<SerializeMe>>()
     .build();
 }

@@ -1,11 +1,12 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
-    ProvidesHealing, InBackpack, Name, Renderable, Position, WantsToUseItem,
+    InBackpack, Name, Renderable, Position, WantsToUseItem,
     WantsToPickupItem, WantsToThrowItem, WantsToEquipItem, WantsToRemoveItem,
-    Equipped, Consumable, InflictsDamageWhenThrown,
-    InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
-    AreaOfEffectWhenThrown, AreaOfEffectAnimationWhenThrown, ApplyDamage,
-    StatusIsFrozen, StatusIsBurning
+    Equipped, Consumable, ProvidesFullHealing, IncreasesMaxHpWhenUsed,
+    InflictsDamageWhenThrown, InflictsFreezingWhenThrown,
+    InflictsBurningWhenThrown, AreaOfEffectWhenThrown,
+    AreaOfEffectAnimationWhenThrown, ApplyDamage, StatusIsFrozen,
+    StatusIsBurning
 };
 use specs::prelude::*;
 
@@ -58,7 +59,8 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, Position>,
         ReadStorage<'a, Consumable>,
         WriteStorage<'a, WantsToUseItem>,
-        ReadStorage<'a, ProvidesHealing>,
+        ReadStorage<'a, IncreasesMaxHpWhenUsed>,
+        ReadStorage<'a, ProvidesFullHealing>,
         WriteStorage<'a, CombatStats>,
     );
 
@@ -72,13 +74,21 @@ impl<'a> System<'a> for ItemUseSystem {
             positions,
             consumables,
             mut wants_use,
+            increases_hp,
             healing,
             mut combat_stats,
         ) = data;
 
         for (entity, do_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
 
-            // Component: ProvidesHealing.
+            // Component: IncreasesMaxHpWhenUsed
+            let item_increases_hp =increases_hp.get(do_use.item);
+            if let Some(item_increases_hp) = item_increases_hp {
+                stats.increase_max_hp(item_increases_hp.amount);
+            }
+
+            // Component: ProvidesFullHealing.
+            //   When used, this item heals the user fully.
             let item_heals = healing.get(do_use.item);
             let name = names.get(entity);
             let pos = positions.get(entity);
@@ -134,7 +144,7 @@ impl<'a> System<'a> for ItemThrowSystem {
         ReadStorage<'a, Consumable>,
         WriteStorage<'a, WantsToThrowItem>,
         WriteStorage<'a, CombatStats>,
-        ReadStorage<'a, ProvidesHealing>,
+        ReadStorage<'a, ProvidesFullHealing>,
         ReadStorage<'a, InflictsDamageWhenThrown>,
         WriteStorage<'a, InflictsFreezingWhenThrown>,
         WriteStorage<'a, InflictsBurningWhenThrown>,
