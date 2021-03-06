@@ -1,12 +1,11 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
-    Name, Renderable, Consumable, Position, Viewshed,
-    WantsToUseTargeted,
-    ProvidesFullHealing, MovesToRandomPosition,
-    InflictsDamageWhenTargeted,
-    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    AreaOfEffectWhenTargeted, AreaOfEffectAnimationWhenTargeted, WantsToTakeDamage,
-    StatusIsFrozen, StatusIsBurning
+    Name, Renderable, Consumable, Position, Viewshed, WantsToUseTargeted,
+    Targeted, ProvidesFullHealing, MovesToRandomPosition,
+    InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
+    InflictsBurningWhenTargeted, AreaOfEffectWhenTargeted,
+    AreaOfEffectAnimationWhenTargeted, WantsToTakeDamage, StatusIsFrozen,
+    StatusIsBurning
 };
 use specs::prelude::*;
 use rltk::RandomNumberGenerator;
@@ -29,6 +28,7 @@ pub struct TargetedSystemData<'a> {
         positions: WriteStorage<'a, Position>,
         viewsheds: WriteStorage<'a, Viewshed>,
         consumables: ReadStorage<'a, Consumable>,
+        targeteds: ReadStorage<'a, Targeted>,
         wants_target: WriteStorage<'a, WantsToUseTargeted>,
         combat_stats: WriteStorage<'a, CombatStats>,
         healing: ReadStorage<'a, ProvidesFullHealing>,
@@ -59,6 +59,7 @@ impl<'a> System<'a> for TargetedSystem {
             mut positions,
             mut viewsheds,
             consumables,
+            targeteds,
             mut wants_target,
             mut combat_stats,
             healing,
@@ -77,7 +78,13 @@ impl<'a> System<'a> for TargetedSystem {
         // targeted position and the targetn thing.
         for (user, want_target) in (&entities, &wants_target).join() {
             let target_point = want_target.target;
+            let thing_name = names.get(want_target.thing);
             let aoe = aoes.get(want_target.thing);
+            let default_verb = "target".to_string();
+            let verb = targeteds
+                .get(want_target.thing)
+                .map(|t| t.verb.clone())
+                .unwrap_or(default_verb);
 
             let targets: Vec<&Entity> = find_targets(&*map, target_point, aoe)
                 .into_iter()
@@ -90,11 +97,11 @@ impl<'a> System<'a> for TargetedSystem {
                 let stats = combat_stats.get_mut(*target);
                 if let (Some(_), Some(stats)) = (thing_heals, stats) {
                     stats.full_heal();
-                    let thing_name = names.get(want_target.thing);
                     let target_name = names.get(*target);
                     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
                         log.entries.push(format!(
-                            "You target the {}, healing {}.",
+                            "You {} the {}, healing {}.",
+                            verb,
                             thing_name.name,
                             target_name.name
                         ));
@@ -124,8 +131,13 @@ impl<'a> System<'a> for TargetedSystem {
                             tviewshed.dirty = true;
                         }
                         let target_name = names.get(*target);
-                        if let Some(tname) = target_name {
-                            log.entries.push(format!("The {} vanishes!", tname.name));
+                        if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                            log.entries.push(format!(
+                                "You {} the {}, and {} disappears.",
+                                verb,
+                                thing_name.name,
+                                target_name.name
+                            ));
                         }
                     }
                 }
@@ -138,7 +150,8 @@ impl<'a> System<'a> for TargetedSystem {
                     let target_name = names.get(*target);
                     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
                         log.entries.push(format!(
-                            "You target the {}, dealing {} {} damage.",
+                            "You {} the {}, dealing {} {} damage.",
+                            verb,
                             thing_name.name,
                             target_name.name,
                             thing_damages.damage
@@ -154,7 +167,8 @@ impl<'a> System<'a> for TargetedSystem {
                     let target_name = names.get(*target);
                     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
                         log.entries.push(format!(
-                            "You target the {}, freezing {} in place.",
+                            "You {} the {}, freezing {} in place.",
+                            verb,
                             thing_name.name,
                             target_name.name,
                         ))
@@ -169,7 +183,8 @@ impl<'a> System<'a> for TargetedSystem {
                     let target_name = names.get(*target);
                     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
                         log.entries.push(format!(
-                            "You target the {}, stting {} ablaze.",
+                            "You {} the {}, stting {} ablaze.",
+                            verb,
                             thing_name.name,
                             target_name.name,
                         ))

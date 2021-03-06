@@ -15,9 +15,8 @@ pub struct SerializationHelper {
 }
 
 
-// Binary Components:
-// These components indicate something, the type of entity or some binary
-// behaviour, by their presence or absence.
+//------------------------------------------------------------------
+// Core data components.
 //------------------------------------------------------------------
 
 // The singular entity with this component is the player.
@@ -40,9 +39,13 @@ pub struct Useable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
 
-// An entity with this component can be thrown.
+// An entity with this component can be used as a targeted effect.
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Targeted {}
+pub struct Targeted {pub verb: String}
+
+// An entity with this component can be used as an untargeted effect.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct UnTargeted {pub verb: String}
 
 // An entity with this component blocks the tile that it occupies.
 #[derive(Component, Serialize, Deserialize, Clone)]

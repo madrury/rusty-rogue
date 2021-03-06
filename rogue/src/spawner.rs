@@ -1,12 +1,12 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player,
     Position, Rectangle, Renderable, Viewshed, PickUpable, Useable,
-    Equippable, EquipmentSlot, Throwable, Consumable, ProvidesFullHealing,
-    IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted, InflictsDamageWhenTargeted,
-    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
-    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus, SimpleMarker,
-    SerializeMe, MarkedBuilder,
+    Equippable, EquipmentSlot, Throwable, Targeted, UnTargeted, Consumable,
+    ProvidesFullHealing, IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
+    InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
+    InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
+    MovesToRandomPosition, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
+    SimpleMarker, SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -274,7 +274,9 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Name {name: "Potion of Healing".to_string()})
     .with(PickUpable {})
     .with(Useable {})
+    .with(UnTargeted {verb: "use".to_string()})
     .with(Throwable {})
+    .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
     // TODO: We probably want a component for triggering the healing animation.
     .with(ProvidesFullHealing {})
@@ -295,6 +297,7 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Name {name: "Potion of Fire".to_string()})
     .with(PickUpable {})
     .with(Throwable {})
+    .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
     .with(InflictsDamageWhenTargeted {damage: 10})
     .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 4})
@@ -321,6 +324,7 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Name {name: "Potion of Freezing".to_string()})
     .with(PickUpable {})
     .with(Throwable {})
+    .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
     .with(InflictsDamageWhenTargeted {damage: 10})
     .with(InflictsFreezingWhenTargeted {turns: 6})
@@ -347,7 +351,9 @@ fn teleportation_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Name {name: "Potion of Teleportation".to_string()})
     .with(PickUpable {})
     .with(Useable {})
+    .with(UnTargeted{ verb: "use".to_string()})
     .with(Throwable {})
+    .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
     .with(MovesToRandomPosition {})
     .marked::<SimpleMarker<SerializeMe>>()
@@ -371,6 +377,7 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(Equippable {slot: EquipmentSlot::Melee})
         .with(GrantsMeleeAttackBonus {bonus: 2})
         .with(Throwable {})
+        .with(Targeted {verb: "throw".to_string()})
         .with(Consumable {})
         .with(InflictsDamageWhenTargeted {damage: 15})
         .marked::<SimpleMarker<SerializeMe>>()
