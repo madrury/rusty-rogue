@@ -362,7 +362,7 @@ const ITEM_MENU_WIDTH: i32 = 31;
 pub enum MenuResult {
     Cancel,
     NoResponse,
-    Selected { item: Entity },
+    Selected {thing: Entity},
 }
 
 // The inventory menu is generic over a type parameter. This supports different
@@ -480,7 +480,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
         y += 1;
     }
 
-    // If we've got input, we can get to using the item.
+    // If we've got input, we can get to using the thing.
     match ctx.key {
         None => MenuResult::NoResponse,
         Some(key) => match key {
@@ -489,7 +489,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
                 let selection = rltk::letter_to_option(key);
                 if selection > -1 && selection < count as i32 {
                     return MenuResult::Selected {
-                        item: useable[selection as usize],
+                        thing: useable[selection as usize],
                     };
                 }
                 MenuResult::NoResponse

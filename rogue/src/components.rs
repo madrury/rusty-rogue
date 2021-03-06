@@ -121,50 +121,50 @@ pub struct Equipped {
     pub slot: EquipmentSlot
 }
 
-// Component for items that increase the user's maximum hp.
+// Component for effects that increase the user's maximum hp.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct IncreasesMaxHpWhenUsed {
     pub amount: i32
 }
 
-// Component for items or spells that inflict damage when thrown or cast.
+// Component for effects that inflict damage when thrown or cast.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsDamageWhenTargeted {
     pub damage: i32
 }
 
-// Component for items or spells with an area of effect.
+// Component for effects with an area of effect.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct AreaOfEffectWhenTargeted {
     pub radius: i32
 }
 
-// Component for items that inflict the frozen status.
+// Component for effects that inflict the frozen status.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsFreezingWhenTargeted {
     pub turns: i32
 }
 
-// Component for items that inflict the burning status.
+// Component for effects that inflict the burning status.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsBurningWhenTargeted {
     pub turns: i32,
     pub tick_damage: i32
 }
 
-// Component for items that grant a MeleeAttackBonus
+// Component for effects that grant a MeleeAttackBonus
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct GrantsMeleeAttackBonus {
     pub bonus: i32
 }
 
-// Component for items that grant a MeleeAttackBonus
+// Component for effects that grant a MeleeAttackBonus
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct GrantsMeleeDefenseBonus {
     pub bonus: i32
 }
 
-// Component for items that create an area of effect animation when
+// Component for effects that create an area of effect animation when
 // thrown.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct AreaOfEffectAnimationWhenTargeted {
@@ -303,13 +303,13 @@ pub struct WantsToPickupItem {
     pub item: Entity
 }
 
-// Signals that the owning entity wants to use an item.
+// Signals that the owning entity wants to use an untargeted effect.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct WantsToUseItem {
-    pub item: Entity,
+pub struct WantsToUseUntargeted {
+    pub thing: Entity,
 }
 
-// Signals that the owning entity wants to throw an item.
+// Signals that the owning entity wants to use a targeted effect.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToUseTargeted {
     pub thing: Entity,

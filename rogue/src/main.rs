@@ -27,6 +27,8 @@ mod inventory_system;
 use inventory_system::*;
 mod targeted_effect_system;
 use targeted_effect_system::*;
+mod untargeted_effect_system;
+use untargeted_effect_system::*;
 mod map_indexing_system;
 use map_indexing_system::*;
 mod particle_system;
@@ -54,12 +56,12 @@ pub enum RunState {
     ShowTargetingMouse {
         range: i32,
         radius: Option<i32>,
-        item: Entity
+        thing: Entity
     },
     ShowTargetingKeyboard {
         range: i32,
         radius: Option<i32>,
-        item: Entity,
+        thing: Entity,
         current: Option<Point>
     },
     NextLevel
@@ -102,8 +104,8 @@ impl State {
         vis.run_now(&self.ecs);
         let mut pickups = ItemCollectionSystem{};
         pickups.run_now(&self.ecs);
-        let mut uses = ItemUseSystem{};
-        uses.run_now(&self.ecs);
+        let mut untargeteds = UntargetedSystem{};
+        untargeteds.run_now(&self.ecs);
         let mut targeteds = TargetedSystem{};
         targeteds.run_now(&self.ecs);
         let mut removes = ItemRemoveSystem{};
@@ -294,11 +296,11 @@ impl GameState for State {
                 match result {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},
-                    MenuResult::Selected {item} => {
-                        let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                    MenuResult::Selected {thing} => {
+                        let mut intent = self.ecs.write_storage::<WantsToUseUntargeted>();
                         intent.insert(
                             *self.ecs.fetch::<Entity>(), // Player.
-                            WantsToUseItem{item: item}
+                            WantsToUseUntargeted {thing: thing}
                         ).expect("Unable to insert intent to use item.");
                         newrunstate = RunState::PlayerTurn;
                     }
@@ -309,25 +311,25 @@ impl GameState for State {
                 match result {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},
-                    MenuResult::Selected {item} => {
+                    MenuResult::Selected {thing} => {
                         let equippables = self.ecs.read_storage::<Equippable>();
                         let equipped = self.ecs.read_storage::<Equipped>();
-                        let equipment = equippables.get(item).unwrap(); // We can only get here if the item is equippable.
+                        let equipment = equippables.get(thing).unwrap(); // We can only get here if the item is equippable.
                         let player_entity = self.ecs.read_resource::<Entity>();
                         let is_equipped = equipped
-                            .get(item)
+                            .get(thing)
                             .map_or(false, |e| e.owner == *player_entity);
                         if is_equipped {
                             let mut intent = self.ecs.write_storage::<WantsToRemoveItem>();
                             intent.insert(
                                 *self.ecs.fetch::<Entity>(), // Player.
-                                WantsToRemoveItem {item: item, slot: equipment.slot}
+                                WantsToRemoveItem {item: thing, slot: equipment.slot}
                             ).expect("Unable to insert intent to remove item.");
                         } else {
                             let mut intent = self.ecs.write_storage::<WantsToEquipItem>();
                             intent.insert(
                                 *self.ecs.fetch::<Entity>(), // Player.
-                                WantsToEquipItem {item: item, slot: equipment.slot}
+                                WantsToEquipItem {item: thing, slot: equipment.slot}
                             ).expect("Unable to insert intent to equip item.");
                         }
                         newrunstate = RunState::PlayerTurn;
@@ -339,57 +341,57 @@ impl GameState for State {
                 match result {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},
-                    MenuResult::Selected {item} => {
+                    MenuResult::Selected {thing} => {
                         // We need the area of effect radius of the item to draw
                         // the targeting system.
                         let aoes = self.ecs.read_storage::<AreaOfEffectWhenTargeted>();
-                        let radius = aoes.get(item).map(|x| x.radius);
+                        let radius = aoes.get(thing).map(|x| x.radius);
                         newrunstate = RunState::ShowTargetingKeyboard {
                             range: 6,
-                            item: item,
+                            thing: thing,
                             radius: radius,
                             current: None
                         };
                     }
                 }
             }
-            RunState::ShowTargetingMouse {range, item, radius} => {
+            RunState::ShowTargetingMouse {range, thing, radius} => {
                 match gui::ranged_target_mouse(&mut self.ecs, ctx, range, radius) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
                     TargetingResult::SwitchModality => {
                         newrunstate = RunState::ShowTargetingKeyboard {
-                            range: range, item: item, radius: radius, current: None
+                            range: range, thing: thing, radius: radius, current: None
                         }
                     }
                     TargetingResult::Selected {pos} => {
                         let mut intent = self.ecs.write_storage::<WantsToUseTargeted>();
                         intent.insert(
                             *self.ecs.fetch::<Entity>(), // Player.
-                            WantsToUseTargeted {thing: item, target: pos}
+                            WantsToUseTargeted {thing: thing, target: pos}
                         ).expect("Unable to insert intent to throw item.");
                         newrunstate = RunState::PlayerTurn;
                     },
                     _ => {},
                 }
             }
-            RunState::ShowTargetingKeyboard {range, item, radius, current} => {
+            RunState::ShowTargetingKeyboard {range, thing, radius, current} => {
                 match gui::ranged_target_keyboard(&mut self.ecs, ctx, range, radius, current) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
                     TargetingResult::SwitchModality => {
                         newrunstate = RunState::ShowTargetingMouse {
-                            range: range, item: item, radius: radius
+                            range: range, thing: thing, radius: radius
                         }
                     },
                     TargetingResult::MoveCursor {pos} => {
                         newrunstate = RunState::ShowTargetingKeyboard {
-                            range: range, item: item, radius: radius, current: Some(pos)
+                            range: range, thing: thing, radius: radius, current: Some(pos)
                         }
                     },
                     TargetingResult::Selected {pos} => {
                         let mut intent = self.ecs.write_storage::<WantsToUseTargeted>();
                         intent.insert(
                             *self.ecs.fetch::<Entity>(), // Player.
-                            WantsToUseTargeted {thing: item, target: pos}
+                            WantsToUseTargeted {thing: thing, target: pos}
                         ).expect("Unable to insert intent to throw item.");
                         newrunstate = RunState::PlayerTurn;
                     },
@@ -443,7 +445,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Equipped>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToPickupItem>();
-    gs.ecs.register::<WantsToUseItem>();
+    gs.ecs.register::<WantsToUseUntargeted>();
     gs.ecs.register::<WantsToUseTargeted>();
     gs.ecs.register::<WantsToEquipItem>();
     gs.ecs.register::<WantsToRemoveItem>();
