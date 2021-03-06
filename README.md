@@ -12,13 +12,13 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] Thrown potions. ¿
   - [x] Thrown weapons. ↑
   - [x] A potion of Freezing. ¿♦
-  - [] A potion of Teleportation.
+  - [ ] A potion of Teleportation.
   - [x] An equipping system.
-  - [] A magic system.
-  - [] A spell of fireball. ♠
-  - [] A spell of fireblast. ♠
-  - [] A spell of icespike. ♦
-  - [] A spell of iceblast. ♦
+  - [ ] A magic system.
+  - [ ] A spell of fireball. ♠
+  - [ ] A spell of fireblast. ♠
+  - [ ] A spell of icespike. ♦
+  - [ ] A spell of iceblast. ♦
   - [x] An AOE display when targeting.
   - [x] Keyboard controls when targeting.
 
@@ -42,7 +42,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] 3.1. Nice Walls with Bitsets
   - [x] 3.2. Bloodstains
   - [x] 3.3. Particle Effects
-  - [ ] 3.4. Hunger Clock
+  - [x] 3.4. Hunger Clock
   - [ ] 3.5. Magic Mapping
   - [ ] 3.6. REX Paint Menu
   - [ ] 3.7. Simple Traps
