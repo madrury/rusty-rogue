@@ -136,12 +136,12 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
-            .insert(ItemType::HealthPotion, 20)
-            .insert(ItemType::TeleportationPotion, 100 + depth)
-            .insert(ItemType::FirePotion, 200 + depth)
+            .insert(ItemType::HealthPotion, 10)
+            .insert(ItemType::TeleportationPotion, 5 + depth)
+            .insert(ItemType::FirePotion, 5+ depth)
             .insert(ItemType::FreezingPotion, 5 + depth)
-            .insert(ItemType::Dagger, 5 + depth)
-            .insert(ItemType::LeatherArmor, 5 + depth)
+            .insert(ItemType::Dagger, 3 + depth)
+            .insert(ItemType::LeatherArmor, 3 + depth)
             .insert(ItemType::None, 60 - 2 * depth)
             .roll(&mut rng);
     }
