@@ -80,6 +80,7 @@ impl<'a> System<'a> for TargetedSystem {
             let target_point = want_target.target;
             let thing_name = names.get(want_target.thing);
             let aoe = aoes.get(want_target.thing);
+
             let default_verb = "target".to_string();
             let verb = targeteds
                 .get(want_target.thing)

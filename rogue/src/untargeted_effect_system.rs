@@ -2,7 +2,8 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
     Name, Renderable, Position, Viewshed, WantsToUseUntargeted, Consumable,
-    ProvidesFullHealing, MovesToRandomPosition, IncreasesMaxHpWhenUsed
+    UnTargeted, ProvidesFullHealing, MovesToRandomPosition,
+    IncreasesMaxHpWhenUsed
 };
 use specs::prelude::*;
 use rltk::RandomNumberGenerator;
@@ -28,6 +29,7 @@ pub struct UntargetedSystemData<'a> {
     positions: WriteStorage<'a, Position>,
     viewsheds: WriteStorage<'a, Viewshed>,
     consumables: ReadStorage<'a, Consumable>,
+    untargeteds: ReadStorage<'a, UnTargeted>,
     wants_use: WriteStorage<'a, WantsToUseUntargeted>,
     increases_hp: ReadStorage<'a, IncreasesMaxHpWhenUsed>,
     healing: ReadStorage<'a, ProvidesFullHealing>,
@@ -54,6 +56,7 @@ impl<'a> System<'a> for UntargetedSystem {
             mut positions,
             mut viewsheds,
             consumables,
+            untargeteds,
             mut wants_use,
             increases_hp,
             healing,
@@ -61,26 +64,34 @@ impl<'a> System<'a> for UntargetedSystem {
             mut combat_stats,
         } = data;
 
-        for (entity, do_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
+        // TODO: Joining on combat stats here is probably incorrect.
+        for (entity, want_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
+
+            let thing_name = names.get(want_use.thing);
+            let default_verb = "target".to_string();
+            let verb = untargeteds
+                .get(want_use.thing)
+                .map(|t| t.verb.clone())
+                .unwrap_or(default_verb);
 
             // Component: IncreasesMaxHpWhenUsed
             //  NOTE: This needs to come BEFORE any healing, so the healing knows
             //  about the new maximum hp.
-            let thing_increases_hp = increases_hp.get(do_use.thing);
+            let thing_increases_hp = increases_hp.get(want_use.thing);
             if let Some(thing_increases_hp) = thing_increases_hp {
                 stats.increase_max_hp(thing_increases_hp.amount);
             }
 
             // Component: ProvidesFullHealing.
-            let thing_heals = healing.get(do_use.thing);
+            let thing_heals = healing.get(want_use.thing);
             if let Some(_) = thing_heals {
                 stats.full_heal();
                 let name = names.get(entity);
-                let thing_name = names.get(do_use.thing);
                 if let (Some(name), Some(thing_name)) = (name, thing_name) {
                     log.entries.push(format!(
-                        "{} drink's the {}.",
+                        "{} {} the {}, and feels great!",
                         name.name,
+                        verb,
                         thing_name.name
                     ));
                 }
@@ -98,7 +109,7 @@ impl<'a> System<'a> for UntargetedSystem {
             }
 
             // Compontnet: MovesToRandomPosition
-            let thing_teleports = teleports.get(do_use.thing);
+            let thing_teleports = teleports.get(want_use.thing);
             if let Some(_) = thing_teleports {
                 let new_pos = map.random_unblocked_point(10, &mut *rng);
                 let pos = positions.get_mut(entity);
@@ -110,8 +121,13 @@ impl<'a> System<'a> for UntargetedSystem {
                         viewshed.dirty = true;
                     }
                     let name = names.get(entity);
-                    if let Some(name) = name {
-                        log.entries.push(format!("{} vanishes!", name.name));
+                    if let (Some(name), Some(thing_name)) = (name, thing_name) {
+                        log.entries.push(format!(
+                            "{} {} the {}, and vanishes!",
+                            name.name,
+                            verb,
+                            thing_name.name
+                        ));
                     }
                     let render = renderables.get(entity);
                     if let Some(render) = render {
@@ -132,9 +148,9 @@ impl<'a> System<'a> for UntargetedSystem {
             }
 
             // If the thing was single use, clean it up.
-            let consumable = consumables.get(do_use.thing);
+            let consumable = consumables.get(want_use.thing);
             if let Some(_) = consumable {
-                entities.delete(do_use.thing).expect("Potion delete failed.");
+                entities.delete(want_use.thing).expect("Potion delete failed.");
             }
 
         }
