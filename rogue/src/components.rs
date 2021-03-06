@@ -6,19 +6,10 @@ use serde::{Serialize, Deserialize};
 use rltk::{RGB, Point};
 
 
-// Marker for entities serialized when saving the game.
-pub struct SerializeMe;
-
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct SerializationHelper {
-    pub map: super::map::Map
-}
-
-
-//------------------------------------------------------------------
-// Core data components.
-//------------------------------------------------------------------
-
+//----------------------------------------------------------------------------
+// Tagging Components
+// These components tag an entity as some type.
+//----------------------------------------------------------------------------
 // The singular entity with this component is the player.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Player {}
@@ -45,7 +36,7 @@ pub struct Targeted {pub verb: String}
 
 // An entity with this component can be used as an untargeted effect.
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct UnTargeted {pub verb: String}
+pub struct Untargeted {pub verb: String}
 
 // An entity with this component blocks the tile that it occupies.
 #[derive(Component, Serialize, Deserialize, Clone)]
@@ -55,21 +46,10 @@ pub struct BlocksTile {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Consumable {}
 
-// An entity with this component, when used, restores all of the users hp.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct ProvidesFullHealing {}
-
-// An entity with this component, when used, teleports the user to a random
-// position.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct MovesToRandomPosition {}
-
-
 //------------------------------------------------------------------
-// Data Components:
-// These components have some data associated with them.
+// Core Data Components:
+// These components have some data associated with them core to gameplay.
 //------------------------------------------------------------------
-
 // Component for all entities that have a position within the map.
 #[derive(Component, ConvertSaveload, Clone, Debug)]
 pub struct Position {
@@ -101,29 +81,106 @@ pub struct Renderable {
     pub order: i32,
 }
 
-// An entity with this component can be equipped.
-#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum EquipmentSlot {
-    Melee, Armor
-}
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Equippable {
-    pub slot: EquipmentSlot
-}
-
+//------------------------------------------------------------------
+// Location components.
+// These components tag an entity as in some (abstract, non-physical) location.
+// In someone's inventory or spellbook, for example.
+//------------------------------------------------------------------
 // Component for a held item. Points to the entity that owns it.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InBackpack {
     pub owner: Entity
 }
 
-// Component for a equipped item. Points to the entity that has it equipped.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct Equipped {
-    pub owner: Entity,
-    pub slot: EquipmentSlot
+//------------------------------------------------------------------
+// Animation System Components
+//------------------------------------------------------------------
+// Represents an atomic piece of game animation.
+#[derive(Component)]
+pub struct ParticleLifetime {
+    pub lifetime : f32,
+    // How many milliseconds after the animation starts should this particle be
+    // displayed?
+    pub delay: f32,
+    // For how long should this particle be displayed?
+    pub displayed: bool,
+    pub x: i32,
+    pub y: i32,
+    pub fg: RGB,
+    pub bg: RGB,
+    pub glyph: rltk::FontCharType
 }
 
+// Component for effects that create an area of effect animation when
+// thrown.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct AreaOfEffectAnimationWhenTargeted {
+    pub radius: i32,
+    pub fg: RGB,
+    pub bg: RGB,
+    pub glyph: rltk::FontCharType
+}
+
+
+
+//------------------------------------------------------------------
+// Entity Stats Components
+//------------------------------------------------------------------
+// Component holding the combat statistics of an entity.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct CombatStats {
+    // Health.
+    pub max_hp: i32,
+    pub hp: i32,
+    // Raw melee stats.
+    pub defense: i32,
+    pub power: i32
+}
+impl CombatStats {
+    pub fn take_damage(&mut self, damage: i32) {
+        self.hp = i32::max(0, self.hp - damage)
+    }
+    pub fn full_heal(&mut self) {
+        self.hp = self.max_hp
+    }
+    pub fn heal_amount(&mut self, amount: i32) {
+        self.hp = i32::min(self.max_hp, self.hp + amount)
+    }
+    pub fn increase_max_hp(&mut self, amount: i32) {
+        self.max_hp += amount;
+    }
+}
+
+//------------------------------------------------------------------
+// Hunger System Components
+//------------------------------------------------------------------
+
+//------------------------------------------------------------------
+// Monster AI Components
+//------------------------------------------------------------------
+// Comonent holding data determining a monster's movement behaviour.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct MonsterMovementAI {
+    pub only_follow_within_viewshed: bool,
+    pub no_visibility_wander: bool,
+    pub lost_visibility_keep_following_turns_max: i32,
+    pub lost_visibility_keep_following_turns_remaining: i32
+}
+impl MonsterMovementAI {
+    pub fn reset_keep_following(&mut self) {
+        self.lost_visibility_keep_following_turns_remaining = self.lost_visibility_keep_following_turns_max
+    }
+    pub fn do_keep_following(&self) -> bool {
+        self.lost_visibility_keep_following_turns_remaining > 0
+    }
+    pub fn decrement_keep_following(&mut self) {
+        self.lost_visibility_keep_following_turns_remaining -= 1
+    }
+}
+
+//------------------------------------------------------------------
+// Game effects components
+//------------------------------------------------------------------
 // Component for effects that increase the user's maximum hp.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct IncreasesMaxHpWhenUsed {
@@ -167,77 +224,18 @@ pub struct GrantsMeleeDefenseBonus {
     pub bonus: i32
 }
 
-// Component for effects that create an area of effect animation when
-// thrown.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct AreaOfEffectAnimationWhenTargeted {
-    pub radius: i32,
-    pub fg: RGB,
-    pub bg: RGB,
-    pub glyph: rltk::FontCharType
-}
+// An entity with this component, when used, restores all of the users hp.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ProvidesFullHealing {}
 
-// Comonent holding data determining a monster's movement behaviour.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct MonsterMovementAI {
-    pub only_follow_within_viewshed: bool,
-    pub no_visibility_wander: bool,
-    pub lost_visibility_keep_following_turns_max: i32,
-    pub lost_visibility_keep_following_turns_remaining: i32
-}
-impl MonsterMovementAI {
-    pub fn reset_keep_following(&mut self) {
-        self.lost_visibility_keep_following_turns_remaining = self.lost_visibility_keep_following_turns_max
-    }
-    pub fn do_keep_following(&self) -> bool {
-        self.lost_visibility_keep_following_turns_remaining > 0
-    }
-    pub fn decrement_keep_following(&mut self) {
-        self.lost_visibility_keep_following_turns_remaining -= 1
-    }
-}
-
-// Component holding the combat statistics of an entity.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct CombatStats {
-    // Health.
-    pub max_hp: i32,
-    pub hp: i32,
-    // Raw melee stats.
-    pub defense: i32,
-    pub power: i32
-}
-impl CombatStats {
-    pub fn take_damage(&mut self, damage: i32) {
-        self.hp = i32::max(0, self.hp - damage)
-    }
-    pub fn full_heal(&mut self) {
-        self.hp = self.max_hp
-    }
-    pub fn heal_amount(&mut self, amount: i32) {
-        self.hp = i32::min(self.max_hp, self.hp + amount)
-    }
-    pub fn increase_max_hp(&mut self, amount: i32) {
-        self.max_hp += amount;
-    }
-}
-
-#[derive(Component)]
-pub struct ParticleLifetime {
-    pub lifetime : f32,
-    pub delay: f32,
-    pub displayed: bool,
-    pub x: i32,
-    pub y: i32,
-    pub fg: RGB,
-    pub bg: RGB,
-    pub glyph: rltk::FontCharType
-}
+// An entity with this component, when used, teleports the user to a random
+// position.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct MovesToRandomPosition {}
 
 //------------------------------------------------------------------
 // Status Effect Components
 //------------------------------------------------------------------
-
 // Component indicating the entity is frozen.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct StatusIsFrozen {
@@ -287,12 +285,34 @@ impl StatusIsBurning {
 }
 
 
-// Signaling Components
 //------------------------------------------------------------------
-// These components are used when processing changes to game state to signal
-// that some change needs to occur.
+// Equipment System Components
 //------------------------------------------------------------------
+// An entity with this component can be equipped.
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
+pub enum EquipmentSlot {
+    Melee, Armor
+}
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Equippable {
+    pub slot: EquipmentSlot
+}
 
+// Component for a equipped item. Points to the entity that has it equipped.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct Equipped {
+    pub owner: Entity,
+    pub slot: EquipmentSlot
+}
+
+//------------------------------------------------------------------
+// Signaling Components
+// These components are used when processing changes to game state to signal
+// that some change needs to occur or effect needs to be applied.
+//
+// The naming convention "WantsToXYZ" indicated that the owning entity wants to
+// apply some effect.
+//------------------------------------------------------------------
 // Signals that the entity has entered into melee combat with a chosen target.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToMeleeAttack {
@@ -333,11 +353,11 @@ pub struct WantsToRemoveItem {
     pub slot: EquipmentSlot,
 }
 
+// The entiity has requested to teleport to a random map position.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct WantsToMoveToRandomPosition {}
 
 // Signals that the entity has damage queued, but not applied.
-// TODO: Rename to WantsToTakeDamage to keep naming consistent.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToTakeDamage {
     pub amounts: Vec<i32>
@@ -355,4 +375,16 @@ impl WantsToTakeDamage {
                 .expect("Unable to insert SufferDamage component.");
         }
     }
+}
+
+//----------------------------------------------------------------------------
+// Serialization Components.
+// Non-gameplay components used to help game saving and loading.
+//----------------------------------------------------------------------------
+// Marker for entities serialized when saving the game.
+pub struct SerializeMe;
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct SerializationHelper {
+    pub map: super::map::Map
 }

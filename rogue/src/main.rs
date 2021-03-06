@@ -441,7 +441,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<Equippable>();
     gs.ecs.register::<Targeted>();
-    gs.ecs.register::<UnTargeted>();
+    gs.ecs.register::<Untargeted>();
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<Equipped>();
     gs.ecs.register::<WantsToMeleeAttack>();

@@ -1,7 +1,7 @@
 use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player,
     Position, Rectangle, Renderable, Viewshed, PickUpable, Useable,
-    Equippable, EquipmentSlot, Throwable, Targeted, UnTargeted, Consumable,
+    Equippable, EquipmentSlot, Throwable, Targeted, Untargeted, Consumable,
     ProvidesFullHealing, IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
@@ -274,7 +274,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Name {name: "Potion of Healing".to_string()})
     .with(PickUpable {})
     .with(Useable {})
-    .with(UnTargeted {verb: "use".to_string()})
+    .with(Untargeted {verb: "use".to_string()})
     .with(Throwable {})
     .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
@@ -351,7 +351,7 @@ fn teleportation_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Name {name: "Potion of Teleportation".to_string()})
     .with(PickUpable {})
     .with(Useable {})
-    .with(UnTargeted{ verb: "use".to_string()})
+    .with(Untargeted{ verb: "use".to_string()})
     .with(Throwable {})
     .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})

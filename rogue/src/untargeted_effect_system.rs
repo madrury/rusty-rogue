@@ -2,7 +2,7 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
     Name, Renderable, Position, Viewshed, WantsToUseUntargeted, Consumable,
-    UnTargeted, ProvidesFullHealing, MovesToRandomPosition,
+    Untargeted, ProvidesFullHealing, MovesToRandomPosition,
     IncreasesMaxHpWhenUsed
 };
 use specs::prelude::*;
@@ -27,7 +27,7 @@ pub struct UntargetedSystemData<'a> {
     positions: WriteStorage<'a, Position>,
     viewsheds: WriteStorage<'a, Viewshed>,
     consumables: ReadStorage<'a, Consumable>,
-    untargeteds: ReadStorage<'a, UnTargeted>,
+    untargeteds: ReadStorage<'a, Untargeted>,
     wants_use: WriteStorage<'a, WantsToUseUntargeted>,
     increases_hp: ReadStorage<'a, IncreasesMaxHpWhenUsed>,
     healing: ReadStorage<'a, ProvidesFullHealing>,
