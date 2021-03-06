@@ -40,6 +40,10 @@ pub struct Useable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
 
+// An entity with this component can be thrown.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Targeted {}
+
 // An entity with this component blocks the tile that it occupies.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct BlocksTile {}
@@ -125,25 +129,25 @@ pub struct IncreasesMaxHpWhenUsed {
 
 // Component for items or spells that inflict damage when thrown or cast.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsDamageWhenThrown {
+pub struct InflictsDamageWhenTargeted {
     pub damage: i32
 }
 
 // Component for items or spells with an area of effect.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct AreaOfEffectWhenThrown {
+pub struct AreaOfEffectWhenTargeted {
     pub radius: i32
 }
 
 // Component for items that inflict the frozen status.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsFreezingWhenThrown {
+pub struct InflictsFreezingWhenTargeted {
     pub turns: i32
 }
 
 // Component for items that inflict the burning status.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsBurningWhenThrown {
+pub struct InflictsBurningWhenTargeted {
     pub turns: i32,
     pub tick_damage: i32
 }
@@ -163,7 +167,7 @@ pub struct GrantsMeleeDefenseBonus {
 // Component for items that create an area of effect animation when
 // thrown.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct AreaOfEffectAnimationWhenThrown {
+pub struct AreaOfEffectAnimationWhenTargeted {
     pub radius: i32,
     pub fg: RGB,
     pub bg: RGB,
@@ -307,8 +311,8 @@ pub struct WantsToUseItem {
 
 // Signals that the owning entity wants to throw an item.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct WantsToThrowItem {
-    pub item: Entity,
+pub struct WantsToUseTargeted {
+    pub thing: Entity,
     pub target: Point,
 }
 
@@ -332,18 +336,18 @@ pub struct WantsToMoveToRandomPosition {}
 // Signals that the entity has damage queued, but not applied.
 // TODO: Rename to WantsToTakeDamage to keep naming consistent.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct ApplyDamage {
+pub struct WantsToTakeDamage {
     pub amounts: Vec<i32>
 }
-impl ApplyDamage {
+impl WantsToTakeDamage {
     // Since the ApplyMeleeDamage component can contain *multiple* instances of
     // damage, we need to distinguish the case of the first instance of damage
     // from the subsequent. This function encapsulates this switch.
-    pub fn new_damage(store: &mut WriteStorage<ApplyDamage>, victim: Entity, amount: i32) {
+    pub fn new_damage(store: &mut WriteStorage<WantsToTakeDamage>, victim: Entity, amount: i32) {
         if let Some(suffering) = store.get_mut(victim) {
             suffering.amounts.push(amount);
         } else {
-            let dmg = ApplyDamage{ amounts: vec![amount] };
+            let dmg = WantsToTakeDamage{ amounts: vec![amount] };
             store.insert(victim, dmg)
                 .expect("Unable to insert SufferDamage component.");
         }

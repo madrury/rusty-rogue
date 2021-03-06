@@ -1,6 +1,6 @@
 use specs::prelude::*;
 use super::{
-    Map, TileType, CombatStats, WantsToMeleeAttack, Name, ApplyDamage,
+    Map, TileType, CombatStats, WantsToMeleeAttack, Name, WantsToTakeDamage,
     GameLog, Renderable, Position, AnimationBuilder, AnimationRequest,
     Equipped, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus
 };
@@ -25,7 +25,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, GrantsMeleeAttackBonus>,
         ReadStorage<'a, GrantsMeleeDefenseBonus>,
         WriteStorage<'a, WantsToMeleeAttack>,
-        WriteStorage<'a, ApplyDamage>,
+        WriteStorage<'a, WantsToTakeDamage>,
         WriteStorage<'a, Position>,
         ReadStorage<'a, Renderable>,
     );
@@ -76,7 +76,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     log.entries.push(
                         format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
                     );
-                    ApplyDamage::new_damage(&mut damagees, melee.target, damage);
+                    WantsToTakeDamage::new_damage(&mut damagees, melee.target, damage);
                     // Animate the damage with a flash, and render a bloodstain
                     // where the damage was inflicted.
                     let pos = positions.get(melee.target);

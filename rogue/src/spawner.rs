@@ -2,9 +2,9 @@ use super::{
     BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player,
     Position, Rectangle, Renderable, Viewshed, PickUpable, Useable,
     Equippable, EquipmentSlot, Throwable, Consumable, ProvidesFullHealing,
-    IncreasesMaxHpWhenUsed, AreaOfEffectWhenThrown, InflictsDamageWhenThrown,
-    InflictsFreezingWhenThrown, InflictsBurningWhenThrown,
-    AreaOfEffectAnimationWhenThrown, MovesToRandomPosition,
+    IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted, InflictsDamageWhenTargeted,
+    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
+    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
     GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus, SimpleMarker,
     SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
@@ -296,10 +296,10 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(PickUpable {})
     .with(Throwable {})
     .with(Consumable {})
-    .with(InflictsDamageWhenThrown {damage: 10})
-    .with(InflictsBurningWhenThrown {turns: 4, tick_damage: 4})
-    .with(AreaOfEffectWhenThrown {radius: 2})
-    .with(AreaOfEffectAnimationWhenThrown {
+    .with(InflictsDamageWhenTargeted {damage: 10})
+    .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 4})
+    .with(AreaOfEffectWhenTargeted {radius: 2})
+    .with(AreaOfEffectAnimationWhenTargeted {
         radius: 2,
         fg: RGB::named(rltk::ORANGE),
         bg: RGB::named(rltk::RED),
@@ -322,10 +322,10 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     .with(PickUpable {})
     .with(Throwable {})
     .with(Consumable {})
-    .with(InflictsDamageWhenThrown {damage: 10})
-    .with(InflictsFreezingWhenThrown {turns: 6})
-    .with(AreaOfEffectWhenThrown {radius: 2})
-    .with(AreaOfEffectAnimationWhenThrown {
+    .with(InflictsDamageWhenTargeted {damage: 10})
+    .with(InflictsFreezingWhenTargeted {turns: 6})
+    .with(AreaOfEffectWhenTargeted {radius: 2})
+    .with(AreaOfEffectAnimationWhenTargeted {
         radius: 2,
         fg: RGB::named(rltk::WHITE),
         bg: RGB::named(rltk::LIGHT_BLUE),
@@ -372,7 +372,7 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(GrantsMeleeAttackBonus {bonus: 2})
         .with(Throwable {})
         .with(Consumable {})
-        .with(InflictsDamageWhenThrown {damage: 15})
+        .with(InflictsDamageWhenTargeted {damage: 15})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

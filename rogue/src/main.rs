@@ -25,6 +25,8 @@ mod damage_system;
 use damage_system::*;
 mod inventory_system;
 use inventory_system::*;
+mod targeted_effect_system;
+use targeted_effect_system::*;
 mod map_indexing_system;
 use map_indexing_system::*;
 mod particle_system;
@@ -102,8 +104,8 @@ impl State {
         pickups.run_now(&self.ecs);
         let mut uses = ItemUseSystem{};
         uses.run_now(&self.ecs);
-        let mut throws = ItemThrowSystem{};
-        throws.run_now(&self.ecs);
+        let mut targeteds = TargetedSystem{};
+        targeteds.run_now(&self.ecs);
         let mut removes = ItemRemoveSystem{};
         removes.run_now(&self.ecs);
         let mut equips = ItemEquipSystem{};
@@ -340,7 +342,7 @@ impl GameState for State {
                     MenuResult::Selected {item} => {
                         // We need the area of effect radius of the item to draw
                         // the targeting system.
-                        let aoes = self.ecs.read_storage::<AreaOfEffectWhenThrown>();
+                        let aoes = self.ecs.read_storage::<AreaOfEffectWhenTargeted>();
                         let radius = aoes.get(item).map(|x| x.radius);
                         newrunstate = RunState::ShowTargetingKeyboard {
                             range: 6,
@@ -360,10 +362,10 @@ impl GameState for State {
                         }
                     }
                     TargetingResult::Selected {pos} => {
-                        let mut intent = self.ecs.write_storage::<WantsToThrowItem>();
+                        let mut intent = self.ecs.write_storage::<WantsToUseTargeted>();
                         intent.insert(
                             *self.ecs.fetch::<Entity>(), // Player.
-                            WantsToThrowItem {item: item, target: pos}
+                            WantsToUseTargeted {thing: item, target: pos}
                         ).expect("Unable to insert intent to throw item.");
                         newrunstate = RunState::PlayerTurn;
                     },
@@ -384,10 +386,10 @@ impl GameState for State {
                         }
                     },
                     TargetingResult::Selected {pos} => {
-                        let mut intent = self.ecs.write_storage::<WantsToThrowItem>();
+                        let mut intent = self.ecs.write_storage::<WantsToUseTargeted>();
                         intent.insert(
                             *self.ecs.fetch::<Entity>(), // Player.
-                            WantsToThrowItem {item: item, target: pos}
+                            WantsToUseTargeted {thing: item, target: pos}
                         ).expect("Unable to insert intent to throw item.");
                         newrunstate = RunState::PlayerTurn;
                     },
@@ -430,34 +432,35 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<CombatStats>();
-    gs.ecs.register::<ApplyDamage>();
+    gs.ecs.register::<WantsToTakeDamage>();
     gs.ecs.register::<Useable>();
     gs.ecs.register::<Throwable>();
     gs.ecs.register::<PickUpable>();
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<Equippable>();
+    gs.ecs.register::<Targeted>();
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<Equipped>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<WantsToUseItem>();
-    gs.ecs.register::<WantsToThrowItem>();
+    gs.ecs.register::<WantsToUseTargeted>();
     gs.ecs.register::<WantsToEquipItem>();
     gs.ecs.register::<WantsToRemoveItem>();
     gs.ecs.register::<WantsToMoveToRandomPosition>();
     gs.ecs.register::<ProvidesFullHealing>();
     gs.ecs.register::<IncreasesMaxHpWhenUsed>();
     gs.ecs.register::<MovesToRandomPosition>();
-    gs.ecs.register::<AreaOfEffectWhenThrown>();
-    gs.ecs.register::<InflictsDamageWhenThrown>();
-    gs.ecs.register::<InflictsFreezingWhenThrown>();
-    gs.ecs.register::<InflictsBurningWhenThrown>();
+    gs.ecs.register::<AreaOfEffectWhenTargeted>();
+    gs.ecs.register::<InflictsDamageWhenTargeted>();
+    gs.ecs.register::<InflictsFreezingWhenTargeted>();
+    gs.ecs.register::<InflictsBurningWhenTargeted>();
     gs.ecs.register::<GrantsMeleeAttackBonus>();
     gs.ecs.register::<GrantsMeleeDefenseBonus>();
     gs.ecs.register::<StatusIsFrozen>();
     gs.ecs.register::<StatusIsBurning>();
     gs.ecs.register::<ParticleLifetime>();
-    gs.ecs.register::<AreaOfEffectAnimationWhenThrown>();
+    gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
 
     let map = Map::new_rooms_and_corridors(1);
     let (px, py) = map.rooms[0].center();

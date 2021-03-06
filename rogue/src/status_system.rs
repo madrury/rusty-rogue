@@ -1,7 +1,7 @@
 
 use specs::prelude::*;
 use rltk::{RGB};
-use super::{GameLog, Name, Monster, StatusIsFrozen, StatusIsBurning, ApplyDamage};
+use super::{GameLog, Name, Monster, StatusIsFrozen, StatusIsBurning, WantsToTakeDamage};
 
 
 pub struct MonsterStatusSystem {}
@@ -16,7 +16,7 @@ impl<'a> System<'a> for MonsterStatusSystem {
         ReadStorage<'a, Name>,
         WriteStorage<'a, StatusIsFrozen>,
         WriteStorage<'a, StatusIsBurning>,
-        WriteStorage<'a, ApplyDamage>
+        WriteStorage<'a, WantsToTakeDamage>
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -62,7 +62,7 @@ impl<'a> System<'a> for MonsterStatusSystem {
                         )
                     }
                 } else {
-                    ApplyDamage::new_damage(&mut damages, entity, burning.tick_damage);
+                    WantsToTakeDamage::new_damage(&mut damages, entity, burning.tick_damage);
                     burning.tick();
                 }
             }
