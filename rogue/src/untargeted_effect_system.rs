@@ -11,10 +11,8 @@ use rltk::RandomNumberGenerator;
 
 pub struct UntargetedSystem {}
 
-// Searches for WantsToUsething compoents and then processes the results by
+// Searches for WantsToUseUntargeted compoents and then processes the results by
 // looking for vatious effect encoding components on the thing:
-//    ProvidesHealing: Restores all of the using entities hp.
-//
 #[derive(SystemData)]
 pub struct UntargetedSystemData<'a> {
     entities: Entities<'a>,
@@ -67,6 +65,7 @@ impl<'a> System<'a> for UntargetedSystem {
         // TODO: Joining on combat stats here is probably incorrect.
         for (entity, want_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
 
+            // Stuff needed for constructing gamelog messages.
             let thing_name = names.get(want_use.thing);
             let default_verb = "target".to_string();
             let verb = untargeteds

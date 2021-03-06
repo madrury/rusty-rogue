@@ -12,10 +12,9 @@ use rltk::RandomNumberGenerator;
 
 pub struct TargetedSystem {}
 
-// Searches for WantsTotargetthing compoents and then processes the results by
-// finding targets in the selected position, and then looking for vatious effect
-// encoding components on the thing:
-//    ProvidesHealing: Restores all of the using entities hp.
+// Searches for WantsToUseTargeted compoents and processes the results by:
+//   - Finding targets in the selected position, or the area of effect.
+//   - Looking for vatious effect encoding components on the thing.
 #[derive(SystemData)]
 pub struct TargetedSystemData<'a> {
         entities: Entities<'a>,
@@ -74,19 +73,20 @@ impl<'a> System<'a> for TargetedSystem {
             mut is_burning,
         } = data;
 
-        // The WantsTotargetthing object (do_target below), has references to the
-        // targeted position and the targetn thing.
         for (user, want_target) in (&entities, &wants_target).join() {
             let target_point = want_target.target;
-            let thing_name = names.get(want_target.thing);
             let aoe = aoes.get(want_target.thing);
 
+            // Stuff needed to construct log messages.
+            let thing_name = names.get(want_target.thing);
             let default_verb = "target".to_string();
             let verb = targeteds
                 .get(want_target.thing)
                 .map(|t| t.verb.clone())
                 .unwrap_or(default_verb);
 
+            // Gather up all the entities that are either at the targeted
+            // position or within the area of effect.
             let targets: Vec<&Entity> = find_targets(&*map, target_point, aoe)
                 .into_iter()
                 .filter(|&e| *e != user)
@@ -142,7 +142,7 @@ impl<'a> System<'a> for TargetedSystem {
                         }
                     }
                 }
-                // Component: InflictsDamageWhentargetn
+                // Component: InflictsDamageWhenTargeted
                 let stats = combat_stats.get_mut(*target);
                 let thing_damages = does_damage.get(want_target.thing);
                 if let (Some(thing_damages), Some(_stats)) = (thing_damages, stats) {
@@ -159,7 +159,7 @@ impl<'a> System<'a> for TargetedSystem {
                         ))
                     }
                 }
-                // Component: InflictsFreezingWhentargetn
+                // Component: InflictsFreezingWhenTargeted
                 let stats = combat_stats.get_mut(*target);
                 let thing_freezes = does_freeze.get(want_target.thing);
                 if let (Some(thing_freezes), Some(_stats)) = (thing_freezes, stats) {
@@ -175,7 +175,7 @@ impl<'a> System<'a> for TargetedSystem {
                         ))
                     }
                 }
-                // Component: InflictsBurningWhentargetn
+                // Component: InflictsBurningWhenTargeted
                 let stats = combat_stats.get_mut(*target);
                 let thing_burns = does_burn.get(want_target.thing);
                 if let (Some(thing_burns), Some(_stats)) = (thing_burns, stats) {
@@ -192,7 +192,7 @@ impl<'a> System<'a> for TargetedSystem {
                     }
                 }
             }
-            // Component: AreaOfEffectAnimationWhentargetn
+            // Component: AreaOfEffectAnimationWhenTargeted
             let has_aoe_animation = aoe_animations.get(want_target.thing);
             if let Some(has_aoe_animation) = has_aoe_animation {
                 animation_builder.request(AnimationRequest::AreaOfEffect {
@@ -216,7 +216,7 @@ impl<'a> System<'a> for TargetedSystem {
     }
 }
 
-// Helper function to find all targets of a given targetn thing.
+// Helper function to find all targets of a given thing.
 //   - Base Case: Find all entites at the given position.
 //   - AOE Case: Find all entities within a given viewshed (defined by a radius)
 //     of a given position.
