@@ -1,8 +1,8 @@
 
 use super::{
-    Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
+    Map, Point, CombatStats, HungerClock, GameLog, AnimationBuilder, AnimationRequest,
     Name, Renderable, Position, Viewshed, WantsToUseUntargeted, Consumable,
-    Untargeted, ProvidesFullHealing, MovesToRandomPosition,
+    Untargeted, ProvidesFullHealing, ProvidesFullFood, MovesToRandomPosition,
     IncreasesMaxHpWhenUsed
 };
 use specs::prelude::*;
@@ -31,8 +31,10 @@ pub struct UntargetedSystemData<'a> {
     wants_use: WriteStorage<'a, WantsToUseUntargeted>,
     increases_hp: ReadStorage<'a, IncreasesMaxHpWhenUsed>,
     healing: ReadStorage<'a, ProvidesFullHealing>,
+    foods: ReadStorage<'a, ProvidesFullFood>,
     teleports: ReadStorage<'a, MovesToRandomPosition>,
     combat_stats: WriteStorage<'a, CombatStats>,
+    hunger_clocks: WriteStorage<'a, HungerClock>,
 }
 
 impl<'a> System<'a> for UntargetedSystem {
@@ -58,8 +60,10 @@ impl<'a> System<'a> for UntargetedSystem {
             mut wants_use,
             increases_hp,
             healing,
+            foods,
             teleports,
             mut combat_stats,
+            mut hunger_clocks,
         } = data;
 
         // TODO: Joining on combat stats here is probably incorrect.
@@ -104,6 +108,22 @@ impl<'a> System<'a> for UntargetedSystem {
                         bg: render.bg,
                         glyph: render.glyph,
                     })
+                }
+            }
+
+            // Component: ProvidesFullFood
+            let thing_foods = foods.get(want_use.thing);
+            let clock = hunger_clocks.get_mut(entity);
+            if let (Some(_), Some(clock)) = (thing_foods, clock) {
+                clock.satiate();
+                let name = names.get(entity);
+                if let (Some(name), Some(thing_name)) = (name, thing_name) {
+                    log.entries.push(format!(
+                        "{} {} the {}, and feels full.",
+                        name.name,
+                        verb,
+                        thing_name.name
+                    ));
                 }
             }
 

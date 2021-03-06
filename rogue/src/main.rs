@@ -35,6 +35,8 @@ mod particle_system;
 use particle_system::*;
 mod animation_system;
 use animation_system::*;
+mod hunger_system;
+use hunger_system::*;
 mod gamelog;
 use gamelog::{GameLog};
 
@@ -116,6 +118,8 @@ impl State {
         melee.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut hunger = HungerSystem{};
+        hunger.run_now(&self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
@@ -430,11 +434,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Name>();
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<BlocksTile>();
-    gs.ecs.register::<Monster>();
-    gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<CombatStats>();
-    gs.ecs.register::<WantsToTakeDamage>();
+    gs.ecs.register::<HungerClock>();
     gs.ecs.register::<Useable>();
     gs.ecs.register::<Throwable>();
     gs.ecs.register::<PickUpable>();
@@ -444,7 +446,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Untargeted>();
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<Equipped>();
+    gs.ecs.register::<Monster>();
+    gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<WantsToMeleeAttack>();
+    gs.ecs.register::<WantsToTakeDamage>();
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<WantsToUseUntargeted>();
     gs.ecs.register::<WantsToUseTargeted>();
@@ -452,6 +457,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToRemoveItem>();
     gs.ecs.register::<WantsToMoveToRandomPosition>();
     gs.ecs.register::<ProvidesFullHealing>();
+    gs.ecs.register::<ProvidesFullFood>();
     gs.ecs.register::<IncreasesMaxHpWhenUsed>();
     gs.ecs.register::<MovesToRandomPosition>();
     gs.ecs.register::<AreaOfEffectWhenTargeted>();

@@ -1,8 +1,9 @@
 use super::{
-    BlocksTile, CombatStats, Monster, MonsterMovementAI, Name, Player,
-    Position, Rectangle, Renderable, Viewshed, PickUpable, Useable,
-    Equippable, EquipmentSlot, Throwable, Targeted, Untargeted, Consumable,
-    ProvidesFullHealing, IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
+    BlocksTile, CombatStats, HungerClock, HungerState, Monster,
+    MonsterMovementAI, Name, Player, Position, Rectangle, Renderable,
+    Viewshed, PickUpable, Useable, Equippable, EquipmentSlot, Throwable,
+    Targeted, Untargeted, Consumable, ProvidesFullHealing, ProvidesFullFood,
+    IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
     MovesToRandomPosition, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
@@ -39,6 +40,12 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             hp: 30,
             defense: 2,
             power: 5,
+        })
+        .with(HungerClock {
+            state: HungerState::Normal,
+            state_duration: 200,
+            time: 200,
+            tick_damage: 1
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
@@ -123,6 +130,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
 #[derive(Clone, Copy)]
 enum ItemType {
     None,
+    Turnip,
+    Pomegranate,
     HealthPotion,
     TeleportationPotion,
     FirePotion,
@@ -136,16 +145,20 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
-            .insert(ItemType::HealthPotion, 10)
+            .insert(ItemType::Turnip, 4 + depth)
+            .insert(ItemType::Pomegranate, 1 + depth)
+            .insert(ItemType::HealthPotion, 9 + depth)
             .insert(ItemType::TeleportationPotion, 5 + depth)
-            .insert(ItemType::FirePotion, 5+ depth)
-            .insert(ItemType::FreezingPotion, 5 + depth)
-            .insert(ItemType::Dagger, 3 + depth)
-            .insert(ItemType::LeatherArmor, 3 + depth)
-            .insert(ItemType::None, 60 - 2 * depth)
+            .insert(ItemType::FirePotion, 3 + depth)
+            .insert(ItemType::FreezingPotion, 3 + depth)
+            .insert(ItemType::Dagger, 2 + depth)
+            .insert(ItemType::LeatherArmor, 2 + depth)
+            .insert(ItemType::None, 60)
             .roll(&mut rng);
     }
     match item {
+        Some(ItemType::Turnip) => turnip(ecs, x, y),
+        Some(ItemType::Pomegranate) => pomegranate(ecs, x, y),
         Some(ItemType::HealthPotion) => health_potion(ecs, x, y),
         Some(ItemType::TeleportationPotion) => teleportation_potion(ecs, x, y),
         Some(ItemType::FirePotion) => fire_potion(ecs, x, y),
@@ -158,7 +171,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
 }
 
 //----------------------------------------------------------------------------
-// Individual Monsters
+// Monsters
 //----------------------------------------------------------------------------
 struct MonsterSpawnData<S: ToString> {
     x: i32,
@@ -260,7 +273,7 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
 }
 
 //----------------------------------------------------------------------------
-// Individual Items
+// Potions
 //----------------------------------------------------------------------------
 fn health_potion(ecs: &mut World, x: i32, y: i32) {
     ecs.create_entity()
@@ -361,7 +374,52 @@ fn teleportation_potion(ecs: &mut World, x: i32, y: i32) {
 }
 
 //----------------------------------------------------------------------------
-// Individual Equipment
+// Food
+//----------------------------------------------------------------------------
+fn turnip(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+    .with(Position {x, y})
+    .with(Renderable {
+        glyph: rltk::to_cp437(';'),
+        fg: RGB::named(rltk::WHITE),
+        bg: RGB::named(rltk::BLACK),
+        order: 2,
+    })
+    .with(Name {name: "Turnip".to_string()})
+    .with(PickUpable {})
+    .with(Useable {})
+    .with(Consumable {})
+    .with(Untargeted {verb: "eat".to_string()})
+    // TODO: We probably want a component for triggering the healing animation.
+    .with(ProvidesFullFood {})
+    .marked::<SimpleMarker<SerializeMe>>()
+    .build();
+}
+
+fn pomegranate(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+    .with(Position {x, y})
+    .with(Renderable {
+        glyph: rltk::to_cp437(';'),
+        fg: RGB::named(rltk::RED),
+        bg: RGB::named(rltk::BLACK),
+        order: 2,
+    })
+    .with(Name {name: "Pomegranate".to_string()})
+    .with(PickUpable {})
+    .with(Useable {})
+    .with(Consumable {})
+    .with(Untargeted {verb: "eat".to_string()})
+    // TODO: We probably want a component for triggering the healing animation.
+    .with(ProvidesFullFood {})
+    .with(ProvidesFullHealing {})
+    .with(IncreasesMaxHpWhenUsed {amount: 5})
+    .marked::<SimpleMarker<SerializeMe>>()
+    .build();
+}
+
+//----------------------------------------------------------------------------
+// Equipment
 //----------------------------------------------------------------------------
 fn dagger(ecs: &mut World, x: i32, y: i32) {
     ecs.create_entity()

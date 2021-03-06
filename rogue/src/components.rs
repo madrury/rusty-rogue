@@ -154,6 +154,27 @@ impl CombatStats {
 //------------------------------------------------------------------
 // Hunger System Components
 //------------------------------------------------------------------
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq)]
+pub enum HungerState {
+    WellFed,
+    Normal,
+    Hungry,
+    Starving
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct HungerClock {
+    pub state: HungerState,
+    pub state_duration: i32,
+    pub time: i32,
+    pub tick_damage: i32
+}
+impl HungerClock {
+    pub fn satiate(&mut self) {
+        self.state = HungerState::WellFed;
+        self.time = self.state_duration;
+    }
+}
 
 //------------------------------------------------------------------
 // Monster AI Components
@@ -227,6 +248,10 @@ pub struct GrantsMeleeDefenseBonus {
 // An entity with this component, when used, restores all of the users hp.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct ProvidesFullHealing {}
+
+// An entity with this component, when used, restores the user to well fed.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ProvidesFullFood {}
 
 // An entity with this component, when used, teleports the user to a random
 // position.

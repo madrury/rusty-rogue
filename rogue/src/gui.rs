@@ -1,6 +1,6 @@
 use super::{
     get_status_indicators, CombatStats, GameLog, InBackpack, Map, Name, Player, Position,
-    Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped
+    Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped, HungerClock, HungerState
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -162,6 +162,9 @@ const HEALTH_BAR_XPOSITION: i32 = 28;
 const HEALTH_BAR_YPOSITION: i32 = 43;
 const HEALTH_BAR_WIDTH: i32 = 51;
 
+const HUNGER_STATUS_XPOSITION: i32 = 71;
+const HUNGER_STATUS_YPOSITION: i32 = 42;
+
 const N_LOG_LINES: i32 = 5;
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
@@ -186,10 +189,37 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         &depth,
     );
 
-    // Draw the players healthbar at the top of the gui.
+    // Draw the players hunger status and healthbar at the top of the gui.
     let combat_stats = ecs.read_storage::<CombatStats>();
     let players = ecs.read_storage::<Player>();
-    for (_player, stats) in (&players, &combat_stats).join() {
+    let hunger = ecs.read_storage::<HungerClock>();
+    for (_player, stats, clock) in (&players, &combat_stats, &hunger).join() {
+        // Hunger Status.
+        match clock.state {
+            HungerState::WellFed => ctx.print_color(
+                HUNGER_STATUS_XPOSITION,
+                HUNGER_STATUS_YPOSITION,
+                RGB::named(rltk::GREEN),
+                RGB::named(rltk::BLACK),
+                "Well Fed"
+            ),
+            HungerState::Hungry => ctx.print_color(
+                HUNGER_STATUS_XPOSITION,
+                HUNGER_STATUS_YPOSITION,
+                RGB::named(rltk::ORANGE),
+                RGB::named(rltk::BLACK),
+                "Hungry"
+            ),
+            HungerState::Starving => ctx.print_color(
+                HUNGER_STATUS_XPOSITION,
+                HUNGER_STATUS_YPOSITION,
+                RGB::named(rltk::RED),
+                RGB::named(rltk::BLACK),
+                "Starving"
+            ),
+            _ => {}
+        }
+        // Healthbar.
         let health = format!(" HP: {} / {} ", stats.hp, stats.max_hp);
         ctx.print_color(
             HEALTH_TEXT_XPOSITION,

@@ -1,7 +1,7 @@
 use super::{
     CombatStats, GameLog, PickUpable, Map, Player, Monster, Position,
-    RunState, State, Viewshed, WantsToMeleeAttack, WantsToPickupItem,
-    TileType
+    RunState, State, HungerClock, HungerState, Viewshed, WantsToMeleeAttack,
+    WantsToPickupItem, TileType
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
@@ -92,6 +92,7 @@ fn skip_turn(ecs: &mut World) {
     let player = ecs.fetch::<Entity>();
     let viewsheds = ecs.read_storage::<Viewshed>();
     let monsters = ecs.read_storage::<Monster>();
+    let hunger = ecs.read_storage::<HungerClock>();
     let map = ecs.fetch::<Map>();
 
     // Check for monsters nearby, we can't heal if there are any.
@@ -103,6 +104,13 @@ fn skip_turn(ecs: &mut World) {
             can_heal &= monsters.get(*entity).is_none();
         }
     }
+    // If we're hungry or starving, we also cannot heal.
+    can_heal &= hunger
+        .get(*player)
+        .map_or(
+            true,
+            |h| h.state == HungerState::WellFed || h.state != HungerState::Normal
+        );
 
     if can_heal {
         let mut stats = ecs.write_storage::<CombatStats>();

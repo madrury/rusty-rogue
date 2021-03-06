@@ -24,6 +24,8 @@ impl MonsterMovementSystem {
 
     // Return a random adjcaent position to pos that is not currently blocked.
     fn random_adjacent_position(map: &Map, pos: &Position) -> (i32, i32) {
+        // TODO: This should use the game's internal RNG and probably belongs in
+        // Map, not here.
         let mut rng = RandomNumberGenerator::new();
         let dx = rng.range(-1, 2);
         let dy = rng.range(-1, 2);
