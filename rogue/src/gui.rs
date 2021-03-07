@@ -1,6 +1,7 @@
 use super::{
-    get_status_indicators, CombatStats, GameLog, InBackpack, Map, Name, Player, Position,
-    Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped, HungerClock, HungerState
+    get_status_indicators, CombatStats, GameLog, InBackpack, InSpellBook,
+    Castable, SpellCharges, Map, Name, Player, Position, Renderable, RunState,
+    StatusIndicatorGlyph, Viewshed, Equipped, HungerClock, HungerState
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -151,10 +152,10 @@ pub fn main_menu(ecs: &mut World, ctx: &mut Rltk) -> MainMenuResult {
 // Headsup UI.
 // Displays player state information (HP), and the game log.
 //----------------------------------------------------------------------------
-const XPOSITION: i32 = 0;
-const YPOSITION: i32 = 43;
-const BOXWIDTH: i32 = 79;
-const BOXHEIGHT: i32 = 6;
+const HEADS_UP_XPOSITION: i32 = 0;
+const HEADS_UP_YPOSITION: i32 = 43;
+const HEADS_UP_WIDTH: i32 = 79;
+const HEADS_UP_HEIGHT: i32 = 6;
 
 const HEALTH_TEXT_XPOSITION: i32 = 12;
 const HEALTH_TEXT_YPOSITION: i32 = 43;
@@ -170,10 +171,10 @@ const N_LOG_LINES: i32 = 5;
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Draw the outline for the gui: A rectangle at the bottom of the console.
     ctx.draw_box(
-        XPOSITION,
-        YPOSITION,
-        BOXWIDTH,
-        BOXHEIGHT,
+        HEADS_UP_XPOSITION,
+        HEADS_UP_YPOSITION,
+        HEADS_UP_WIDTH,
+        HEADS_UP_HEIGHT,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
     );
@@ -182,8 +183,8 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let map = ecs.fetch::<Map>();
     let depth = format!("Depth: {}", map.depth);
     ctx.print_color(
-        XPOSITION + 2,
-        YPOSITION,
+        HEADS_UP_XPOSITION + 2,
+        HEADS_UP_YPOSITION,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         &depth,
@@ -243,7 +244,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let log = ecs.fetch::<GameLog>();
     for (i, s) in log.entries.iter().rev().enumerate() {
         if i < N_LOG_LINES as usize {
-            ctx.print(2, YPOSITION as usize + i + 1, s)
+            ctx.print(2, HEADS_UP_YPOSITION as usize + i + 1, s)
         }
     }
 
@@ -527,6 +528,162 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
         },
     }
 }
+
+//----------------------------------------------------------------------------
+// Spell Menu
+// We cannot re-use the code for the various item menus here, since we need to
+// display information on spell charges.
+//----------------------------------------------------------------------------
+pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
+    let player = ecs.fetch::<Entity>();
+    let names = ecs.read_storage::<Name>();
+    let in_spellbook = ecs.read_storage::<InSpellBook>();
+    let castables = ecs.read_storage::<Castable>();
+    let charges = ecs.read_storage::<SpellCharges>();
+    let renderables = ecs.read_storage::<Renderable>();
+    let entities = ecs.entities();
+
+    let spellbook = (&in_spellbook, &castables, &names)
+        .join()
+        .filter(|(spell, _use, _do)| spell.owner == *player);
+    let count = spellbook.count();
+
+    let mut y = ITEM_MENU_Y_POSTION - (count / 2) as i32;
+
+    // Draw the outline of the menu, and the helper text.
+    ctx.draw_box(
+        ITEM_MENU_X_POSITION,
+        y - 2,
+        ITEM_MENU_WIDTH,
+        (count + 3) as i32,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+    );
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y - 2,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        format!("Castable Spells"),
+    );
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y + count as i32 + 1,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Press ESC to cancel",
+    );
+
+    // Iterate through all spells in the player's spellbook with the castable
+    // component and:
+    //   - Draw an selection letter for that item: (a), (b), (c), etc...
+    //   - Add the spell to a vector for later lookup upon selection.
+    let spellbook = (&entities, &in_spellbook, &names, &castables, &charges)
+        .join()
+        .filter(|(_e, inbook, _name, _do, _ch)| inbook.owner == *player)
+        .enumerate();
+    // Vector to keep track of the positions of items in the inventory. When the
+    // player selects an item, we need to retrieve that associated item entity.
+    let mut useable: Vec<Entity> = Vec::new();
+    for (i, (spell, _sb, name, _cst, charge)) in spellbook {
+        // Draw the selection information. (a), (b), (c) etc.
+        let selection_char = 97 + i as rltk::FontCharType;
+        ctx.set(
+            ITEM_MENU_X_POSITION + 1,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437('('),
+        );
+        ctx.set(
+            ITEM_MENU_X_POSITION + 2,
+            y,
+            RGB::named(rltk::YELLOW),
+            RGB::named(rltk::BLACK),
+            selection_char,
+        );
+        ctx.set(
+            ITEM_MENU_X_POSITION + 3,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437(')'),
+        );
+        // Draw the spell glyph if one exists.
+        let render = renderables.get(spell);
+        match render {
+            Some(render) => ctx.set(
+                ITEM_MENU_X_POSITION + 4,
+                y,
+                render.fg,
+                RGB::named(rltk::BLACK),
+                render.glyph,
+            ),
+            None => ctx.set(
+                ITEM_MENU_X_POSITION + 4,
+                y,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437(' '),
+            ),
+        }
+        // Display the spell charge information: n_charges/max_charges.
+        let number_char = vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        ctx.set(
+            ITEM_MENU_X_POSITION + 6,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            // I'm sure there's a better way to do this...
+            rltk::to_cp437(*number_char.get(charge.charges as usize).unwrap_or(&'9'))
+        );
+        ctx.set(
+            ITEM_MENU_X_POSITION + 7,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437('/'),
+        );
+        ctx.set(
+            ITEM_MENU_X_POSITION + 8,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437(*number_char.get(charge.charges as usize).unwrap_or(&'9'))
+        );
+
+        // Render the item name, with a color indicating if the item is
+        // equipped.
+        ctx.print_color(
+            ITEM_MENU_X_POSITION + 10,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            &name.name.to_string()
+        );
+
+        useable.push(spell);
+        y += 1;
+    }
+
+    // If we've got input, we can get to using the thing.
+    match ctx.key {
+        None => MenuResult::NoResponse,
+        Some(key) => match key {
+            VirtualKeyCode::Escape => MenuResult::Cancel,
+            _ => {
+                let selection = rltk::letter_to_option(key);
+                if selection > -1 && selection < count as i32 {
+                    return MenuResult::Selected {
+                        thing: useable[selection as usize],
+                    };
+                }
+                MenuResult::NoResponse
+            }
+        },
+    }
+}
+
 
 //----------------------------------------------------------------------------
 // Targeting system.

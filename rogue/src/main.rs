@@ -361,7 +361,7 @@ impl GameState for State {
                 }
             }
             RunState::ShowSpellbook => {
-                let result = gui::show_inventory::<Castable>(&mut self.ecs, ctx, "Castable");
+                let result = gui::show_spellbook(&mut self.ecs, ctx);
                 match result {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},

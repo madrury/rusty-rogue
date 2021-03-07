@@ -1,6 +1,6 @@
 use super::{
-    GameLog, InBackpack, Name, Position, WantsToPickupItem, WantsToEquipItem,
-    WantsToRemoveItem, Equipped
+    GameLog, InBackpack, InSpellBook, Name, Position, WantsToPickupItem, WantsToEquipItem,
+    WantsToRemoveItem, Equipped, Castable
 };
 use specs::prelude::*;
 
@@ -16,16 +16,26 @@ impl<'a> System<'a> for ItemCollectionSystem {
         WriteStorage<'a, WantsToPickupItem>,
         WriteStorage<'a, Position>,
         ReadStorage<'a, Name>,
+        ReadStorage<'a, Castable>,
         WriteStorage<'a, InBackpack>,
+        WriteStorage<'a, InSpellBook>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player, mut log, mut pickups, mut positions, names, mut backpacks) = data;
+        let (player, mut log, mut pickups, mut positions, names, castables, mut backpacks, mut spellbooks) = data;
         for pickup in pickups.join() {
             positions.remove(pickup.item);
-            backpacks
-                .insert(pickup.item, InBackpack { owner: pickup.by })
-                .expect("Unable to insert item in backpack.");
+            // Spells go in the spellbook, everything else goes in a backpack.
+            let is_castable = castables.get(pickup.item).is_some();
+            if is_castable {
+                spellbooks
+                    .insert(pickup.item, InSpellBook {owner: pickup.by})
+                    .expect("Unable to insert spell into spellbook.");
+            } else {
+                backpacks
+                    .insert(pickup.item, InBackpack {owner: pickup.by})
+                    .expect("Unable to insert item in backpack.");
+            }
             if pickup.by == *player {
                 let name = &names.get(pickup.item);
                 if let Some(name) = name {
