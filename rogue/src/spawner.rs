@@ -485,7 +485,8 @@ fn fireblast(ecs: &mut World, x: i32, y: i32) {
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
-            regen: 50
+            regen_time: 10,
+            time: 0
         })
         .with(Targeted {verb: "cast".to_string()})
         .with(InflictsDamageWhenTargeted {damage: 10})
@@ -516,7 +517,8 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) {
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
-            regen: 50
+            regen_time: 10,
+            time: 0
         })
         .with(Targeted {verb: "cast".to_string()})
         .with(InflictsDamageWhenTargeted {damage: 10})

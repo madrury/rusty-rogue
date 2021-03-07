@@ -649,24 +649,36 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
-            rltk::to_cp437(*number_char.get(charge.charges as usize).unwrap_or(&'9'))
+            rltk::to_cp437(*number_char.get(charge.max_charges as usize).unwrap_or(&'9'))
         );
 
-        // Render the item name, with a color indicating if the item is
+        // Render the spell name, with dark text if it cannot currently be cast.
         // equipped.
-        ctx.print_color(
-            ITEM_MENU_X_POSITION + 10,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            &name.name.to_string()
-        );
+        let can_cast = charge.charges > 0;
+        if can_cast {
+            ctx.print_color(
+                ITEM_MENU_X_POSITION + 10,
+                y,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                &name.name.to_string()
+            );
+        } else {
+            ctx.print_color(
+                ITEM_MENU_X_POSITION + 10,
+                y,
+                RGB::named(rltk::DARK_GRAY),
+                RGB::named(rltk::BLACK),
+                &name.name.to_string()
+            );
+
+        }
 
         useable.push(spell);
         y += 1;
     }
 
-    // If we've got input, we can get to using the thing.
+    // If we've got input, we can get to casting the spell.
     match ctx.key {
         None => MenuResult::NoResponse,
         Some(key) => match key {
@@ -674,16 +686,21 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
             _ => {
                 let selection = rltk::letter_to_option(key);
                 if selection > -1 && selection < count as i32 {
-                    return MenuResult::Selected {
-                        thing: useable[selection as usize],
-                    };
+                    let spell = useable[selection as usize];
+                    let can_cast = charges.get(spell).map_or(false, |c| c.charges > 0);
+                    if can_cast {
+                        return MenuResult::Selected {
+                            thing: useable[selection as usize],
+                        };
+                    }
+                    // The user selected an uncastable spell...
+                    return MenuResult::NoResponse
                 }
                 MenuResult::NoResponse
             }
         },
     }
 }
-
 
 //----------------------------------------------------------------------------
 // Targeting system.

@@ -37,6 +37,8 @@ mod animation_system;
 use animation_system::*;
 mod hunger_system;
 use hunger_system::*;
+mod spell_charge_system;
+use spell_charge_system::*;
 mod gamelog;
 use gamelog::{GameLog};
 
@@ -121,6 +123,8 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut hunger = HungerSystem{};
         hunger.run_now(&self.ecs);
+        let mut charges = SpellChargeSystem{};
+        charges.run_now(&self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};

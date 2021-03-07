@@ -191,11 +191,22 @@ pub struct InSpellBook {
 pub struct SpellCharges {
     pub max_charges: i32,
     pub charges: i32,
-    pub regen: i32
+    pub regen_time: i32,
+    pub time: i32
 }
 impl SpellCharges {
     pub fn expend_charge(&mut self) {
         self.charges = i32::max(0, self.charges - 1);
+        self.time = 0;
+    }
+    // Return value indicated if a cast has recharged.
+    pub fn tick(&mut self) -> bool {
+        self.time = i32::min(self.time + 1, self.regen_time);
+        if self.time == self.regen_time && self.charges < self.max_charges {
+            self.charges += 1;
+            return true
+        }
+        false
     }
 }
 

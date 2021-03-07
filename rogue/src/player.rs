@@ -110,7 +110,7 @@ fn skip_turn(ecs: &mut World) {
         .get(*player)
         .map_or(
             true,
-            |h| h.state == HungerState::WellFed || h.state != HungerState::Normal
+            |h| h.state == HungerState::WellFed || h.state == HungerState::Normal
         );
 
     if can_heal {
