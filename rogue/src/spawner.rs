@@ -156,8 +156,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::FreezingPotion, 3 + depth)
             .insert(ItemType::Dagger, 2 + depth)
             .insert(ItemType::LeatherArmor, 2 + depth)
-            .insert(ItemType::FireblastScroll, 200)
-            .insert(ItemType::IceblastScroll, 200)
+            .insert(ItemType::FireblastScroll, depth)
+            .insert(ItemType::IceblastScroll, depth)
             .insert(ItemType::None, 60)
             .roll(&mut rng);
     }
