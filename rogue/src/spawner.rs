@@ -148,17 +148,17 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
-            .insert(ItemType::Turnip, 4 + depth)
+            .insert(ItemType::Turnip, 3 + depth)
             .insert(ItemType::Pomegranate, 1 + depth)
-            .insert(ItemType::HealthPotion, 9 + depth)
-            .insert(ItemType::TeleportationPotion, 5 + depth)
-            .insert(ItemType::FirePotion, 3 + depth)
-            .insert(ItemType::FreezingPotion, 3 + depth)
-            .insert(ItemType::Dagger, 2 + depth)
-            .insert(ItemType::LeatherArmor, 2 + depth)
+            .insert(ItemType::HealthPotion, 3 + depth)
+            .insert(ItemType::TeleportationPotion, 2 + depth)
+            .insert(ItemType::FirePotion, 2 + depth)
+            .insert(ItemType::FreezingPotion, 2 + depth)
+            .insert(ItemType::Dagger, depth)
+            .insert(ItemType::LeatherArmor, depth)
             .insert(ItemType::FireblastScroll, depth)
             .insert(ItemType::IceblastScroll, depth)
-            .insert(ItemType::None, 60)
+            .insert(ItemType::None, 100)
             .roll(&mut rng);
     }
     match item {
@@ -485,7 +485,7 @@ fn fireblast(ecs: &mut World, x: i32, y: i32) {
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
-            regen_time: 10,
+            regen_time: 200,
             time: 0
         })
         .with(Targeted {verb: "cast".to_string()})
@@ -517,7 +517,7 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) {
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
-            regen_time: 10,
+            regen_time: 200,
             time: 0
         })
         .with(Targeted {verb: "cast".to_string()})

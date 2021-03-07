@@ -29,8 +29,6 @@ impl<'a> System<'a> for SpellChargeSystem {
 
         for (spell, in_spellbook, charges) in (&entities, &in_spellbooks, &mut spell_charges).join() {
 
-            println!("Attempting to charge.");
-
             // Only tick the player's spells on their turn and any monster's
             // spells on monster's turns.
             let spellcaster = in_spellbook.owner;
@@ -40,7 +38,6 @@ impl<'a> System<'a> for SpellChargeSystem {
             if !proceed {
                 return
             }
-            println!("Made it here!");
 
             // Tick the timer and bail out if there is nothing else to do.
             let did_recharge = charges.tick();

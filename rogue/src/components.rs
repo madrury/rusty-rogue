@@ -206,6 +206,8 @@ impl SpellCharges {
             self.charges += 1;
             return true
         }
+        // We don't want to let the time fill when we're at max charges, since
+        // then we could spam spells at max charge each turn.
         if self.charges == self.max_charges {
             self.time = 0;
         }

@@ -23,6 +23,11 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] A spell of iceblast. ♦
   - [ ] Some spell which is a combination of fire and ice elements.
   - [ ] An elemental damage system.
+  - [ ] Magic damage stats.
+  - [ ] A weapon (staff) that buffs spellcasting. /
+  - [ ] A ranged weapon.
+  - [ ] Weapon special attacks.
+  - [ ] Pause the game during animations.
 
 ## Progress In Tutorial:
 

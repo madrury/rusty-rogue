@@ -252,9 +252,9 @@ impl GameState for State {
             // We're playng the game.
             _ => {
                 update_particle_lifetimes(&mut self.ecs, ctx);
+                self.run_particle_render_systems();
                 draw_map(&self.ecs, ctx);
                 self.render_all(ctx);
-                self.run_particle_render_systems();
                 self::draw_ui(&self.ecs, ctx)
              }
         }
