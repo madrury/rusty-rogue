@@ -1,6 +1,6 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
-    Name, Renderable, Consumable, Position, Viewshed, WantsToUseTargeted,
+    Name, Renderable, Consumable, SpellCharges, Position, Viewshed, WantsToUseTargeted,
     Targeted, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, AreaOfEffectWhenTargeted,
@@ -27,6 +27,7 @@ pub struct TargetedSystemData<'a> {
         positions: WriteStorage<'a, Position>,
         viewsheds: WriteStorage<'a, Viewshed>,
         consumables: ReadStorage<'a, Consumable>,
+        spell_charges: WriteStorage<'a, SpellCharges>,
         targeteds: ReadStorage<'a, Targeted>,
         wants_target: WriteStorage<'a, WantsToUseTargeted>,
         combat_stats: WriteStorage<'a, CombatStats>,
@@ -58,6 +59,7 @@ impl<'a> System<'a> for TargetedSystem {
             mut positions,
             mut viewsheds,
             consumables,
+            mut spell_charges,
             targeteds,
             mut wants_target,
             mut combat_stats,
@@ -74,6 +76,14 @@ impl<'a> System<'a> for TargetedSystem {
         } = data;
 
         for (user, want_target) in (&entities, &wants_target).join() {
+
+            // In the case we are casting a spell, we guard against the case
+            // that we have no spell charges left.
+            let proceed = spell_charges
+                .get(want_target.thing)
+                .map_or(true, |sc| sc.charges > 0);
+            if !proceed {continue}
+
             let target_point = want_target.target;
             let aoe = aoes.get(want_target.thing);
 
@@ -209,6 +219,11 @@ impl<'a> System<'a> for TargetedSystem {
             let consumable = consumables.get(want_target.thing);
             if let Some(_) = consumable {
                 entities.delete(want_target.thing).expect("Potion delete failed.");
+            }
+            // If the thing is a spell, we've used up one of the spell charges.
+            let sc = spell_charges.get_mut(want_target.thing);
+            if let Some(sc) = sc {
+                sc.expend_charge()
             }
 
         }

@@ -193,6 +193,11 @@ pub struct SpellCharges {
     pub charges: i32,
     pub regen: i32
 }
+impl SpellCharges {
+    pub fn expend_charge(&mut self) {
+        self.charges = i32::max(0, self.charges - 1);
+    }
+}
 
 
 //------------------------------------------------------------------
