@@ -16,11 +16,11 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] An equipping system.
   - [x] An AOE display when targeting.
   - [x] Keyboard controls when targeting.
-  - [ ] A magic system.
+  - [x] A magic system.
   - [ ] A spell of fireball. ♠
-  - [ ] A spell of fireblast. ♠
+  - [x] A spell of fireblast. ♠
   - [ ] A spell of icespike. ♦
-  - [ ] A spell of iceblast. ♦
+  - [x] A spell of iceblast. ♦
   - [ ] Some spell which is a combination of fire and ice elements.
   - [ ] An elemental damage system.
 
