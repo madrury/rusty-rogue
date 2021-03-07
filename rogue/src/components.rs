@@ -206,6 +206,9 @@ impl SpellCharges {
             self.charges += 1;
             return true
         }
+        if self.charges == self.max_charges {
+            self.time = 0;
+        }
         false
     }
 }

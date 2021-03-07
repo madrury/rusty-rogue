@@ -548,14 +548,14 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         .filter(|(spell, _use, _do)| spell.owner == *player);
     let count = spellbook.count();
 
-    let mut y = ITEM_MENU_Y_POSTION - (count / 2) as i32;
+    let mut y = ITEM_MENU_Y_POSTION - count as i32;
 
     // Draw the outline of the menu, and the helper text.
     ctx.draw_box(
         ITEM_MENU_X_POSITION,
         y - 2,
         ITEM_MENU_WIDTH,
-        (count + 3) as i32,
+        (2 * count + 3) as i32,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
     );
@@ -568,7 +568,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     );
     ctx.print_color(
         ITEM_MENU_X_POSITION + 3,
-        y + count as i32 + 1,
+        y + 2 * count as i32 + 1,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         "Press ESC to cancel",
@@ -653,7 +653,6 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         );
 
         // Render the spell name, with dark text if it cannot currently be cast.
-        // equipped.
         let can_cast = charge.charges > 0;
         if can_cast {
             ctx.print_color(
@@ -671,11 +670,21 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
                 RGB::named(rltk::BLACK),
                 &name.name.to_string()
             );
-
         }
 
+        // Render the spell recharge bar.
+        ctx.draw_bar_horizontal(
+            ITEM_MENU_X_POSITION + 10,
+            y + 1,
+            ITEM_MENU_WIDTH - 11,
+            charge.time,
+            charge.regen_time,
+            RGB::named(rltk::GREEN),
+            RGB::named(rltk::BLACK),
+        );
+
         useable.push(spell);
-        y += 1;
+        y += 2;
     }
 
     // If we've got input, we can get to casting the spell.
