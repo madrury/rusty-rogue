@@ -1,13 +1,14 @@
 use super::{
     BlocksTile, CombatStats, HungerClock, HungerState, Monster,
     MonsterMovementAI, Name, Player, Position, Rectangle, Renderable,
-    Viewshed, PickUpable, Useable, Equippable, EquipmentSlot, Throwable,
-    Targeted, Untargeted, Consumable, ProvidesFullHealing, ProvidesFullFood,
-    IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
-    InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
-    InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
-    MovesToRandomPosition, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
-    SimpleMarker, SerializeMe, MarkedBuilder,
+    Viewshed, PickUpable, Useable, Castable, SpellCharges, Equippable,
+    EquipmentSlot, Throwable, Targeted, Untargeted, Consumable,
+    ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
+    AreaOfEffectWhenTargeted, InflictsDamageWhenTargeted,
+    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
+    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
+    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus, SimpleMarker,
+    SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -138,6 +139,8 @@ enum ItemType {
     FreezingPotion,
     Dagger,
     LeatherArmor,
+    FireblastScroll,
+    IceblastScroll,
 }
 fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let item: Option<ItemType>;
@@ -153,6 +156,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::FreezingPotion, 3 + depth)
             .insert(ItemType::Dagger, 2 + depth)
             .insert(ItemType::LeatherArmor, 2 + depth)
+            .insert(ItemType::FireblastScroll, 200)
+            .insert(ItemType::IceblastScroll, 200)
             .insert(ItemType::None, 60)
             .roll(&mut rng);
     }
@@ -165,6 +170,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::FreezingPotion) => freezing_potion(ecs, x, y),
         Some(ItemType::Dagger) => dagger(ecs, x, y),
         Some(ItemType::LeatherArmor) => leather_armor(ecs, x, y),
+        Some(ItemType::FireblastScroll) => fireblast(ecs, x, y),
+        Some(ItemType::IceblastScroll) => iceblast(ecs, x, y),
         Some(ItemType::None) => {},
         None => {}
     }
@@ -455,6 +462,72 @@ fn leather_armor(ecs: &mut World, x: i32, y: i32) {
         .with(PickUpable {})
         .with(Equippable {slot: EquipmentSlot::Armor})
         .with(GrantsMeleeDefenseBonus {bonus: 1})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+//----------------------------------------------------------------------------
+// Spells
+//----------------------------------------------------------------------------
+
+fn fireblast(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Scroll of Fireblast".to_string()})
+        .with(PickUpable {})
+        .with(Castable {})
+        .with(SpellCharges {
+            max_charges: 3,
+            charges: 1,
+            regen: 50
+        })
+        .with(Targeted {verb: "cast".to_string()})
+        .with(InflictsDamageWhenTargeted {damage: 10})
+        .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 4})
+        .with(AreaOfEffectWhenTargeted {radius: 2})
+        .with(AreaOfEffectAnimationWhenTargeted {
+            radius: 2,
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::RED),
+            glyph: rltk::to_cp437('^')
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn iceblast(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::LIGHT_BLUE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Scroll of Iceblast".to_string()})
+        .with(PickUpable {})
+        .with(Castable {})
+        .with(SpellCharges {
+            max_charges: 3,
+            charges: 1,
+            regen: 50
+        })
+        .with(Targeted {verb: "cast".to_string()})
+        .with(InflictsDamageWhenTargeted {damage: 10})
+        .with(InflictsFreezingWhenTargeted {turns: 6})
+        .with(AreaOfEffectWhenTargeted {radius: 2})
+        .with(AreaOfEffectAnimationWhenTargeted {
+            radius: 2,
+            fg: RGB::named(rltk::WHITE),
+            bg: RGB::named(rltk::LIGHT_BLUE),
+            glyph: rltk::to_cp437('*')
+        })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

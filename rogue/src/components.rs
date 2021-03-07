@@ -30,6 +30,9 @@ pub struct Useable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
 
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Castable {}
+
 // An entity with this component can be used as a targeted effect.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Targeted {pub verb: String}
@@ -121,12 +124,12 @@ pub struct AreaOfEffectAnimationWhenTargeted {
     pub glyph: rltk::FontCharType
 }
 
-
-
 //------------------------------------------------------------------
 // Entity Stats Components
 //------------------------------------------------------------------
 // Component holding the combat statistics of an entity.
+// TODO: This should probably be broken into two comonents? HealthStats and
+// MeleeStats?
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct CombatStats {
     // Health.
@@ -154,7 +157,7 @@ impl CombatStats {
 //------------------------------------------------------------------
 // Hunger System Components
 //------------------------------------------------------------------
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq)]
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum HungerState {
     WellFed,
     Normal,
@@ -162,7 +165,7 @@ pub enum HungerState {
     Starving
 }
 
-#[derive(Component, Serialize, Deserialize, Clone)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct HungerClock {
     pub state: HungerState,
     pub state_duration: i32,
@@ -175,6 +178,22 @@ impl HungerClock {
         self.time = self.state_duration;
     }
 }
+
+//------------------------------------------------------------------
+// Magic System Components
+//------------------------------------------------------------------
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InSpellBook {
+    pub owner: Entity
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct SpellCharges {
+    pub max_charges: i32,
+    pub charges: i32,
+    pub regen: i32
+}
+
 
 //------------------------------------------------------------------
 // Monster AI Components

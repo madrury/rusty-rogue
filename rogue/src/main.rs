@@ -55,6 +55,7 @@ pub enum RunState {
     ShowUseInventory,
     ShowThrowInventory,
     ShowEquipInventory,
+    ShowSpellbook,
     ShowTargetingMouse {
         range: i32,
         radius: Option<i32>,
@@ -359,6 +360,37 @@ impl GameState for State {
                     }
                 }
             }
+            RunState::ShowSpellbook => {
+                let result = gui::show_inventory::<Castable>(&mut self.ecs, ctx, "Castable");
+                match result {
+                    MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    MenuResult::NoResponse => {},
+                    MenuResult::Selected {thing} => {
+                        let targeted = self.ecs.read_storage::<Targeted>();
+                        let is_targeted = targeted.get(thing).is_some();
+                        if is_targeted {
+                            let aoes = self.ecs.read_storage::<AreaOfEffectWhenTargeted>();
+                            let radius = aoes.get(thing).map(|x| x.radius);
+                            newrunstate = RunState::ShowTargetingKeyboard {
+                                range: 6,
+                                thing: thing,
+                                radius: radius,
+                                current: None
+                            };
+                        }
+                        let untargeted = self.ecs.read_storage::<Untargeted>();
+                        let is_untargeted = untargeted.get(thing).is_some();
+                        if is_untargeted {
+                            let mut intent = self.ecs.write_storage::<WantsToUseUntargeted>();
+                            intent.insert(
+                                *self.ecs.fetch::<Entity>(), // Player.
+                                WantsToUseUntargeted {thing: thing}
+                            ).expect("Unable to insert intent to use item.");
+                            newrunstate = RunState::PlayerTurn;
+                        }
+                    }
+                }
+            }
             RunState::ShowTargetingMouse {range, thing, radius} => {
                 match gui::ranged_target_mouse(&mut self.ecs, ctx, range, radius) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
@@ -396,7 +428,7 @@ impl GameState for State {
                         intent.insert(
                             *self.ecs.fetch::<Entity>(), // Player.
                             WantsToUseTargeted {thing: thing, target: pos}
-                        ).expect("Unable to insert intent to throw item.");
+                        ).expect("Unable to insert intent to use targeted item.");
                         newrunstate = RunState::PlayerTurn;
                     },
                     TargetingResult::NoResponse => {},
@@ -442,12 +474,15 @@ fn main() -> rltk::BError {
     gs.ecs.register::<PickUpable>();
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<Equippable>();
+    gs.ecs.register::<Castable>();
     gs.ecs.register::<Targeted>();
     gs.ecs.register::<Untargeted>();
     gs.ecs.register::<InBackpack>();
+    gs.ecs.register::<InSpellBook>();
     gs.ecs.register::<Equipped>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<MonsterMovementAI>();
+    gs.ecs.register::<SpellCharges>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();
     gs.ecs.register::<WantsToPickupItem>();

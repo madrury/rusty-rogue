@@ -12,15 +12,17 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] Thrown potions. ¿
   - [x] Thrown weapons. ↑
   - [x] A potion of Freezing. ¿♦
-  - [ ] A potion of Teleportation.
+  - [x] A potion of Teleportation.
   - [x] An equipping system.
+  - [x] An AOE display when targeting.
+  - [x] Keyboard controls when targeting.
   - [ ] A magic system.
   - [ ] A spell of fireball. ♠
   - [ ] A spell of fireblast. ♠
   - [ ] A spell of icespike. ♦
   - [ ] A spell of iceblast. ♦
-  - [x] An AOE display when targeting.
-  - [x] Keyboard controls when targeting.
+  - [ ] Some spell which is a combination of fire and ice elements.
+  - [ ] An elemental damage system.
 
 ## Progress In Tutorial:
 
