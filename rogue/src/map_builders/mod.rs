@@ -5,15 +5,13 @@ mod common;
 use common::*;
 
 
-trait MapBuilder {
-    fn build(depth: i32) -> (Map, Position);
-    fn spawn(map: &Map, ecs: &mut World, depth: i32);
+pub trait MapBuilder {
+    fn build_map(&mut self);
+    fn spawn_entities(&mut self, ecs: &mut World);
+    fn map(&self) -> Map;
+    fn starting_position(&self) -> Position;
 }
 
-pub fn build_random_map(depth: i32) -> (Map, Position) {
-    SimpleMapBuilder::build(depth)
-}
-
-pub fn spawn(map: &Map, ecs: &mut World, depth: i32) {
-    SimpleMapBuilder::spawn(map, ecs, depth)
+pub fn random_builder(depth: i32) -> Box<dyn MapBuilder> {
+    Box::new(SimpleMapBuilder::new(depth))
 }

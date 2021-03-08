@@ -8,26 +8,45 @@ use super::{
 };
 
 
-pub struct SimpleMapBuilder {}
+pub struct SimpleMapBuilder {
+    map: Map,
+    starting_position: Position,
+    depth: i32
+}
 
 impl MapBuilder for SimpleMapBuilder {
 
-    fn build(depth: i32) -> (Map, Position) {
-       let mut map =  Map::new(depth);
-       let ppos = SimpleMapBuilder::rooms_and_corridors(&mut map);
-       (map, ppos)
+    fn map(&self) -> Map {
+        self.map.clone()
     }
 
-    fn spawn(map: &Map, ecs: &mut World, depth: i32) {
-        for room in map.rooms.iter().skip(1) {
-            spawner::spawn_room(ecs, room, depth);
+    fn starting_position(&self) -> Position {
+        self.starting_position.clone()
+    }
+
+    fn build_map(&mut self) {
+        self.rooms_and_corridors();
+    }
+
+    fn spawn_entities(&mut self, ecs: &mut World) {
+        for room in self.map.rooms.iter().skip(1) {
+            spawner::spawn_room(ecs, room, self.depth);
         }
     }
+
 }
 
 impl SimpleMapBuilder {
 
-    fn rooms_and_corridors(map: &mut Map) -> Position {
+    pub fn new(depth: i32) -> SimpleMapBuilder {
+        SimpleMapBuilder{
+            map: Map::new(depth),
+            starting_position: Position{x: 0, y: 0},
+            depth: depth
+        }
+    }
+
+    fn rooms_and_corridors(&mut self) {
         const MAX_ROOMS: i32 = 30;
         const MIN_ROOM_SIZE: i32 = 6;
         const MAX_ROOM_SIZE: i32 = 10;
@@ -40,29 +59,31 @@ impl SimpleMapBuilder {
             let y = rng.roll_dice(1, MAP_HEIGHT - h - 1) - 1;
             let new_room = Rectangle::new(x, y, w, h);
             // Try to place our new room on the map.
-            let ok_to_place = map.rooms.iter().all(|other| !new_room.intersect(other));
+            let ok_to_place = self.map.rooms
+                .iter()
+                .all(|other| !new_room.intersect(other));
             if ok_to_place {
-                apply_room(map, &new_room);
-                if !map.rooms.is_empty() {
+                apply_room(&mut self.map, &new_room);
+                if !self.map.rooms.is_empty() {
                     let (cxnew, cynew) = new_room.center();
-                    let (cxprev, cyprev) = map.rooms[map.rooms.len() - 1].center();
+                    let (cxprev, cyprev) =self.map.rooms[self.map.rooms.len() - 1].center();
                     if rng.range(0, 2) == 1 {
-                        apply_horizontal_tunnel(map, cxprev, cxnew, cyprev);
-                        apply_vertical_tunnel(map, cyprev, cynew, cxnew);
+                        apply_horizontal_tunnel(&mut self.map, cxprev, cxnew, cyprev);
+                        apply_vertical_tunnel(&mut self.map, cyprev, cynew, cxnew);
                     } else {
-                        apply_vertical_tunnel(map, cyprev, cynew, cxprev);
-                        apply_horizontal_tunnel(map, cxprev, cxnew, cynew);
+                        apply_vertical_tunnel(&mut self.map, cyprev, cynew, cxprev);
+                        apply_horizontal_tunnel(&mut self.map, cxprev, cxnew, cynew);
                     }
                 }
-                map.rooms.push(new_room)
+                self.map.rooms.push(new_room)
             }
         }
         // Place downward stairs.
-        let stairs_position = map.rooms[map.rooms.len()-1].center();
-        let stairs_idx = map.xy_idx(stairs_position.0, stairs_position.1);
-        map.tiles[stairs_idx] = TileType::DownStairs;
+        let stairs_position = self.map.rooms[self.map.rooms.len()-1].center();
+        let stairs_idx = self.map.xy_idx(stairs_position.0, stairs_position.1);
+        self.map.tiles[stairs_idx] = TileType::DownStairs;
         // Compute the player's starting position in this map.
-        let start_position = map.rooms[0].center();
-        Position {x: start_position.0, y: start_position.1}
+        let start_position = self.map.rooms[0].center();
+        self.starting_position = Position{x: start_position.0, y: start_position.1}
     }
 }

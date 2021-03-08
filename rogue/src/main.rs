@@ -166,19 +166,18 @@ impl State {
         }
 
         // Create the new Map object and replace the resource in the ECS.
-        let tempmap: Map; // We need a temporary copy of out map to pass into
-                          // spawning logic.
+        let mut builder;
         let depth: i32;
         let player_start: Position;
         {
             let mut map_resource = self.ecs.write_resource::<Map>();
             depth = map_resource.depth;
-            let (newmap, start) = map_builders::build_random_map(depth + 1);
-            player_start = start;
-            *map_resource = newmap;
-            tempmap = map_resource.clone();
+            builder = map_builders::random_builder(depth);
+            builder.build_map();
+            *map_resource = builder.map();
+            player_start = builder.starting_position();
         }
-        map_builders::spawn(&tempmap, &mut self.ecs, depth + 1);
+        builder.spawn_entities(&mut self.ecs);
 
         // Spawn the player in the new map, and replace the associated resources
         // in the ECS.
@@ -512,7 +511,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
 
-    let (map, player_start) = map_builders::build_random_map(1);
+    let mut builder = map_builders::random_builder(1);
+    builder.build_map();
+    let player_start = builder.starting_position();
     let (px, py) = (player_start.x, player_start.y);
 
     // Spawning the player is deterministic, so no RNG is needed...
@@ -522,12 +523,12 @@ fn main() -> rltk::BError {
     // ..but we need to insert the RNG here so spawning logic can make use of
     // it.
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
-    map_builders::spawn(&map, &mut gs.ecs, 1);
+    builder.spawn_entities(&mut gs.ecs);
     // for room in map.rooms.iter().skip(1) {
     //     spawner::spawn_room(&mut gs.ecs, room, 1);
     // }
 
-    gs.ecs.insert(map);
+    gs.ecs.insert(builder.map());
     gs.ecs.insert(
         RunState::MainMenu {current: MainMenuSelection::NewGame}
     );
