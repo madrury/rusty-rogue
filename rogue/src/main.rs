@@ -213,6 +213,7 @@ impl State {
         let entities = self.ecs.entities();
         let player = self.ecs.read_storage::<Player>();
         let backpack = self.ecs.read_storage::<InBackpack>();
+        let spellbook = self.ecs.read_storage::<InSpellBook>();
         let equipped = self.ecs.read_storage::<Equipped>();
         let player_entity = self.ecs.fetch::<Entity>();
 
@@ -221,6 +222,8 @@ impl State {
             let delete_me = player.get(entity).is_none()
                 && backpack.get(entity).is_none();
                 && backpack.get(entity).map_or(true, |b| b.owner != *player_entity);
+                && spellbook.get(entity).is_none();
+                && spellbook.get(entity).map_or(true, |b| b.owner != *player_entity);
                 && equipped.get(entity).is_none();
                 && equipped.get(entity).map_or(true, |e| e.owner != *player_entity);
             if delete_me {
