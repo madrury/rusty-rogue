@@ -8,6 +8,7 @@ use super::{
 };
 
 
+// A map with some rectangular rooms connected with L shaped corridors.
 pub struct SimpleMapBuilder {
     map: Map,
     starting_position: Position,

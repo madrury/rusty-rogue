@@ -158,6 +158,37 @@ impl State {
         particles.run_now(&self.ecs);
     }
 
+    fn generate_map(&mut self, depth: i32) {
+        let mut builder = map_builders::random_builder(depth);
+        builder.build_map();
+        let player_start;
+        {
+            let mut worldmap_resource = self.ecs.write_resource::<Map>();
+            *worldmap_resource = builder.map();
+            player_start = builder.starting_position();
+        }
+        builder.spawn_entities(&mut self.ecs);
+
+        // Place the player and update the player's associated ECS resources.
+        let (player_x, player_y) = (player_start.x, player_start.y);
+        let mut player_position = self.ecs.write_resource::<Point>();
+        *player_position = Point::new(player_x, player_y);
+        let mut position_components = self.ecs.write_storage::<Position>();
+        let player_entity = self.ecs.fetch::<Entity>();
+        let player_pos_comp = position_components.get_mut(*player_entity);
+        if let Some(player_pos_comp) = player_pos_comp {
+            player_pos_comp.x = player_x;
+            player_pos_comp.y = player_y;
+        }
+
+        // Mark the player's visibility as dirty
+        let mut viewshed_components = self.ecs.write_storage::<Viewshed>();
+        let vs = viewshed_components.get_mut(*player_entity);
+        if let Some(vs) = vs {
+            vs.dirty = true;
+        }
+    }
+
     fn descend_level(&mut self) {
         let to_delete = self.entities_to_delete_when_descending();
         for target in to_delete {
@@ -165,39 +196,12 @@ impl State {
                 .expect("Unable to delete entity when descending.");
         }
 
-        // Create the new Map object and replace the resource in the ECS.
-        let mut builder;
-        let depth: i32;
-        let player_start: Position;
+        let current_depth;
         {
-            let mut map_resource = self.ecs.write_resource::<Map>();
-            depth = map_resource.depth;
-            builder = map_builders::random_builder(depth);
-            builder.build_map();
-            *map_resource = builder.map();
-            player_start = builder.starting_position();
+            let map_resource = self.ecs.fetch::<Map>();
+            current_depth = map_resource.depth;
         }
-        builder.spawn_entities(&mut self.ecs);
-
-        // Spawn the player in the new map, and replace the associated resources
-        // in the ECS.
-        let (px, py) = (player_start.x, player_start.y);
-        let mut ppos = self.ecs.write_resource::<Point>();
-        *ppos = Point::new(px, py);
-        let mut positions = self.ecs.write_storage::<Position>();
-        let player = self.ecs.fetch::<Entity>();
-        let player_position = positions.get_mut(*player);
-        if let Some(player_position) = player_position {
-            player_position.x = px;
-            player_position.y = py;
-        }
-
-        // We're in a new position, so our field of view is dirty.
-        let mut viewsheds = self.ecs.write_storage::<Viewshed>();
-        let pvs = viewsheds.get_mut(*player);
-        if let Some(pvs) = pvs {
-            pvs.dirty = true;
-        }
+        self.generate_map(current_depth + 1);
 
         let mut log = self.ecs.fetch_mut::<gamelog::GameLog>();
         log.entries.push("You descend.".to_string());
@@ -511,31 +515,21 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
 
-    let mut builder = map_builders::random_builder(1);
-    builder.build_map();
-    let player_start = builder.starting_position();
-    let (px, py) = (player_start.x, player_start.y);
-
-    // Spawning the player is deterministic, so no RNG is needed...
-    let player = spawner::spawn_player(&mut gs.ecs, px, py);
-    gs.ecs.insert(player);
-
-    // ..but we need to insert the RNG here so spawning logic can make use of
-    // it.
+    // Placeholder values which we will replace upon map generation.
+    gs.ecs.insert(Point::new(0, 0)); // Player position.
+    gs.ecs.insert(Map::new(1));
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
-    builder.spawn_entities(&mut gs.ecs);
-    // for room in map.rooms.iter().skip(1) {
-    //     spawner::spawn_room(&mut gs.ecs, room, 1);
-    // }
-
-    gs.ecs.insert(builder.map());
     gs.ecs.insert(
         RunState::MainMenu {current: MainMenuSelection::NewGame}
     );
     gs.ecs.insert(GameLog::new());
     gs.ecs.insert(AnimationBuilder::new());
     gs.ecs.insert(ParticleBuilder::new());
-    gs.ecs.insert(Point::new(px, py)); // Player position.
+
+    let player = spawner::spawn_player(&mut gs.ecs, 0, 0);
+    gs.ecs.insert(player);
+
+    gs.generate_map(1);
 
     rltk::main_loop(context, gs)
 }

@@ -4,6 +4,12 @@ use simple_map::{SimpleMapBuilder};
 mod common;
 use common::*;
 
+/*
+Various apgorithms for map building.
+
+  Simple Map Builder: PLaces some rectangular rooms and then connects them
+    with L shaped corridors.
+*/
 
 pub trait MapBuilder {
     fn build_map(&mut self);
