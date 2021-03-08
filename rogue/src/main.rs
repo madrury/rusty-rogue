@@ -4,6 +4,7 @@ use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
 
 mod components;
 pub use components::*;
+pub mod map_builders;
 mod map;
 pub use map::*;
 mod spawner;
@@ -165,22 +166,23 @@ impl State {
         }
 
         // Create the new Map object and replace the resource in the ECS.
-        let newmap;
-        let depth;
+        let tempmap: Map; // We need a temporary copy of out map to pass into
+                          // spawning logic.
+        let depth: i32;
+        let player_start: Position;
         {
             let mut map_resource = self.ecs.write_resource::<Map>();
             depth = map_resource.depth;
-            *map_resource = Map::new_rooms_and_corridors(depth + 1);
-            newmap = map_resource.clone();
+            let (newmap, start) = map_builders::build_random_map(depth + 1);
+            player_start = start;
+            *map_resource = newmap;
+            tempmap = map_resource.clone();
         }
-
-        for room in newmap.rooms.iter().skip(1) {
-            spawner::spawn_room(&mut self.ecs, room, depth + 1);
-        }
+        map_builders::spawn(&tempmap, &mut self.ecs, depth + 1);
 
         // Spawn the player in the new map, and replace the associated resources
         // in the ECS.
-        let (px, py) = newmap.rooms[0].center();
+        let (px, py) = (player_start.x, player_start.y);
         let mut ppos = self.ecs.write_resource::<Point>();
         *ppos = Point::new(px, py);
         let mut positions = self.ecs.write_storage::<Position>();
@@ -510,18 +512,20 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
 
-    let map = Map::new_rooms_and_corridors(1);
-    let (px, py) = map.rooms[0].center();
+    let (map, player_start) = map_builders::build_random_map(1);
+    let (px, py) = (player_start.x, player_start.y);
 
-    // Spawning the player is deterministic, so no RNG is needed.
+    // Spawning the player is deterministic, so no RNG is needed...
     let player = spawner::spawn_player(&mut gs.ecs, px, py);
     gs.ecs.insert(player);
 
-    // We need to insert the RNG here so spawning logic can make use of it.
+    // ..but we need to insert the RNG here so spawning logic can make use of
+    // it.
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
-    for room in map.rooms.iter().skip(1) {
-        spawner::spawn_room(&mut gs.ecs, room, 1);
-    }
+    map_builders::spawn(&map, &mut gs.ecs, 1);
+    // for room in map.rooms.iter().skip(1) {
+    //     spawner::spawn_room(&mut gs.ecs, room, 1);
+    // }
 
     gs.ecs.insert(map);
     gs.ecs.insert(

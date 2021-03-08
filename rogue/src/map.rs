@@ -12,6 +12,7 @@ pub const MAP_SIZE: usize = (MAP_WIDTH as usize) * (MAP_HEIGHT as usize);
 const DEBUG_DRAW_ALL: bool = false;
 
 
+
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum TileType {
     Wall,
@@ -38,55 +39,69 @@ pub struct Map {
 
 impl Map {
 
-    pub fn new_rooms_and_corridors(depth: i32) -> Map {
-
-        let mut map = Map{
-           width: MAP_WIDTH,
-           height: MAP_HEIGHT,
-           depth: depth,
-           tiles: vec![TileType::Wall; MAP_SIZE],
-           rooms: Vec::new(),
-           revealed_tiles: vec![false; MAP_SIZE],
-           visible_tiles: vec![false; MAP_SIZE],
-           blocked: vec![false; MAP_SIZE],
-           tile_content: vec![Vec::new(); MAP_SIZE],
-        };
-
-        const MAX_ROOMS: i32 = 30;
-        const MIN_ROOM_SIZE: i32 = 6;
-        const MAX_ROOM_SIZE: i32 = 10;
-
-        let mut rng = RandomNumberGenerator::new();
-        for _ in 0..MAX_ROOMS {
-            let w = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
-            let h = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
-            let x = rng.roll_dice(1, MAP_WIDTH - w - 1) - 1;
-            let y = rng.roll_dice(1, MAP_HEIGHT - h - 1) - 1;
-            let new_room = Rectangle::new(x, y, w, h);
-            // Try to place our new room on the map.
-            let ok_to_place = map.rooms.iter().all(|other| !new_room.intersect(other));
-            if ok_to_place {
-                map.apply_room(&new_room);
-                if !map.rooms.is_empty() {
-                    let (cxnew, cynew) = new_room.center();
-                    let (cxprev, cyprev) = map.rooms[map.rooms.len() - 1].center();
-                    if rng.range(0, 2) == 1 {
-                        map.apply_horizontal_tunnel(cxprev, cxnew, cyprev);
-                        map.apply_vertical_tunnel(cyprev, cynew, cxnew);
-                    } else {
-                        map.apply_vertical_tunnel(cyprev, cynew, cxprev);
-                        map.apply_horizontal_tunnel(cxprev, cxnew, cynew);
-                    }
-                }
-                map.rooms.push(new_room)
-            }
+    pub fn new(depth : i32) -> Map {
+        Map{
+            width : MAP_WIDTH as i32,
+            height: MAP_HEIGHT as i32,
+            depth: depth,
+            rooms : Vec::new(),
+            tiles : vec![TileType::Wall; MAP_SIZE],
+            revealed_tiles : vec![false; MAP_SIZE],
+            visible_tiles : vec![false; MAP_SIZE],
+            blocked : vec![false; MAP_SIZE],
+            tile_content : vec![Vec::new(); MAP_SIZE],
         }
-        // Place downward stairs.
-        let stairs_position = map.rooms[map.rooms.len()-1].center();
-        let stairs_idx = map.xy_idx(stairs_position.0, stairs_position.1);
-        map.tiles[stairs_idx] = TileType::DownStairs;
-        map
     }
+
+    // pub fn new_rooms_and_corridors(depth: i32) -> Map {
+
+    //     let mut map = Map{
+    //        width: MAP_WIDTH,
+    //        height: MAP_HEIGHT,
+    //        depth: depth,
+    //        tiles: vec![TileType::Wall; MAP_SIZE],
+    //        rooms: Vec::new(),
+    //        revealed_tiles: vec![false; MAP_SIZE],
+    //        visible_tiles: vec![false; MAP_SIZE],
+    //        blocked: vec![false; MAP_SIZE],
+    //        tile_content: vec![Vec::new(); MAP_SIZE],
+    //     };
+
+    //     const MAX_ROOMS: i32 = 30;
+    //     const MIN_ROOM_SIZE: i32 = 6;
+    //     const MAX_ROOM_SIZE: i32 = 10;
+
+    //     let mut rng = RandomNumberGenerator::new();
+    //     for _ in 0..MAX_ROOMS {
+    //         let w = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
+    //         let h = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
+    //         let x = rng.roll_dice(1, MAP_WIDTH - w - 1) - 1;
+    //         let y = rng.roll_dice(1, MAP_HEIGHT - h - 1) - 1;
+    //         let new_room = Rectangle::new(x, y, w, h);
+    //         // Try to place our new room on the map.
+    //         let ok_to_place = map.rooms.iter().all(|other| !new_room.intersect(other));
+    //         if ok_to_place {
+    //             map.apply_room(&new_room);
+    //             if !map.rooms.is_empty() {
+    //                 let (cxnew, cynew) = new_room.center();
+    //                 let (cxprev, cyprev) = map.rooms[map.rooms.len() - 1].center();
+    //                 if rng.range(0, 2) == 1 {
+    //                     map.apply_horizontal_tunnel(cxprev, cxnew, cyprev);
+    //                     map.apply_vertical_tunnel(cyprev, cynew, cxnew);
+    //                 } else {
+    //                     map.apply_vertical_tunnel(cyprev, cynew, cxprev);
+    //                     map.apply_horizontal_tunnel(cxprev, cxnew, cynew);
+    //                 }
+    //             }
+    //             map.rooms.push(new_room)
+    //         }
+    //     }
+    //     // Place downward stairs.
+    //     let stairs_position = map.rooms[map.rooms.len()-1].center();
+    //     let stairs_idx = map.xy_idx(stairs_position.0, stairs_position.1);
+    //     map.tiles[stairs_idx] = TileType::DownStairs;
+    //     map
+    // }
 
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         ((y * self.width) as usize) + x as usize
@@ -137,32 +152,32 @@ impl Map {
         !self.blocked[idx]
     }
 
-    fn apply_room(&mut self, room: &Rectangle) {
-        for x in (room.x1 + 1)..=room.x2 {
-            for y in (room.y1 + 1)..=room.y2 {
-                let idx = self.xy_idx(x, y);
-                self.tiles[idx] = TileType::Floor;
-            }
-        }
-    }
+    // fn apply_room(&mut self, room: &Rectangle) {
+    //     for x in (room.x1 + 1)..=room.x2 {
+    //         for y in (room.y1 + 1)..=room.y2 {
+    //             let idx = self.xy_idx(x, y);
+    //             self.tiles[idx] = TileType::Floor;
+    //         }
+    //     }
+    // }
 
-    fn apply_horizontal_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
-        for x in min(x1, x2)..=max(x1, x2) {
-            let idx = self.xy_idx(x, y);
-            if idx > 0 && idx < MAP_SIZE {
-                self.tiles[idx] = TileType::Floor;
-            }
-        }
-    }
+    // fn apply_horizontal_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
+    //     for x in min(x1, x2)..=max(x1, x2) {
+    //         let idx = self.xy_idx(x, y);
+    //         if idx > 0 && idx < MAP_SIZE {
+    //             self.tiles[idx] = TileType::Floor;
+    //         }
+    //     }
+    // }
 
-    fn apply_vertical_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
-        for y in min(y1, y2)..=max(y1, y2) {
-            let idx = self.xy_idx(x, y);
-            if idx > 0 && idx < MAP_SIZE {
-                self.tiles[idx] = TileType::Floor;
-            }
-        }
-    }
+    // fn apply_vertical_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
+    //     for y in min(y1, y2)..=max(y1, y2) {
+    //         let idx = self.xy_idx(x, y);
+    //         if idx > 0 && idx < MAP_SIZE {
+    //             self.tiles[idx] = TileType::Floor;
+    //         }
+    //     }
+    // }
 
 }
 
