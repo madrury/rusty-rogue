@@ -35,6 +35,14 @@ impl MapBuilder for SimpleMapBuilder {
         }
     }
 
+    fn take_snapshot(&mut self) {
+
+    }
+
+    fn snapshot_history(&self) -> Vec<Map> {
+        Vec::new()
+    }
+
 }
 
 impl SimpleMapBuilder {

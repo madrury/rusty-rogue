@@ -43,8 +43,9 @@ use spell_charge_system::*;
 mod gamelog;
 use gamelog::{GameLog};
 
-// Render all entities all the time.
+// Debug flags.
 const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_VISUALIZE_MAPGEN: bool = true;
 
 
 #[derive(PartialEq, Copy, Clone)]
