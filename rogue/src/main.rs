@@ -220,11 +220,11 @@ impl State {
         let mut to_delete: Vec<Entity> = Vec::new();
         for entity in entities.join() {
             let delete_me = player.get(entity).is_none()
-                && backpack.get(entity).is_none();
-                && backpack.get(entity).map_or(true, |b| b.owner != *player_entity);
-                && spellbook.get(entity).is_none();
-                && spellbook.get(entity).map_or(true, |b| b.owner != *player_entity);
-                && equipped.get(entity).is_none();
+                && backpack.get(entity).is_none()
+                && backpack.get(entity).map_or(true, |b| b.owner != *player_entity)
+                && spellbook.get(entity).is_none()
+                && spellbook.get(entity).map_or(true, |b| b.owner != *player_entity)
+                && equipped.get(entity).is_none()
                 && equipped.get(entity).map_or(true, |e| e.owner != *player_entity);
             if delete_me {
                 to_delete.push(entity);
