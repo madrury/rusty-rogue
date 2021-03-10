@@ -1,4 +1,8 @@
-use super::{World, Map, Rectangle, TileType, Position, spawner, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE};
+use super::{
+    World, Map, Rectangle, TileType, Position, spawner,
+    DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
+};
+use rltk::{RandomNumberGenerator};
 mod simple_map;
 use simple_map::{SimpleMapBuilder};
 mod common;

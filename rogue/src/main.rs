@@ -47,10 +47,13 @@ use gamelog::{GameLog};
 const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = true;
 
+const MAPGEN_FRAME_TIME: f32 = 200.0;
+
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
     MainMenu {current: MainMenuSelection},
+    MapGeneration,
     SaveGame,
     PreGame,
     AwaitingInput,
@@ -74,8 +77,25 @@ pub enum RunState {
     NextLevel
 }
 
+
+pub struct MapGenerationAnimation {
+    return_state : Option<RunState>,
+    history : Vec<Map>,
+    index : usize,
+    timer : f32
+}
+impl MapGenerationAnimation {
+    pub fn reset(&mut self) {
+        self.history.clear();
+        self.index = 0;
+        self.timer = 0.0;
+    }
+}
+
+
 pub struct State {
     pub ecs: World,
+    pub mapgen: MapGenerationAnimation
 }
 
 impl State {
@@ -160,8 +180,11 @@ impl State {
     }
 
     fn generate_map(&mut self, depth: i32) {
+        self.mapgen.reset();
         let mut builder = map_builders::random_builder(depth);
         builder.build_map();
+        self.mapgen.history = builder.snapshot_history();
+
         let player_start;
         {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
@@ -262,7 +285,7 @@ impl GameState for State {
             _ => {
                 update_particle_lifetimes(&mut self.ecs, ctx);
                 self.run_particle_render_systems();
-                draw_map(&self.ecs, ctx);
+                draw_map(&self.ecs.fetch::<Map>(), ctx);
                 self.render_all(ctx);
                 self::draw_ui(&self.ecs, ctx)
              }
@@ -285,12 +308,27 @@ impl GameState for State {
                     }
                 }
             }
+            RunState::MapGeneration => {
+                if !DEBUG_VISUALIZE_MAPGEN {
+                    newrunstate = self.mapgen.return_state.unwrap();
+                }
+                ctx.cls();
+                draw_map(&self.mapgen.history[self.mapgen.index], ctx);
+                self.mapgen.timer += ctx.frame_time_ms;
+                if self.mapgen.timer > MAPGEN_FRAME_TIME {
+                    self.mapgen.timer = 0.0;
+                    self.mapgen.index += 1;
+                    if self.mapgen.index >= self.mapgen.history.len() {
+                        newrunstate = self.mapgen.return_state.unwrap();
+                    }
+                }
+            }
             RunState::SaveGame {} => {
                 save_load::save_game(&mut self.ecs);
                 newrunstate = RunState::MainMenu {
                     current: MainMenuSelection::LoadGame
                 };
-            },
+            }
             RunState::PreGame => {
                 self.run_pregame_systems();
                 self.run_map_indexing_system();
@@ -468,6 +506,14 @@ fn main() -> rltk::BError {
 
     let mut gs = State {
         ecs: World::new(),
+        mapgen: MapGenerationAnimation {
+            return_state : Some(RunState::MainMenu{
+                current: gui::MainMenuSelection::NewGame
+            }),
+            index: 0,
+            history: Vec::new(),
+            timer: 0.0
+        }
     };
 
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
@@ -523,9 +569,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(Point::new(0, 0)); // Player position.
     gs.ecs.insert(Map::new(1));
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
-    gs.ecs.insert(
-        RunState::MainMenu {current: MainMenuSelection::NewGame}
-    );
+    gs.ecs.insert(RunState::MapGeneration {});
     gs.ecs.insert(GameLog::new());
     gs.ecs.insert(AnimationBuilder::new());
     gs.ecs.insert(ParticleBuilder::new());

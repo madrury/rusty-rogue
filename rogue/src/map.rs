@@ -27,7 +27,6 @@ pub struct Map {
     pub height: i32,
     pub depth: i32,
     pub tiles: Vec<TileType>,
-    pub rooms: Vec<Rectangle>,
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
@@ -44,7 +43,6 @@ impl Map {
             width : MAP_WIDTH as i32,
             height: MAP_HEIGHT as i32,
             depth: depth,
-            rooms : Vec::new(),
             tiles : vec![TileType::Wall; MAP_SIZE],
             revealed_tiles : vec![false; MAP_SIZE],
             visible_tiles : vec![false; MAP_SIZE],
@@ -52,56 +50,6 @@ impl Map {
             tile_content : vec![Vec::new(); MAP_SIZE],
         }
     }
-
-    // pub fn new_rooms_and_corridors(depth: i32) -> Map {
-
-    //     let mut map = Map{
-    //        width: MAP_WIDTH,
-    //        height: MAP_HEIGHT,
-    //        depth: depth,
-    //        tiles: vec![TileType::Wall; MAP_SIZE],
-    //        rooms: Vec::new(),
-    //        revealed_tiles: vec![false; MAP_SIZE],
-    //        visible_tiles: vec![false; MAP_SIZE],
-    //        blocked: vec![false; MAP_SIZE],
-    //        tile_content: vec![Vec::new(); MAP_SIZE],
-    //     };
-
-    //     const MAX_ROOMS: i32 = 30;
-    //     const MIN_ROOM_SIZE: i32 = 6;
-    //     const MAX_ROOM_SIZE: i32 = 10;
-
-    //     let mut rng = RandomNumberGenerator::new();
-    //     for _ in 0..MAX_ROOMS {
-    //         let w = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
-    //         let h = rng.range(MIN_ROOM_SIZE, MAX_ROOM_SIZE);
-    //         let x = rng.roll_dice(1, MAP_WIDTH - w - 1) - 1;
-    //         let y = rng.roll_dice(1, MAP_HEIGHT - h - 1) - 1;
-    //         let new_room = Rectangle::new(x, y, w, h);
-    //         // Try to place our new room on the map.
-    //         let ok_to_place = map.rooms.iter().all(|other| !new_room.intersect(other));
-    //         if ok_to_place {
-    //             map.apply_room(&new_room);
-    //             if !map.rooms.is_empty() {
-    //                 let (cxnew, cynew) = new_room.center();
-    //                 let (cxprev, cyprev) = map.rooms[map.rooms.len() - 1].center();
-    //                 if rng.range(0, 2) == 1 {
-    //                     map.apply_horizontal_tunnel(cxprev, cxnew, cyprev);
-    //                     map.apply_vertical_tunnel(cyprev, cynew, cxnew);
-    //                 } else {
-    //                     map.apply_vertical_tunnel(cyprev, cynew, cxprev);
-    //                     map.apply_horizontal_tunnel(cxprev, cxnew, cynew);
-    //                 }
-    //             }
-    //             map.rooms.push(new_room)
-    //         }
-    //     }
-    //     // Place downward stairs.
-    //     let stairs_position = map.rooms[map.rooms.len()-1].center();
-    //     let stairs_idx = map.xy_idx(stairs_position.0, stairs_position.1);
-    //     map.tiles[stairs_idx] = TileType::DownStairs;
-    //     map
-    // }
 
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         ((y * self.width) as usize) + x as usize
@@ -111,26 +59,33 @@ impl Map {
         (idx as i32 % self.width, idx as i32 / self.width)
     }
 
-    pub fn random_point(&self, rng: &mut RandomNumberGenerator) -> (i32, i32) {
-        let rand_room_idx;
-        {
-            // let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-            let n_rooms = self.rooms.len() as i32;
-            rand_room_idx = rng.roll_dice(1, n_rooms) - 1;
+    pub fn random_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
+        for _ in 0..n_tries {
+            let x = rng.roll_dice(1, self.width + 1) - 1;
+            let y = rng.roll_dice(1, self.height + 1 - 1);
+            let idx = self.xy_idx(x, y);
+            let tile = self.tiles[idx];
+            if tile == TileType::Floor || tile == TileType::BloodStain {
+                return Some((x, y))
+            }
         }
-        self.rooms[rand_room_idx as usize].random_point(rng)
+        return None
+
     }
 
     pub fn random_unblocked_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
         for _ in 0..n_tries {
-            let pt = self.random_point(rng);
-            let idx = self.xy_idx(pt.0, pt.1);
-            if !self.blocked[idx] {
-                return Some(pt);
+            let pt = self.random_point(n_tries, rng);
+            if let Some(pt) = pt {
+                let idx = self.xy_idx(pt.0, pt.1);
+                if !self.blocked[idx] {
+                    return Some(pt);
+                }
             }
         }
         return None;
     }
+
 
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
@@ -217,8 +172,7 @@ impl Algorithm2D for Map {
    }
 }
 
-pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
-    let map = ecs.fetch::<Map>();
+pub fn draw_map(map: &Map, ctx: &mut Rltk) {
     for (idx, tile) in map.tiles.iter().enumerate() {
         let pt = Point::new(idx as i32 % MAP_WIDTH, idx as i32 / MAP_WIDTH);
         if map.revealed_tiles[idx] || DEBUG_DRAW_ALL {

@@ -3,8 +3,9 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, Rectangle, TileType, Position, MAP_WIDTH, MAP_HEIGHT, spawner,
-    apply_room, apply_horizontal_tunnel, apply_vertical_tunnel
+    Map, Rectangle, TileType, Position, MAP_WIDTH, MAP_HEIGHT,
+    DEBUG_VISUALIZE_MAPGEN, spawner, apply_room, apply_horizontal_tunnel,
+    apply_vertical_tunnel
 };
 
 
@@ -12,7 +13,9 @@ use super::{
 pub struct SimpleMapBuilder {
     map: Map,
     starting_position: Position,
-    depth: i32
+    depth: i32,
+    rooms: Vec<Rectangle>,
+    history: Vec<Map>
 }
 
 impl MapBuilder for SimpleMapBuilder {
@@ -30,17 +33,24 @@ impl MapBuilder for SimpleMapBuilder {
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {
-        for room in self.map.rooms.iter().skip(1) {
+        for room in self.rooms.iter().skip(1) {
             spawner::spawn_room(ecs, room, self.depth);
         }
     }
 
     fn take_snapshot(&mut self) {
-
+        if DEBUG_VISUALIZE_MAPGEN {
+            let mut snapshot = self.map.clone();
+            for v in snapshot.revealed_tiles.iter_mut() {
+                // So the snapshot will render everything.
+                *v = true;
+            }
+            self.history.push(snapshot);
+        }
     }
 
     fn snapshot_history(&self) -> Vec<Map> {
-        Vec::new()
+        self.history.clone()
     }
 
 }
@@ -51,7 +61,9 @@ impl SimpleMapBuilder {
         SimpleMapBuilder{
             map: Map::new(depth),
             starting_position: Position{x: 0, y: 0},
-            depth: depth
+            depth: depth,
+            rooms: Vec::new(),
+            history: Vec::new()
         }
     }
 
@@ -68,14 +80,15 @@ impl SimpleMapBuilder {
             let y = rng.roll_dice(1, MAP_HEIGHT - h - 1) - 1;
             let new_room = Rectangle::new(x, y, w, h);
             // Try to place our new room on the map.
-            let ok_to_place = self.map.rooms
+            let ok_to_place = self.rooms
                 .iter()
                 .all(|other| !new_room.intersect(other));
             if ok_to_place {
                 apply_room(&mut self.map, &new_room);
-                if !self.map.rooms.is_empty() {
+                self.take_snapshot();
+                if !self.rooms.is_empty() {
                     let (cxnew, cynew) = new_room.center();
-                    let (cxprev, cyprev) =self.map.rooms[self.map.rooms.len() - 1].center();
+                    let (cxprev, cyprev) =self.rooms[self.rooms.len() - 1].center();
                     if rng.range(0, 2) == 1 {
                         apply_horizontal_tunnel(&mut self.map, cxprev, cxnew, cyprev);
                         apply_vertical_tunnel(&mut self.map, cyprev, cynew, cxnew);
@@ -84,15 +97,16 @@ impl SimpleMapBuilder {
                         apply_horizontal_tunnel(&mut self.map, cxprev, cxnew, cynew);
                     }
                 }
-                self.map.rooms.push(new_room)
+                self.rooms.push(new_room);
+                self.take_snapshot();
             }
         }
         // Place downward stairs.
-        let stairs_position = self.map.rooms[self.map.rooms.len()-1].center();
+        let stairs_position = self.rooms[self.rooms.len()-1].center();
         let stairs_idx = self.map.xy_idx(stairs_position.0, stairs_position.1);
         self.map.tiles[stairs_idx] = TileType::DownStairs;
         // Compute the player's starting position in this map.
-        let start_position = self.map.rooms[0].center();
+        let start_position = self.rooms[0].center();
         self.starting_position = Position{x: start_position.0, y: start_position.1}
     }
 }
