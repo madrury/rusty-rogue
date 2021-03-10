@@ -5,6 +5,8 @@ use super::{
 use rltk::{RandomNumberGenerator};
 mod simple_map;
 use simple_map::{SimpleMapBuilder};
+mod cellular_automata_map;
+use cellular_automata_map::{CellularAutomataBuilder};
 mod common;
 use common::*;
 
@@ -13,6 +15,8 @@ Various apgorithms for map building.
 
   Simple Map Builder: PLaces some rectangular rooms and then connects them
     with L shaped corridors.
+  Cellular Automota Builder: Fills the rap with binary random noise, then
+    smoothes it out with a cellular automata.
 */
 
 pub trait MapBuilder {
@@ -26,5 +30,6 @@ pub trait MapBuilder {
 }
 
 pub fn random_builder(depth: i32) -> Box<dyn MapBuilder> {
-    Box::new(SimpleMapBuilder::new(depth))
+    //Box::new(SimpleMapBuilder::new(depth))
+    Box::new(CellularAutomataBuilder::new(depth))
 }

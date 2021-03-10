@@ -106,34 +106,6 @@ impl Map {
         let idx = self.xy_idx(x, y);
         !self.blocked[idx]
     }
-
-    // fn apply_room(&mut self, room: &Rectangle) {
-    //     for x in (room.x1 + 1)..=room.x2 {
-    //         for y in (room.y1 + 1)..=room.y2 {
-    //             let idx = self.xy_idx(x, y);
-    //             self.tiles[idx] = TileType::Floor;
-    //         }
-    //     }
-    // }
-
-    // fn apply_horizontal_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
-    //     for x in min(x1, x2)..=max(x1, x2) {
-    //         let idx = self.xy_idx(x, y);
-    //         if idx > 0 && idx < MAP_SIZE {
-    //             self.tiles[idx] = TileType::Floor;
-    //         }
-    //     }
-    // }
-
-    // fn apply_vertical_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
-    //     for y in min(y1, y2)..=max(y1, y2) {
-    //         let idx = self.xy_idx(x, y);
-    //         if idx > 0 && idx < MAP_SIZE {
-    //             self.tiles[idx] = TileType::Floor;
-    //         }
-    //     }
-    // }
-
 }
 
 impl BaseMap for Map {
@@ -226,7 +198,6 @@ impl Rectangle {
         ((self.x1 + self.x2)/2, (self.y1 + self.y2)/2)
     }
     pub fn random_point(&self, rng: &mut RandomNumberGenerator) -> (i32, i32) {
-        // let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         let room_width = i32::abs(self.x1 - self.x2);
         let room_height = i32::abs(self.y1 - self.y2);
         let x = self.x1 + rng.roll_dice(1, room_width);
