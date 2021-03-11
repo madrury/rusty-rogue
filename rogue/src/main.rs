@@ -47,7 +47,7 @@ use gamelog::{GameLog};
 const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = true;
 
-const MAPGEN_FRAME_TIME: f32 = 500.0;
+const MAPGEN_FRAME_TIME: f32 = 50.0;
 
 
 #[derive(PartialEq, Copy, Clone)]

@@ -1,8 +1,8 @@
 use super::{
-    BlocksTile, CombatStats, HungerClock, HungerState, Monster,
-    MonsterMovementAI, Name, Player, Position, Rectangle, Renderable,
-    Viewshed, PickUpable, Useable, Castable, SpellCharges, Equippable,
-    EquipmentSlot, Throwable, Targeted, Untargeted, Consumable,
+    Map, TileType, BlocksTile, CombatStats, HungerClock, HungerState,
+    Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
+    Renderable, Viewshed, PickUpable, Useable, Castable, SpellCharges,
+    Equippable, EquipmentSlot, Throwable, Targeted, Untargeted, Consumable,
     ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
     AreaOfEffectWhenTargeted, InflictsDamageWhenTargeted,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
@@ -17,7 +17,7 @@ use specs::prelude::*;
 const MAX_MONSTERS_IN_ROOM: i32 = 4;
 const MAX_ITEMS_IN_ROOM: i32 = 2;
 
-// Spawn the player in the center of the first room.
+// Create the player entity in a specified position. Called only once a game.
 pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
     ecs.create_entity()
         .with(Position {x: px, y: py})
@@ -52,57 +52,61 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
         .build()
 }
 
-// Populate a room with monsters and items.
-pub fn spawn_room(ecs: &mut World, room: &Rectangle, depth: i32) {
-    let num_monsters: i32;
-    let num_items: i32;
+// Populate a reigon (defined by a container of map indexes) with monsters and
+// items.
+pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
+    let mut areas : Vec<usize> = Vec::from(region);
+    let mut monster_spawn_points: Vec<usize> = Vec::new();
+    let mut item_spawn_points: Vec<usize> = Vec::new();
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        num_monsters = rng.roll_dice(1, MAX_MONSTERS_IN_ROOM + 1) + depth;
-        num_items = rng.roll_dice(1, MAX_ITEMS_IN_ROOM + 1) + depth / 2;
+        let num_monsters = rng.roll_dice(1, MAX_MONSTERS_IN_ROOM + 1) + depth;
+        let num_items = rng.roll_dice(1, MAX_ITEMS_IN_ROOM + 1) + depth / 2;
+        for i in 0..(num_monsters + num_items) {
+            let array_index = if areas.len() == 1 {
+                0 as usize
+            } else {
+                (rng.roll_dice(1, areas.len() as i32) - 1) as usize
+            };
+            let map_idx = areas[array_index];
+            if i < num_monsters {
+                monster_spawn_points.push(map_idx);
+            } else {
+                item_spawn_points.push(map_idx)
+            }
+            areas.remove(array_index);
+        }
     }
 
-    let monster_spawn_points;
-    let item_spawn_points;
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        monster_spawn_points = generate_spawn_points(num_monsters, room, &mut *rng);
-        item_spawn_points = generate_spawn_points(num_items, room, &mut *rng);
+    for idx in monster_spawn_points.iter() {
+        let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
+        spawn_random_monster(ecs, x, y, depth);
     }
-
-    for (x, y) in monster_spawn_points.iter() {
-        spawn_random_monster(ecs, *x, *y, depth);
-    }
-    for (x, y) in item_spawn_points.iter() {
-        spawn_random_item(ecs, *x, *y, depth);
+    for idx in item_spawn_points.iter() {
+        let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
+        spawn_random_item(ecs, x, y, depth);
     }
 }
 
-// Returns a vector of positions in a room to spawn entities.
-fn generate_spawn_points(n: i32, room: &Rectangle, rng: &mut RandomNumberGenerator) -> Vec<(i32, i32)> {
-    // First generate some random indexes.
-    let mut spawn_idxs: Vec<usize> = Vec::new();
-    for _i in 1..=n {
-        let mut added = false;
-        while !added {
-            let (x, y) = room.random_point(rng);
-            let idx = ((y * MAP_WIDTH) as usize) + x as usize;
-            if !spawn_idxs.contains(&idx) {
-                spawn_idxs.push(idx);
-                added = true;
+// Specialized function for spawning in a rectangular room.
+pub fn spawn_room(ecs: &mut World, room: &Rectangle, depth: i32) {
+    let mut possible_targets: Vec<usize> = Vec::new();
+    { // Borrow scope - to keep access to the map separated
+        let map = ecs.fetch::<Map>();
+        for y in room.y1 + 1 .. room.y2 {
+            for x in room.x1 + 1 .. room.x2 {
+                let idx = map.xy_idx(x, y);
+                if map.tiles[idx] == TileType::Floor {
+                    possible_targets.push(idx);
+                }
             }
         }
     }
-    // Then convert these to points.
-    let mut spawn_points: Vec<(i32, i32)> = Vec::new();
-    for idx in spawn_idxs.iter() {
-        let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
-        spawn_points.push((x, y))
-    }
-    spawn_points
+    spawn_region(ecs, &possible_targets, depth);
 }
 
-// Spawns a random monster at a specified location.
+
+// Spawns a randomly chosen monster at a specified location.
 #[derive(Clone, Copy)]
 enum MonsterType {
     None,
@@ -127,7 +131,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
     }
 }
 
-// Spawns a random item at a specified location.
+// Spawns a randomly chosen item at a specified location.
 #[derive(Clone, Copy)]
 enum ItemType {
     None,
@@ -469,7 +473,6 @@ fn leather_armor(ecs: &mut World, x: i32, y: i32) {
 //----------------------------------------------------------------------------
 // Spells (well, Scrolls for now).
 //----------------------------------------------------------------------------
-
 fn fireblast(ecs: &mut World, x: i32, y: i32) {
     ecs.create_entity()
         .with(Position {x, y})

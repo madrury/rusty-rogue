@@ -3,7 +3,6 @@ use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::cmp::{min, max};
 use std::iter::Iterator;
-// use super::{Rectangle};
 
 
 pub const MAP_WIDTH: i32 = 80;
@@ -70,7 +69,6 @@ impl Map {
             }
         }
         return None
-
     }
 
     pub fn random_unblocked_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {

@@ -8,8 +8,12 @@ use super::{
     apply_vertical_tunnel
 };
 
-
-// A map with some rectangular rooms connected with L shaped corridors.
+//----------------------------------------------------------------------------
+// Simple Map
+//
+// This is the simplest map genration algorithm, A map with some rectangular
+// rooms connected with L shaped corridors.
+//----------------------------------------------------------------------------
 pub struct SimpleMapBuilder {
     map: Map,
     starting_position: Position,

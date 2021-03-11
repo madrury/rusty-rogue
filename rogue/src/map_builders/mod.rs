@@ -30,6 +30,6 @@ pub trait MapBuilder {
 }
 
 pub fn random_builder(depth: i32) -> Box<dyn MapBuilder> {
-    //Box::new(SimpleMapBuilder::new(depth))
-    Box::new(CellularAutomataBuilder::new(depth))
+    Box::new(SimpleMapBuilder::new(depth))
+    // Box::new(CellularAutomataBuilder::new(depth))
 }

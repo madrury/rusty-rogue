@@ -3,13 +3,18 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, Rectangle, TileType, Position,
-    DEBUG_VISUALIZE_MAPGEN, spawner,
+    Map, TileType, Position, DEBUG_VISUALIZE_MAPGEN, spawner
 };
 
 //const MIN_ROOM_SIZE : i32 = 8;
 const N_ITERATIONS: i32 = 4;
 
+//----------------------------------------------------------------------------
+// Celular Automata Map
+//
+// This map generator creates organic looking caves using a cellular automata
+// algorithm.
+//----------------------------------------------------------------------------
 pub struct CellularAutomataBuilder {
     map: Map,
     starting_position: Position,
@@ -31,7 +36,6 @@ impl MapBuilder for CellularAutomataBuilder {
         if DEBUG_VISUALIZE_MAPGEN {
             let mut snapshot = self.map.clone();
             for v in snapshot.revealed_tiles.iter_mut() {
-                // So the snapshot will render everything.
                 *v = true;
             }
             self.history.push(snapshot);
@@ -50,6 +54,10 @@ impl MapBuilder for CellularAutomataBuilder {
             self.update();
             self.take_snapshot();
         }
+        // We use a Dijkstra map to figure out the furthest point from the
+        // player's spawn position. To do so, we need the blocked array
+        // populated correctly, as we rely on this for the is_exit_valid method
+        // on Map.
         self.map.populate_blocked();
         self.compute_starting_position();
         self.place_stairs();
@@ -135,20 +143,20 @@ impl CellularAutomataBuilder {
         }
     }
 
+    // Place the stairs as far away from the player as possible.
     fn place_stairs(&mut self) {
         let start_idx = self.map.xy_idx(self.starting_position.x, self.starting_position.y);
         let map_starts : Vec<usize> = vec![start_idx];
-        let dijkstra_map = rltk::DijkstraMap::new(self.map.width, self.map.height, &map_starts , &self.map, 200.0);
+        let dijkstra_map = rltk::DijkstraMap::new(
+            self.map.width, self.map.height, &map_starts , &self.map, 200.0
+        );
         let mut exit_tile = (0, 0.0f32);
         for (idx, tile) in self.map.tiles.iter_mut().enumerate() {
             if *tile == TileType::Floor {
                 let distance_to_start = dijkstra_map.map[idx];
-                println!("{}", distance_to_start);
-                // We can't get to this tile - so we'll make it a wall
                 if distance_to_start == std::f32::MAX {
                     *tile = TileType::Wall;
                 } else {
-                    // If it is further away than our current exit candidate, move the exit
                     if distance_to_start > exit_tile.1 {
                         exit_tile.0 = idx;
                         exit_tile.1 = distance_to_start;
