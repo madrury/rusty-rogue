@@ -44,10 +44,10 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = true;
 
-const MAPGEN_FRAME_TIME: f32 = 400.0;
+const MAPGEN_FRAME_TIME: f32 = 500.0;
 
 
 #[derive(PartialEq, Copy, Clone)]

@@ -9,7 +9,7 @@ use std::iter::Iterator;
 pub const MAP_WIDTH: i32 = 80;
 pub const MAP_HEIGHT: i32 = 43;
 pub const MAP_SIZE: usize = (MAP_WIDTH as usize) * (MAP_HEIGHT as usize);
-const DEBUG_DRAW_ALL: bool = false;
+const DEBUG_DRAW_ALL: bool = true;
 
 
 
@@ -61,8 +61,8 @@ impl Map {
 
     pub fn random_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
         for _ in 0..n_tries {
-            let x = rng.roll_dice(1, self.width + 1) - 1;
-            let y = rng.roll_dice(1, self.height + 1 - 1);
+            let x = rng.roll_dice(1, self.width) - 1;
+            let y = rng.roll_dice(1, self.height) - 1;
             let idx = self.xy_idx(x, y);
             let tile = self.tiles[idx];
             if tile == TileType::Floor || tile == TileType::BloodStain {
@@ -85,7 +85,6 @@ impl Map {
         }
         return None;
     }
-
 
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
