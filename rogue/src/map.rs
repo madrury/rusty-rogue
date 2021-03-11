@@ -3,13 +3,12 @@ use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::cmp::{min, max};
 use std::iter::Iterator;
+use super::{DEBUG_DRAW_ALL_MAP};
 
 
 pub const MAP_WIDTH: i32 = 80;
 pub const MAP_HEIGHT: i32 = 43;
 pub const MAP_SIZE: usize = (MAP_WIDTH as usize) * (MAP_HEIGHT as usize);
-const DEBUG_DRAW_ALL: bool = true;
-
 
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
@@ -144,7 +143,7 @@ impl Algorithm2D for Map {
 pub fn draw_map(map: &Map, ctx: &mut Rltk) {
     for (idx, tile) in map.tiles.iter().enumerate() {
         let pt = Point::new(idx as i32 % MAP_WIDTH, idx as i32 / MAP_WIDTH);
-        if map.revealed_tiles[idx] || DEBUG_DRAW_ALL {
+        if map.revealed_tiles[idx] || DEBUG_DRAW_ALL_MAP {
             let visible = map.visible_tiles[idx];
             draw_tile(pt.x, pt.y, tile, visible, ctx);
         }

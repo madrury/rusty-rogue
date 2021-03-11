@@ -44,8 +44,9 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_RENDER_ALL: bool = true;
-const DEBUG_VISUALIZE_MAPGEN: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_VISUALIZE_MAPGEN: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
 
@@ -311,15 +312,16 @@ impl GameState for State {
             RunState::MapGeneration => {
                 if !DEBUG_VISUALIZE_MAPGEN {
                     newrunstate = self.mapgen.return_state.unwrap();
-                }
-                ctx.cls();
-                draw_map(&self.mapgen.history[self.mapgen.index], ctx);
-                self.mapgen.timer += ctx.frame_time_ms;
-                if self.mapgen.timer > MAPGEN_FRAME_TIME {
-                    self.mapgen.timer = 0.0;
-                    self.mapgen.index += 1;
-                    if self.mapgen.index >= self.mapgen.history.len() {
-                        newrunstate = self.mapgen.return_state.unwrap();
+                } else {
+                    ctx.cls();
+                    draw_map(&self.mapgen.history[self.mapgen.index], ctx);
+                    self.mapgen.timer += ctx.frame_time_ms;
+                    if self.mapgen.timer > MAPGEN_FRAME_TIME {
+                        self.mapgen.timer = 0.0;
+                        self.mapgen.index += 1;
+                        if self.mapgen.index >= self.mapgen.history.len() {
+                            newrunstate = self.mapgen.return_state.unwrap();
+                        }
                     }
                 }
             }

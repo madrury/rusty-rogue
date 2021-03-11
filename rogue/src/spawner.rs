@@ -56,6 +56,8 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
 // items.
 pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
     let mut areas : Vec<usize> = Vec::from(region);
+    if areas.is_empty() {return;}
+
     let mut monster_spawn_points: Vec<usize> = Vec::new();
     let mut item_spawn_points: Vec<usize> = Vec::new();
     {
@@ -63,8 +65,9 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
         let num_monsters = rng.roll_dice(1, MAX_MONSTERS_IN_ROOM + 1) + depth;
         let num_items = rng.roll_dice(1, MAX_ITEMS_IN_ROOM + 1) + depth / 2;
         for i in 0..(num_monsters + num_items) {
+            if areas.is_empty() {break;}
             let array_index = if areas.len() == 1 {
-                0 as usize
+                0usize
             } else {
                 (rng.roll_dice(1, areas.len() as i32) - 1) as usize
             };
