@@ -1,5 +1,5 @@
 use super::{
-    World, Map, Rectangle, TileType, Position, spawner,
+    World, Map, TileType, Position, spawner,
     DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
 use rltk::{RandomNumberGenerator};
@@ -30,6 +30,6 @@ pub trait MapBuilder {
 }
 
 pub fn random_builder(depth: i32) -> Box<dyn MapBuilder> {
-    // Box::new(SimpleMapBuilder::new(depth))
-    Box::new(CellularAutomataBuilder::new(depth))
+    Box::new(SimpleMapBuilder::new(depth))
+    // Box::new(CellularAutomataBuilder::new(depth))
 }

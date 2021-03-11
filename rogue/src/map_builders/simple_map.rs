@@ -3,7 +3,7 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, Rectangle, TileType, Position, MAP_WIDTH, MAP_HEIGHT,
+    Map, TileType, Position, Rectangle, MAP_WIDTH, MAP_HEIGHT,
     DEBUG_VISUALIZE_MAPGEN, spawner, apply_room, apply_horizontal_tunnel,
     apply_vertical_tunnel
 };
@@ -38,7 +38,16 @@ impl MapBuilder for SimpleMapBuilder {
 
     fn spawn_entities(&mut self, ecs: &mut World) {
         for room in self.rooms.iter().skip(1) {
-            spawner::spawn_room(ecs, room, self.depth);
+            let mut region: Vec<usize> = Vec::new();
+            for y in room.y1 + 1 .. room.y2 {
+                for x in room.x1 + 1 .. room.x2 {
+                    let idx = self.map.xy_idx(x, y);
+                    if self.map.tiles[idx] == TileType::Floor {
+                        region.push(idx);
+                    }
+                }
+            }
+            spawner::spawn_region(ecs, &region, self.depth);
         }
     }
 

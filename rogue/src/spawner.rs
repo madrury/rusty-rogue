@@ -1,6 +1,6 @@
 use super::{
     Map, TileType, BlocksTile, CombatStats, HungerClock, HungerState,
-    Monster, MonsterMovementAI, Name, Player, Position, Rectangle,
+    Monster, MonsterMovementAI, Name, Player, Position,
     Renderable, Viewshed, PickUpable, Useable, Castable, SpellCharges,
     Equippable, EquipmentSlot, Throwable, Targeted, Untargeted, Consumable,
     ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
@@ -90,24 +90,6 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
         spawn_random_item(ecs, x, y, depth);
     }
 }
-
-// Specialized function for spawning in a rectangular room.
-pub fn spawn_room(ecs: &mut World, room: &Rectangle, depth: i32) {
-    let mut possible_targets: Vec<usize> = Vec::new();
-    { // Borrow scope - to keep access to the map separated
-        let map = ecs.fetch::<Map>();
-        for y in room.y1 + 1 .. room.y2 {
-            for x in room.x1 + 1 .. room.x2 {
-                let idx = map.xy_idx(x, y);
-                if map.tiles[idx] == TileType::Floor {
-                    possible_targets.push(idx);
-                }
-            }
-        }
-    }
-    spawn_region(ecs, &possible_targets, depth);
-}
-
 
 // Spawns a randomly chosen monster at a specified location.
 #[derive(Clone, Copy)]
