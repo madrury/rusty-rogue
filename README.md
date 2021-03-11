@@ -2,7 +2,46 @@
 
 We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductions.com/) and adding new stuff along the way.
 
-## Additional Stuff We've Planned Or Added:
+
+## Additional Stuff We've Planned
+
+#### General
+  - [ ] Pause the game during animations.
+  - [ ] A swimming system.
+
+#### Terrain
+  - [ ] Grass.
+  - [ ] Water.
+  - [ ] Fire.
+  - [ ] Lava.
+  - [ ] Steam.
+  - [ ] Chill.
+  - [ ] Ice.
+
+#### Monsters
+  - [ ] Goblin Warleader.
+  - [ ] Goblin Spellcaster.
+  - [ ] Orc Warleader.
+  - [ ] Orc Spellcaster.
+  - [ ] Red Jelly (spawns fire when hit).
+  - [ ] Blue Jelly (spawns chill when hit).
+
+#### Damage System
+  - [ ] An elemental damage system.
+  - [ ] Resistances to elemental damage.
+  - [ ] Magic damage stats.
+
+#### Spellcasting
+  - [ ] A spell of fireball. ♠
+  - [ ] A spell of icespike. ♦
+  - [ ] Some spell which is a combination of fire and ice elements.
+
+#### Equipment
+  - [ ] A weapon (staff) that buffs spellcasting. /
+  - [ ] A ranged weapon.
+  - [ ] Weapon special attacks.
+
+## Additional We've Planned Added:
 
   - [x] A status effects system.
   - [x] The Burning status effect. ♠
@@ -17,17 +56,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] An AOE display when targeting.
   - [x] Keyboard controls when targeting.
   - [x] A magic system.
-  - [ ] A spell of fireball. ♠
   - [x] A spell of fireblast. ♠
-  - [ ] A spell of icespike. ♦
   - [x] A spell of iceblast. ♦
-  - [ ] Some spell which is a combination of fire and ice elements.
-  - [ ] An elemental damage system.
-  - [ ] Magic damage stats.
-  - [ ] A weapon (staff) that buffs spellcasting. /
-  - [ ] A ranged weapon.
-  - [ ] Weapon special attacks.
-  - [ ] Pause the game during animations.
 
 ## Progress In Tutorial:
 
@@ -54,11 +84,11 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] 3.6. REX Paint Menu
   - [ ] 3.7. Simple Traps
 #### Section 3 - Generating Maps
-  - [ ] 4.1. Refactor Map Building
-  - [ ] 4.2. Map Building Test Harness
+  - [x] 4.1. Refactor Map Building
+  - [x] 4.2. Map Building Test Harness
   - [ ] 4.3. BSP Room Dungeons
   - [ ] 4.4. BSP Interior Design
-  - [ ] 4.5. Cellular Automata Maps
+  - [x] 4.5. Cellular Automata Maps
   - [ ] 4.6. Drunkard's Walk Maps
   - [ ] 4.7. Mazes and Labyrinths
   - [ ] 4.8. Diffusion- [ ]limited aggregation maps
