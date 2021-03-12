@@ -241,7 +241,10 @@ fn goblin(ecs: &mut World, x: i32, y: i32) {
                 ..DEFAULT_COMBAT_STATS
             },
         },
-    )
+    );
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
 }
 
 // Individual monster types: Orc.
@@ -265,7 +268,10 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
                 ..DEFAULT_COMBAT_STATS
             },
         },
-    )
+    );
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
 }
 
 //----------------------------------------------------------------------------

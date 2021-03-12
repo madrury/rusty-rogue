@@ -103,6 +103,7 @@ impl<'a> System<'a> for TargetedSystem {
                 .collect();
 
             for target in targets {
+
                 // Component: ProvidesHealing.
                 let thing_heals = healing.get(want_target.thing);
                 let stats = combat_stats.get_mut(*target);
@@ -129,6 +130,7 @@ impl<'a> System<'a> for TargetedSystem {
                         })
                     }
                 }
+
                 // Compontnet: MovesToRandomPosition
                 let thing_teleports = teleports.get(want_target.thing);
                 let target_pos = positions.get_mut(*target);
@@ -152,6 +154,7 @@ impl<'a> System<'a> for TargetedSystem {
                         }
                     }
                 }
+
                 // Component: InflictsDamageWhenTargeted
                 let stats = combat_stats.get_mut(*target);
                 let thing_damages = does_damage.get(want_target.thing);
@@ -169,6 +172,7 @@ impl<'a> System<'a> for TargetedSystem {
                         ))
                     }
                 }
+
                 // Component: InflictsFreezingWhenTargeted
                 let stats = combat_stats.get_mut(*target);
                 let thing_freezes = does_freeze.get(want_target.thing);
@@ -185,6 +189,7 @@ impl<'a> System<'a> for TargetedSystem {
                         ))
                     }
                 }
+
                 // Component: InflictsBurningWhenTargeted
                 let stats = combat_stats.get_mut(*target);
                 let thing_burns = does_burn.get(want_target.thing);
@@ -202,6 +207,7 @@ impl<'a> System<'a> for TargetedSystem {
                     }
                 }
             }
+
             // Component: AreaOfEffectAnimationWhenTargeted
             let has_aoe_animation = aoe_animations.get(want_target.thing);
             if let Some(has_aoe_animation) = has_aoe_animation {
