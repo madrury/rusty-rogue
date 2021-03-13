@@ -3,8 +3,7 @@ use rltk::{Point, RandomNumberGenerator};
 use specs::prelude::*;
 
 
-
-// A request to spawn a single entity of a specified type.
+// A request to spawn a single entity of a specified kind.
 #[derive(Clone)]
 pub struct EntitySpawnRequest {
     pub x: i32,
@@ -46,6 +45,7 @@ impl<'a> System<'a> for EntitySpawnSystem {
 
         let (map, mut rng, mut request_buffer, chance_to_spawn, positions) = data;
 
+        // Component: ChanceToSpawnAdjacentEntity
         for (spawn_chance, pos) in (&chance_to_spawn, &positions).join() {
             let do_spawn = rng.roll_dice(1, 100) <= spawn_chance.chance;
             if do_spawn {
@@ -60,10 +60,13 @@ impl<'a> System<'a> for EntitySpawnSystem {
                 }
             }
         }
+
     }
 }
 
-
+// Loop through the EntitySpawnRequestBuffer and switch on the kind of entity
+// being requested. Delegate the requests to the appropriate functions and then
+// clear the buffer.
 pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
     // We need to clone the requests vector here to keep the borrow checker
     // happy. Otherwise we're keeping a mutable reference to part of the ecs,

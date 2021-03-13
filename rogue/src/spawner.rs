@@ -1,15 +1,15 @@
 use super::{
-    Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock, HungerState,
-    Monster, MonsterMovementAI, Name, Player, Position,
-    Renderable, Viewshed, PickUpable, Useable, Castable, SpellCharges,
-    Equippable, EquipmentSlot, Throwable, Targeted, Untargeted, Consumable,
-    ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
-    AreaOfEffectWhenTargeted, InflictsDamageWhenTargeted,
-    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
-    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
-    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus, SimpleMarker,
-    SerializeMe, MarkedBuilder,
+    Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
+    HungerState, Monster, IsEntityKind, MonsterMovementAI, Name, Player,
+    Position, Renderable, Viewshed, PickUpable, Useable, Castable,
+    SpellCharges, Equippable, EquipmentSlot, Throwable, Targeted, Untargeted,
+    Consumable, ProvidesFullHealing, ProvidesFullFood,
+    IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
+    InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
+    InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
+    MovesToRandomPosition, SpawnsEntityInAreaWhenTargeted,
+    ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
+    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -278,6 +278,8 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
 //----------------------------------------------------------------------------
 // Other Interactable Entities
 //----------------------------------------------------------------------------
+// Spawn a fire entity in the ecs. All spawning of fire MUST use this function,
+// since it handles syncronizing the map.fire array.
 pub fn fire(ecs: &mut World, x: i32, y: i32) {
     let can_spawn: bool;
     let idx: usize;
@@ -296,16 +298,44 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) {
                 order: 2,
             })
             .with(Name {name: "Fire".to_string()})
+            .with(IsEntityKind {kind: EntitySpawnKind::Fire})
             .with(ChanceToSpawnAdjacentEntity {
                 chance: 50,
                 kind: EntitySpawnKind::Fire
+            })
+            .with(ChanceToDissipate {
+                chance: 60
             })
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
         map.fire[idx] = true;
-
     }
+}
+
+// Remove a fire entity from the ecs. All despawning of fire MUST use this
+// function, since we need to syncronize the map.fire array.
+pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
+    let idx;
+    { // Contain first borrow of ECS.
+        let positions = ecs.read_storage::<Position>();
+        let map = ecs.fetch::<Map>();
+        let pos = positions.get(*entity);
+        match pos {
+            Some(pos) => {
+                idx = map.xy_idx(pos.x, pos.y);
+                if !map.fire[idx] {
+                    panic!("Attempted to delete fire but no fire in position.")
+                }
+            }
+            None => panic!("Attempted to delete fire, but fire has no position.")
+        }
+    }
+    { // Contain second borrow of ECS.
+        let mut map = ecs.fetch_mut::<Map>();
+        map.fire[idx] = false;
+    }
+    ecs.delete_entity(*entity).expect("Unable to remove fire entity.");
 }
 
 //----------------------------------------------------------------------------

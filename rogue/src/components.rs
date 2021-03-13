@@ -84,6 +84,13 @@ pub struct Renderable {
     pub order: i32,
 }
 
+// Tags entitys with a specific type. This is used to lookup the apropriate
+// destructor.
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct IsEntityKind {
+    pub kind: EntitySpawnKind
+}
+
 //------------------------------------------------------------------
 // Location components.
 // These components tag an entity as in some (abstract, non-physical) location.
@@ -250,19 +257,12 @@ pub enum EntitySpawnKind {
     Fire,
     Chill
 }
-// Component indicates that an effect spawns new entities when resolved.
+// Component indicates that a targeted effect spawns new entities when resolved.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct SpawnsEntityInAreaWhenTargeted {
     pub radius: i32,
     pub kind: EntitySpawnKind
 }
-
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct ChanceToSpawnAdjacentEntity {
-    pub chance: i32,
-    pub kind: EntitySpawnKind
-}
-
 
 //------------------------------------------------------------------
 // Game effects components
@@ -322,6 +322,21 @@ pub struct ProvidesFullFood {}
 // position.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct MovesToRandomPosition {}
+
+// Component indicates that the entity has a random chance to spawn entities in
+// an adjacent space.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct ChanceToSpawnAdjacentEntity {
+    pub chance: i32,
+    pub kind: EntitySpawnKind
+}
+
+// An entity with this component has a chance to dissipate every turn.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct ChanceToDissipate {
+    pub chance: i32,
+}
+
 
 //------------------------------------------------------------------
 // Status Effect Components
@@ -465,6 +480,12 @@ impl WantsToTakeDamage {
         }
     }
 }
+
+// An entity with this component has dissipated and should be removed from the
+// ECS at the end of the current turn.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct WantsToDissipate {}
+
 
 //----------------------------------------------------------------------------
 // Serialization Components.

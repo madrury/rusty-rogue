@@ -42,6 +42,8 @@ use hunger_system::*;
 mod spell_charge_system;
 use spell_charge_system::*;
 mod entity_spawn_system;
+use dissipation_system::*;
+mod dissipation_system;
 use entity_spawn_system::*;
 mod gamelog;
 use gamelog::{GameLog};
@@ -152,6 +154,9 @@ impl State {
         hunger.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
         charges.run_now(&self.ecs);
+        let mut dissipates = DissipationSystem{};
+        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
+        dissipates.run_now(&self.ecs);
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);
@@ -552,6 +557,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InSpellBook>();
     gs.ecs.register::<Equipped>();
     gs.ecs.register::<Monster>();
+    gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<SpellCharges>();
     gs.ecs.register::<WantsToMeleeAttack>();
@@ -562,6 +568,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToEquipItem>();
     gs.ecs.register::<WantsToRemoveItem>();
     gs.ecs.register::<WantsToMoveToRandomPosition>();
+    gs.ecs.register::<WantsToDissipate>();
     gs.ecs.register::<ProvidesFullHealing>();
     gs.ecs.register::<ProvidesFullFood>();
     gs.ecs.register::<IncreasesMaxHpWhenUsed>();
@@ -572,6 +579,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsBurningWhenTargeted>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<ChanceToSpawnAdjacentEntity>();
+    gs.ecs.register::<ChanceToDissipate>();
     gs.ecs.register::<GrantsMeleeAttackBonus>();
     gs.ecs.register::<GrantsMeleeDefenseBonus>();
     gs.ecs.register::<StatusIsFrozen>();
