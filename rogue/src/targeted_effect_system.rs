@@ -1,11 +1,12 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
-    Name, Renderable, Consumable, SpellCharges, Position, Viewshed, WantsToUseTargeted,
-    Targeted, ProvidesFullHealing, MovesToRandomPosition,
+    EntitySpawnRequestBuffer, EntitySpawnRequest, EntitySpawnKind, Name,
+    Renderable, Consumable, SpellCharges, Position, Viewshed,
+    WantsToUseTargeted, Targeted, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, AreaOfEffectWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, WantsToTakeDamage, StatusIsFrozen,
-    StatusIsBurning
+    StatusIsBurning, SpawnsEntityInAreaWhenTargeted
 };
 use specs::prelude::*;
 use rltk::RandomNumberGenerator;
@@ -21,6 +22,7 @@ pub struct TargetedSystemData<'a> {
         map: ReadExpect<'a, Map>,
         log: WriteExpect<'a, GameLog>,
         animation_builder: WriteExpect<'a, AnimationBuilder>,
+        spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
         rng: WriteExpect<'a, RandomNumberGenerator>,
         names: ReadStorage<'a, Name>,
         renderables: ReadStorage<'a, Renderable>,
@@ -37,6 +39,7 @@ pub struct TargetedSystemData<'a> {
         does_burn: WriteStorage<'a, InflictsBurningWhenTargeted>,
         aoes: ReadStorage<'a, AreaOfEffectWhenTargeted>,
         aoe_animations: ReadStorage<'a, AreaOfEffectAnimationWhenTargeted>,
+        spawns_entity_in_area: ReadStorage<'a, SpawnsEntityInAreaWhenTargeted>,
         apply_damages: WriteStorage<'a, WantsToTakeDamage>,
         teleports: ReadStorage<'a, MovesToRandomPosition>,
         is_frozen: WriteStorage<'a, StatusIsFrozen>,
@@ -53,6 +56,7 @@ impl<'a> System<'a> for TargetedSystem {
             map,
             mut log,
             mut animation_builder,
+            mut spawn_buffer,
             mut rng,
             names,
             renderables,
@@ -73,6 +77,7 @@ impl<'a> System<'a> for TargetedSystem {
             teleports,
             mut is_frozen,
             mut is_burning,
+            spawns_entity_in_area
         } = data;
 
         for (user, want_target) in (&entities, &wants_target).join() {
@@ -102,6 +107,8 @@ impl<'a> System<'a> for TargetedSystem {
                 .filter(|&e| *e != user)
                 .collect();
 
+            // Apply the effect to each target in turn. This is essentially a
+            // bit switch over the possible types of effects.
             for target in targets {
 
                 // Component: ProvidesHealing.
@@ -218,6 +225,16 @@ impl<'a> System<'a> for TargetedSystem {
                     bg: has_aoe_animation.bg,
                     glyph: has_aoe_animation.glyph,
                     radius: has_aoe_animation.radius
+                })
+            }
+
+            // Component: SpawnsEntityInAreaWhenTargeted
+            let spawns_entity_when_targeted = spawns_entity_in_area.get(want_target.thing);
+            if let Some(spawns) = spawns_entity_when_targeted {
+                spawn_buffer.request(EntitySpawnRequest {
+                    x: target_point.x,
+                    y: target_point.y,
+                    kind: spawns.kind
                 })
             }
 

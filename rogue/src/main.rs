@@ -7,13 +7,14 @@ pub use components::*;
 pub mod map_builders;
 mod map;
 pub use map::*;
-mod spawner;
 mod save_load;
 mod random_table;
 mod player;
 use player::*;
 mod gui;
 use gui::*;
+mod spawner;
+use spawner::*;
 mod visibility_system;
 use visibility_system::*;
 mod monster_ai_system;
@@ -40,6 +41,8 @@ mod hunger_system;
 use hunger_system::*;
 mod spell_charge_system;
 use spell_charge_system::*;
+mod entity_spawn_system;
+use entity_spawn_system::*;
 mod gamelog;
 use gamelog::{GameLog};
 
@@ -47,6 +50,7 @@ use gamelog::{GameLog};
 const DEBUG_DRAW_ALL_MAP: bool = false;
 const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
+const DEBUG_CONSOLE_MESSAGE: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
 
@@ -148,6 +152,7 @@ impl State {
         hunger.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
         charges.run_now(&self.ecs);
+        process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
@@ -167,6 +172,7 @@ impl State {
         status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
@@ -560,6 +566,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsDamageWhenTargeted>();
     gs.ecs.register::<InflictsFreezingWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenTargeted>();
+    gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<GrantsMeleeAttackBonus>();
     gs.ecs.register::<GrantsMeleeDefenseBonus>();
     gs.ecs.register::<StatusIsFrozen>();
@@ -575,6 +582,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(GameLog::new());
     gs.ecs.insert(AnimationBuilder::new());
     gs.ecs.insert(ParticleBuilder::new());
+    gs.ecs.insert(EntitySpawnRequestBuffer::new());
 
     let player = spawner::spawn_player(&mut gs.ecs, 0, 0);
     gs.ecs.insert(player);

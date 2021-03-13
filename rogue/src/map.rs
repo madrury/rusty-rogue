@@ -23,14 +23,29 @@ pub enum TileType {
 pub struct Map {
     pub width: i32,
     pub height: i32,
+    // The current depth into the dungeon. This will effect which types of map
+    // geometries can spawn, along with enemies and items.
     pub depth: i32,
     pub tiles: Vec<TileType>,
+    // Has the player seen this tile? If so, we render it even when it is out of
+    // visibility, but darkened.
     pub revealed_tiles: Vec<bool>,
+    // Is this tile currently visible to the player. This array is updated in
+    // visibility_system every turn.
     pub visible_tiles: Vec<bool>,
+    // Is the tile currently blocked for movement? This array needs to be kept
+    // synced with game state.
+    // TODO: Is there a better way to keep this synced, a generic move entity
+    // function that is always used?
     pub blocked: Vec<bool>,
+    // Is the tile currently occuped by fire? We only want to spawn one fire
+    // entity in each tile, so we need a source of truth for this.
+    pub fire: Vec<bool>,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
+    // Convenience vector of all the entities occupying a tile. This array is
+    // updated each turn in map_indexing_system.rs.
     pub tile_content: Vec<Vec<Entity>>,
 }
 
@@ -45,6 +60,7 @@ impl Map {
             revealed_tiles : vec![false; MAP_SIZE],
             visible_tiles : vec![false; MAP_SIZE],
             blocked : vec![false; MAP_SIZE],
+            fire: vec![false; MAP_SIZE],
             tile_content : vec![Vec::new(); MAP_SIZE],
         }
     }

@@ -273,6 +273,20 @@ pub struct InflictsBurningWhenTargeted {
     pub tick_damage: i32
 }
 
+// Enumerates the various types of entities that can spawn. Used to tag a spawn
+// request to lookup the appropriate function used to spawn the entity.
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
+pub enum EntitySpawnKind {
+    Fire,
+    Chill
+}
+// Component indicates that an effect spawns new entities when resolved.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnsEntityInAreaWhenTargeted {
+    pub radius: i32,
+    pub kind: EntitySpawnKind
+}
+
 // Component for effects that grant a MeleeAttackBonus
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct GrantsMeleeAttackBonus {

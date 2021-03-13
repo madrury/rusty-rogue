@@ -1,5 +1,5 @@
 use super::{
-    Map, TileType, BlocksTile, CombatStats, HungerClock, HungerState,
+    Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock, HungerState,
     Monster, MonsterMovementAI, Name, Player, Position,
     Renderable, Viewshed, PickUpable, Useable, Castable, SpellCharges,
     Equippable, EquipmentSlot, Throwable, Targeted, Untargeted, Consumable,
@@ -7,8 +7,8 @@ use super::{
     AreaOfEffectWhenTargeted, InflictsDamageWhenTargeted,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
-    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus, SimpleMarker,
-    SerializeMe, MarkedBuilder,
+    SpawnsEntityInAreaWhenTargeted, GrantsMeleeAttackBonus,
+    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -141,7 +141,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Pomegranate, 1 + depth)
             .insert(ItemType::HealthPotion, 3 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, 2 + depth)
+            .insert(ItemType::FirePotion, 200 + depth)
             .insert(ItemType::FreezingPotion, 2 + depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
@@ -275,6 +275,35 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
 }
 
 //----------------------------------------------------------------------------
+// Other Interactable Entities
+//----------------------------------------------------------------------------
+pub fn fire(ecs: &mut World, x: i32, y: i32) {
+    let can_spawn: bool;
+    let idx: usize;
+    {
+        let map = ecs.fetch::<Map>();
+        idx = map.xy_idx(x, y);
+        can_spawn = map.fire[idx];
+    }
+    if can_spawn {
+        ecs.create_entity()
+            .with(Position {x, y})
+            .with(Renderable {
+                glyph: rltk::to_cp437('^'),
+                fg: RGB::named(rltk::RED),
+                bg: RGB::named(rltk::ORANGE),
+                order: 0,
+            })
+            .with(Name {name: "Fire".to_string()})
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        let mut map = ecs.fetch_mut::<Map>();
+        map.fire[idx] = true;
+
+    }
+}
+
+//----------------------------------------------------------------------------
 // Potions
 //----------------------------------------------------------------------------
 fn health_potion(ecs: &mut World, x: i32, y: i32) {
@@ -314,9 +343,13 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Throwable {})
     .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
+    .with(AreaOfEffectWhenTargeted {radius: 2})
     .with(InflictsDamageWhenTargeted {damage: 10})
     .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 4})
-    .with(AreaOfEffectWhenTargeted {radius: 2})
+    .with(SpawnsEntityInAreaWhenTargeted {
+        radius: 2,
+        kind: EntitySpawnKind::Fire
+    })
     .with(AreaOfEffectAnimationWhenTargeted {
         radius: 2,
         fg: RGB::named(rltk::ORANGE),
