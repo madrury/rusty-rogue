@@ -65,6 +65,7 @@ pub enum RunState {
     PreGame,
     AwaitingInput,
     PlayerTurn,
+    TerrainTurn,
     MonsterTurn,
     ShowUseInventory,
     ShowThrowInventory,
@@ -154,17 +155,21 @@ impl State {
         hunger.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
         charges.run_now(&self.ecs);
-        let mut dissipates = DissipationSystem{};
-        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
-        dissipates.run_now(&self.ecs);
-        let mut spawns = EntitySpawnSystem{};
-        spawns.run_now(&self.ecs);
-        process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
+        self.ecs.maintain();
+    }
+
+    fn run_terrain_turn_systems(&mut self) {
+        let mut dissipates = DissipationSystem{};
+        dissipates.run_now(&self.ecs);
+        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
+        let mut spawns = EntitySpawnSystem{};
+        spawns.run_now(&self.ecs);
+        process_entity_spawn_request_buffer(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -357,8 +362,13 @@ impl GameState for State {
             RunState::PlayerTurn => {
                 self.run_player_turn_systems();
                 self.run_map_indexing_system();
-                newrunstate = RunState::MonsterTurn;
+                newrunstate = RunState::TerrainTurn;
             }
+            RunState::TerrainTurn => {
+                self.run_terrain_turn_systems();
+                self.run_map_indexing_system();
+                newrunstate = RunState::MonsterTurn;
+            },
             RunState::MonsterTurn => {
                 self.run_monster_turn_systems();
                 self.run_map_indexing_system();
