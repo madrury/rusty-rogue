@@ -1,4 +1,4 @@
-use rltk::{GameState, Rltk, Point};
+use rltk::{GameState, Rltk, Point, RGB};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
 
@@ -50,9 +50,9 @@ use gamelog::{GameLog};
 
 // Debug flags.
 const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
-const DEBUG_CONSOLE_MESSAGE: bool = false;
+const DEBUG_HIGHLIGHT_FIRE: bool = true;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
 
@@ -120,6 +120,9 @@ impl State {
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
             }
+        }
+        if DEBUG_HIGHLIGHT_FIRE {
+            self.debug_highlight_fire(ctx);
         }
     }
 
@@ -286,6 +289,20 @@ impl State {
             println!("{} is in position {:?}", name.name, *pos)
         }
     }
+
+    #[allow(dead_code)]
+    fn debug_highlight_fire(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.fire[idx] {
+                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
+                }
+            }
+        }
+    }
+
 }
 
 impl GameState for State {

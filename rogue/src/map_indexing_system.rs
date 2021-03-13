@@ -30,7 +30,7 @@ impl<'a> System<'a> for MapIndexingSystem {
             // Syncronize map.fire.
             let is_fire = kind.get(entity)
                 .map_or(false, |k| k.kind == EntitySpawnKind::Fire);
-            map.fire[idx] = is_fire;
+            map.fire[idx] |= is_fire;
             // Update tile content.
             map.tile_content[idx].push(entity);
         }

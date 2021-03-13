@@ -60,7 +60,6 @@ impl<'a> System<'a> for EntitySpawnSystem {
                 }
             }
         }
-
     }
 }
 

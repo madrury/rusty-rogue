@@ -300,11 +300,11 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) {
             .with(Name {name: "Fire".to_string()})
             .with(IsEntityKind {kind: EntitySpawnKind::Fire})
             .with(ChanceToSpawnAdjacentEntity {
-                chance: 50,
+                chance: 100,
                 kind: EntitySpawnKind::Fire
             })
             .with(ChanceToDissipate {
-                chance: 60
+                chance: 20
             })
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -325,7 +325,10 @@ pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
             Some(pos) => {
                 idx = map.xy_idx(pos.x, pos.y);
                 if !map.fire[idx] {
-                    panic!("Attempted to delete fire but no fire in position.")
+                    panic!(format!(
+                        "Attempted to delete fire but no fire in position {} {}.",
+                        pos.x, pos.y
+                    ))
                 }
             }
             None => panic!("Attempted to delete fire, but fire has no position.")
