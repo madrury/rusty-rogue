@@ -215,7 +215,6 @@ impl SpellCharges {
     }
 }
 
-
 //------------------------------------------------------------------
 // Monster AI Components
 //------------------------------------------------------------------
@@ -238,6 +237,32 @@ impl MonsterMovementAI {
         self.lost_visibility_keep_following_turns_remaining -= 1
     }
 }
+
+//------------------------------------------------------------------
+// Spawn Components
+//
+// These components influence entity spawning behaviour.
+//------------------------------------------------------------------
+// Enumerates the various types of entities that can spawn. Used to tag a spawn
+// request to lookup the appropriate function used to spawn the entity.
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
+pub enum EntitySpawnKind {
+    Fire,
+    Chill
+}
+// Component indicates that an effect spawns new entities when resolved.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnsEntityInAreaWhenTargeted {
+    pub radius: i32,
+    pub kind: EntitySpawnKind
+}
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct ChanceToSpawnAdjacentEntity {
+    pub chance: i32,
+    pub kind: EntitySpawnKind
+}
+
 
 //------------------------------------------------------------------
 // Game effects components
@@ -271,20 +296,6 @@ pub struct InflictsFreezingWhenTargeted {
 pub struct InflictsBurningWhenTargeted {
     pub turns: i32,
     pub tick_damage: i32
-}
-
-// Enumerates the various types of entities that can spawn. Used to tag a spawn
-// request to lookup the appropriate function used to spawn the entity.
-#[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
-pub enum EntitySpawnKind {
-    Fire,
-    Chill
-}
-// Component indicates that an effect spawns new entities when resolved.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct SpawnsEntityInAreaWhenTargeted {
-    pub radius: i32,
-    pub kind: EntitySpawnKind
 }
 
 // Component for effects that grant a MeleeAttackBonus

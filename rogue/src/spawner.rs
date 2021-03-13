@@ -7,8 +7,9 @@ use super::{
     AreaOfEffectWhenTargeted, InflictsDamageWhenTargeted,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
-    SpawnsEntityInAreaWhenTargeted, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
+    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
+    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus, SimpleMarker,
+    SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -283,7 +284,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) {
     {
         let map = ecs.fetch::<Map>();
         idx = map.xy_idx(x, y);
-        can_spawn = map.fire[idx];
+        can_spawn = !map.fire[idx] && map.tiles[idx] != TileType::Wall;
     }
     if can_spawn {
         ecs.create_entity()
@@ -292,9 +293,13 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) {
                 glyph: rltk::to_cp437('^'),
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::ORANGE),
-                order: 0,
+                order: 2,
             })
             .with(Name {name: "Fire".to_string()})
+            .with(ChanceToSpawnAdjacentEntity {
+                chance: 50,
+                kind: EntitySpawnKind::Fire
+            })
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();

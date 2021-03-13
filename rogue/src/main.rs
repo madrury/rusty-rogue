@@ -152,6 +152,8 @@ impl State {
         hunger.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
         charges.run_now(&self.ecs);
+        let mut spawns = EntitySpawnSystem{};
+        spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
@@ -172,6 +174,8 @@ impl State {
         status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut spawns = EntitySpawnSystem{};
+        spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
@@ -567,6 +571,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsFreezingWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenTargeted>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
+    gs.ecs.register::<ChanceToSpawnAdjacentEntity>();
     gs.ecs.register::<GrantsMeleeAttackBonus>();
     gs.ecs.register::<GrantsMeleeDefenseBonus>();
     gs.ecs.register::<StatusIsFrozen>();

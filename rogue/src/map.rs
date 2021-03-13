@@ -73,6 +73,10 @@ impl Map {
         (idx as i32 % self.width, idx as i32 / self.width)
     }
 
+    pub fn within_bounds(&self, x: i32, y: i32) -> bool {
+        x >= 1 || x <= self.width - 1 || y >= 1 || y <= self.height - 1
+    }
+
     pub fn random_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
         for _ in 0..n_tries {
             let x = rng.roll_dice(1, self.width) - 1;
@@ -99,6 +103,35 @@ impl Map {
         return None;
     }
 
+    pub fn random_adjacent_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
+        // TODO: This should use the game's internal RNG.
+        let mut rng = RandomNumberGenerator::new();
+        let dx = rng.range(-1, 2);
+        let dy = rng.range(-1, 2);
+        if dx == 0 && dy == 0 {
+            return None
+        }
+        if !self.within_bounds(x + dx, y + dy) {
+            return None
+        }
+        return Some((x + dx, y + dy))
+    }
+
+    pub fn random_adjacent_unblocked_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
+        // TODO: This should use the game's internal RNG.
+        let mut rng = RandomNumberGenerator::new();
+        let dx = rng.range(-1, 2);
+        let dy = rng.range(-1, 2);
+        if dx == 0 && dy == 0 {
+            return None
+        }
+        let idx = self.xy_idx(x + dx, y + dy);
+        if self.within_bounds(x + dx, y + dy) && !self.blocked[idx] {
+            return Some((x + dx, y + dy))
+        }
+        return None
+    }
+
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.blocked[i] = *tile == TileType::Wall;
@@ -112,7 +145,7 @@ impl Map {
     }
 
     fn is_exit_valid(&self, x: i32, y: i32) -> bool {
-        if x < 1 || x > self.width - 1 || y < 1 || y > self.height - 1 {
+        if !self.within_bounds(x, y) {
             return false;
         }
         let idx = self.xy_idx(x, y);

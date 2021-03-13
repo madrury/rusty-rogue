@@ -1,5 +1,5 @@
-use super::{World, Map, EntitySpawnKind, fire};
-use rltk::{Point};
+use super::{World, Map, EntitySpawnKind, Position, ChanceToSpawnAdjacentEntity, fire};
+use rltk::{Point, RandomNumberGenerator};
 use specs::prelude::*;
 
 
@@ -27,6 +27,43 @@ impl EntitySpawnRequestBuffer {
     }
 }
 
+// Checks for any components that generate entity spawn requests, determines
+// their specific request, and then pushes that request to the
+// EntitySpawnRequestBuffer.
+pub struct EntitySpawnSystem {}
+
+impl<'a> System<'a> for EntitySpawnSystem {
+    #[allow(clippy::type_complexity)]
+    type SystemData = (
+        ReadExpect<'a, Map>,
+        WriteExpect<'a, RandomNumberGenerator>,
+        WriteExpect<'a, EntitySpawnRequestBuffer>,
+        ReadStorage<'a, ChanceToSpawnAdjacentEntity>,
+        ReadStorage<'a, Position>,
+    );
+
+    fn run(&mut self, data: Self::SystemData) {
+
+        let (map, mut rng, mut request_buffer, chance_to_spawn, positions) = data;
+
+        for (spawn_chance, pos) in (&chance_to_spawn, &positions).join() {
+            let do_spawn = rng.roll_dice(1, 100) <= spawn_chance.chance;
+            if do_spawn {
+                // spawn_position = map.random_adjacent_point()
+                let spawn_position = map.random_adjacent_point(pos.x, pos.y);
+                if let Some(spawn_position) = spawn_position {
+                    request_buffer.request(EntitySpawnRequest{
+                        x: spawn_position.0,
+                        y: spawn_position.1,
+                        kind: spawn_chance.kind
+                    })
+                }
+            }
+        }
+    }
+}
+
+
 pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
     // We need to clone the requests vector here to keep the borrow checker
     // happy. Otherwise we're keeping a mutable reference to part of the ecs,
@@ -37,7 +74,7 @@ pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
         spawn_requests = spawns.requests.clone();
     }
     for request in spawn_requests.iter() {
-        // spawn_new_entity(ecs, request.kind, request.x, request.y);
+        // TODO: Check that the index is within bounds!
         match request.kind {
             EntitySpawnKind::Fire => fire(ecs, request.x, request.y),
             _ => {}

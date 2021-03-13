@@ -23,6 +23,7 @@ impl MonsterMovementSystem {
     }
 
     // Return a random adjcaent position to pos that is not currently blocked.
+    // TODO: This should use the general functions we introduced in Map.
     fn random_adjacent_position(map: &Map, pos: &Position) -> (i32, i32) {
         // TODO: This should use the game's internal RNG and probably belongs in
         // Map, not here.
