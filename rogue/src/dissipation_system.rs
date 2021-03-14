@@ -27,8 +27,12 @@ impl<'a> System<'a> for DissipationSystem {
     }
 }
 
+// Search for entities with a WantsToDissipate component, then delegate the
+// dissipation to the appropriate destructor for that entity.
 impl DissipationSystem {
     pub fn clean_up_dissipated_entities(ecs: &mut World) {
+        // Holds the entities that want to dissipate, along with type
+        // information that allows us to delegate to the appropriate destructor.
         let mut dissipated: Vec<(Entity, Option<IsEntityKind>)> = Vec::new();
         { // Scope to contain the lifetime of the immutable borrow of ecs in
             //the line below.
@@ -40,10 +44,12 @@ impl DissipationSystem {
                 dissipated.push((entity, kind.map(|k| *k)));
             }
         }
+        // Actually call the apppropriate destructors.
         for (victim, kind) in dissipated {
             match (victim, kind) {
                 (_, None) => {
-                    ecs.delete_entity(victim).expect("Unable to dissipate an entitiy that requested it.")
+                    ecs.delete_entity(victim)
+                        .expect("Unable to dissipate an entitiy that requested it.");
                 }
                 (victim, Some(is_entity_kind)) => {
                     match is_entity_kind.kind {

@@ -80,6 +80,9 @@ impl<'a> System<'a> for TargetedSystem {
             spawns_entity_in_area
         } = data;
 
+        //--------------------------------------------------------------------
+        // Main loop through all the targets.
+        //--------------------------------------------------------------------
         for (user, want_target) in (&entities, &wants_target).join() {
 
             // In the case we are casting a spell, we guard against the case

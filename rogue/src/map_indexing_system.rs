@@ -3,10 +3,15 @@ use super::{Map, Position, BlocksTile, IsEntityKind, EntitySpawnKind};
 
 pub struct MapIndexingSystem {}
 
-// Updates internal data stores on Map:
-//   - blocked: Tracks what indexes are blocked for movement.
-//   - fire: Is fire currently burning in the tile?
+//----------------------------------------------------------------------------
+// Updates/sychronizes internal data stores on Map.
+//   This system runs each turn and synchronizes various attributes of Map with
+//   the entities currently on the game map:
+//
+//   - blocked: A boolean array that tracks what indexes are blocked for movement.
+//   - fire: A boolean array that tracks if fire currently burning in the tile?
 //   - tile_content: Vector of entities residing in a tile.
+//----------------------------------------------------------------------------
 impl<'a> System<'a> for MapIndexingSystem {
     type SystemData = (
         WriteExpect<'a, Map>,
@@ -19,6 +24,7 @@ impl<'a> System<'a> for MapIndexingSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (mut map, positions, blockers, kind, entities) = data;
 
+        // Re-initialize each of the map attributes.
         map.populate_blocked();
         for e in map.fire.iter_mut() {*e = false}
         map.clear_tile_content();

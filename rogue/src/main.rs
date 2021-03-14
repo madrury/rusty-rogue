@@ -52,7 +52,7 @@ use gamelog::{GameLog};
 const DEBUG_DRAW_ALL_MAP: bool = false;
 const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
-const DEBUG_HIGHLIGHT_FIRE: bool = true;
+const DEBUG_HIGHLIGHT_FIRE: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
 
