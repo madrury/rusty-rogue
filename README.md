@@ -9,10 +9,9 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] Pause the game during animations.
   - [ ] A swimming system.
 
-#### Terrain
+#### Terrain and Hazards
   - [ ] Grass.
   - [ ] Water.
-  - [ ] Fire.
   - [ ] Lava.
   - [ ] Steam.
   - [ ] Chill.
@@ -58,6 +57,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] A magic system.
   - [x] A spell of fireblast. ♠
   - [x] A spell of iceblast. ♦
+  - [x] Fire.
 
 ## Progress In Tutorial:
 
