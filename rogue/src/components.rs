@@ -279,6 +279,13 @@ pub struct InflictsDamageWhenTargeted {
     pub damage: i32
 }
 
+// Component for entities that inflict damage on any other entity occupying the
+// same position.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InflictsDamageWhenEncroachedUpon {
+    pub damage: i32
+}
+
 // Component for effects with an area of effect.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct AreaOfEffectWhenTargeted {

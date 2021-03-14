@@ -5,11 +5,12 @@ use super::{
     SpellCharges, Equippable, EquipmentSlot, Throwable, Targeted, Untargeted,
     Consumable, ProvidesFullHealing, ProvidesFullFood,
     IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
-    InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
-    InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
-    MovesToRandomPosition, SpawnsEntityInAreaWhenTargeted,
-    ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
+    InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
+    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
+    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
+    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
+    ChanceToDissipate, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
+    SimpleMarker, SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -305,6 +306,9 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) {
             })
             .with(ChanceToDissipate {
                 chance: 20
+            })
+            .with(InflictsDamageWhenEncroachedUpon {
+                damage: 10
             })
             .marked::<SimpleMarker<SerializeMe>>()
             .build();

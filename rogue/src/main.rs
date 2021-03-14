@@ -45,6 +45,8 @@ mod entity_spawn_system;
 use dissipation_system::*;
 mod dissipation_system;
 use entity_spawn_system::*;
+mod encroachment_system;
+use encroachment_system::*;
 mod gamelog;
 use gamelog::{GameLog};
 
@@ -167,12 +169,17 @@ impl State {
     }
 
     fn run_terrain_turn_systems(&mut self) {
+        let mut encroachment = EncroachmentSystem{};
+        encroachment.run_now(&self.ecs);
+        let mut dmg = DamageSystem{};
+        dmg.run_now(&self.ecs);
         let mut dissipates = DissipationSystem{};
         dissipates.run_now(&self.ecs);
-        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);
+        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
+        DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -602,6 +609,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MovesToRandomPosition>();
     gs.ecs.register::<AreaOfEffectWhenTargeted>();
     gs.ecs.register::<InflictsDamageWhenTargeted>();
+    gs.ecs.register::<InflictsDamageWhenEncroachedUpon>();
     gs.ecs.register::<InflictsFreezingWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenTargeted>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
