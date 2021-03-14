@@ -227,11 +227,18 @@ impl SpellCharges {
 //------------------------------------------------------------------
 // Comonent holding data determining a monster's movement behaviour.
 #[derive(Component, ConvertSaveload, Clone)]
+pub struct MovementRoutingOptions {
+    pub avoid_blocked: bool,
+    pub avoid_fire: bool,
+}
+
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct MonsterMovementAI {
     pub only_follow_within_viewshed: bool,
     pub no_visibility_wander: bool,
     pub lost_visibility_keep_following_turns_max: i32,
-    pub lost_visibility_keep_following_turns_remaining: i32
+    pub lost_visibility_keep_following_turns_remaining: i32,
+    pub routing_options: MovementRoutingOptions
 }
 impl MonsterMovementAI {
     pub fn reset_keep_following(&mut self) {

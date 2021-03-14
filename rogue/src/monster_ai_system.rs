@@ -1,5 +1,8 @@
 use specs::prelude::*;
-use super::{Viewshed, Monster, MonsterMovementAI, Name, Position, Map, WantsToMeleeAttack, StatusIsFrozen};
+use super::{
+    Viewshed, Monster, MonsterMovementAI, Name, Position, Map, RoutingMap,
+    WantsToMeleeAttack, StatusIsFrozen
+};
 use rltk::{Point, RandomNumberGenerator};
 
 pub struct MonsterMovementSystem {
@@ -91,6 +94,7 @@ impl<'a> System<'a> for MonsterMovementSystem {
                 Point::new(pos.x, pos.y),
                 *player_pos
             ) < 1.5;
+
             // Monster next to player branch:
             //   If we're already next to player, we enter into melee combat.
             if next_to_player {
@@ -106,7 +110,7 @@ impl<'a> System<'a> for MonsterMovementSystem {
                 let path = rltk::a_star_search(
                     map.xy_idx(pos.x, pos.y) as i32,
                     map.xy_idx(player_pos.x, player_pos.y) as i32,
-                    &mut *map
+                    &RoutingMap::from_map(&*map, &movement_ai.routing_options)
                 );
                 if path.success && path.steps.len() > 1 {
                     let new_x = path.steps[1] as i32 % map.width;

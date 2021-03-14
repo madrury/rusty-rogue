@@ -1,10 +1,10 @@
 use super::{
     Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
-    HungerState, Monster, IsEntityKind, MonsterMovementAI, Name, Player,
-    Position, Renderable, Viewshed, PickUpable, Useable, Castable,
-    SpellCharges, Equippable, EquipmentSlot, Throwable, Targeted, Untargeted,
-    Consumable, ProvidesFullHealing, ProvidesFullFood,
-    IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
+    HungerState, Monster, IsEntityKind, MonsterMovementAI,
+    MovementRoutingOptions, Name, Player, Position, Renderable, Viewshed,
+    PickUpable, Useable, Castable, SpellCharges, Equippable, EquipmentSlot,
+    Throwable, Targeted, Untargeted, Consumable, ProvidesFullHealing,
+    ProvidesFullFood, IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
     InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
@@ -188,6 +188,10 @@ const DEFAULT_MOVEMENT_AI: MonsterMovementAI = MonsterMovementAI {
     no_visibility_wander: true,
     lost_visibility_keep_following_turns_max: 2,
     lost_visibility_keep_following_turns_remaining: 2,
+    routing_options: MovementRoutingOptions {
+        avoid_blocked: true,
+        avoid_fire: true
+    }
 };
 const DEFAULT_COMBAT_STATS: CombatStats = CombatStats {
     max_hp: 15,

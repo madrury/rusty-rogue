@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::cmp::{min, max};
 use std::iter::Iterator;
-use super::{DEBUG_DRAW_ALL_MAP};
+use super::{DEBUG_DRAW_ALL_MAP, MovementRoutingOptions};
 
 
 pub const MAP_WIDTH: i32 = 80;
@@ -222,4 +222,70 @@ fn draw_tile(x: i32, y: i32, tile: &TileType, visible: bool, ctx: &mut Rltk) {
     }
     if !visible {fg = RGB::from_f32(0.5, 0.5, 0.5);}
     ctx.set(x, y, fg, RGB::from_f32(0.0, 0.0, 0.0), glyph);
+}
+
+//----------------------------------------------------------------------------
+// RoutingMap.
+// Supports options for how to route Monsters around hazardous terrain.
+//----------------------------------------------------------------------------
+pub struct RoutingMap {
+    pub width: i32,
+    pub height: i32,
+    pub avoid: Vec<bool>
+}
+
+impl RoutingMap {
+    pub fn from_map(map: &Map, options: &MovementRoutingOptions) -> RoutingMap {
+        let mut route = RoutingMap {
+            width: map.width,
+            height: map.height,
+            avoid: vec![false; map.width as usize * map.height as usize]
+        };
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                route.avoid[idx] =
+                    map.tiles[idx] == TileType::Wall
+                    || (options.avoid_blocked && map.blocked[idx])
+                    || (options.avoid_fire && map.fire[idx]);
+            }
+        }
+        route
+    }
+
+    fn xy_idx(&self, x: i32, y: i32) -> usize {
+        ((y * self.width) as usize) + x as usize
+    }
+
+    fn within_bounds(&self, x: i32, y: i32) -> bool {
+        x >= 1 || x <= self.width - 1 || y >= 1 || y <= self.height - 1
+    }
+
+    fn is_exit_valid(&self, x: i32, y: i32) -> bool {
+        if !self.within_bounds(x, y) {
+            return false;
+        }
+        let idx = self.xy_idx(x, y);
+        !self.avoid[idx]
+    }
+}
+
+impl BaseMap for RoutingMap {
+    fn get_available_exits(&self, idx: usize) -> rltk::SmallVec<[(usize, f32); 10]> {
+        let mut exits = rltk::SmallVec::new();
+        let x = idx as i32 % self.width;
+        let y = idx as i32 / self.width;
+        let w = self.width as usize;
+        if self.is_exit_valid(x - 1, y) { exits.push((idx - 1, 1.0));}
+        if self.is_exit_valid(x + 1, y) { exits.push((idx + 1, 1.0));}
+        if self.is_exit_valid(x, y - 1) { exits.push((idx - w, 1.0));}
+        if self.is_exit_valid(x, y + 1) { exits.push((idx + w, 1.0));}
+        // 1.45 is approximately sqrt(2).
+        if self.is_exit_valid(x - 1, y - 1) { exits.push((idx - w - 1, 1.45));}
+        if self.is_exit_valid(x + 1, y - 1) { exits.push((idx - w + 1, 1.45));}
+        if self.is_exit_valid(x - 1, y + 1) { exits.push((idx + w - 1, 1.45));}
+        if self.is_exit_valid(x + 1, y + 1) { exits.push((idx + w + 1, 1.45));}
+        exits
+    }
+
 }
