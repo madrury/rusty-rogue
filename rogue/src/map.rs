@@ -227,6 +227,11 @@ fn draw_tile(x: i32, y: i32, tile: &TileType, visible: bool, ctx: &mut Rltk) {
 //----------------------------------------------------------------------------
 // RoutingMap.
 // Supports options for how to route Monsters around hazardous terrain.
+//
+// This struct is meant to be used with the rltk pathfinding functions
+// a_star_search and dijkstra_map. It can be created from a Map using the
+// from_map function, which consumes a struct of RoutingOptions defining how a
+// monster treats movement through hazardous terrain.
 //----------------------------------------------------------------------------
 pub struct RoutingMap {
     pub width: i32,

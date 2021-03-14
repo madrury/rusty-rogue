@@ -551,7 +551,7 @@ impl GameState for State {
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::simple80x50()
-        .with_fps_cap(30.0)
+        .with_fps_cap(60.0)
         .with_title("Roguelike Tutorial")
         .build()?;
 
