@@ -343,6 +343,12 @@ pub struct ProvidesFullHealing {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct ProvidesFullFood {}
 
+// An entity with this component, when used, grants fire immunity.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ProvidesFireImmunityWhenUsed {
+    pub turns: i32
+}
+
 // An entity with this component, when used, teleports the user to a random
 // position.
 #[derive(Component, Serialize, Deserialize, Clone)]
@@ -404,6 +410,30 @@ impl StatusIsBurning {
             let burning = StatusIsBurning{remaining_turns: turns, tick_damage: dmg};
             store.insert(victim, burning)
                 .expect("Unable to insert StatusIsBurning component.");
+        }
+    }
+    pub fn is_burning(self) -> bool {
+        self.remaining_turns > 0
+    }
+    pub fn tick(&mut self) {
+        self.remaining_turns -= 1
+    }
+}
+
+// Component indicating the entity is immune to damage from Fire elemntal
+// sources.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct StatusIsImmuneToFire {
+    pub remaining_turns: i32,
+}
+impl StatusIsImmuneToFire {
+    pub fn new_status(store: &mut WriteStorage<StatusIsImmuneToFire>, e: Entity, turns: i32) {
+        if let Some(immune) = store.get_mut(e) {
+            immune.remaining_turns = turns;
+        } else {
+            let immune = StatusIsImmuneToFire{remaining_turns: turns};
+            store.insert(e, immune)
+                .expect("Unable to insert StatusIsImmuneToFire component.");
         }
     }
     pub fn is_burning(self) -> bool {

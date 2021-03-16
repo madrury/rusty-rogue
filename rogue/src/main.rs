@@ -610,6 +610,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ProvidesFullHealing>();
     gs.ecs.register::<ProvidesFullFood>();
     gs.ecs.register::<IncreasesMaxHpWhenUsed>();
+    gs.ecs.register::<ProvidesFireImmunityWhenUsed>();
     gs.ecs.register::<MovesToRandomPosition>();
     gs.ecs.register::<AreaOfEffectWhenTargeted>();
     gs.ecs.register::<InflictsDamageWhenTargeted>();
@@ -624,6 +625,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<GrantsMeleeDefenseBonus>();
     gs.ecs.register::<StatusIsFrozen>();
     gs.ecs.register::<StatusIsBurning>();
+    gs.ecs.register::<StatusIsImmuneToFire>();
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
 

@@ -80,6 +80,7 @@ pub fn save_game(ecs: &mut World) {
             ProvidesFullHealing,
             ProvidesFullFood,
             IncreasesMaxHpWhenUsed,
+            ProvidesFireImmunityWhenUsed,
             MovesToRandomPosition,
             AreaOfEffectWhenTargeted,
             InflictsDamageWhenTargeted,
@@ -94,6 +95,7 @@ pub fn save_game(ecs: &mut World) {
             GrantsMeleeDefenseBonus,
             StatusIsFrozen,
             StatusIsBurning,
+            StatusIsImmuneToFire,
             AreaOfEffectAnimationWhenTargeted,
             SerializationHelper
         );
@@ -183,6 +185,7 @@ pub fn load_game(ecs: &mut World) {
             ProvidesFullHealing,
             ProvidesFullFood,
             IncreasesMaxHpWhenUsed,
+            ProvidesFireImmunityWhenUsed,
             MovesToRandomPosition,
             AreaOfEffectWhenTargeted,
             InflictsDamageWhenTargeted,
@@ -197,6 +200,7 @@ pub fn load_game(ecs: &mut World) {
             GrantsMeleeDefenseBonus,
             StatusIsFrozen,
             StatusIsBurning,
+            StatusIsImmuneToFire,
             AreaOfEffectAnimationWhenTargeted,
             SerializationHelper
         );

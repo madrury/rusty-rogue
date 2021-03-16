@@ -24,7 +24,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, CombatStats>,
         ReadStorage<'a, Equipped>,
         ReadStorage<'a, GrantsMeleeAttackBonus>,
-        ReadStorage<'a, GrantsMeleeDefenseBonus>,
         WriteStorage<'a, WantsToMeleeAttack>,
         WriteStorage<'a, WantsToTakeDamage>,
         WriteStorage<'a, Position>,
@@ -41,7 +40,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
             combat_stats,
             equipped,
             attack_bonuses,
-            defense_bonuses,
             mut melee_attacks,
             mut damagees,
             positions,
@@ -63,12 +61,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     .filter(|(_e, _ab, eq)| eq.owner == attacker)
                     .map(|(_e, ab, _eq)| ab.bonus)
                     .sum();
-                let defense_bonus: i32 = (&entities, &defense_bonuses, &equipped)
-                    .join()
-                    .filter(|(_e, _ab, eq)| eq.owner == target)
-                    .map(|(_e, ab, _eq)| ab.bonus)
-                    .sum();
-                let damage = i32::max(0, stats.power + attack_bonus - target_stats.defense - defense_bonus);
+                let damage = i32::max(0, stats.power + attack_bonus);
                 if damage == 0 {
                     log.entries.push(
                         format!("{} is unable to damage {}.", &name.name, &target_name.name)

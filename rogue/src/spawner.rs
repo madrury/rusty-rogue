@@ -10,8 +10,8 @@ use super::{
     InflictsBurningWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
     MovesToRandomPosition, SpawnsEntityInAreaWhenTargeted,
     ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind,
+    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed, SimpleMarker,
+    SerializeMe, MarkedBuilder, ElementalDamageKind,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -391,12 +391,14 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     })
     .with(Name {name: "Potion of Fire".to_string()})
     .with(PickUpable {})
+    .with(Useable {})
     .with(Throwable {})
     .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
+    .with(ProvidesFireImmunityWhenUsed {turns: 50})
     .with(AreaOfEffectWhenTargeted {radius: 2})
     .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
-    .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 2})
+    .with(InflictsBurningWhenTargeted {turns: 5, tick_damage: 2})
     .with(SpawnsEntityInAreaWhenTargeted {
         radius: 2,
         kind: EntitySpawnKind::Fire

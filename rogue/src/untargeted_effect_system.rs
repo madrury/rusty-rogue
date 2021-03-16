@@ -1,9 +1,10 @@
 
 use super::{
-    Map, Point, CombatStats, HungerClock, GameLog, AnimationBuilder, AnimationRequest,
-    Name, Renderable, Position, Viewshed, WantsToUseUntargeted, Consumable,
-    Untargeted, ProvidesFullHealing, ProvidesFullFood, MovesToRandomPosition,
-    IncreasesMaxHpWhenUsed
+    Map, Point, CombatStats, HungerClock, GameLog, AnimationBuilder,
+    AnimationRequest, Name, Renderable, Position, Viewshed,
+    WantsToUseUntargeted, Consumable, Untargeted, ProvidesFullHealing,
+    ProvidesFullFood, MovesToRandomPosition, IncreasesMaxHpWhenUsed,
+    ProvidesFireImmunityWhenUsed, StatusIsImmuneToFire
 };
 use specs::prelude::*;
 use rltk::RandomNumberGenerator;
@@ -30,11 +31,13 @@ pub struct UntargetedSystemData<'a> {
     untargeteds: ReadStorage<'a, Untargeted>,
     wants_use: WriteStorage<'a, WantsToUseUntargeted>,
     increases_hp: ReadStorage<'a, IncreasesMaxHpWhenUsed>,
+    provides_fire_immunity: ReadStorage<'a, ProvidesFireImmunityWhenUsed>,
     healing: ReadStorage<'a, ProvidesFullHealing>,
     foods: ReadStorage<'a, ProvidesFullFood>,
     teleports: ReadStorage<'a, MovesToRandomPosition>,
     combat_stats: WriteStorage<'a, CombatStats>,
     hunger_clocks: WriteStorage<'a, HungerClock>,
+    status_fire_immunity: WriteStorage<'a, StatusIsImmuneToFire>,
 }
 
 impl<'a> System<'a> for UntargetedSystem {
@@ -59,11 +62,13 @@ impl<'a> System<'a> for UntargetedSystem {
             untargeteds,
             mut wants_use,
             increases_hp,
+            provides_fire_immunity,
             healing,
             foods,
             teleports,
             mut combat_stats,
             mut hunger_clocks,
+            mut status_fire_immunity
         } = data;
 
         // TODO: Joining on combat stats here is probably incorrect.
@@ -120,6 +125,25 @@ impl<'a> System<'a> for UntargetedSystem {
                 if let (Some(name), Some(thing_name)) = (name, thing_name) {
                     log.entries.push(format!(
                         "{} {} the {}, and feels full.",
+                        name.name,
+                        verb,
+                        thing_name.name
+                    ));
+                }
+            }
+
+            // Component: ProvidesFireImmunityWhenUsed
+            let thing_provides_fire_immunity = provides_fire_immunity.get(want_use.thing);
+            if let Some(provides_immunity) = thing_provides_fire_immunity {
+                StatusIsImmuneToFire::new_status(
+                    &mut status_fire_immunity,
+                    entity,
+                    provides_immunity.turns
+                );
+                let name = names.get(entity);
+                if let (Some(name), Some(thing_name)) = (name, thing_name) {
+                    log.entries.push(format!(
+                        "{} {} the {}, and no longer fears fire.",
                         name.name,
                         verb,
                         thing_name.name

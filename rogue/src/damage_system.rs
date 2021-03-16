@@ -1,5 +1,8 @@
 use specs::prelude::*;
-use super::{CombatStats, WantsToTakeDamage, Player, Name, GameLog};
+use super::{
+    CombatStats, WantsToTakeDamage, Player, Name, GameLog, Equipped,
+    ElementalDamageKind, GrantsMeleeDefenseBonus, StatusIsImmuneToFire
+};
 
 pub struct DamageSystem {}
 
@@ -39,18 +42,54 @@ impl DamageSystem {
 
 }
 
+
+
 // Process queued damage.
 impl<'a> System<'a> for DamageSystem {
     type SystemData = (
+        Entities<'a>,
         WriteStorage<'a, CombatStats>,
-        WriteStorage<'a, WantsToTakeDamage>
+        ReadStorage<'a, Equipped>,
+        WriteStorage<'a, WantsToTakeDamage>,
+        ReadStorage<'a, GrantsMeleeDefenseBonus>,
+        ReadStorage<'a, StatusIsImmuneToFire>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut stats, mut damage) = data;
-        for (stats, damage) in (&mut stats, &damage).join() {
-            stats.take_damage(damage.amounts.iter().sum::<i32>());
+        let (
+            entities,
+            mut stats,
+            equipped,
+            mut wants_to_take_damage,
+            melee_defense_bonus,
+            status_fire_immunity
+        ) = data;
+
+        for (entity, mut stats, damage) in (&entities, &mut stats, &wants_to_take_damage).join() {
+
+            let defense_bonus: i32 = (&entities, &melee_defense_bonus, &equipped)
+                .join()
+                .filter(|(_e, _ab, eq)| eq.owner == entity)
+                .map(|(_e, ab, _eq)| ab.bonus)
+                .sum();
+            let is_immune_to_fire: bool = status_fire_immunity.get(entity).is_some();
+
+            for (dmg, kind) in damage.amounts.iter().zip(&damage.kinds) {
+                match *kind {
+                    ElementalDamageKind::Physical => {
+                        stats.take_damage(i32::max(0, dmg - defense_bonus));
+                    }
+                    ElementalDamageKind::Hunger => {
+                        stats.take_damage(*dmg);
+                    }
+                    ElementalDamageKind::Fire => {
+                        if !is_immune_to_fire {
+                            stats.take_damage(*dmg);
+                        }
+                    }
+                }
+            }
         }
-        damage.clear();
+        wants_to_take_damage.clear();
     }
 }
