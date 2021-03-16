@@ -40,8 +40,8 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             name: "Player".to_string(),
         })
         .with(CombatStats {
-            max_hp: 30,
-            hp: 30,
+            max_hp: 50,
+            hp: 50,
             defense: 2,
             power: 5,
         })
@@ -144,7 +144,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Pomegranate, 1 + depth)
             .insert(ItemType::HealthPotion, 3 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, 2 + depth)
+            .insert(ItemType::FirePotion, 200 + depth)
             .insert(ItemType::FreezingPotion, 2 + depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)

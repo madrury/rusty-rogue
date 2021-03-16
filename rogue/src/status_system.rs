@@ -35,8 +35,6 @@ impl<'a> System<'a> for StatusSystem {
         ) = data;
 
         for entity in entities.join() {
-
-
             // StatusIsBurning: Tick burning entities, apply the tick damage,
             // and remove the status if expired or if the entity has aquired
             // fire immunity.
@@ -48,7 +46,7 @@ impl<'a> System<'a> for StatusSystem {
                     let name = names.get(entity);
                     if let Some(name) = name {
                         log.entries.push(
-                            format!("{} is np longer frozen.", name.name)
+                            format!("{} is np longer burning.", name.name)
                         )
                     }
                 } else {
@@ -61,7 +59,6 @@ impl<'a> System<'a> for StatusSystem {
                     burning.tick();
                 }
             }
-
             // StatusIsFrozen: Tick frozen entities and remove the status if
             // expired.
             let frozen = status_frozen.get_mut(entity);
@@ -78,7 +75,6 @@ impl<'a> System<'a> for StatusSystem {
                     frozen.tick();
                 }
             }
-
             // StatusIsImmuneToFire: Tick fire immune entities and remove the
             // status if expired.
             let is_fire_immune = status_is_fire_immune.get_mut(entity);
