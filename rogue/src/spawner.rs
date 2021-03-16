@@ -10,8 +10,8 @@ use super::{
     InflictsBurningWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
     MovesToRandomPosition, SpawnsEntityInAreaWhenTargeted,
     ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus,
-    SimpleMarker, SerializeMe, MarkedBuilder,
+    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
+    ElementalDamageKind,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -313,7 +313,8 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) {
                 chance: 20
             })
             .with(InflictsDamageWhenEncroachedUpon {
-                damage: 10
+                damage: 10,
+                kind: ElementalDamageKind::Fire
             })
             .with(InflictsBurningWhenEncroachedUpon {
                 turns: 4, tick_damage: 2
@@ -394,7 +395,7 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
     .with(AreaOfEffectWhenTargeted {radius: 2})
-    .with(InflictsDamageWhenTargeted {damage: 10})
+    .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
     .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 2})
     .with(SpawnsEntityInAreaWhenTargeted {
         radius: 2,
@@ -424,7 +425,7 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Throwable {})
     .with(Targeted {verb: "throw".to_string()})
     .with(Consumable {})
-    .with(InflictsDamageWhenTargeted {damage: 10})
+    .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
     .with(InflictsFreezingWhenTargeted {turns: 6})
     .with(AreaOfEffectWhenTargeted {radius: 2})
     .with(AreaOfEffectAnimationWhenTargeted {
@@ -522,7 +523,7 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(Throwable {})
         .with(Targeted {verb: "throw".to_string()})
         .with(Consumable {})
-        .with(InflictsDamageWhenTargeted {damage: 15})
+        .with(InflictsDamageWhenTargeted {damage: 15, kind: ElementalDamageKind::Physical})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
@@ -566,7 +567,7 @@ fn fireblast(ecs: &mut World, x: i32, y: i32) {
             time: 0
         })
         .with(Targeted {verb: "cast".to_string()})
-        .with(InflictsDamageWhenTargeted {damage: 10})
+        .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
         .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 4})
         .with(AreaOfEffectWhenTargeted {radius: 2})
         .with(AreaOfEffectAnimationWhenTargeted {
@@ -598,7 +599,7 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) {
             time: 0
         })
         .with(Targeted {verb: "cast".to_string()})
-        .with(InflictsDamageWhenTargeted {damage: 10})
+        .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
         .with(InflictsFreezingWhenTargeted {turns: 6})
         .with(AreaOfEffectWhenTargeted {radius: 2})
         .with(AreaOfEffectAnimationWhenTargeted {

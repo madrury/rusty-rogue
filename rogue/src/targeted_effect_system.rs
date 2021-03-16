@@ -169,7 +169,12 @@ impl<'a> System<'a> for TargetedSystem {
                 let stats = combat_stats.get_mut(*target);
                 let thing_damages = does_damage.get(want_target.thing);
                 if let (Some(thing_damages), Some(_stats)) = (thing_damages, stats) {
-                    WantsToTakeDamage::new_damage(&mut apply_damages, *target, thing_damages.damage);
+                    WantsToTakeDamage::new_damage(
+                        &mut apply_damages,
+                        *target,
+                        thing_damages.damage,
+                        thing_damages.kind
+                    );
                     let thing_name = names.get(want_target.thing);
                     let target_name = names.get(*target);
                     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {

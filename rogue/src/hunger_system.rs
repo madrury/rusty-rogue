@@ -1,6 +1,8 @@
 
 use specs::prelude::*;
-use super::{HungerClock, RunState, HungerState, WantsToTakeDamage, GameLog};
+use super::{
+    HungerClock, RunState, HungerState, WantsToTakeDamage, GameLog, ElementalDamageKind
+};
 
 
 pub struct HungerSystem {}
@@ -61,7 +63,12 @@ impl<'a> System<'a> for HungerSystem {
                     log_message = Some("You are starving.".to_string());
                 }
                 HungerState::Starving => {
-                    WantsToTakeDamage::new_damage(&mut wants_damages, entity, clock.tick_damage);
+                    WantsToTakeDamage::new_damage(
+                        &mut wants_damages,
+                        entity,
+                        clock.tick_damage,
+                        ElementalDamageKind::Hunger
+                    );
                     log_message = None;
                 }
             }

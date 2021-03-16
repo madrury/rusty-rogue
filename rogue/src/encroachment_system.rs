@@ -1,7 +1,8 @@
 use specs::prelude::*;
 use super::{
     Map, Position, InflictsDamageWhenEncroachedUpon,
-    InflictsBurningWhenEncroachedUpon, WantsToTakeDamage, StatusIsBurning
+    InflictsBurningWhenEncroachedUpon, WantsToTakeDamage, StatusIsBurning,
+    ElementalDamageKind
 };
 
 
@@ -38,7 +39,12 @@ impl<'a> System<'a> for EncroachmentSystem {
                 // Component: InflictsDamageWhenEncroachedUpon.
                 let dmg = damage_when_encroached.get(entity);
                 if let Some(dmg) = dmg {
-                    WantsToTakeDamage::new_damage(&mut wants_damage, *encroaching, dmg.damage);
+                    WantsToTakeDamage::new_damage(
+                        &mut wants_damage,
+                        *encroaching,
+                        dmg.damage,
+                        dmg.kind
+                    );
                 }
                 // Component: InflictsBurningWhenEncroachedUpon.
                 let burning = burning_when_encroached.get(entity);

@@ -283,14 +283,16 @@ pub struct IncreasesMaxHpWhenUsed {
 // Component for effects that inflict damage when thrown or cast.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsDamageWhenTargeted {
-    pub damage: i32
+    pub damage: i32,
+    pub kind: ElementalDamageKind
 }
 
 // Component for entities that inflict damage on any other entity occupying the
 // same position.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsDamageWhenEncroachedUpon {
-    pub damage: i32
+    pub damage: i32,
+    pub kind: ElementalDamageKind
 }
 
 // Component for effects with an area of effect.
@@ -485,19 +487,33 @@ pub struct WantsToRemoveItem {
 pub struct WantsToMoveToRandomPosition {}
 
 // Signals that the entity has damage queued, but not applied.
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
+pub enum ElementalDamageKind {
+    Physical, Fire, Hunger
+}
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToTakeDamage {
-    pub amounts: Vec<i32>
+    pub amounts: Vec<i32>,
+    pub kinds: Vec<ElementalDamageKind>
 }
 impl WantsToTakeDamage {
     // Since the ApplyMeleeDamage component can contain *multiple* instances of
     // damage, we need to distinguish the case of the first instance of damage
     // from the subsequent. This function encapsulates this switch.
-    pub fn new_damage(store: &mut WriteStorage<WantsToTakeDamage>, victim: Entity, amount: i32) {
-        if let Some(suffering) = store.get_mut(victim) {
-            suffering.amounts.push(amount);
+    pub fn new_damage(
+        store: &mut WriteStorage<WantsToTakeDamage>,
+        victim: Entity,
+        amount: i32,
+        kind: ElementalDamageKind
+    ) {
+        if let Some(wants_damage) = store.get_mut(victim) {
+            wants_damage.amounts.push(amount);
+            wants_damage.kinds.push(kind);
         } else {
-            let dmg = WantsToTakeDamage{ amounts: vec![amount] };
+            let dmg = WantsToTakeDamage{
+                amounts: vec![amount],
+                kinds: vec![kind]
+            };
             store.insert(victim, dmg)
                 .expect("Unable to insert SufferDamage component.");
         }

@@ -2,7 +2,8 @@ use specs::prelude::*;
 use super::{
     Map, TileType, CombatStats, WantsToMeleeAttack, Name, WantsToTakeDamage,
     GameLog, Renderable, Position, AnimationBuilder, AnimationRequest,
-    Equipped, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus
+    Equipped, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
+    ElementalDamageKind
 };
 
 pub struct MeleeCombatSystem {}
@@ -76,7 +77,12 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     log.entries.push(
                         format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
                     );
-                    WantsToTakeDamage::new_damage(&mut damagees, melee.target, damage);
+                    WantsToTakeDamage::new_damage(
+                        &mut damagees,
+                        melee.target,
+                        damage,
+                        ElementalDamageKind::Physical
+                    );
                     // Animate the damage with a flash, and render a bloodstain
                     // where the damage was inflicted.
                     let pos = positions.get(melee.target);

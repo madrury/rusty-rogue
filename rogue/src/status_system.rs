@@ -1,7 +1,10 @@
 
 use specs::prelude::*;
 use rltk::{RGB};
-use super::{GameLog, Name, StatusIsFrozen, StatusIsBurning, WantsToTakeDamage};
+use super::{
+    GameLog, Name, StatusIsFrozen, StatusIsBurning, WantsToTakeDamage,
+    ElementalDamageKind
+};
 
 
 pub struct StatusSystem {}
@@ -60,7 +63,12 @@ impl<'a> System<'a> for StatusSystem {
                         )
                     }
                 } else {
-                    WantsToTakeDamage::new_damage(&mut damages, entity, burning.tick_damage);
+                    WantsToTakeDamage::new_damage(
+                        &mut damages,
+                        entity,
+                        burning.tick_damage,
+                        ElementalDamageKind::Fire
+                    );
                     burning.tick();
                 }
             }
