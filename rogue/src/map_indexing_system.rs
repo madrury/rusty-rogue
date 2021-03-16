@@ -30,9 +30,9 @@ impl<'a> System<'a> for MapIndexingSystem {
         map.clear_tile_content();
 
         for (pos, entity) in (&positions, &entities).join() {
-            // Syncronize map.blocked.
             let idx = map.xy_idx(pos.x, pos.y);
-            map.blocked[idx] = blockers.get(entity).is_some();
+            // Syncronize map.blocked.
+            map.blocked[idx] |= blockers.get(entity).is_some();
             // Syncronize map.fire.
             let is_fire = kind.get(entity)
                 .map_or(false, |k| k.kind == EntitySpawnKind::Fire);
