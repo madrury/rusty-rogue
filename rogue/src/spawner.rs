@@ -144,7 +144,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Pomegranate, 1 + depth)
             .insert(ItemType::HealthPotion, 3 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, 200 + depth)
+            .insert(ItemType::FirePotion, 2 + depth)
             .insert(ItemType::FreezingPotion, 2 + depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
@@ -542,7 +542,7 @@ fn leather_armor(ecs: &mut World, x: i32, y: i32) {
         .with(Name {name : "Leather Armor".to_string()})
         .with(PickUpable {})
         .with(Equippable {slot: EquipmentSlot::Armor})
-        .with(GrantsMeleeDefenseBonus {bonus: 1})
+        .with(GrantsMeleeDefenseBonus {bonus: 3})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

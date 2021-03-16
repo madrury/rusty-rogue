@@ -26,8 +26,6 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] Blue Jelly (spawns chill when hit).
 
 #### Damage System
-  - [ ] An elemental damage system.
-  - [ ] Resistances to elemental damage.
   - [ ] Magic damage stats.
 
 #### Spellcasting
@@ -58,6 +56,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] A spell of fireblast. ♠
   - [x] A spell of iceblast. ♦
   - [x] Fire.
+  - [x] An elemental damage system.
+  - [x] Resistances to elemental damage.
 
 ## Progress In Tutorial:
 
