@@ -2,7 +2,6 @@ use specs::prelude::*;
 use super::{
     Map, Position, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, WantsToTakeDamage, StatusIsBurning,
-    ElementalDamageKind
 };
 
 

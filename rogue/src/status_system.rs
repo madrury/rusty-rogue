@@ -36,20 +36,29 @@ impl<'a> System<'a> for StatusSystem {
 
         for entity in entities.join() {
 
-            // StatusIsImmuneToFire: Tick fire immune entities and remove the
-            // status if expired.
-            let is_fire_immune = status_is_fire_immune.get_mut(entity);
-            if let Some(immune) = is_fire_immune {
-                if immune.remaining_turns <= 0 {
-                    status_is_fire_immune.remove(entity);
+
+            // StatusIsBurning: Tick burning entities, apply the tick damage,
+            // and remove the status if expired or if the entity has aquired
+            // fire immunity.
+            let burning = status_burning.get_mut(entity);
+            let is_fire_immune = status_is_fire_immune.get(entity).is_some();
+            if let Some(burning) = burning {
+                if burning.remaining_turns <= 0 || is_fire_immune {
+                    status_burning.remove(entity);
                     let name = names.get(entity);
                     if let Some(name) = name {
                         log.entries.push(
-                            format!("{} is no longer immune to flames.", name.name)
+                            format!("{} is np longer frozen.", name.name)
                         )
                     }
                 } else {
-                    immune.tick();
+                    WantsToTakeDamage::new_damage(
+                        &mut damages,
+                        entity,
+                        burning.tick_damage,
+                        ElementalDamageKind::Fire
+                    );
+                    burning.tick();
                 }
             }
 
@@ -70,28 +79,23 @@ impl<'a> System<'a> for StatusSystem {
                 }
             }
 
-            // StatusIsBurning: Tick burning entities, apply the tick damage,
-            // and remove the status if expired.
-            let burning = status_burning.get_mut(entity);
-            if let Some(burning) = burning {
-                if burning.remaining_turns <= 0 {
-                    status_burning.remove(entity);
+            // StatusIsImmuneToFire: Tick fire immune entities and remove the
+            // status if expired.
+            let is_fire_immune = status_is_fire_immune.get_mut(entity);
+            if let Some(immune) = is_fire_immune {
+                if immune.remaining_turns <= 0 {
+                    status_is_fire_immune.remove(entity);
                     let name = names.get(entity);
                     if let Some(name) = name {
                         log.entries.push(
-                            format!("{} is np longer frozen.", name.name)
+                            format!("{} is no longer immune to flames.", name.name)
                         )
                     }
                 } else {
-                    WantsToTakeDamage::new_damage(
-                        &mut damages,
-                        entity,
-                        burning.tick_damage,
-                        ElementalDamageKind::Fire
-                    );
-                    burning.tick();
+                    immune.tick();
                 }
             }
+
 
         }
     }

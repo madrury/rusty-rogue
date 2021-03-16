@@ -2,7 +2,7 @@ use specs::prelude::*;
 use super::{
     Map, TileType, CombatStats, WantsToMeleeAttack, Name, WantsToTakeDamage,
     GameLog, Renderable, Position, AnimationBuilder, AnimationRequest,
-    Equipped, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
+    Equipped, GrantsMeleeAttackBonus,
     ElementalDamageKind
 };
 

@@ -65,7 +65,7 @@ impl<'a> System<'a> for DamageSystem {
             status_fire_immunity
         ) = data;
 
-        for (entity, mut stats, damage) in (&entities, &mut stats, &wants_to_take_damage).join() {
+        for (entity, stats, damage) in (&entities, &mut stats, &wants_to_take_damage).join() {
 
             let defense_bonus: i32 = (&entities, &melee_defense_bonus, &equipped)
                 .join()
