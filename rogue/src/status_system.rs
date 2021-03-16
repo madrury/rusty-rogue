@@ -1,18 +1,17 @@
 
 use specs::prelude::*;
 use rltk::{RGB};
-use super::{GameLog, Name, Monster, StatusIsFrozen, StatusIsBurning, WantsToTakeDamage};
+use super::{GameLog, Name, StatusIsFrozen, StatusIsBurning, WantsToTakeDamage};
 
 
-pub struct MonsterStatusSystem {}
+pub struct StatusSystem {}
 
 // A system to update and apply effects of status ailments/buffs on monsters.
-impl<'a> System<'a> for MonsterStatusSystem {
+impl<'a> System<'a> for StatusSystem {
 
     type SystemData = (
         Entities<'a>,
         WriteExpect<'a, GameLog>,
-        ReadStorage<'a, Monster>,
         ReadStorage<'a, Name>,
         WriteStorage<'a, StatusIsFrozen>,
         WriteStorage<'a, StatusIsBurning>,
@@ -23,14 +22,13 @@ impl<'a> System<'a> for MonsterStatusSystem {
         let (
             entities,
             mut log,
-            monsters,
             names,
             mut status_frozen,
             mut status_burning,
             mut damages
         ) = data;
 
-        for (entity, _monster) in (&entities, &monsters).join() {
+        for entity in entities.join() {
 
             // StatusIsFrozen: Tick frozen entities and remove the status if
             // expired.

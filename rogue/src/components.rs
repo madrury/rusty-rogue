@@ -305,9 +305,18 @@ pub struct InflictsFreezingWhenTargeted {
     pub turns: i32
 }
 
-// Component for effects that inflict the burning status.
+// Component for effects that inflict the burning status when used as a targeted
+// effect.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsBurningWhenTargeted {
+    pub turns: i32,
+    pub tick_damage: i32
+}
+
+// Component for effects that inflict the burning status on any other entity
+// occupyting the same space..
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InflictsBurningWhenEncroachedUpon {
     pub turns: i32,
     pub tick_damage: i32
 }

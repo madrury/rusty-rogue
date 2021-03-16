@@ -7,9 +7,10 @@ use super::{
     ProvidesFullFood, IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
     InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
-    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
-    ChanceToDissipate, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
+    InflictsBurningWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
+    MovesToRandomPosition, SpawnsEntityInAreaWhenTargeted,
+    ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
+    GrantsMeleeDefenseBonus,
     SimpleMarker, SerializeMe, MarkedBuilder,
     MAP_WIDTH, random_table
 };
@@ -314,6 +315,9 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) {
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: 10
             })
+            .with(InflictsBurningWhenEncroachedUpon {
+                turns: 4, tick_damage: 2
+            })
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -391,7 +395,7 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Consumable {})
     .with(AreaOfEffectWhenTargeted {radius: 2})
     .with(InflictsDamageWhenTargeted {damage: 10})
-    .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 4})
+    .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 2})
     .with(SpawnsEntityInAreaWhenTargeted {
         radius: 2,
         kind: EntitySpawnKind::Fire

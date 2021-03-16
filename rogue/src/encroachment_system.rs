@@ -1,5 +1,8 @@
 use specs::prelude::*;
-use super::{Map, Position, InflictsDamageWhenEncroachedUpon, WantsToTakeDamage};
+use super::{
+    Map, Position, InflictsDamageWhenEncroachedUpon,
+    InflictsBurningWhenEncroachedUpon, WantsToTakeDamage, StatusIsBurning
+};
 
 
 pub struct EncroachmentSystem {}
@@ -10,7 +13,9 @@ pub struct EncroachmentSystemData<'a> {
     map: ReadExpect<'a, Map>,
     positions: ReadStorage<'a, Position>,
     damage_when_encroached: ReadStorage<'a, InflictsDamageWhenEncroachedUpon>,
-    wants_damage: WriteStorage<'a, WantsToTakeDamage>
+    burning_when_encroached: ReadStorage<'a, InflictsBurningWhenEncroachedUpon>,
+    wants_damage: WriteStorage<'a, WantsToTakeDamage>,
+    is_burning: WriteStorage<'a, StatusIsBurning>
 }
 
 impl<'a> System<'a> for EncroachmentSystem {
@@ -22,17 +27,26 @@ impl<'a> System<'a> for EncroachmentSystem {
             map,
             positions,
             damage_when_encroached,
-            mut wants_damage
+            burning_when_encroached,
+            mut wants_damage,
+            mut is_burning
         } = data;
 
-        for (entity, dmg, pos) in (&entities, &damage_when_encroached, &positions).join() {
-            // Search for entities in the same tile.
+        for (entity, pos) in (&entities, &positions).join() {
             let idx = map.xy_idx(pos.x, pos.y);
-            // let encroaching = &map.tile_content[idx];
-            for encroaching in map.tile_content[idx].iter() {
-                if *encroaching == entity {continue;}
-                WantsToTakeDamage::new_damage(&mut wants_damage, *encroaching, dmg.damage);
+            for encroaching in map.tile_content[idx].iter().filter(|e| **e != entity) {
+                // Component: InflictsDamageWhenEncroachedUpon.
+                let dmg = damage_when_encroached.get(entity);
+                if let Some(dmg) = dmg {
+                    WantsToTakeDamage::new_damage(&mut wants_damage, *encroaching, dmg.damage);
+                }
+                // Component: InflictsBurningWhenEncroachedUpon.
+                let burning = burning_when_encroached.get(entity);
+                if let Some(burning) = burning {
+                    StatusIsBurning::new_status(&mut is_burning, *encroaching, burning.turns, burning.tick_damage)
+                }
             }
         }
+
     }
 }

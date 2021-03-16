@@ -52,7 +52,7 @@ use gamelog::{GameLog};
 
 // Debug flags.
 const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 
@@ -156,6 +156,8 @@ impl State {
         melee.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut status = StatusSystem{};
+        status.run_now(&self.ecs);
         let mut hunger = HungerSystem{};
         hunger.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
@@ -173,6 +175,8 @@ impl State {
         encroachment.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut status = StatusSystem{};
+        status.run_now(&self.ecs);
         let mut dissipates = DissipationSystem{};
         dissipates.run_now(&self.ecs);
         let mut spawns = EntitySpawnSystem{};
@@ -190,7 +194,7 @@ impl State {
         mob.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
-        let mut status = MonsterStatusSystem{};
+        let mut status = StatusSystem{};
         status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
@@ -612,6 +616,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsDamageWhenEncroachedUpon>();
     gs.ecs.register::<InflictsFreezingWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenTargeted>();
+    gs.ecs.register::<InflictsBurningWhenEncroachedUpon>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<ChanceToSpawnAdjacentEntity>();
     gs.ecs.register::<ChanceToDissipate>();
