@@ -1,6 +1,6 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
-    EntitySpawnRequestBuffer, EntitySpawnRequest, EntitySpawnKind, Name,
+    EntitySpawnRequestBuffer, EntitySpawnRequest, Name,
     Renderable, Consumable, SpellCharges, Position, Viewshed,
     WantsToUseTargeted, Targeted, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,

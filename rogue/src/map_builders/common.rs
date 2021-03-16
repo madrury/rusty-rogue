@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 use serde::{Serialize, Deserialize};
-use rltk::{RandomNumberGenerator};
+// use rltk::{RandomNumberGenerator};
 use super::{Map, TileType, MAP_SIZE};
 
 
@@ -50,12 +50,12 @@ impl Rectangle {
     pub fn center(&self) -> (i32, i32) {
         ((self.x1 + self.x2)/2, (self.y1 + self.y2)/2)
     }
-    pub fn random_point(&self) -> (i32, i32) {
-        let mut rng = RandomNumberGenerator::new();
-        let room_width = i32::abs(self.x1 - self.x2);
-        let room_height = i32::abs(self.y1 - self.y2);
-        let x = self.x1 + rng.roll_dice(1, room_width);
-        let y = self.y1 + rng.roll_dice(1, room_height);
-        (x, y)
-    }
+    // pub fn random_point(&self) -> (i32, i32) {
+    //     let mut rng = RandomNumberGenerator::new();
+    //     let room_width = i32::abs(self.x1 - self.x2);
+    //     let room_height = i32::abs(self.y1 - self.y2);
+    //     let x = self.x1 + rng.roll_dice(1, room_width);
+    //     let y = self.y1 + rng.roll_dice(1, room_height);
+    //     (x, y)
+    // }
 }

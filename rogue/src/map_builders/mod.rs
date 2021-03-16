@@ -2,7 +2,6 @@ use super::{
     World, Map, TileType, Position, spawner,
     DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
-use rltk::{RandomNumberGenerator};
 mod simple_map;
 use simple_map::{SimpleMapBuilder};
 mod cellular_automata_map;

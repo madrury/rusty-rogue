@@ -1,7 +1,6 @@
 use rltk::{RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point};
 use serde::{Serialize, Deserialize};
 use specs::prelude::*;
-use std::cmp::{min, max};
 use std::iter::Iterator;
 use super::{DEBUG_DRAW_ALL_MAP, MovementRoutingOptions};
 

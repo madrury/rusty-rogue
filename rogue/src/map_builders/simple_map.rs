@@ -1,4 +1,4 @@
-use rltk::{RGB, Rltk, RandomNumberGenerator};
+use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
 
 use super::MapBuilder;

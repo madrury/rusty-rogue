@@ -1,5 +1,5 @@
 use super::{World, Map, EntitySpawnKind, Position, ChanceToSpawnAdjacentEntity, fire};
-use rltk::{Point, RandomNumberGenerator};
+use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
 
 

@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use rltk::{Point, RandomNumberGenerator};
+use rltk::{RandomNumberGenerator};
 use super::{ChanceToDissipate, WantsToDissipate, EntitySpawnKind, IsEntityKind, destroy_fire};
 
 
