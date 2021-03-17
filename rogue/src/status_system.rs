@@ -19,7 +19,6 @@ pub struct StatusTickSystemData<'a> {
     status_frozen: WriteStorage<'a, StatusIsFrozen>,
     status_burning: WriteStorage<'a, StatusIsBurning>,
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
-    wants_damages: WriteStorage<'a, WantsToTakeDamage>
 }
 
 impl<'a> System<'a> for StatusTickSystem {
@@ -34,7 +33,6 @@ impl<'a> System<'a> for StatusTickSystem {
             mut status_frozen,
             mut status_burning,
             mut status_immune_fire,
-            mut wants_damages
         } = data;
 
         for entity in entities.join() {
@@ -116,7 +114,7 @@ impl<'a> System<'a> for StatusEffectSystem {
             player,
             monsters,
             mut status_burning,
-            mut status_immune_fire,
+            status_immune_fire,
             mut wants_damages
         } = data;
 
