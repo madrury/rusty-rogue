@@ -1,3 +1,4 @@
+use std::matches;
 use specs::prelude::*;
 use super::{Map, Position, BlocksTile, IsEntityKind, EntitySpawnKind};
 
@@ -35,7 +36,7 @@ impl<'a> System<'a> for MapIndexingSystem {
             map.blocked[idx] |= blockers.get(entity).is_some();
             // Syncronize map.fire.
             let is_fire = kind.get(entity)
-                .map_or(false, |k| k.kind == EntitySpawnKind::Fire);
+                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Fire {..}));
             map.fire[idx] |= is_fire;
             // Update tile content.
             map.tile_content[idx].push(entity);

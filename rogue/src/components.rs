@@ -261,8 +261,8 @@ impl MonsterMovementAI {
 // request to lookup the appropriate function used to spawn the entity.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum EntitySpawnKind {
-    Fire,
-    Chill
+    Fire {spread_chance: i32, dissipate_chance: i32},
+    Chill {spread_chance: i32, dissipate_chance: i32},
 }
 // Component indicates that a targeted effect spawns new entities when resolved.
 #[derive(Component, ConvertSaveload, Clone)]

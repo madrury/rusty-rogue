@@ -286,7 +286,7 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
 //----------------------------------------------------------------------------
 // Spawn a fire entity in the ecs. All spawning of fire MUST use this function,
 // since it handles syncronizing the map.fire array.
-pub fn fire(ecs: &mut World, x: i32, y: i32) {
+pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) {
     let can_spawn: bool;
     let idx: usize;
     {
@@ -304,13 +304,20 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) {
                 order: 2,
             })
             .with(Name {name: "Fire".to_string()})
-            .with(IsEntityKind {kind: EntitySpawnKind::Fire})
+            .with(IsEntityKind {
+                kind: EntitySpawnKind::Fire {
+                    spread_chance, dissipate_chance
+                }
+            })
             .with(ChanceToSpawnAdjacentEntity {
-                chance: 100,
-                kind: EntitySpawnKind::Fire
+                chance: spread_chance,
+                kind: EntitySpawnKind::Fire {
+                    spread_chance: i32::max(0, spread_chance - 20),
+                    dissipate_chance: i32::max(0, dissipate_chance + 20),
+                }
             })
             .with(ChanceToDissipate {
-                chance: 20
+                chance: dissipate_chance
             })
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: 10,
@@ -408,7 +415,10 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     })
     .with(SpawnsEntityInAreaWhenTargeted {
         radius: 1,
-        kind: EntitySpawnKind::Fire
+        kind: EntitySpawnKind::Fire {
+            spread_chance: 50,
+            dissipate_chance: 30,
+        }
     })
     .with(AreaOfEffectAnimationWhenTargeted {
         radius: 2,
