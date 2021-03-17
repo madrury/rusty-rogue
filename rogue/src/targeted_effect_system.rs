@@ -237,13 +237,16 @@ impl<'a> System<'a> for TargetedSystem {
             }
 
             // Component: SpawnsEntityInAreaWhenTargeted
-            let spawns_entity_when_targeted = spawns_entity_in_area.get(want_target.thing);
-            if let Some(spawns) = spawns_entity_when_targeted {
-                spawn_buffer.request(EntitySpawnRequest {
-                    x: target_point.x,
-                    y: target_point.y,
-                    kind: spawns.kind
-                })
+            let spawns_entities_when_targeted = spawns_entity_in_area.get(want_target.thing);
+            if let Some(spawns) = spawns_entities_when_targeted {
+                let points = rltk::field_of_view(target_point, spawns.radius, &*map);
+                for pt in points.iter() {
+                    spawn_buffer.request(EntitySpawnRequest {
+                        x: pt.x,
+                        y: pt.y,
+                        kind: spawns.kind
+                    })
+                }
             }
 
             // If the thing was single use, clean it up.

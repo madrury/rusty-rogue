@@ -398,10 +398,16 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Consumable {})
     .with(ProvidesFireImmunityWhenUsed {turns: 50})
     .with(AreaOfEffectWhenTargeted {radius: 2})
-    .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
-    .with(InflictsBurningWhenTargeted {turns: 5, tick_damage: 2})
+    .with(InflictsDamageWhenTargeted {
+        damage: 10,
+        kind: ElementalDamageKind::Fire
+    })
+    .with(InflictsBurningWhenTargeted {
+        turns: 5,
+        tick_damage: 2
+    })
     .with(SpawnsEntityInAreaWhenTargeted {
-        radius: 2,
+        radius: 1,
         kind: EntitySpawnKind::Fire
     })
     .with(AreaOfEffectAnimationWhenTargeted {
