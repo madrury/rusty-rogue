@@ -67,8 +67,9 @@ pub enum RunState {
     PreGame,
     AwaitingInput,
     PlayerTurn,
-    TerrainTurn,
+    HazardTurn,
     MonsterTurn,
+    UpkeepTrun,
     ShowUseInventory,
     ShowThrowInventory,
     ShowEquipInventory,
@@ -154,10 +155,10 @@ impl State {
         equips.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
+        let mut status = StatusEffectSystem{};
+        status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
-        let mut status = StatusSystem{};
-        status.run_now(&self.ecs);
         let mut hunger = HungerSystem{};
         hunger.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
@@ -175,8 +176,6 @@ impl State {
         encroachment.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
-        let mut status = StatusSystem{};
-        status.run_now(&self.ecs);
         let mut dissipates = DissipationSystem{};
         dissipates.run_now(&self.ecs);
         let mut spawns = EntitySpawnSystem{};
@@ -194,7 +193,7 @@ impl State {
         mob.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
-        let mut status = StatusSystem{};
+        let mut status = StatusEffectSystem{};
         status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
@@ -206,6 +205,12 @@ impl State {
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
+        self.ecs.maintain();
+    }
+
+    fn run_upkeep_turn_systems(&mut self) {
+        let mut status = StatusTickSystem{};
+        status.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
@@ -390,15 +395,20 @@ impl GameState for State {
             RunState::PlayerTurn => {
                 self.run_player_turn_systems();
                 self.run_map_indexing_system();
-                newrunstate = RunState::TerrainTurn;
+                newrunstate = RunState::HazardTurn;
             }
-            RunState::TerrainTurn => {
+            RunState::HazardTurn => {
                 self.run_terrain_turn_systems();
                 self.run_map_indexing_system();
                 newrunstate = RunState::MonsterTurn;
-            },
+            }
             RunState::MonsterTurn => {
                 self.run_monster_turn_systems();
+                self.run_map_indexing_system();
+                newrunstate = RunState::UpkeepTrun;
+            }
+            RunState::UpkeepTrun => {
+                self.run_upkeep_turn_systems();
                 self.run_map_indexing_system();
                 newrunstate = RunState::AwaitingInput;
             }
