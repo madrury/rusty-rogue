@@ -144,7 +144,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Pomegranate, 1 + depth)
             .insert(ItemType::HealthPotion, 3 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, 200 + depth)
+            .insert(ItemType::FirePotion, 2 + depth)
             .insert(ItemType::FreezingPotion, 2 + depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
@@ -282,7 +282,7 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
 }
 
 //----------------------------------------------------------------------------
-// Other Interactable Entities
+// Hazards
 //----------------------------------------------------------------------------
 // Spawn a fire entity in the ecs. All spawning of fire MUST use this function,
 // since it handles syncronizing the map.fire array.
@@ -417,7 +417,7 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
         radius: 1,
         kind: EntitySpawnKind::Fire {
             spread_chance: 50,
-            dissipate_chance: 30,
+            dissipate_chance: 50,
         }
     })
     .with(AreaOfEffectAnimationWhenTargeted {
@@ -589,6 +589,13 @@ fn fireblast(ecs: &mut World, x: i32, y: i32) {
         .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
         .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 4})
         .with(AreaOfEffectWhenTargeted {radius: 2})
+        .with(SpawnsEntityInAreaWhenTargeted {
+            radius: 1,
+            kind: EntitySpawnKind::Fire {
+                spread_chance: 50,
+                dissipate_chance: 50,
+            }
+        })
         .with(AreaOfEffectAnimationWhenTargeted {
             radius: 2,
             fg: RGB::named(rltk::ORANGE),
