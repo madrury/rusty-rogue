@@ -2,7 +2,8 @@ use specs::prelude::*;
 use super::{
     Map, Position, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
-    WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire
+    WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire,
+    StatusIsImmuneToChill
 };
 
 
@@ -17,7 +18,7 @@ pub struct EncroachmentSystemData<'a> {
     burning_when_encroached: ReadStorage<'a, InflictsBurningWhenEncroachedUpon>,
     freezing_when_encroached: ReadStorage<'a, InflictsFreezingWhenEncroachedUpon>,
     is_fire_immune: ReadStorage<'a, StatusIsImmuneToFire>,
-    // is_chill_immune: ReadStorage<'a, StatusIsImmuneToChill>,
+    is_chill_immune: ReadStorage<'a, StatusIsImmuneToChill>,
     wants_damage: WriteStorage<'a, WantsToTakeDamage>,
     is_burning: WriteStorage<'a, StatusIsBurning>,
     is_frozen: WriteStorage<'a, StatusIsFrozen>,
@@ -35,6 +36,7 @@ impl<'a> System<'a> for EncroachmentSystem {
             burning_when_encroached,
             freezing_when_encroached,
             is_fire_immune,
+            is_chill_immune,
             mut wants_damage,
             mut is_burning,
             mut is_frozen
@@ -56,29 +58,24 @@ impl<'a> System<'a> for EncroachmentSystem {
                 }
                 // Component: InflictsBurningWhenEncroachedUpon.
                 let burning = burning_when_encroached.get(entity);
-                let encroaching_is_immune = is_fire_immune.get(*encroaching).is_some();
                 if let Some(burning) = burning {
-                    if !encroaching_is_immune {
-                        StatusIsBurning::new_status(
-                            &mut is_burning,
-                            *encroaching,
-                            burning.turns,
-                            burning.tick_damage
-                        )
-                    }
+                    let _ = StatusIsBurning::new_status(
+                        &mut is_burning,
+                        &is_fire_immune,
+                        *encroaching,
+                        burning.turns,
+                        burning.tick_damage
+                    );
                 }
                 // Component: InflictsFreezingWhenEncroachedUpon.
                 let freezing = freezing_when_encroached.get(entity);
-                // let encroaching_is_immune = is_fire_immune.get(*encroaching).is_some();
-                let encroaching_is_immune = false;
                 if let Some(freezing) = freezing {
-                    if !encroaching_is_immune {
-                        StatusIsFrozen::new_status(
-                            &mut is_frozen,
-                            *encroaching,
-                            freezing.turns,
-                        )
-                    }
+                    let _ =StatusIsFrozen::new_status(
+                        &mut is_frozen,
+                        &is_chill_immune,
+                        *encroaching,
+                        freezing.turns,
+                    );
                 }
             }
         }

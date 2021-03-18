@@ -6,7 +6,8 @@ use super::{
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, AreaOfEffectWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, WantsToTakeDamage, StatusIsFrozen,
-    StatusIsBurning, SpawnsEntityInAreaWhenTargeted
+    StatusIsBurning, SpawnsEntityInAreaWhenTargeted, StatusIsImmuneToFire,
+    StatusIsImmuneToChill
 };
 use specs::prelude::*;
 use rltk::RandomNumberGenerator;
@@ -44,6 +45,8 @@ pub struct TargetedSystemData<'a> {
         teleports: ReadStorage<'a, MovesToRandomPosition>,
         is_frozen: WriteStorage<'a, StatusIsFrozen>,
         is_burning: WriteStorage<'a, StatusIsBurning>,
+        is_fire_immune: ReadStorage<'a, StatusIsImmuneToFire>,
+        is_chill_immune: ReadStorage<'a, StatusIsImmuneToChill>,
 }
 
 impl<'a> System<'a> for TargetedSystem {
@@ -77,7 +80,9 @@ impl<'a> System<'a> for TargetedSystem {
             teleports,
             mut is_frozen,
             mut is_burning,
-            spawns_entity_in_area
+            spawns_entity_in_area,
+            is_fire_immune,
+            is_chill_immune
         } = data;
 
         //--------------------------------------------------------------------
@@ -189,36 +194,49 @@ impl<'a> System<'a> for TargetedSystem {
                 }
 
                 // Component: InflictsFreezingWhenTargeted
-                let stats = combat_stats.get_mut(*target);
                 let thing_freezes = does_freeze.get(want_target.thing);
-                if let (Some(thing_freezes), Some(_stats)) = (thing_freezes, stats) {
-                    StatusIsFrozen::new_status(&mut is_frozen, *target, thing_freezes.turns);
+                if let Some(thing_freezes) = thing_freezes {
+                    let play_message = StatusIsFrozen::new_status(
+                        &mut is_frozen,
+                        &is_chill_immune,
+                        *target,
+                        thing_freezes.turns
+                    );
                     let thing_name = names.get(want_target.thing);
                     let target_name = names.get(*target);
                     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                        log.entries.push(format!(
-                            "You {} the {}, freezing {} in place.",
-                            verb,
-                            thing_name.name,
-                            target_name.name,
-                        ))
+                        if play_message {
+                            log.entries.push(format!(
+                                "You {} the {}, freezing {} in place.",
+                                verb,
+                                thing_name.name,
+                                target_name.name,
+                            ))
+                        }
                     }
                 }
 
                 // Component: InflictsBurningWhenTargeted
-                let stats = combat_stats.get_mut(*target);
                 let thing_burns = does_burn.get(want_target.thing);
-                if let (Some(thing_burns), Some(_stats)) = (thing_burns, stats) {
-                    StatusIsBurning::new_status(&mut is_burning, *target, thing_burns.turns, thing_burns.tick_damage);
+                if let Some(thing_burns) = thing_burns {
+                    let play_message = StatusIsBurning::new_status(
+                        &mut is_burning,
+                        &is_fire_immune,
+                        *target,
+                        thing_burns.turns,
+                        thing_burns.tick_damage
+                    );
                     let thing_name = names.get(want_target.thing);
                     let target_name = names.get(*target);
                     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                        log.entries.push(format!(
-                            "You {} the {}, stting {} ablaze.",
-                            verb,
-                            thing_name.name,
-                            target_name.name,
-                        ))
+                        if play_message {
+                            log.entries.push(format!(
+                                "You {} the {}, stting {} ablaze.",
+                                verb,
+                                thing_name.name,
+                                target_name.name,
+                            ))
+                        }
                     }
                 }
             }

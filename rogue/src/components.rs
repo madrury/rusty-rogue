@@ -396,13 +396,25 @@ pub struct StatusIsFrozen {
     pub remaining_turns: i32
 }
 impl StatusIsFrozen {
-    pub fn new_status(store: &mut WriteStorage<StatusIsFrozen>, victim: Entity, turns: i32) {
+    // Attempt to add the burning status to an enetity and return a boolean
+    // indicating if this was successful.
+    pub fn new_status(
+        store: &mut WriteStorage<StatusIsFrozen>,
+        immune: &ReadStorage<StatusIsImmuneToChill>,
+        victim: Entity,
+        turns: i32) -> bool
+    {
+        if immune.get(victim).is_some() {
+            return false
+        }
         if let Some(frozen) = store.get_mut(victim) {
             frozen.remaining_turns = turns;
+            return false
         } else {
             let frozen = StatusIsFrozen{remaining_turns: turns};
             store.insert(victim, frozen)
                 .expect("Unable to insert StatusIsFrozen component.");
+            return true
         }
     }
     pub fn is_frozen(self) -> bool {
@@ -420,14 +432,27 @@ pub struct StatusIsBurning {
     pub tick_damage: i32,
 }
 impl StatusIsBurning {
-    pub fn new_status(store: &mut WriteStorage<StatusIsBurning>, victim: Entity, turns: i32, dmg: i32) {
+    // Attempt to add the burning status to an enetity and return a boolean
+    // indicating if this was successful.
+    pub fn new_status(
+        store: &mut WriteStorage<StatusIsBurning>,
+        immune: &ReadStorage<StatusIsImmuneToFire>,
+        victim: Entity,
+        turns: i32,
+        dmg: i32) -> bool
+    {
+        if immune.get(victim).is_some() {
+            return false
+        }
         if let Some(burning) = store.get_mut(victim) {
             burning.remaining_turns = turns;
             burning.tick_damage = i32::max(dmg, burning.tick_damage);
+            return false
         } else {
             let burning = StatusIsBurning{remaining_turns: turns, tick_damage: dmg};
             store.insert(victim, burning)
                 .expect("Unable to insert StatusIsBurning component.");
+            return true
         }
     }
     pub fn is_burning(self) -> bool {
