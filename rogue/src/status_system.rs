@@ -120,7 +120,7 @@ impl<'a> System<'a> for StatusEffectSystem {
 
         for entity in entities.join() {
 
-            // Only apply an entities statuses on the appropriate turn.
+            // Only apply an entity'ss statuses on the appropriate turn.
             let is_player = entity == *player;
             let is_monster = monsters.get(entity).is_some();
             let proceed =

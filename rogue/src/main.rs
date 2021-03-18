@@ -161,8 +161,6 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut hunger = HungerSystem{};
         hunger.run_now(&self.ecs);
-        let mut charges = SpellChargeSystem{};
-        charges.run_now(&self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
@@ -211,6 +209,8 @@ impl State {
     fn run_upkeep_turn_systems(&mut self) {
         let mut status = StatusTickSystem{};
         status.run_now(&self.ecs);
+        let mut charges = SpellChargeSystem{};
+        charges.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
