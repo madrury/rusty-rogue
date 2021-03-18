@@ -1,7 +1,7 @@
 use super::{
     CombatStats, GameLog, PickUpable, Map, Player, Monster, Position,
     RunState, State, HungerClock, HungerState, Viewshed, WantsToMeleeAttack,
-    WantsToPickupItem, TileType
+    WantsToPickupItem, StatusIsFrozen, TileType
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
@@ -12,6 +12,21 @@ const WAIT_HEAL_AMOUNT: i32 = 1;
 
 
 pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
+    // Check if the player is frozen, in which case they cannot take any
+    // meaningful action until the status expires.
+    let player_is_frozen;
+    {
+        let status_is_frozen = gs.ecs.read_storage::<StatusIsFrozen>();
+        let player = gs.ecs.fetch::<Entity>();
+        player_is_frozen = status_is_frozen.get(*player).is_some();
+    }
+    if player_is_frozen {
+        match ctx.key {
+            Some(key) => return RunState::PlayerTurn,
+            None => return RunState::AwaitingInput
+        }
+    }
+    // Match the player input and delegate.
     match ctx.key {
         None => return RunState::AwaitingInput,
         Some(key) => match key {

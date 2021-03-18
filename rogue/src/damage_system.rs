@@ -87,6 +87,11 @@ impl<'a> System<'a> for DamageSystem {
                             stats.take_damage(*dmg);
                         }
                     }
+                    ElementalDamageKind::Chill => {
+                        // if !is_immune_to_fire {
+                        //     stats.take_damage(*dmg);
+                        // }
+                    }
                 }
             }
         }

@@ -7,11 +7,12 @@ use super::{
     ProvidesFullFood, IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
     InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    InflictsBurningWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
-    MovesToRandomPosition, SpawnsEntityInAreaWhenTargeted,
-    ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed, SimpleMarker,
-    SerializeMe, MarkedBuilder, ElementalDamageKind,
+    InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
+    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
+    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
+    ChanceToDissipate, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
+    ProvidesFireImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
+    ElementalDamageKind,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -145,7 +146,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::HealthPotion, 3 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, 2 + depth)
-            .insert(ItemType::FreezingPotion, 2 + depth)
+            .insert(ItemType::FreezingPotion, 200 + depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
             .insert(ItemType::FireblastScroll, depth)
@@ -191,7 +192,8 @@ const DEFAULT_MOVEMENT_AI: MonsterMovementAI = MonsterMovementAI {
     lost_visibility_keep_following_turns_remaining: 2,
     routing_options: MovementRoutingOptions {
         avoid_blocked: true,
-        avoid_fire: true
+        avoid_fire: true,
+        avoid_chill: true
     }
 };
 const DEFAULT_COMBAT_STATS: CombatStats = CombatStats {
@@ -284,8 +286,9 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
 //----------------------------------------------------------------------------
 // Hazards
 //----------------------------------------------------------------------------
-// Spawn a fire entity in the ecs. All spawning of fire MUST use this function,
-// since it handles syncronizing the map.fire array.
+// Spawn a fire entity in the ecs, representing a burning tile that can spread
+// and dissipate. All spawning of fire MUST use this function, since it handles
+// syncronizing the map.fire array.
 pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) {
     let can_spawn: bool;
     let idx: usize;
@@ -321,7 +324,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
                 chance: dissipate_chance
             })
             .with(InflictsDamageWhenEncroachedUpon {
-                damage: 10,
+                damage: 2,
                 kind: ElementalDamageKind::Fire
             })
             .with(InflictsBurningWhenEncroachedUpon {
@@ -333,9 +336,6 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
         map.fire[idx] = true;
     }
 }
-
-// Remove a fire entity from the ecs. All despawning of fire MUST use this
-// function, since we need to syncronize the map.fire array.
 pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
     let idx;
     { // Contain first borrow of ECS.
@@ -360,6 +360,82 @@ pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
         map.fire[idx] = false;
     }
     ecs.delete_entity(*entity).expect("Unable to remove fire entity.");
+}
+
+// Spawn a chill entity in the ecs, representing freezing air that can spread
+// and dissipate. All spawning of chill MUST use this function, since it handles
+// syncronizing the map.chill array.
+pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) {
+    let can_spawn: bool;
+    let idx: usize;
+    {
+        let map = ecs.fetch::<Map>();
+        idx = map.xy_idx(x, y);
+        can_spawn = !map.chill[idx] && map.tiles[idx] != TileType::Wall;
+    }
+    if can_spawn {
+        ecs.create_entity()
+            .with(Position {x, y})
+            .with(Renderable {
+                fg: RGB::named(rltk::WHITE),
+                bg: RGB::named(rltk::LIGHT_BLUE),
+                glyph: rltk::to_cp437('*'),
+                order: 2,
+            })
+            .with(Name {name: "Chill".to_string()})
+            .with(Hazard {})
+            .with(IsEntityKind {
+                kind: EntitySpawnKind::Chill {
+                    spread_chance, dissipate_chance
+                }
+            })
+            .with(ChanceToSpawnAdjacentEntity {
+                chance: spread_chance,
+                kind: EntitySpawnKind::Chill {
+                    spread_chance: i32::max(0, spread_chance - 10),
+                    dissipate_chance: i32::max(0, dissipate_chance + 40),
+                }
+            })
+            .with(ChanceToDissipate {
+                chance: dissipate_chance
+            })
+            .with(InflictsDamageWhenEncroachedUpon {
+                damage: 2,
+                kind: ElementalDamageKind::Chill
+            })
+            .with(InflictsFreezingWhenEncroachedUpon {
+                turns: 2
+            })
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        let mut map = ecs.fetch_mut::<Map>();
+        map.chill[idx] = true;
+    }
+}
+pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
+    let idx;
+    { // Contain first borrow of ECS.
+        let positions = ecs.read_storage::<Position>();
+        let map = ecs.fetch::<Map>();
+        let pos = positions.get(*entity);
+        match pos {
+            Some(pos) => {
+                idx = map.xy_idx(pos.x, pos.y);
+                if !map.chill[idx] {
+                    panic!(format!(
+                        "Attempted to delete chill but no chill in position {} {}.",
+                        pos.x, pos.y
+                    ))
+                }
+            }
+            None => panic!("Attempted to delete chill, but chill has no position.")
+        }
+    }
+    { // Contain second borrow of ECS.
+        let mut map = ecs.fetch_mut::<Map>();
+        map.chill[idx] = false;
+    }
+    ecs.delete_entity(*entity).expect("Unable to remove chill entity.");
 }
 
 //----------------------------------------------------------------------------
@@ -445,9 +521,19 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Throwable {})
     .with(Targeted {verb: "throws".to_string()})
     .with(Consumable {})
-    .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
+    .with(InflictsDamageWhenTargeted {
+        damage: 10,
+        kind: ElementalDamageKind::Chill
+    })
     .with(InflictsFreezingWhenTargeted {turns: 6})
     .with(AreaOfEffectWhenTargeted {radius: 2})
+        .with(SpawnsEntityInAreaWhenTargeted {
+            radius: 1,
+            kind: EntitySpawnKind::Chill {
+                spread_chance: 80,
+                dissipate_chance: 20,
+            }
+        })
     .with(AreaOfEffectAnimationWhenTargeted {
         radius: 2,
         fg: RGB::named(rltk::WHITE),
@@ -626,9 +712,19 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) {
             time: 0
         })
         .with(Targeted {verb: "casts".to_string()})
-        .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
-        .with(InflictsFreezingWhenTargeted {turns: 6})
+        .with(InflictsDamageWhenTargeted {
+            damage: 10,
+            kind: ElementalDamageKind::Chill
+        })
+        .with(InflictsFreezingWhenTargeted {turns: 8})
         .with(AreaOfEffectWhenTargeted {radius: 2})
+        .with(SpawnsEntityInAreaWhenTargeted {
+            radius: 1,
+            kind: EntitySpawnKind::Chill {
+                spread_chance: 60,
+                dissipate_chance: 40,
+            }
+        })
         .with(AreaOfEffectAnimationWhenTargeted {
             radius: 2,
             fg: RGB::named(rltk::WHITE),

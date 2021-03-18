@@ -1,8 +1,8 @@
 use specs::prelude::*;
 use super::{
     Map, Position, InflictsDamageWhenEncroachedUpon,
-    InflictsBurningWhenEncroachedUpon, WantsToTakeDamage, StatusIsBurning,
-    StatusIsImmuneToFire
+    InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
+    WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire
 };
 
 
@@ -15,9 +15,12 @@ pub struct EncroachmentSystemData<'a> {
     positions: ReadStorage<'a, Position>,
     damage_when_encroached: ReadStorage<'a, InflictsDamageWhenEncroachedUpon>,
     burning_when_encroached: ReadStorage<'a, InflictsBurningWhenEncroachedUpon>,
+    freezing_when_encroached: ReadStorage<'a, InflictsFreezingWhenEncroachedUpon>,
     is_fire_immune: ReadStorage<'a, StatusIsImmuneToFire>,
+    // is_chill_immune: ReadStorage<'a, StatusIsImmuneToChill>,
     wants_damage: WriteStorage<'a, WantsToTakeDamage>,
-    is_burning: WriteStorage<'a, StatusIsBurning>
+    is_burning: WriteStorage<'a, StatusIsBurning>,
+    is_frozen: WriteStorage<'a, StatusIsFrozen>,
 }
 
 impl<'a> System<'a> for EncroachmentSystem {
@@ -30,9 +33,11 @@ impl<'a> System<'a> for EncroachmentSystem {
             positions,
             damage_when_encroached,
             burning_when_encroached,
+            freezing_when_encroached,
             is_fire_immune,
             mut wants_damage,
-            mut is_burning
+            mut is_burning,
+            mut is_frozen
         } = data;
 
         for (entity, pos) in (&entities, &positions).join() {
@@ -62,7 +67,19 @@ impl<'a> System<'a> for EncroachmentSystem {
                         )
                     }
                 }
-
+                // Component: InflictsFreezingWhenEncroachedUpon.
+                let freezing = freezing_when_encroached.get(entity);
+                // let encroaching_is_immune = is_fire_immune.get(*encroaching).is_some();
+                let encroaching_is_immune = false;
+                if let Some(freezing) = freezing {
+                    if !encroaching_is_immune {
+                        StatusIsFrozen::new_status(
+                            &mut is_frozen,
+                            *encroaching,
+                            freezing.turns,
+                        )
+                    }
+                }
             }
         }
     }

@@ -38,6 +38,10 @@ impl<'a> System<'a> for MapIndexingSystem {
             let is_fire = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Fire {..}));
             map.fire[idx] |= is_fire;
+            // Syncronize map.chill.
+            let is_chill = kind.get(entity)
+                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Chill {..}));
+            map.chill[idx] |= is_chill;
             // Update tile content.
             map.tile_content[idx].push(entity);
         }

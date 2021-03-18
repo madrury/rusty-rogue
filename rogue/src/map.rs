@@ -40,6 +40,9 @@ pub struct Map {
     // Is the tile currently occuped by fire? We only want to spawn one fire
     // entity in each tile, so we need a source of truth for this.
     pub fire: Vec<bool>,
+    // Is the tile currently occuped by chill? We only want to spawn one chill
+    // entity in each tile, so we need a source of truth for this.
+    pub chill: Vec<bool>,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -60,6 +63,7 @@ impl Map {
             visible_tiles : vec![false; MAP_SIZE],
             blocked : vec![false; MAP_SIZE],
             fire: vec![false; MAP_SIZE],
+            chill: vec![false; MAP_SIZE],
             tile_content : vec![Vec::new(); MAP_SIZE],
         }
     }
@@ -251,7 +255,8 @@ impl RoutingMap {
                 route.avoid[idx] =
                     map.tiles[idx] == TileType::Wall
                     || (options.avoid_blocked && map.blocked[idx])
-                    || (options.avoid_fire && map.fire[idx]);
+                    || (options.avoid_fire && map.fire[idx])
+                    || (options.avoid_chill && map.chill[idx]);
             }
         }
         route

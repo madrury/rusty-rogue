@@ -234,6 +234,7 @@ impl SpellCharges {
 pub struct MovementRoutingOptions {
     pub avoid_blocked: bool,
     pub avoid_fire: bool,
+    pub avoid_chill: bool
 }
 
 #[derive(Component, ConvertSaveload, Clone)]
@@ -320,11 +321,18 @@ pub struct InflictsBurningWhenTargeted {
 }
 
 // Component for effects that inflict the burning status on any other entity
-// occupyting the same space..
+// occupyting the same space.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsBurningWhenEncroachedUpon {
     pub turns: i32,
     pub tick_damage: i32
+}
+
+// Component for effects that inflict the freezing status on any other entity
+// occupyting the same space.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InflictsFreezingWhenEncroachedUpon {
+    pub turns: i32,
 }
 
 // Component for effects that grant a MeleeAttackBonus
@@ -523,7 +531,7 @@ pub struct WantsToMoveToRandomPosition {}
 // Signals that the entity has damage queued, but not applied.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum ElementalDamageKind {
-    Physical, Fire, Hunger
+    Physical, Fire, Chill, Hunger
 }
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToTakeDamage {
@@ -558,7 +566,6 @@ impl WantsToTakeDamage {
 // ECS at the end of the current turn.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct WantsToDissipate {}
-
 
 //----------------------------------------------------------------------------
 // Serialization Components.

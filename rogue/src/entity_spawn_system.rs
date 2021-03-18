@@ -1,4 +1,4 @@
-use super::{World, Map, EntitySpawnKind, Position, ChanceToSpawnAdjacentEntity, fire};
+use super::{World, Map, EntitySpawnKind, Position, ChanceToSpawnAdjacentEntity, fire, chill};
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
 
@@ -80,7 +80,8 @@ pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
         match request.kind {
             EntitySpawnKind::Fire {spread_chance, dissipate_chance} =>
                 fire(ecs, request.x, request.y, spread_chance, dissipate_chance),
-            _ => {}
+            EntitySpawnKind::Chill {spread_chance, dissipate_chance} =>
+                chill(ecs, request.x, request.y, spread_chance, dissipate_chance),
         }
     }
     let mut spawn_buffer = ecs.fetch_mut::<EntitySpawnRequestBuffer>();

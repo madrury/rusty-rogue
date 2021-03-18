@@ -1,6 +1,6 @@
 use specs::prelude::*;
 use rltk::{RandomNumberGenerator};
-use super::{ChanceToDissipate, WantsToDissipate, EntitySpawnKind, IsEntityKind, destroy_fire};
+use super::{ChanceToDissipate, WantsToDissipate, EntitySpawnKind, IsEntityKind, destroy_fire, destroy_chill};
 
 
 pub struct DissipationSystem {}
@@ -54,7 +54,7 @@ impl DissipationSystem {
                 (victim, Some(is_entity_kind)) => {
                     match is_entity_kind.kind {
                         EntitySpawnKind::Fire {..} => destroy_fire(ecs, &victim),
-                        _ => {}
+                        EntitySpawnKind::Chill {..} => destroy_chill(ecs, &victim),
                     }
                 }
             }
