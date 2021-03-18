@@ -82,6 +82,7 @@ pub fn save_game(ecs: &mut World) {
             ProvidesFullFood,
             IncreasesMaxHpWhenUsed,
             ProvidesFireImmunityWhenUsed,
+            ProvidesChillImmunityWhenUsed,
             MovesToRandomPosition,
             AreaOfEffectWhenTargeted,
             InflictsDamageWhenTargeted,
@@ -98,6 +99,7 @@ pub fn save_game(ecs: &mut World) {
             StatusIsFrozen,
             StatusIsBurning,
             StatusIsImmuneToFire,
+            StatusIsImmuneToChill,
             AreaOfEffectAnimationWhenTargeted,
             SerializationHelper
         );
@@ -189,6 +191,7 @@ pub fn load_game(ecs: &mut World) {
             ProvidesFullFood,
             IncreasesMaxHpWhenUsed,
             ProvidesFireImmunityWhenUsed,
+            ProvidesChillImmunityWhenUsed,
             MovesToRandomPosition,
             AreaOfEffectWhenTargeted,
             InflictsDamageWhenTargeted,
@@ -205,6 +208,7 @@ pub fn load_game(ecs: &mut World) {
             StatusIsFrozen,
             StatusIsBurning,
             StatusIsImmuneToFire,
+            StatusIsImmuneToChill,
             AreaOfEffectAnimationWhenTargeted,
             SerializationHelper
         );

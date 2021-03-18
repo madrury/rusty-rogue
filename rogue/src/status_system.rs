@@ -59,8 +59,9 @@ impl<'a> System<'a> for StatusTickSystem {
             // StatusIsFrozen: Tick frozen entities and remove the status if
             // expired.
             let frozen = status_frozen.get_mut(entity);
+            let is_chill_immune = status_immune_chill.get(entity).is_some();
             if let Some(frozen) = frozen {
-                if frozen.remaining_turns <= 0 {
+                if frozen.remaining_turns <= 0 || is_chill_immune {
                     status_frozen.remove(entity);
                     let name = names.get(entity);
                     if let Some(name) = name {
@@ -93,7 +94,7 @@ impl<'a> System<'a> for StatusTickSystem {
             let is_chill_immune = status_immune_chill.get_mut(entity);
             if let Some(immune) = is_chill_immune {
                 if immune.remaining_turns <= 0 {
-                    status_immune_fire.remove(entity);
+                    status_immune_chill.remove(entity);
                     let name = names.get(entity);
                     if let Some(name) = name {
                         log.entries.push(
@@ -202,6 +203,12 @@ pub fn get_status_indicators(ecs: &World, entity: &Entity) -> Vec<StatusIndicato
     if let Some(_) = burnings.get(*entity) {
         indicators.push(
             StatusIndicatorGlyph {glyph: rltk::to_cp437('♠'), color: RGB::named(rltk::ORANGE)}
+        )
+    }
+    let chill_immunities = ecs.read_storage::<StatusIsImmuneToChill>();
+    if let Some(_) = chill_immunities.get(*entity) {
+        indicators.push(
+            StatusIndicatorGlyph {glyph: rltk::to_cp437('♦'), color: RGB::named(rltk::WHITE)}
         )
     }
     let fire_immunities = ecs.read_storage::<StatusIsImmuneToFire>();
