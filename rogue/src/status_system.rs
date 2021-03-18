@@ -41,70 +41,46 @@ impl<'a> System<'a> for StatusTickSystem {
         for entity in entities.join() {
             // StatusIsBurning: Tick burning entities, and remove the status if
             // expired or if the entity has aquired fire immunity.
-            let burning = status_burning.get_mut(entity);
-            let is_fire_immune = status_immune_fire.get(entity).is_some();
-            if let Some(burning) = burning {
-                if burning.remaining_turns <= 0 || is_fire_immune {
-                    status_burning.remove(entity);
-                    let name = names.get(entity);
-                    if let Some(name) = name {
-                        log.entries.push(
-                            format!("{} is np longer burning.", name.name)
-                        )
-                    }
-                } else {
-                    burning.tick();
-                }
-            }
+            let msg = names.get(entity)
+                .map(|nm| format!("{} is no longer burning.", nm.name));
+            StatusIsBurning::tick(
+                &mut status_burning,
+                &mut status_immune_fire,
+                &mut log,
+                entity,
+                msg
+            );
             // StatusIsFrozen: Tick frozen entities and remove the status if
             // expired.
-            let frozen = status_frozen.get_mut(entity);
-            let is_chill_immune = status_immune_chill.get(entity).is_some();
-            if let Some(frozen) = frozen {
-                if frozen.remaining_turns <= 0 || is_chill_immune {
-                    status_frozen.remove(entity);
-                    let name = names.get(entity);
-                    if let Some(name) = name {
-                        log.entries.push(
-                            format!("{} is no longer frozen.", name.name)
-                        )
-                    }
-                } else {
-                    frozen.tick();
-                }
-            }
+            let msg = names.get(entity)
+                .map(|nm| format!("{} is no longer frozen.", nm.name));
+            StatusIsFrozen::tick(
+                &mut status_frozen,
+                &mut status_immune_chill,
+                &mut log,
+                entity,
+                msg
+            );
             // StatusIsImmuneToFire: Tick fire immune entities and remove the
             // status if expired.
-            let is_fire_immune = status_immune_fire.get_mut(entity);
-            if let Some(immune) = is_fire_immune {
-                if immune.remaining_turns <= 0 {
-                    status_immune_fire.remove(entity);
-                    let name = names.get(entity);
-                    if let Some(name) = name {
-                        log.entries.push(
-                            format!("{} is no longer immune to flames.", name.name)
-                        )
-                    }
-                } else {
-                    immune.tick();
-                }
-            }
+            let msg = names.get(entity)
+                .map(|nm| format!("{} is no longer immune to flames.", nm.name));
+            StatusIsImmuneToFire::tick(
+                &mut status_immune_fire,
+                &mut log,
+                entity,
+                msg
+            );
             // StatusIsImmuneToChill: Tick chill entities and remove the
             // status if expired.
-            let is_chill_immune = status_immune_chill.get_mut(entity);
-            if let Some(immune) = is_chill_immune {
-                if immune.remaining_turns <= 0 {
-                    status_immune_chill.remove(entity);
-                    let name = names.get(entity);
-                    if let Some(name) = name {
-                        log.entries.push(
-                            format!("{} is no longer immune to the cold.", name.name)
-                        )
-                    }
-                } else {
-                    immune.tick();
-                }
-            }
+            let msg = names.get(entity)
+                .map(|nm| format!("{} is no longer immune to chill.", nm.name));
+            StatusIsImmuneToChill::tick(
+                &mut status_immune_chill,
+                &mut log,
+                entity,
+                msg
+            );
         }
     }
 }

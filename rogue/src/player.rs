@@ -20,9 +20,12 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
         let player = gs.ecs.fetch::<Entity>();
         player_is_frozen = status_is_frozen.get(*player).is_some();
     }
+    // We still match on the key so the player can pass thier frozen turns
+    // manually, otherwise the frozen turns pass rapidly and it's hard to tell
+    // what is happening.
     if player_is_frozen {
         match ctx.key {
-            Some(key) => return RunState::PlayerTurn,
+            Some(_) => return RunState::PlayerTurn,
             None => return RunState::AwaitingInput
         }
     }

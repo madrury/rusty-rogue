@@ -4,6 +4,7 @@ use specs::saveload::{ConvertSaveload, Marker};
 use specs::error::NoError;
 use serde::{Serialize, Deserialize};
 use rltk::{RGB, Point};
+use super::{GameLog};
 
 
 //----------------------------------------------------------------------------
@@ -390,6 +391,8 @@ pub struct ChanceToDissipate {
 //------------------------------------------------------------------
 // Status Effect Components
 //------------------------------------------------------------------
+// TODO: Figure out how to write a generalized tick function.
+
 // Component indicating the entity is frozen.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct StatusIsFrozen {
@@ -417,11 +420,26 @@ impl StatusIsFrozen {
             return true
         }
     }
-    pub fn is_frozen(self) -> bool {
-        self.remaining_turns > 0
-    }
-    pub fn tick(&mut self) {
-        self.remaining_turns -= 1
+
+    pub fn tick(
+        store: &mut WriteStorage<StatusIsFrozen>,
+        immune: &mut WriteStorage<StatusIsImmuneToChill>,
+        log: &mut GameLog,
+        entity: Entity,
+        msg: Option<String>)
+    {
+        let frozen = store.get_mut(entity);
+        let is_immune = immune.get(entity).is_some();
+        if let Some(frozen) = frozen {
+            if frozen.remaining_turns <= 0 || is_immune {
+                store.remove(entity);
+                if let Some(msg) = msg {
+                    log.entries.push(msg);
+                }
+            } else {
+                frozen.remaining_turns -= 1;
+            }
+        }
     }
 }
 
@@ -455,11 +473,25 @@ impl StatusIsBurning {
             return true
         }
     }
-    pub fn is_burning(self) -> bool {
-        self.remaining_turns > 0
-    }
-    pub fn tick(&mut self) {
-        self.remaining_turns -= 1
+    pub fn tick(
+        store: &mut WriteStorage<StatusIsBurning>,
+        immune: &mut WriteStorage<StatusIsImmuneToFire>,
+        log: &mut GameLog,
+        entity: Entity,
+        msg: Option<String>)
+    {
+        let burning = store.get_mut(entity);
+        let is_immune = immune.get(entity).is_some();
+        if let Some(burning) = burning {
+            if burning.remaining_turns <= 0 || is_immune {
+                store.remove(entity);
+                if let Some(msg) = msg {
+                    log.entries.push(msg);
+                }
+            } else {
+                burning.remaining_turns -= 1;
+            }
+        }
     }
 }
 
@@ -479,8 +511,23 @@ impl StatusIsImmuneToFire {
                 .expect("Unable to insert StatusIsImmuneToFire component.");
         }
     }
-    pub fn tick(&mut self) {
-        self.remaining_turns -= 1
+    pub fn tick(
+        store: &mut WriteStorage<StatusIsImmuneToFire>,
+        log: &mut GameLog,
+        entity: Entity,
+        msg: Option<String>)
+    {
+        let is_immune = store.get_mut(entity);
+        if let Some(is_immune) = is_immune {
+            if is_immune.remaining_turns <= 0 {
+                store.remove(entity);
+                if let Some(msg) = msg {
+                    log.entries.push(msg);
+                }
+            } else {
+                is_immune.remaining_turns -= 1;
+            }
+        }
     }
 }
 
@@ -500,8 +547,23 @@ impl StatusIsImmuneToChill {
                 .expect("Unable to insert StatusIsImmuneToChill component.");
         }
     }
-    pub fn tick(&mut self) {
-        self.remaining_turns -= 1
+    pub fn tick(
+        store: &mut WriteStorage<StatusIsImmuneToChill>,
+        log: &mut GameLog,
+        entity: Entity,
+        msg: Option<String>)
+    {
+        let is_immune = store.get_mut(entity);
+        if let Some(is_immune) = is_immune {
+            if is_immune.remaining_turns <= 0 {
+                store.remove(entity);
+                if let Some(msg) = msg {
+                    log.entries.push(msg);
+                }
+            } else {
+                is_immune.remaining_turns -= 1;
+            }
+        }
     }
 }
 
@@ -588,7 +650,7 @@ pub struct WantsToTakeDamage {
     pub kinds: Vec<ElementalDamageKind>
 }
 impl WantsToTakeDamage {
-    // Since the ApplyMeleeDamage component can contain *multiple* instances of
+    // Since the WantsToTakeDamage component can contain *multiple* instances of
     // damage, we need to distinguish the case of the first instance of damage
     // from the subsequent. This function encapsulates this switch.
     pub fn new_damage(
@@ -606,7 +668,7 @@ impl WantsToTakeDamage {
                 kinds: vec![kind]
             };
             store.insert(victim, dmg)
-                .expect("Unable to insert SufferDamage component.");
+                .expect("Unable to insert WantsToTakeDamage component.");
         }
     }
 }
