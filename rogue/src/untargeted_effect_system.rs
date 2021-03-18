@@ -4,7 +4,8 @@ use super::{
     AnimationRequest, Name, Renderable, Position, Viewshed,
     WantsToUseUntargeted, Consumable, Untargeted, ProvidesFullHealing,
     ProvidesFullFood, MovesToRandomPosition, IncreasesMaxHpWhenUsed,
-    ProvidesFireImmunityWhenUsed, StatusIsImmuneToFire
+    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
+    StatusIsImmuneToFire, StatusIsImmuneToChill
 };
 use specs::prelude::*;
 use rltk::RandomNumberGenerator;
@@ -32,12 +33,14 @@ pub struct UntargetedSystemData<'a> {
     wants_use: WriteStorage<'a, WantsToUseUntargeted>,
     increases_hp: ReadStorage<'a, IncreasesMaxHpWhenUsed>,
     provides_fire_immunity: ReadStorage<'a, ProvidesFireImmunityWhenUsed>,
+    provides_chill_immunity: ReadStorage<'a, ProvidesChillImmunityWhenUsed>,
     healing: ReadStorage<'a, ProvidesFullHealing>,
     foods: ReadStorage<'a, ProvidesFullFood>,
     teleports: ReadStorage<'a, MovesToRandomPosition>,
     combat_stats: WriteStorage<'a, CombatStats>,
     hunger_clocks: WriteStorage<'a, HungerClock>,
     status_fire_immunity: WriteStorage<'a, StatusIsImmuneToFire>,
+    status_chill_immunity: WriteStorage<'a, StatusIsImmuneToChill>,
 }
 
 impl<'a> System<'a> for UntargetedSystem {
@@ -63,12 +66,14 @@ impl<'a> System<'a> for UntargetedSystem {
             mut wants_use,
             increases_hp,
             provides_fire_immunity,
+            provides_chill_immunity,
             healing,
             foods,
             teleports,
             mut combat_stats,
             mut hunger_clocks,
-            mut status_fire_immunity
+            mut status_fire_immunity,
+            mut status_chill_immunity
         } = data;
 
         // TODO: Joining on combat stats here is probably incorrect.
@@ -144,6 +149,25 @@ impl<'a> System<'a> for UntargetedSystem {
                 if let (Some(name), Some(thing_name)) = (name, thing_name) {
                     log.entries.push(format!(
                         "{} {} the {}, and no longer fears fire.",
+                        name.name,
+                        verb,
+                        thing_name.name
+                    ));
+                }
+            }
+
+            // Component: ProvidesFireImmunityWhenUsed
+            let thing_provides_chill_immunity = provides_chill_immunity.get(want_use.thing);
+            if let Some(provides_immunity) = thing_provides_chill_immunity {
+                StatusIsImmuneToChill::new_status(
+                    &mut status_chill_immunity,
+                    entity,
+                    provides_immunity.turns
+                );
+                let name = names.get(entity);
+                if let (Some(name), Some(thing_name)) = (name, thing_name) {
+                    log.entries.push(format!(
+                        "{} {} the {}, and no longer fears cold.",
                         name.name,
                         verb,
                         thing_name.name

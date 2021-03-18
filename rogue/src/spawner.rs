@@ -11,7 +11,8 @@ use super::{
     AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
     SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
     ChanceToDissipate, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
-    ProvidesFireImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
+    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
+    SimpleMarker, SerializeMe, MarkedBuilder,
     ElementalDamageKind,
     MAP_WIDTH, random_table
 };
@@ -518,9 +519,12 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     })
     .with(Name {name: "Potion of Freezing".to_string()})
     .with(PickUpable {})
+    .with(Useable {})
+    .with(Untargeted {verb: "drinks".to_string()})
     .with(Throwable {})
     .with(Targeted {verb: "throws".to_string()})
     .with(Consumable {})
+    .with(ProvidesChillImmunityWhenUsed {turns: 50})
     .with(InflictsDamageWhenTargeted {
         damage: 10,
         kind: ElementalDamageKind::Chill

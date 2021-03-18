@@ -3,8 +3,8 @@ use specs::prelude::*;
 use rltk::{RGB};
 use super::{
     GameLog, Name, RunState, Monster, Hazard, StatusIsFrozen,
-    StatusIsBurning, StatusIsImmuneToFire, WantsToTakeDamage,
-    ElementalDamageKind
+    StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
+    WantsToTakeDamage, ElementalDamageKind
 };
 
 //----------------------------------------------------------------------------
@@ -20,6 +20,7 @@ pub struct StatusTickSystemData<'a> {
     status_frozen: WriteStorage<'a, StatusIsFrozen>,
     status_burning: WriteStorage<'a, StatusIsBurning>,
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
+    status_immune_chill: WriteStorage<'a, StatusIsImmuneToChill>,
 }
 
 impl<'a> System<'a> for StatusTickSystem {
@@ -34,6 +35,7 @@ impl<'a> System<'a> for StatusTickSystem {
             mut status_frozen,
             mut status_burning,
             mut status_immune_fire,
+            mut status_immune_chill,
         } = data;
 
         for entity in entities.join() {
@@ -80,6 +82,22 @@ impl<'a> System<'a> for StatusTickSystem {
                     if let Some(name) = name {
                         log.entries.push(
                             format!("{} is no longer immune to flames.", name.name)
+                        )
+                    }
+                } else {
+                    immune.tick();
+                }
+            }
+            // StatusIsImmuneToChill: Tick chill entities and remove the
+            // status if expired.
+            let is_chill_immune = status_immune_chill.get_mut(entity);
+            if let Some(immune) = is_chill_immune {
+                if immune.remaining_turns <= 0 {
+                    status_immune_fire.remove(entity);
+                    let name = names.get(entity);
+                    if let Some(name) = name {
+                        log.entries.push(
+                            format!("{} is no longer immune to the cold.", name.name)
                         )
                     }
                 } else {

@@ -361,6 +361,12 @@ pub struct ProvidesFireImmunityWhenUsed {
     pub turns: i32
 }
 
+// An entity with this component, when used, grants chill immunity.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ProvidesChillImmunityWhenUsed {
+    pub turns: i32
+}
+
 // An entity with this component, when used, teleports the user to a random
 // position.
 #[derive(Component, Serialize, Deserialize, Clone)]
@@ -448,8 +454,26 @@ impl StatusIsImmuneToFire {
                 .expect("Unable to insert StatusIsImmuneToFire component.");
         }
     }
-    pub fn is_burning(self) -> bool {
-        self.remaining_turns > 0
+    pub fn tick(&mut self) {
+        self.remaining_turns -= 1
+    }
+}
+
+// Component indicating the entity is immune to damage from Chill elemntal
+// sources.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct StatusIsImmuneToChill {
+    pub remaining_turns: i32,
+}
+impl StatusIsImmuneToChill {
+    pub fn new_status(store: &mut WriteStorage<StatusIsImmuneToChill>, e: Entity, turns: i32) {
+        if let Some(immune) = store.get_mut(e) {
+            immune.remaining_turns = turns;
+        } else {
+            let immune = StatusIsImmuneToChill{remaining_turns: turns};
+            store.insert(e, immune)
+                .expect("Unable to insert StatusIsImmuneToChill component.");
+        }
     }
     pub fn tick(&mut self) {
         self.remaining_turns -= 1
