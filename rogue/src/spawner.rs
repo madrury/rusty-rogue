@@ -530,8 +530,8 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
         .with(SpawnsEntityInAreaWhenTargeted {
             radius: 1,
             kind: EntitySpawnKind::Chill {
-                spread_chance: 80,
-                dissipate_chance: 20,
+                spread_chance: 20,
+                dissipate_chance: 60,
             }
         })
     .with(AreaOfEffectAnimationWhenTargeted {
@@ -721,8 +721,8 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) {
         .with(SpawnsEntityInAreaWhenTargeted {
             radius: 1,
             kind: EntitySpawnKind::Chill {
-                spread_chance: 60,
-                dissipate_chance: 40,
+                spread_chance: 20,
+                dissipate_chance: 60,
             }
         })
         .with(AreaOfEffectAnimationWhenTargeted {
