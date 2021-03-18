@@ -1,6 +1,6 @@
 use super::{
     Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
-    HungerState, Monster, IsEntityKind, MonsterMovementAI,
+    HungerState, Monster, Hazard, IsEntityKind, MonsterMovementAI,
     MovementRoutingOptions, Name, Player, Position, Renderable, Viewshed,
     PickUpable, Useable, Castable, SpellCharges, Equippable, EquipmentSlot,
     Throwable, Targeted, Untargeted, Consumable, ProvidesFullHealing,
@@ -141,7 +141,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
             .insert(ItemType::Turnip, 3 + depth)
-            .insert(ItemType::Pomegranate, 1 + depth)
+            .insert(ItemType::Pomegranate, depth)
             .insert(ItemType::HealthPotion, 3 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, 2 + depth)
@@ -304,6 +304,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
                 order: 2,
             })
             .with(Name {name: "Fire".to_string()})
+            .with(Hazard {})
             .with(IsEntityKind {
                 kind: EntitySpawnKind::Fire {
                     spread_chance, dissipate_chance

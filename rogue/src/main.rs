@@ -605,6 +605,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InSpellBook>();
     gs.ecs.register::<Equipped>();
     gs.ecs.register::<Monster>();
+    gs.ecs.register::<Hazard>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<MonsterMovementAI>();
     gs.ecs.register::<SpellCharges>();

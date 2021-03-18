@@ -18,6 +18,10 @@ pub struct Player {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Monster {}
 
+// An entity with this component is a hazard.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Hazard {}
+
 // An entity with this component can be picked up.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct PickUpable {}

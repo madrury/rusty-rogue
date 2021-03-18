@@ -2,8 +2,9 @@
 use specs::prelude::*;
 use rltk::{RGB};
 use super::{
-    GameLog, Name, RunState, Monster, StatusIsFrozen, StatusIsBurning,
-    StatusIsImmuneToFire, WantsToTakeDamage, ElementalDamageKind
+    GameLog, Name, RunState, Monster, Hazard, StatusIsFrozen,
+    StatusIsBurning, StatusIsImmuneToFire, WantsToTakeDamage,
+    ElementalDamageKind
 };
 
 //----------------------------------------------------------------------------
@@ -90,6 +91,9 @@ impl<'a> System<'a> for StatusTickSystem {
 }
 
 
+//----------------------------------------------------------------------------
+// Apply all status effects that happen once every game loop.
+//----------------------------------------------------------------------------
 pub struct StatusEffectSystem {}
 
 #[derive(SystemData)]
@@ -98,6 +102,7 @@ pub struct StatusEffectSystemData<'a> {
     runstate: ReadExpect<'a, RunState>,
     player: ReadExpect<'a, Entity>,
     monsters: ReadStorage<'a, Monster>,
+    hazards: ReadStorage<'a, Hazard>,
     status_burning: WriteStorage<'a, StatusIsBurning>,
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
     wants_damages: WriteStorage<'a, WantsToTakeDamage>
@@ -113,6 +118,7 @@ impl<'a> System<'a> for StatusEffectSystem {
             runstate,
             player,
             monsters,
+            hazards,
             mut status_burning,
             status_immune_fire,
             mut wants_damages
@@ -120,12 +126,14 @@ impl<'a> System<'a> for StatusEffectSystem {
 
         for entity in entities.join() {
 
-            // Only apply an entity'ss statuses on the appropriate turn.
+            // Only apply an entity's statuses on the appropriate turn.
             let is_player = entity == *player;
             let is_monster = monsters.get(entity).is_some();
+            let is_hazard = hazards.get(entity).is_some();
             let proceed =
                 (*runstate == RunState::PlayerTurn && is_player)
-                || (*runstate == RunState::MonsterTurn && is_monster);
+                || (*runstate == RunState::MonsterTurn && is_monster)
+                || (*runstate == RunState::HazardTurn && is_hazard);
             if !proceed {
                 return
             }
