@@ -76,6 +76,7 @@ impl<'a> System<'a> for DamageSystem {
                 .sum();
             let is_immune_to_fire: bool = status_fire_immunity.get(entity).is_some();
             let is_immune_to_chill: bool = status_chill_immunity.get(entity).is_some();
+
             for (dmg, kind) in damage.amounts.iter().zip(&damage.kinds) {
                 match *kind {
                     ElementalDamageKind::Physical => {
@@ -86,7 +87,6 @@ impl<'a> System<'a> for DamageSystem {
                     }
                     ElementalDamageKind::Fire => {
                         if !is_immune_to_fire {
-                            println!("Takes {} damage.", *dmg);
                             stats.take_damage(*dmg);
                         }
                     }

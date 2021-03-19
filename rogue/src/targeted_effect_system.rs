@@ -5,8 +5,8 @@ use super::{
     Targeted, TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
-    WantsToTakeDamage, StatusIsFrozen, StatusIsBurning,
-    SpawnsEntityInAreaWhenTargeted, StatusIsImmuneToFire,
+    AlongRayAnimationWhenTargeted, WantsToTakeDamage, StatusIsFrozen,
+    StatusIsBurning, SpawnsEntityInAreaWhenTargeted, StatusIsImmuneToFire,
     StatusIsImmuneToChill
 };
 use specs::prelude::*;
@@ -40,6 +40,7 @@ pub struct TargetedSystemData<'a> {
         does_freeze: WriteStorage<'a, InflictsFreezingWhenTargeted>,
         does_burn: WriteStorage<'a, InflictsBurningWhenTargeted>,
         aoe_animations: ReadStorage<'a, AreaOfEffectAnimationWhenTargeted>,
+        along_ray_animations: ReadStorage<'a, AlongRayAnimationWhenTargeted>,
         spawns_entity_in_area: ReadStorage<'a, SpawnsEntityInAreaWhenTargeted>,
         apply_damages: WriteStorage<'a, WantsToTakeDamage>,
         teleports: ReadStorage<'a, MovesToRandomPosition>,
@@ -76,6 +77,7 @@ impl<'a> System<'a> for TargetedSystem {
             does_freeze,
             does_burn,
             aoe_animations,
+            along_ray_animations,
             mut apply_damages,
             teleports,
             mut is_frozen,
@@ -96,7 +98,6 @@ impl<'a> System<'a> for TargetedSystem {
                 .get(want_target.thing)
                 .map_or(true, |sc| sc.charges > 0);
             if !proceed {continue}
-
 
             // Stuff needed to construct log messages.
             let thing_name = names.get(want_target.thing);
@@ -254,6 +255,21 @@ impl<'a> System<'a> for TargetedSystem {
                     bg: has_aoe_animation.bg,
                     glyph: has_aoe_animation.glyph,
                     radius: has_aoe_animation.radius
+                })
+            }
+
+            // Component: AlongRayAnimationWhenTargeted
+            let has_ray_animation = along_ray_animations.get(want_target.thing);
+            let user_position = positions.get(user);
+            if let (Some(has_ray_animation), Some(user_position)) = (has_ray_animation, user_position) {
+                animation_builder.request(AnimationRequest::AlongRay {
+                    source_x: user_position.x,
+                    source_y: user_position.y,
+                    target_x: target_point.x,
+                    target_y: target_point.y,
+                    fg: has_ray_animation.fg,
+                    bg: has_ray_animation.bg,
+                    glyph: has_ray_animation.glyph
                 })
             }
 

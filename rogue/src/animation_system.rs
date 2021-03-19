@@ -37,6 +37,15 @@ pub enum AnimationRequest {
         glyph: rltk::FontCharType,
         radius: i32,
     },
+    AlongRay {
+        source_x: i32,
+        source_y: i32,
+        target_x: i32,
+        target_y: i32,
+        fg: RGB,
+        bg: RGB,
+        glyph: rltk::FontCharType,
+    },
     Teleportation {
         x: i32,
         y: i32,
@@ -94,6 +103,22 @@ impl<'a> System<'a> for AnimationInitSystem {
                     glyph,
                     radius,
                 } => make_aoe_animation(&*map, *x, *y, *fg, *bg, *glyph, *radius),
+                AnimationRequest::AlongRay {
+                    source_x,
+                    source_y,
+                    target_x,
+                    target_y,
+                    fg,
+                    bg,
+                    glyph,
+                } => make_along_ray_animation(
+                    &*map,
+                    Point {x: *source_x, y: *source_y},
+                    Point {x: *target_x, y: *target_y},
+                    *fg,
+                    *bg,
+                    *glyph
+                ),
                 AnimationRequest::Teleportation {x, y, bg}
                     => make_teleportation_animation(*x, *y, *bg),
             })
@@ -185,6 +210,30 @@ fn make_aoe_animation(
     particles
 }
 
+// An animation that travels along a ray from source to target.
+fn make_along_ray_animation(
+    map: &Map,
+    source: Point,
+    target: Point,
+    fg: RGB,
+    bg: RGB,
+    glyph: rltk::FontCharType
+) -> Vec<ParticleRequest> {
+    let mut particles = Vec::new();
+    let tiles = map.get_ray_tiles(source, target);
+    for (i, tile) in tiles.into_iter().enumerate() {
+        particles.push(ParticleRequest {
+            x: tile.x,
+            y: tile.y,
+            fg: fg,
+            bg: bg,
+            glyph: glyph,
+            lifetime: 50.0,
+            delay: 50.0 * (i as f32)
+        })
+    }
+    particles
+}
 
 // A healing animation. A heart flashes quickly.
 fn make_teleportation_animation(
