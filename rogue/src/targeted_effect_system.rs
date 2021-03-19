@@ -306,6 +306,9 @@ impl<'a> System<'a> for TargetedSystem {
 //   - Base Case: Find all entites at the given position.
 //   - AOE Case: Find all entities within a given viewshed (defined by a radius)
 //     of a given position.
+//   - Along Ray Case: Draw a ray from the source to the target point, stopping
+//     when the ray encounters a blocked tile. Target all entities in the final
+//     tile.
 fn find_targets<'a>(map: &'a Map, ppos: Point, pt: Point, kind: TargetingKind) -> Vec<&'a Entity> {
     let mut targets: Vec<&Entity> = Vec::new();
     let idx = map.xy_idx(pt.x, pt.y);

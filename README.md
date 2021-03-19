@@ -43,7 +43,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] A potion of speed.
   - [ ] A potion of recharging.
 
-## Additional We've Planned Added:
+## Additional We've Added:
 
   - [x] A status effects system.
   - [x] The Burning status effect. ♠
