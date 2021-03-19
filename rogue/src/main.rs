@@ -187,7 +187,9 @@ impl State {
     fn run_monster_turn_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
-        let mut mob = MonsterMovementSystem{};
+        let mut can_act = MonsterCanActSystem{};
+        can_act.run_now(&self.ecs);
+        let mut mob = MonsterBasicAISystem{};
         mob.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
@@ -636,6 +638,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Hazard>();
     gs.ecs.register::<IsEntityKind>();
+    gs.ecs.register::<CanAct>();
     gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<SpellCharges>();
     gs.ecs.register::<WantsToMeleeAttack>();

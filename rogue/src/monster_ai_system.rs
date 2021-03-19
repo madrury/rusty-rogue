@@ -1,75 +1,111 @@
 use specs::prelude::*;
 use super::{
-    Viewshed, Monster, MonsterBasicAI, Name, Position, Map, RoutingMap,
-    WantsToMeleeAttack, StatusIsFrozen
+    Viewshed, Monster, CanAct, MonsterBasicAI, Position, Map,
+    RoutingMap, WantsToMeleeAttack, StatusIsFrozen
 };
 use rltk::{Point, RandomNumberGenerator};
 
-pub struct MonsterMovementSystem {
+//----------------------------------------------------------------------------
+// System for determining if a Monster can take an action this turn.
+//----------------------------------------------------------------------------
+pub struct MonsterCanActSystem {}
+
+#[derive(SystemData)]
+pub struct MonsterCanActSystemData<'a> {
+    entities: Entities<'a>,
+    monsters: ReadStorage<'a, Monster>,
+    status_is_frozen: ReadStorage<'a, StatusIsFrozen>,
+    can_acts: WriteStorage<'a, CanAct>
+}
+
+impl<'a> System<'a> for MonsterCanActSystem {
+    type SystemData = MonsterCanActSystemData<'a>;
+
+    fn run(&mut self, data: Self::SystemData) {
+
+        let MonsterCanActSystemData {entities, monsters, status_is_frozen, mut can_acts} = data;
+
+        for (entity, _monster) in (&entities, &monsters).join() {
+
+            // Guard for frozen monsters: they cannot act.
+            if let Some(_) = status_is_frozen.get(entity) {
+                continue;
+            }
+            can_acts.insert(entity, CanAct {})
+                .expect("Failed to insert CanAct component.");
+        }
+    }
 }
 
 
+//----------------------------------------------------------------------------
+// System for the most basic monster AI.
+//
+// Monsters with this AI type are simple Melee attaackers. They attempt to chase
+// down the player and will Melee attack until someone is dead.
+//----------------------------------------------------------------------------
+pub struct MonsterBasicAISystem {}
 
-// System for handling monster movement.
-// Iterates through all monsters and updates their position according to their
-// MonsterMovementAI.
-impl<'a> System<'a> for MonsterMovementSystem {
+#[derive(SystemData)]
+pub struct MonsterBasicAISystemData<'a> {
+    entities: Entities<'a>,
+    map: WriteExpect<'a, Map>,
+    ppos: ReadExpect<'a, Point>,
+    player: ReadExpect<'a, Entity>,
+    monsters: ReadStorage<'a, Monster>,
+    viewsheds: WriteStorage<'a, Viewshed>,
+    basic_ais: WriteStorage<'a, MonsterBasicAI>,
+    can_acts: WriteStorage<'a, CanAct>,
+    positions: WriteStorage<'a, Position>,
+    wants_melee_attack: WriteStorage<'a, WantsToMeleeAttack>,
+}
 
-    type SystemData = (
-        WriteExpect<'a, Map>,
-        ReadExpect<'a, Point>, // Player position.
-        ReadExpect<'a, Entity>, // Player entity.
-        Entities<'a>,
-        WriteStorage<'a, StatusIsFrozen>,
-        WriteStorage<'a, Viewshed>,
-        ReadStorage<'a, Monster>,
-        WriteStorage<'a, MonsterBasicAI>,
-        ReadStorage<'a, Name>,
-        WriteStorage<'a, Position>,
-        WriteStorage<'a, WantsToMeleeAttack>,
-    );
+impl<'a> System<'a> for MonsterBasicAISystem {
+
+    type SystemData = MonsterBasicAISystemData<'a>;
 
     fn run(&mut self, data: Self::SystemData) {
-        let (
-            mut map,
-            player_pos,
-            player,
+        let MonsterBasicAISystemData {
             entities,
-            mut status_frozen,
-            mut viewsheds,
+            mut map,
+            ppos,
+            player,
             monsters,
-            mut movement_ais,
-            names,
-            mut pos,
-            mut melee_attack,
-        ) = data;
+            mut viewsheds,
+            mut basic_ais,
+            mut can_acts,
+            mut positions,
+            mut wants_melee_attack,
+        } = data;
 
-        let iter = (&entities, &mut viewsheds, &monsters, &mut movement_ais, &names, &mut pos).join();
-        for  (entity, mut viewshed, _monster, movement_ai, _name, mut pos) in iter {
+        let iter = (
+            &entities,
+            &monsters,
+            &mut viewsheds,
+            &mut basic_ais,
+            &mut positions).join();
 
-            // Check for status effects that would prevent the monster from
-            // taking actions.
-            //----------------------------------------------------------------
-            // The monster has the frozen status, and cannot take actions.
-            if let Some(_) = status_frozen.get_mut(entity) {
-                continue;
+        for (entity, _m, mut viewshed, ai, mut pos) in iter {
+
+            // If the entity cannot act, bail out.
+            if can_acts.get(entity).is_none() {
+                continue
             }
 
-            // The monster is free to take actions.
-            let in_viewshed = viewshed.visible_tiles.contains(&*player_pos);
-            let keep_following = movement_ai.do_keep_following();
+            // Our decision for what to do is conditional on this data.
+            let in_viewshed = viewshed.visible_tiles.contains(&*ppos);
+            let keep_following = ai.do_keep_following();
             let next_to_player = rltk::DistanceAlg::Pythagoras.distance2d(
                 Point::new(pos.x, pos.y),
-                *player_pos
+                *ppos
             ) < 1.5;
 
             // Monster next to player branch:
             //   If we're already next to player, we enter into melee combat.
             if next_to_player {
-                melee_attack
+                wants_melee_attack
                     .insert(entity, WantsToMeleeAttack {target: *player})
                     .expect("Failed to insert player as melee target.");
-                continue;
             // Monster seeking player branch:
             //   This branch is taken if the monster is currently seeking the
             //   player, i.e., the monster is currently attempting to move towards
@@ -77,8 +113,8 @@ impl<'a> System<'a> for MonsterMovementSystem {
             } else if in_viewshed || keep_following {
                 let path = rltk::a_star_search(
                     map.xy_idx(pos.x, pos.y) as i32,
-                    map.xy_idx(player_pos.x, player_pos.y) as i32,
-                    &RoutingMap::from_map(&*map, &movement_ai.routing_options)
+                    map.xy_idx(ppos.x, ppos.y) as i32,
+                    &RoutingMap::from_map(&*map, &ai.routing_options)
                 );
                 if path.success && path.steps.len() > 1 {
                     let new_x = path.steps[1] as i32 % map.width;
@@ -89,18 +125,20 @@ impl<'a> System<'a> for MonsterMovementSystem {
                 // when they lose visual contact. After a specified amount of
                 // time, the monster will switch to idling.
                 if in_viewshed {
-                    movement_ai.reset_keep_following();
+                    ai.reset_keep_following();
                 } else {
-                    movement_ai.decrement_keep_following();
+                    ai.decrement_keep_following();
                 }
             // Monster idling branch.
             //   This branch is taken if the monster can not currently see the
             //   player, and are flagged to wander when the player is out of
             //   visible range.
-            } else if !in_viewshed && movement_ai.no_visibility_wander {
+            } else if !in_viewshed && ai.no_visibility_wander {
                 let new_pos = random_adjacent_position(&map, pos);
                 move_monster(&mut map, &mut pos, new_pos.0, new_pos.1, &mut viewshed)
             }
+            // We're done acting, so we've used up our action for the turn.
+            can_acts.remove(entity).expect("Unable to remove CanAct component.");
         }
     }
 }

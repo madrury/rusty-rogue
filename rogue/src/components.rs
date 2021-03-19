@@ -251,6 +251,11 @@ impl SpellCharges {
 //------------------------------------------------------------------
 // Monster AI Components
 //------------------------------------------------------------------
+
+// Component tags monsters if they can act in a given turn.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct CanAct {}
+
 // Comonent holding data determining a monster's movement behaviour.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MovementRoutingOptions {
