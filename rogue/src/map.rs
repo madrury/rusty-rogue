@@ -2,6 +2,7 @@ use rltk::{RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point, Bresen
 use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::iter::Iterator;
+use take_until::*;
 use super::{DEBUG_DRAW_ALL_MAP, MovementRoutingOptions};
 
 
@@ -136,21 +137,21 @@ impl Map {
     }
 
     pub fn get_aoe_tiles(&self, pt: Point, radius: f32) -> Vec<Point> {
-        let mut tiles: Vec<Point> = Vec::new();
-        let mut in_viewshed = rltk::field_of_view(pt, f32::ceil(radius) as i32, self);
+        let in_viewshed = rltk::field_of_view(pt, f32::ceil(radius) as i32, self);
         in_viewshed.into_iter()
             .filter(|p| rltk::DistanceAlg::Pythagoras.distance2d(*p, pt) < radius)
             .collect()
     }
 
     pub fn get_ray_tiles(&self, source: Point, target: Point) -> Vec<Point> {
-        let mut tiles: Vec<Point> = Bresenham::new(source, target)
-            .take_while(|p| {
+        let mut tiles: Vec<Point> = Bresenham::new(source, target).collect();
+        tiles.push(target);
+        tiles.into_iter()
+            .take_until(|p| {
                 let idx = self.xy_idx(p.x, p.y);
-                !self.blocked[idx]
+                self.blocked[idx]
             })
-            .collect();
-        tiles
+            .collect()
     }
 
     pub fn populate_blocked(&mut self) {

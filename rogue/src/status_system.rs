@@ -120,6 +120,9 @@ impl<'a> System<'a> for StatusEffectSystem {
         } = data;
 
         for entity in entities.join() {
+            if *runstate == RunState::MonsterTurn {
+                println!("Running on Monster Turn.")
+            }
 
             // Only apply an entity's statuses on the appropriate turn.
             let is_player = entity == *player;
@@ -130,7 +133,7 @@ impl<'a> System<'a> for StatusEffectSystem {
                 || (*runstate == RunState::MonsterTurn && is_monster)
                 || (*runstate == RunState::HazardTurn && is_hazard);
             if !proceed {
-                return
+                continue
             }
 
             // StatusIsBurning: Tick burning entities, apply the tick damage,
@@ -139,6 +142,7 @@ impl<'a> System<'a> for StatusEffectSystem {
             let burning = status_burning.get_mut(entity);
             let is_fire_immune = status_immune_fire.get(entity).is_some();
             if let Some(burning) = burning {
+                println!("Taking burning damage.");
                 if !is_fire_immune {
                     WantsToTakeDamage::new_damage(
                         &mut wants_damages,

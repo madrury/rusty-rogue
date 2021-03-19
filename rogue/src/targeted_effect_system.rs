@@ -319,6 +319,7 @@ fn find_targets<'a>(map: &'a Map, ppos: Point, pt: Point, kind: TargetingKind) -
                 for target in map.tile_content[idx].iter() {
                     targets.push(target);
                 }
+                println!("Number of targets found is {}", targets.len());
             }
         }
     }

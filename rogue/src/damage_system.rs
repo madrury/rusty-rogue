@@ -1,7 +1,8 @@
 use specs::prelude::*;
 use super::{
     CombatStats, WantsToTakeDamage, Player, Name, GameLog, Equipped,
-    ElementalDamageKind, GrantsMeleeDefenseBonus, StatusIsImmuneToFire
+    ElementalDamageKind, GrantsMeleeDefenseBonus, StatusIsImmuneToFire,
+    StatusIsImmuneToChill
 };
 
 pub struct DamageSystem {}
@@ -43,7 +44,6 @@ impl DamageSystem {
 }
 
 
-
 // Process queued damage.
 impl<'a> System<'a> for DamageSystem {
     type SystemData = (
@@ -53,6 +53,7 @@ impl<'a> System<'a> for DamageSystem {
         WriteStorage<'a, WantsToTakeDamage>,
         ReadStorage<'a, GrantsMeleeDefenseBonus>,
         ReadStorage<'a, StatusIsImmuneToFire>,
+        ReadStorage<'a, StatusIsImmuneToChill>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -62,7 +63,8 @@ impl<'a> System<'a> for DamageSystem {
             equipped,
             mut wants_to_take_damage,
             melee_defense_bonus,
-            status_fire_immunity
+            status_fire_immunity,
+            status_chill_immunity,
         ) = data;
 
         for (entity, stats, damage) in (&entities, &mut stats, &wants_to_take_damage).join() {
@@ -73,7 +75,7 @@ impl<'a> System<'a> for DamageSystem {
                 .map(|(_e, ab, _eq)| ab.bonus)
                 .sum();
             let is_immune_to_fire: bool = status_fire_immunity.get(entity).is_some();
-
+            let is_immune_to_chill: bool = status_chill_immunity.get(entity).is_some();
             for (dmg, kind) in damage.amounts.iter().zip(&damage.kinds) {
                 match *kind {
                     ElementalDamageKind::Physical => {
@@ -84,13 +86,14 @@ impl<'a> System<'a> for DamageSystem {
                     }
                     ElementalDamageKind::Fire => {
                         if !is_immune_to_fire {
+                            println!("Takes {} damage.", *dmg);
                             stats.take_damage(*dmg);
                         }
                     }
                     ElementalDamageKind::Chill => {
-                        // if !is_immune_to_fire {
-                        //     stats.take_damage(*dmg);
-                        // }
+                        if !is_immune_to_chill {
+                            stats.take_damage(*dmg);
+                        }
                     }
                 }
             }
