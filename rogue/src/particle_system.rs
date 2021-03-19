@@ -148,3 +148,8 @@ pub fn update_particle_lifetimes(ecs: &mut World, ctx: &Rltk) {
         ecs.delete_entity(*dead).expect("Particle will not die.");
     }
 }
+
+pub fn is_any_animation_alive(ecs: &World) -> bool {
+    let particles = ecs.read_storage::<ParticleLifetime>();
+    particles.join().next().is_some()
+}

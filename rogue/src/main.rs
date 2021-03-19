@@ -85,12 +85,12 @@ pub enum RunState {
         thing: Entity,
         current: Option<Point>
     },
+    PlayingAnimation,
     NextLevel
 }
 
 
 pub struct MapGenerationAnimation {
-    return_state : Option<RunState>,
     history : Vec<Map>,
     index : usize,
     timer : f32
@@ -103,9 +103,9 @@ impl MapGenerationAnimation {
     }
 }
 
-
 pub struct State {
     pub ecs: World,
+    pub next_state : Option<RunState>,
     pub mapgen: MapGenerationAnimation
 }
 
@@ -364,7 +364,8 @@ impl GameState for State {
             }
             RunState::MapGeneration => {
                 if !DEBUG_VISUALIZE_MAPGEN {
-                    newrunstate = self.mapgen.return_state.unwrap();
+                    newrunstate = self.next_state
+                        .expect("Attempting to return from mapgen, but no next state.");
                 } else {
                     ctx.cls();
                     draw_map(&self.mapgen.history[self.mapgen.index], ctx);
@@ -373,7 +374,8 @@ impl GameState for State {
                         self.mapgen.timer = 0.0;
                         self.mapgen.index += 1;
                         if self.mapgen.index >= self.mapgen.history.len() {
-                            newrunstate = self.mapgen.return_state.unwrap();
+                            newrunstate = self.next_state
+                                .expect("Attempting to return from mapgen, but no next state.");
                         }
                     }
                 }
@@ -392,20 +394,44 @@ impl GameState for State {
             RunState::AwaitingInput => {
                 newrunstate = player_input(self, ctx);
             }
+            RunState::PlayingAnimation => {
+                if is_any_animation_alive(&self.ecs) {
+                    newrunstate = RunState::PlayingAnimation;
+                } else {
+                    let next_state = self.next_state
+                        .expect("Returning from animation, but no next_state to return to.");
+                    newrunstate = next_state;
+                }
+            }
             RunState::PlayerTurn => {
                 self.run_player_turn_systems();
                 self.run_map_indexing_system();
-                newrunstate = RunState::HazardTurn;
+                if is_any_animation_alive(&self.ecs) {
+                    self.next_state = Some(RunState::HazardTurn);
+                    newrunstate = RunState::PlayingAnimation;
+                } else {
+                    newrunstate = RunState::HazardTurn;
+                }
             }
             RunState::HazardTurn => {
                 self.run_terrain_turn_systems();
                 self.run_map_indexing_system();
-                newrunstate = RunState::MonsterTurn;
+                if is_any_animation_alive(&self.ecs) {
+                    self.next_state = Some(RunState::MonsterTurn);
+                    newrunstate = RunState::PlayingAnimation;
+                } else {
+                    newrunstate = RunState::MonsterTurn;
+                }
             }
             RunState::MonsterTurn => {
                 self.run_monster_turn_systems();
                 self.run_map_indexing_system();
-                newrunstate = RunState::UpkeepTrun;
+                if is_any_animation_alive(&self.ecs) {
+                    self.next_state = Some(RunState::UpkeepTrun);
+                    newrunstate = RunState::PlayingAnimation;
+                } else {
+                    newrunstate = RunState::UpkeepTrun
+                }
             }
             RunState::UpkeepTrun => {
                 self.run_upkeep_turn_systems();
@@ -574,10 +600,10 @@ fn main() -> rltk::BError {
 
     let mut gs = State {
         ecs: World::new(),
+        next_state: Some(RunState::MainMenu{
+            current: gui::MainMenuSelection::NewGame
+        }),
         mapgen: MapGenerationAnimation {
-            return_state : Some(RunState::MainMenu{
-                current: gui::MainMenuSelection::NewGame
-            }),
             index: 0,
             history: Vec::new(),
             timer: 0.0
