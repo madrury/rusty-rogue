@@ -1,12 +1,12 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
-    EntitySpawnRequestBuffer, EntitySpawnRequest, Name,
-    Renderable, Consumable, SpellCharges, Position, Viewshed,
-    WantsToUseTargeted, Targeted, ProvidesFullHealing, MovesToRandomPosition,
+    EntitySpawnRequestBuffer, EntitySpawnRequest, Name, Renderable,
+    Consumable, SpellCharges, Position, Viewshed, WantsToUseTargeted,
+    Targeted, TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
-    InflictsBurningWhenTargeted, AreaOfEffectWhenTargeted,
-    AreaOfEffectAnimationWhenTargeted, WantsToTakeDamage, StatusIsFrozen,
-    StatusIsBurning, SpawnsEntityInAreaWhenTargeted, StatusIsImmuneToFire,
+    InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
+    WantsToTakeDamage, StatusIsFrozen, StatusIsBurning,
+    SpawnsEntityInAreaWhenTargeted, StatusIsImmuneToFire,
     StatusIsImmuneToChill
 };
 use specs::prelude::*;
@@ -38,7 +38,6 @@ pub struct TargetedSystemData<'a> {
         does_damage: ReadStorage<'a, InflictsDamageWhenTargeted>,
         does_freeze: WriteStorage<'a, InflictsFreezingWhenTargeted>,
         does_burn: WriteStorage<'a, InflictsBurningWhenTargeted>,
-        aoes: ReadStorage<'a, AreaOfEffectWhenTargeted>,
         aoe_animations: ReadStorage<'a, AreaOfEffectAnimationWhenTargeted>,
         spawns_entity_in_area: ReadStorage<'a, SpawnsEntityInAreaWhenTargeted>,
         apply_damages: WriteStorage<'a, WantsToTakeDamage>,
@@ -74,7 +73,6 @@ impl<'a> System<'a> for TargetedSystem {
             does_damage,
             does_freeze,
             does_burn,
-            aoes,
             aoe_animations,
             mut apply_damages,
             teleports,
@@ -97,8 +95,6 @@ impl<'a> System<'a> for TargetedSystem {
                 .map_or(true, |sc| sc.charges > 0);
             if !proceed {continue}
 
-            let target_point = want_target.target;
-            let aoe = aoes.get(want_target.thing);
 
             // Stuff needed to construct log messages.
             let thing_name = names.get(want_target.thing);
@@ -110,7 +106,12 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Gather up all the entities that are either at the targeted
             // position or within the area of effect.
-            let targets: Vec<&Entity> = find_targets(&*map, target_point, aoe)
+            let target_point = want_target.target;
+            let targeting_kind = targeteds
+                .get(want_target.thing)
+                .map(|t| t.kind.clone())
+                .expect("Tried to target but no Targeted component.");
+            let targets: Vec<&Entity> = find_targets(&*map, target_point, targeting_kind)
                 .into_iter()
                 .filter(|&e| *e != user)
                 .collect();
@@ -287,17 +288,17 @@ impl<'a> System<'a> for TargetedSystem {
 //   - Base Case: Find all entites at the given position.
 //   - AOE Case: Find all entities within a given viewshed (defined by a radius)
 //     of a given position.
-fn find_targets<'a>(map: &'a Map, pt: Point, aoe: Option<&AreaOfEffectWhenTargeted>) -> Vec<&'a Entity> {
+fn find_targets<'a>(map: &'a Map, pt: Point, kind: TargetingKind) -> Vec<&'a Entity> {
     let mut targets: Vec<&Entity> = Vec::new();
     let idx = map.xy_idx(pt.x, pt.y);
-    match aoe {
-        None => {
+    match kind {
+        TargetingKind::Simple => {
             for target in map.tile_content[idx].iter() {
                 targets.push(target);
             }
         }
-        Some(aoe) => {
-            let mut blast_tiles = rltk::field_of_view(pt, aoe.radius, &*map);
+        TargetingKind::AreaOfEffect {radius} => {
+            let mut blast_tiles = map.get_aoe_tiles(pt, radius);
             blast_tiles.retain(
                 |p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1
             );

@@ -3,16 +3,16 @@ use super::{
     HungerState, Monster, Hazard, IsEntityKind, MonsterMovementAI,
     MovementRoutingOptions, Name, Player, Position, Renderable, Viewshed,
     PickUpable, Useable, Castable, SpellCharges, Equippable, EquipmentSlot,
-    Throwable, Targeted, Untargeted, Consumable, ProvidesFullHealing,
-    ProvidesFullFood, IncreasesMaxHpWhenUsed, AreaOfEffectWhenTargeted,
+    Throwable, Targeted, TargetingKind, Untargeted, Consumable,
+    ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
     InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
     SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
     ChanceToDissipate, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
-    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
-    SimpleMarker, SerializeMe, MarkedBuilder,
+    ProvidesFireImmunityWhenUsed,
+    ProvidesChillImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
     ElementalDamageKind,
     MAP_WIDTH, random_table
 };
@@ -146,12 +146,12 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Pomegranate, depth)
             .insert(ItemType::HealthPotion, 3 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, 2 + depth)
-            .insert(ItemType::FreezingPotion, 2 + depth)
-            .insert(ItemType::Dagger, depth)
+            .insert(ItemType::FirePotion, 200 + depth)
+            .insert(ItemType::FreezingPotion, 200 + depth)
+            .insert(ItemType::Dagger, 200 + depth)
             .insert(ItemType::LeatherArmor, depth)
-            .insert(ItemType::FireblastScroll, depth)
-            .insert(ItemType::IceblastScroll, depth)
+            .insert(ItemType::FireblastScroll, 200 + depth)
+            .insert(ItemType::IceblastScroll, 200 + depth)
             .insert(ItemType::None, 100)
             .roll(&mut rng);
     }
@@ -456,7 +456,11 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Useable {})
     .with(Untargeted {verb: "drinks".to_string()})
     .with(Throwable {})
-    .with(Targeted {verb: "throws".to_string()})
+    .with(Targeted {
+        verb: "throws".to_string(),
+        range: 6.5,
+        kind: TargetingKind::Simple
+    })
     .with(Consumable {})
     // TODO: We probably want a component for triggering the healing animation.
     .with(ProvidesFullHealing {})
@@ -479,10 +483,13 @@ fn fire_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Useable {})
     .with(Untargeted {verb: "drinks".to_string()})
     .with(Throwable {})
-    .with(Targeted {verb: "throws".to_string()})
+    .with(Targeted {
+        verb: "throws".to_string(),
+        range: 6.5,
+        kind: TargetingKind::AreaOfEffect {radius: 2.5}
+    })
     .with(Consumable {})
     .with(ProvidesFireImmunityWhenUsed {turns: 50})
-    .with(AreaOfEffectWhenTargeted {radius: 2})
     .with(InflictsDamageWhenTargeted {
         damage: 10,
         kind: ElementalDamageKind::Fire
@@ -522,7 +529,11 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Useable {})
     .with(Untargeted {verb: "drinks".to_string()})
     .with(Throwable {})
-    .with(Targeted {verb: "throws".to_string()})
+    .with(Targeted {
+        verb: "throws".to_string(),
+        range: 6.5,
+        kind: TargetingKind::AreaOfEffect {radius: 2.5}
+    })
     .with(Consumable {})
     .with(ProvidesChillImmunityWhenUsed {turns: 50})
     .with(InflictsDamageWhenTargeted {
@@ -530,14 +541,13 @@ fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
         kind: ElementalDamageKind::Chill
     })
     .with(InflictsFreezingWhenTargeted {turns: 6})
-    .with(AreaOfEffectWhenTargeted {radius: 2})
-        .with(SpawnsEntityInAreaWhenTargeted {
-            radius: 1,
-            kind: EntitySpawnKind::Chill {
-                spread_chance: 20,
-                dissipate_chance: 60,
-            }
-        })
+    .with(SpawnsEntityInAreaWhenTargeted {
+        radius: 1,
+        kind: EntitySpawnKind::Chill {
+            spread_chance: 20,
+            dissipate_chance: 60,
+        }
+    })
     .with(AreaOfEffectAnimationWhenTargeted {
         radius: 2,
         fg: RGB::named(rltk::WHITE),
@@ -562,7 +572,11 @@ fn teleportation_potion(ecs: &mut World, x: i32, y: i32) {
     .with(Useable {})
     .with(Untargeted{ verb: "drinks".to_string()})
     .with(Throwable {})
-    .with(Targeted {verb: "throws".to_string()})
+    .with(Targeted {
+        verb: "throws".to_string(),
+        range: 6.5,
+        kind: TargetingKind::Simple
+    })
     .with(Consumable {})
     .with(MovesToRandomPosition {})
     .marked::<SimpleMarker<SerializeMe>>()
@@ -631,7 +645,11 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(Equippable {slot: EquipmentSlot::Melee})
         .with(GrantsMeleeAttackBonus {bonus: 2})
         .with(Throwable {})
-        .with(Targeted {verb: "throws".to_string()})
+        .with(Targeted {
+            verb: "throws".to_string(),
+            range: 6.5,
+            kind: TargetingKind::Simple
+        })
         .with(Consumable {})
         .with(InflictsDamageWhenTargeted {damage: 15, kind: ElementalDamageKind::Physical})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -676,10 +694,19 @@ fn fireblast(ecs: &mut World, x: i32, y: i32) {
             regen_time: 200,
             time: 0
         })
-        .with(Targeted {verb: "casts".to_string()})
-        .with(InflictsDamageWhenTargeted {damage: 10, kind: ElementalDamageKind::Fire})
-        .with(InflictsBurningWhenTargeted {turns: 4, tick_damage: 4})
-        .with(AreaOfEffectWhenTargeted {radius: 2})
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AreaOfEffect {radius: 2.5}
+        })
+        .with(InflictsDamageWhenTargeted {
+            damage: 10,
+            kind: ElementalDamageKind::Fire
+        })
+        .with(InflictsBurningWhenTargeted {
+            turns: 4,
+            tick_damage: 4
+        })
         .with(SpawnsEntityInAreaWhenTargeted {
             radius: 1,
             kind: EntitySpawnKind::Fire {
@@ -715,13 +742,16 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) {
             regen_time: 200,
             time: 0
         })
-        .with(Targeted {verb: "casts".to_string()})
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AreaOfEffect {radius: 2.5}
+        })
         .with(InflictsDamageWhenTargeted {
             damage: 10,
             kind: ElementalDamageKind::Chill
         })
         .with(InflictsFreezingWhenTargeted {turns: 8})
-        .with(AreaOfEffectWhenTargeted {radius: 2})
         .with(SpawnsEntityInAreaWhenTargeted {
             radius: 1,
             kind: EntitySpawnKind::Chill {

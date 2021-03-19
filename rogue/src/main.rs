@@ -75,13 +75,13 @@ pub enum RunState {
     ShowEquipInventory,
     ShowSpellbook,
     ShowTargetingMouse {
-        range: i32,
-        radius: Option<i32>,
+        range: f32,
+        kind: TargetingKind,
         thing: Entity
     },
     ShowTargetingKeyboard {
-        range: i32,
-        radius: Option<i32>,
+        range: f32,
+        kind: TargetingKind,
         thing: Entity,
         current: Option<Point>
     },
@@ -465,12 +465,14 @@ impl GameState for State {
                     MenuResult::Selected {thing} => {
                         // We need the area of effect radius of the item to draw
                         // the targeting system.
-                        let aoes = self.ecs.read_storage::<AreaOfEffectWhenTargeted>();
-                        let radius = aoes.get(thing).map(|x| x.radius);
+                        let targeted = self.ecs.read_storage::<Targeted>();
+                        let (range, kind) = targeted.get(thing)
+                            .map(|x| (x.range, x.kind))
+                            .expect("Attempted to throw item without Targeted components.");
                         newrunstate = RunState::ShowTargetingKeyboard {
-                            range: 6,
+                            range: range,
                             thing: thing,
-                            radius: radius,
+                            kind: kind,
                             current: None
                         };
                     }
@@ -485,12 +487,13 @@ impl GameState for State {
                         let targeted = self.ecs.read_storage::<Targeted>();
                         let is_targeted = targeted.get(thing).is_some();
                         if is_targeted {
-                            let aoes = self.ecs.read_storage::<AreaOfEffectWhenTargeted>();
-                            let radius = aoes.get(thing).map(|x| x.radius);
+                            let (range, kind) = targeted.get(thing)
+                                .map(|x| (x.range, x.kind))
+                                .expect("Attempted to throw item without Targeted components.");
                             newrunstate = RunState::ShowTargetingKeyboard {
-                                range: 6,
+                                range: range,
                                 thing: thing,
-                                radius: radius,
+                                kind: kind,
                                 current: None
                             };
                         }
@@ -507,12 +510,12 @@ impl GameState for State {
                     }
                 }
             }
-            RunState::ShowTargetingMouse {range, thing, radius} => {
-                match gui::ranged_target_mouse(&mut self.ecs, ctx, range, radius) {
+            RunState::ShowTargetingMouse {range, kind, thing} => {
+                match gui::ranged_target_mouse(&mut self.ecs, ctx, range, kind) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
                     TargetingResult::SwitchModality => {
                         newrunstate = RunState::ShowTargetingKeyboard {
-                            range: range, thing: thing, radius: radius, current: None
+                            range: range, thing: thing, kind: kind, current: None
                         }
                     }
                     TargetingResult::Selected {pos} => {
@@ -522,21 +525,21 @@ impl GameState for State {
                             WantsToUseTargeted {thing: thing, target: pos}
                         ).expect("Unable to insert intent to throw item.");
                         newrunstate = RunState::PlayerTurn;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
-            RunState::ShowTargetingKeyboard {range, thing, radius, current} => {
-                match gui::ranged_target_keyboard(&mut self.ecs, ctx, range, radius, current) {
+            RunState::ShowTargetingKeyboard {range, kind, thing, current} => {
+                match gui::ranged_target_keyboard(&mut self.ecs, ctx, range, kind, current) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
                     TargetingResult::SwitchModality => {
                         newrunstate = RunState::ShowTargetingMouse {
-                            range: range, thing: thing, radius: radius
+                            range: range, thing: thing, kind: kind
                         }
                     },
                     TargetingResult::MoveCursor {pos} => {
                         newrunstate = RunState::ShowTargetingKeyboard {
-                            range: range, thing: thing, radius: radius, current: Some(pos)
+                            range: range, thing: thing, kind: kind, current: Some(pos)
                         }
                     },
                     TargetingResult::Selected {pos} => {
@@ -624,7 +627,6 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ProvidesFireImmunityWhenUsed>();
     gs.ecs.register::<ProvidesChillImmunityWhenUsed>();
     gs.ecs.register::<MovesToRandomPosition>();
-    gs.ecs.register::<AreaOfEffectWhenTargeted>();
     gs.ecs.register::<InflictsDamageWhenTargeted>();
     gs.ecs.register::<InflictsDamageWhenEncroachedUpon>();
     gs.ecs.register::<InflictsFreezingWhenTargeted>();

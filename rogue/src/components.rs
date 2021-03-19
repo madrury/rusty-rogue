@@ -39,12 +39,23 @@ pub struct Throwable {}
 pub struct Castable {}
 
 // An entity with this component can be used as a targeted effect.
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
+pub enum TargetingKind {
+    Simple,
+    AreaOfEffect {radius: f32}
+}
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Targeted {pub verb: String}
+pub struct Targeted {
+    pub verb: String,
+    pub range: f32,
+    pub kind: TargetingKind
+}
 
 // An entity with this component can be used as an untargeted effect.
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Untargeted {pub verb: String}
+pub struct Untargeted {
+    pub verb: String
+}
 
 // An entity with this component blocks the tile that it occupies.
 #[derive(Component, Serialize, Deserialize, Clone)]
@@ -301,12 +312,6 @@ pub struct InflictsDamageWhenEncroachedUpon {
     pub kind: ElementalDamageKind
 }
 
-// Component for effects with an area of effect.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct AreaOfEffectWhenTargeted {
-    pub radius: i32
-}
-
 // Component for effects that inflict the frozen status.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsFreezingWhenTargeted {
@@ -386,7 +391,6 @@ pub struct ChanceToSpawnAdjacentEntity {
 pub struct ChanceToDissipate {
     pub chance: i32,
 }
-
 
 //------------------------------------------------------------------
 // Status Effect Components

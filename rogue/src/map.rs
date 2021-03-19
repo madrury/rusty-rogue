@@ -135,6 +135,14 @@ impl Map {
         return None
     }
 
+    pub fn get_aoe_tiles(&self, pt: Point, radius: f32) -> Vec<Point> {
+        let mut tiles: Vec<Point> = Vec::new();
+        let mut in_viewshed = rltk::field_of_view(pt, f32::ceil(radius) as i32, self);
+        in_viewshed.into_iter()
+            .filter(|p| rltk::DistanceAlg::Pythagoras.distance2d(*p, pt) < radius)
+            .collect()
+    }
+
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.blocked[i] = *tile == TileType::Wall;

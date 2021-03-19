@@ -1,7 +1,8 @@
 use super::{
     get_status_indicators, CombatStats, GameLog, InBackpack, InSpellBook,
-    Castable, SpellCharges, Map, Name, Player, Position, Renderable, RunState,
-    StatusIndicatorGlyph, Viewshed, Equipped, HungerClock, HungerState
+    Castable, TargetingKind, SpellCharges, Map, Name, Player, Position,
+    Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped,
+    HungerClock, HungerState
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -727,8 +728,8 @@ pub enum TargetingResult {
 pub fn ranged_target_mouse(
     ecs: &mut World,
     ctx: &mut Rltk,
-    range: i32,
-    radius: Option<i32>,
+    range: f32,
+    kind: TargetingKind,
 ) -> TargetingResult {
     ctx.print_color(
         5,
@@ -745,7 +746,7 @@ pub fn ranged_target_mouse(
     };
     // Compute the vactor of cells within range and draw the targeting
     // recepticle.
-    let available_cells = draw_targeting_system(ecs, ctx, range, radius, &mouse_pos_point);
+    let available_cells = draw_targeting_system(ecs, ctx, range, kind, &mouse_pos_point);
     // Draw mouse cursor and check for clicks within range.
     let mut valid_target = false;
     for pt in available_cells.iter() {
@@ -782,8 +783,8 @@ pub fn ranged_target_mouse(
 pub fn ranged_target_keyboard(
     ecs: &mut World,
     ctx: &mut Rltk,
-    range: i32,
-    radius: Option<i32>,
+    range: f32,
+    kind: TargetingKind,
     current: Option<Point>
 ) -> TargetingResult {
     ctx.print_color(
@@ -802,7 +803,7 @@ pub fn ranged_target_keyboard(
     }
     // Compute the vactor of cells within range and draw the targeting
     // recepticle.
-    let available_cells = draw_targeting_system(ecs, ctx, range, radius, &cursor);
+    let available_cells = draw_targeting_system(ecs, ctx, range, kind, &cursor);
     // Draw mouse cursor and check for clicks within range.
     let mut valid_target = false;
     for pt in available_cells.iter() {
@@ -843,8 +844,9 @@ pub fn ranged_target_keyboard(
 fn draw_targeting_system(
     ecs: &World,
     ctx: &mut Rltk,
-    range: i32,
-    radius: Option<i32>,
+    range: f32,
+    // radius: Option<f32>,
+    kind: TargetingKind,
     target: &Point,
 ) -> Vec<Point> {
     let viewsheds = ecs.read_storage::<Viewshed>();
@@ -855,22 +857,27 @@ fn draw_targeting_system(
     let mut available_cells = Vec::new();
     // This is a safe unwrap, since the player *always* has a viewshed.
     let visible = viewsheds.get(*player).unwrap();
+    // Iterate through the tiles available for targets and highlight them.
     let mouse_within_range =
-        rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *target) <= range as f32;
+        rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *target) <= range;
     for point in visible.visible_tiles.iter() {
         let dplayer = rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *point);
         // The tile is within the throwable range.
-        if dplayer <= range as f32 {
+        if dplayer <= range {
             ctx.set_bg(point.x, point.y, RGB::named(rltk::LIGHT_GREY));
             available_cells.push(*point);
         }
-        // When Some(radius), the item has an area of effect, so we highlight
-        // the aoe range as well.
-        if let Some(radius) = radius {
-            let blast = rltk::field_of_view(*target, radius, &*map);
-            if mouse_within_range && blast.contains(point) {
-                ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
+        // Draw any other display needed depending on the kind of targeting the
+        // object has:
+        //   - AreaOfEffect: Highlight the area of effect.
+        match kind {
+            TargetingKind::AreaOfEffect {radius} => {
+                let blast = map.get_aoe_tiles(*target, radius);
+                if mouse_within_range && blast.contains(point) {
+                    ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
+                }
             }
+            TargetingKind::Simple => {}
         }
     }
     available_cells
