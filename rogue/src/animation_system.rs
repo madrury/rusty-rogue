@@ -147,8 +147,10 @@ fn make_melee_animation(
             fg: *color,
             bg: bg,
             glyph: glyph,
-            lifetime: 50.0, // ms
-            delay: 50.0 * (i as f32),
+            // Slightly shorter than the other animations so combat feels
+            // snappyer.
+            lifetime: 35.0, // ms
+            delay: 35.0 * (i as f32),
         })
     }
     particles
@@ -172,8 +174,8 @@ fn make_healing_animation(
             fg: *color,
             bg: bg,
             glyph: *glyph,
-            lifetime: 100.0, // ms
-            delay: 100.0 * (i as f32),
+            lifetime: 50.0, // ms
+            delay: 50.0 * (i as f32),
         })
     }
     particles
