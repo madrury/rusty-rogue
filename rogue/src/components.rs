@@ -415,7 +415,7 @@ impl StatusIsFrozen {
             return false
         }
         if let Some(frozen) = store.get_mut(victim) {
-            frozen.remaining_turns = turns;
+            frozen.remaining_turns = i32::max(frozen.remaining_turns, turns);
             return false
         } else {
             let frozen = StatusIsFrozen{remaining_turns: turns};
@@ -467,7 +467,7 @@ impl StatusIsBurning {
             return false
         }
         if let Some(burning) = store.get_mut(victim) {
-            burning.remaining_turns = turns;
+            burning.remaining_turns = i32::max(burning.remaining_turns, turns);
             burning.tick_damage = i32::max(dmg, burning.tick_damage);
             return false
         } else {
@@ -508,7 +508,7 @@ pub struct StatusIsImmuneToFire {
 impl StatusIsImmuneToFire {
     pub fn new_status(store: &mut WriteStorage<StatusIsImmuneToFire>, e: Entity, turns: i32) {
         if let Some(immune) = store.get_mut(e) {
-            immune.remaining_turns = turns;
+            immune.remaining_turns = i32::max(immune.remaining_turns, turns);
         } else {
             let immune = StatusIsImmuneToFire{remaining_turns: turns};
             store.insert(e, immune)
@@ -544,7 +544,7 @@ pub struct StatusIsImmuneToChill {
 impl StatusIsImmuneToChill {
     pub fn new_status(store: &mut WriteStorage<StatusIsImmuneToChill>, e: Entity, turns: i32) {
         if let Some(immune) = store.get_mut(e) {
-            immune.remaining_turns = turns;
+            immune.remaining_turns = i32::max(immune.remaining_turns, turns);
         } else {
             let immune = StatusIsImmuneToChill{remaining_turns: turns};
             store.insert(e, immune)
