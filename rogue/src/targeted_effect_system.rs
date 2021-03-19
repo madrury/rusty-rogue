@@ -21,6 +21,7 @@ pub struct TargetedSystem {}
 pub struct TargetedSystemData<'a> {
         entities: Entities<'a>,
         map: ReadExpect<'a, Map>,
+        ppos: ReadExpect<'a, Point>,
         log: WriteExpect<'a, GameLog>,
         animation_builder: WriteExpect<'a, AnimationBuilder>,
         spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
@@ -56,6 +57,7 @@ impl<'a> System<'a> for TargetedSystem {
         let TargetedSystemData {
             entities,
             map,
+            ppos,
             mut log,
             mut animation_builder,
             mut spawn_buffer,
@@ -111,7 +113,7 @@ impl<'a> System<'a> for TargetedSystem {
                 .get(want_target.thing)
                 .map(|t| t.kind.clone())
                 .expect("Tried to target but no Targeted component.");
-            let targets: Vec<&Entity> = find_targets(&*map, target_point, targeting_kind)
+            let targets: Vec<&Entity> = find_targets(&*map, *ppos, target_point, targeting_kind)
                 .into_iter()
                 .filter(|&e| *e != user)
                 .collect();
@@ -288,7 +290,7 @@ impl<'a> System<'a> for TargetedSystem {
 //   - Base Case: Find all entites at the given position.
 //   - AOE Case: Find all entities within a given viewshed (defined by a radius)
 //     of a given position.
-fn find_targets<'a>(map: &'a Map, pt: Point, kind: TargetingKind) -> Vec<&'a Entity> {
+fn find_targets<'a>(map: &'a Map, ppos: Point, pt: Point, kind: TargetingKind) -> Vec<&'a Entity> {
     let mut targets: Vec<&Entity> = Vec::new();
     let idx = map.xy_idx(pt.x, pt.y);
     match kind {
@@ -303,6 +305,16 @@ fn find_targets<'a>(map: &'a Map, pt: Point, kind: TargetingKind) -> Vec<&'a Ent
                 |p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1
             );
             for tile in blast_tiles.iter() {
+                let idx = map.xy_idx(tile.x, tile.y);
+                for target in map.tile_content[idx].iter() {
+                    targets.push(target);
+                }
+            }
+        }
+        TargetingKind::AlongRay => {
+            let tiles = map.get_ray_tiles(ppos, pt);
+            let last_tile = tiles.last();
+            if let Some(tile) = last_tile {
                 let idx = map.xy_idx(tile.x, tile.y);
                 for target in map.tile_content[idx].iter() {
                     targets.push(target);

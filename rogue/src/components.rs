@@ -42,7 +42,8 @@ pub struct Castable {}
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum TargetingKind {
     Simple,
-    AreaOfEffect {radius: f32}
+    AreaOfEffect {radius: f32},
+    AlongRay
 }
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Targeted {
@@ -138,10 +139,19 @@ pub struct ParticleLifetime {
 }
 
 // Component for effects that create an area of effect animation when
-// thrown.
+// used as a targeted effect.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct AreaOfEffectAnimationWhenTargeted {
     pub radius: i32,
+    pub fg: RGB,
+    pub bg: RGB,
+    pub glyph: rltk::FontCharType
+}
+
+// Component for effects that create an animation along a ray (so, say a
+// fireball) when used as a targeted effect.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct AlongRayAnimationWhenTargeted {
     pub fg: RGB,
     pub bg: RGB,
     pub glyph: rltk::FontCharType

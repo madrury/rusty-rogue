@@ -644,6 +644,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusIsImmuneToChill>();
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
+    gs.ecs.register::<AlongRayAnimationWhenTargeted>();
 
     // Placeholder values which we will replace upon map generation.
     gs.ecs.insert(Point::new(0, 0)); // Player position.

@@ -870,10 +870,18 @@ fn draw_targeting_system(
         // Draw any other display needed depending on the kind of targeting the
         // object has:
         //   - AreaOfEffect: Highlight the area of effect.
+        // TODO: This is super, super inneficient. We're calculating the area of
+        // effect and ray over and over.
         match kind {
             TargetingKind::AreaOfEffect {radius} => {
                 let blast = map.get_aoe_tiles(*target, radius);
                 if mouse_within_range && blast.contains(point) {
+                    ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
+                }
+            }
+            TargetingKind::AlongRay => {
+                let ray = map.get_ray_tiles(*ppos, *target);
+                if mouse_within_range && ray.contains(point) {
                     ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
                 }
             }

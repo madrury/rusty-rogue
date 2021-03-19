@@ -14,14 +14,15 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] Water.
   - [ ] Lava.
   - [ ] Steam.
-  - [ ] Chill.
   - [ ] Ice.
 
 #### Monsters
-  - [ ] Goblin Warleader.
-  - [ ] Goblin Spellcaster.
+  - [ ] Goblin Warleader (buff spells).
+  - [ ] Goblin Spellcaster (attack spells).
+  - [ ] Goblin Cleric (healing spells).
   - [ ] Orc Warleader.
   - [ ] Orc Spellcaster.
+  - [ ] Pink Jelly (spawns another jelly when hit)
   - [ ] Red Jelly (spawns fire when hit).
   - [ ] Blue Jelly (spawns chill when hit).
 
@@ -31,12 +32,18 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
 #### Spellcasting
   - [ ] A spell of fireball. ♠
   - [ ] A spell of icespike. ♦
+  - [ ] A spell of healing.
+  - [ ] Defense and attack buff spells.
   - [ ] Some spell which is a combination of fire and ice elements.
 
 #### Equipment
   - [ ] A weapon (staff) that buffs spellcasting. /
   - [ ] A ranged weapon.
   - [ ] Weapon special attacks.
+
+#### Items
+  - [ ] A potion of speed.
+  - [ ] A potion of recharging.
 
 ## Additional We've Planned Added:
 
@@ -57,7 +64,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] A spell of iceblast. ♦
   - [x] Fire.
   - [x] An elemental damage system.
-  - [x] Resistances to elemental damage.
+  - [x] Immunities to elemental damage.
+  - [x] Chill.
 
 ## Progress In Tutorial:
 

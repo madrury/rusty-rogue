@@ -100,6 +100,7 @@ pub fn save_game(ecs: &mut World) {
             StatusIsImmuneToFire,
             StatusIsImmuneToChill,
             AreaOfEffectAnimationWhenTargeted,
+            AlongRayAnimationWhenTargeted,
             SerializationHelper
         );
     }
@@ -208,6 +209,7 @@ pub fn load_game(ecs: &mut World) {
             StatusIsImmuneToFire,
             StatusIsImmuneToChill,
             AreaOfEffectAnimationWhenTargeted,
+            AlongRayAnimationWhenTargeted,
             SerializationHelper
         );
     }

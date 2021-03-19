@@ -8,10 +8,10 @@ use super::{
     InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
-    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
-    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
-    ChanceToDissipate, GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
-    ProvidesFireImmunityWhenUsed,
+    AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
+    MovesToRandomPosition, SpawnsEntityInAreaWhenTargeted,
+    ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
+    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
     ProvidesChillImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
     ElementalDamageKind,
     MAP_WIDTH, random_table
@@ -134,6 +134,7 @@ enum ItemType {
     Dagger,
     LeatherArmor,
     FireblastScroll,
+    FireballScroll,
     IceblastScroll,
 }
 fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
@@ -146,12 +147,13 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Pomegranate, depth)
             .insert(ItemType::HealthPotion, 3 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, 200 + depth)
-            .insert(ItemType::FreezingPotion, 200 + depth)
-            .insert(ItemType::Dagger, 200 + depth)
+            .insert(ItemType::FirePotion, 2 + depth)
+            .insert(ItemType::FreezingPotion, 2 + depth)
+            .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
-            .insert(ItemType::FireblastScroll, 200 + depth)
-            .insert(ItemType::IceblastScroll, 200 + depth)
+            .insert(ItemType::FireblastScroll, 1 + depth)
+            .insert(ItemType::FireballScroll, 200 + depth)
+            .insert(ItemType::IceblastScroll, 1 + depth)
             .insert(ItemType::None, 100)
             .roll(&mut rng);
     }
@@ -165,6 +167,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::Dagger) => dagger(ecs, x, y),
         Some(ItemType::LeatherArmor) => leather_armor(ecs, x, y),
         Some(ItemType::FireblastScroll) => fireblast(ecs, x, y),
+        Some(ItemType::FireballScroll) => fireball(ecs, x, y),
         Some(ItemType::IceblastScroll) => iceblast(ecs, x, y),
         Some(ItemType::None) => {},
         None => {}
@@ -716,6 +719,46 @@ fn fireblast(ecs: &mut World, x: i32, y: i32) {
         })
         .with(AreaOfEffectAnimationWhenTargeted {
             radius: 2,
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::RED),
+            glyph: rltk::to_cp437('^')
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn fireball(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Scroll of Fireball".to_string()})
+        .with(PickUpable {})
+        .with(Castable {})
+        .with(SpellCharges {
+            max_charges: 5,
+            charges: 2,
+            regen_time: 100,
+            time: 0
+        })
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AlongRay
+        })
+        .with(InflictsDamageWhenTargeted {
+            damage: 10,
+            kind: ElementalDamageKind::Fire
+        })
+        .with(InflictsBurningWhenTargeted {
+            turns: 4,
+            tick_damage: 4
+        })
+        .with(AlongRayAnimationWhenTargeted {
             fg: RGB::named(rltk::ORANGE),
             bg: RGB::named(rltk::RED),
             glyph: rltk::to_cp437('^')

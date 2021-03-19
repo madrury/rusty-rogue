@@ -1,4 +1,4 @@
-use rltk::{RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point};
+use rltk::{RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point, Bresenham};
 use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::iter::Iterator;
@@ -141,6 +141,16 @@ impl Map {
         in_viewshed.into_iter()
             .filter(|p| rltk::DistanceAlg::Pythagoras.distance2d(*p, pt) < radius)
             .collect()
+    }
+
+    pub fn get_ray_tiles(&self, source: Point, target: Point) -> Vec<Point> {
+        let mut tiles: Vec<Point> = Bresenham::new(source, target)
+            .take_while(|p| {
+                let idx = self.xy_idx(p.x, p.y);
+                !self.blocked[idx]
+            })
+            .collect();
+        tiles
     }
 
     pub fn populate_blocked(&mut self) {
