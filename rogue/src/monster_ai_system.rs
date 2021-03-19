@@ -1,6 +1,6 @@
 use specs::prelude::*;
 use super::{
-    Viewshed, Monster, MonsterMovementAI, Name, Position, Map, RoutingMap,
+    Viewshed, Monster, MonsterBasicAI, Name, Position, Map, RoutingMap,
     WantsToMeleeAttack, StatusIsFrozen
 };
 use rltk::{Point, RandomNumberGenerator};
@@ -8,39 +8,7 @@ use rltk::{Point, RandomNumberGenerator};
 pub struct MonsterMovementSystem {
 }
 
-impl MonsterMovementSystem {
 
-    // Move a monster to a new postions.
-    // **THIS METHOD ASSUMES THE NEW POSITION IS SAFE TO MOVE INTO!**
-    fn move_monster(map: &mut Map, pos: &mut Position, newposx: i32, newposy: i32, viewshed: &mut Viewshed) {
-        let new_idx = map.xy_idx(newposx, newposy);
-        let old_idx = map.xy_idx(pos.x, pos.y);
-        // We need to update the blocking information *now*, since we do
-        // not want later monsters in the move queue to move into the
-        // same position as this monster.
-        map.blocked[old_idx] = false;
-        map.blocked[new_idx] = true;
-        pos.x = newposx;
-        pos.y = newposy;
-        viewshed.dirty = true;
-    }
-
-    // Return a random adjcaent position to pos that is not currently blocked.
-    // TODO: This should use the general functions we introduced in Map.
-    fn random_adjacent_position(map: &Map, pos: &Position) -> (i32, i32) {
-        // TODO: This should use the game's internal RNG and probably belongs in
-        // Map, not here.
-        let mut rng = RandomNumberGenerator::new();
-        let dx = rng.range(-1, 2);
-        let dy = rng.range(-1, 2);
-        let idx = map.xy_idx(pos.x + dx, pos.y + dy);
-        if !map.blocked[idx] {
-            return (pos.x + dx, pos.y + dy)
-        } else {
-            return (pos.x, pos.y)
-        }
-    }
-}
 
 // System for handling monster movement.
 // Iterates through all monsters and updates their position according to their
@@ -55,7 +23,7 @@ impl<'a> System<'a> for MonsterMovementSystem {
         WriteStorage<'a, StatusIsFrozen>,
         WriteStorage<'a, Viewshed>,
         ReadStorage<'a, Monster>,
-        WriteStorage<'a, MonsterMovementAI>,
+        WriteStorage<'a, MonsterBasicAI>,
         ReadStorage<'a, Name>,
         WriteStorage<'a, Position>,
         WriteStorage<'a, WantsToMeleeAttack>,
@@ -115,7 +83,7 @@ impl<'a> System<'a> for MonsterMovementSystem {
                 if path.success && path.steps.len() > 1 {
                     let new_x = path.steps[1] as i32 % map.width;
                     let new_y = path.steps[1] as i32 / map.width;
-                    MonsterMovementSystem::move_monster(&mut map, &mut pos, new_x, new_y, &mut viewshed);
+                    move_monster(&mut map, &mut pos, new_x, new_y, &mut viewshed);
                 }
                 // Update our monster's propensity to keep following the player
                 // when they lose visual contact. After a specified amount of
@@ -130,9 +98,40 @@ impl<'a> System<'a> for MonsterMovementSystem {
             //   player, and are flagged to wander when the player is out of
             //   visible range.
             } else if !in_viewshed && movement_ai.no_visibility_wander {
-                let new_pos = MonsterMovementSystem::random_adjacent_position(&map, pos);
-                MonsterMovementSystem::move_monster(&mut map, &mut pos, new_pos.0, new_pos.1, &mut viewshed)
+                let new_pos = random_adjacent_position(&map, pos);
+                move_monster(&mut map, &mut pos, new_pos.0, new_pos.1, &mut viewshed)
             }
         }
+    }
+}
+
+// Move a monster to a new postions.
+// **THIS METHOD ASSUMES THE NEW POSITION IS SAFE TO MOVE INTO!**
+fn move_monster(map: &mut Map, pos: &mut Position, newposx: i32, newposy: i32, viewshed: &mut Viewshed) {
+    let new_idx = map.xy_idx(newposx, newposy);
+    let old_idx = map.xy_idx(pos.x, pos.y);
+    // We need to update the blocking information *now*, since we do
+    // not want later monsters in the move queue to move into the
+    // same position as this monster.
+    map.blocked[old_idx] = false;
+    map.blocked[new_idx] = true;
+    pos.x = newposx;
+    pos.y = newposy;
+    viewshed.dirty = true;
+}
+
+// Return a random adjcaent position to pos that is not currently blocked.
+// TODO: This should use the general functions we introduced in Map.
+fn random_adjacent_position(map: &Map, pos: &Position) -> (i32, i32) {
+    // TODO: This should use the game's internal RNG and probably belongs in
+    // Map, not here.
+    let mut rng = RandomNumberGenerator::new();
+    let dx = rng.range(-1, 2);
+    let dy = rng.range(-1, 2);
+    let idx = map.xy_idx(pos.x + dx, pos.y + dy);
+    if !map.blocked[idx] {
+        return (pos.x + dx, pos.y + dy)
+    } else {
+        return (pos.x, pos.y)
     }
 }

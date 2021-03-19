@@ -260,14 +260,14 @@ pub struct MovementRoutingOptions {
 }
 
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct MonsterMovementAI {
+pub struct MonsterBasicAI {
     pub only_follow_within_viewshed: bool,
     pub no_visibility_wander: bool,
     pub lost_visibility_keep_following_turns_max: i32,
     pub lost_visibility_keep_following_turns_remaining: i32,
     pub routing_options: MovementRoutingOptions
 }
-impl MonsterMovementAI {
+impl MonsterBasicAI {
     pub fn reset_keep_following(&mut self) {
         self.lost_visibility_keep_following_turns_remaining = self.lost_visibility_keep_following_turns_max
     }

@@ -1,6 +1,6 @@
 use super::{
     Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
-    HungerState, Monster, Hazard, IsEntityKind, MonsterMovementAI,
+    HungerState, Monster, Hazard, IsEntityKind, MonsterBasicAI,
     MovementRoutingOptions, Name, Player, Position, Renderable, Viewshed,
     PickUpable, Useable, Castable, SpellCharges, Equippable, EquipmentSlot,
     Throwable, Targeted, TargetingKind, Untargeted, Consumable,
@@ -115,8 +115,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .roll(&mut rng);
     }
     match monster {
-        Some(MonsterType::Orc) => orc(ecs, x, y),
-        Some(MonsterType::Goblin) => goblin(ecs, x, y),
+        Some(MonsterType::Orc) => orc_basic(ecs, x, y),
+        Some(MonsterType::Goblin) => goblin_basic(ecs, x, y),
         _ => {}
     }
 }
@@ -187,12 +187,12 @@ struct MonsterSpawnData<S: ToString> {
     glyph: rltk::FontCharType,
     color: RGB,
     view_range: i32,
-    movement_ai: MonsterMovementAI,
+    movement_ai: MonsterBasicAI,
     combat_stats: CombatStats,
 }
 
 const DEFAULT_VIEW_RANGE: i32 = 8;
-const DEFAULT_MOVEMENT_AI: MonsterMovementAI = MonsterMovementAI {
+const DEFAULT_MOVEMENT_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
     lost_visibility_keep_following_turns_max: 2,
@@ -240,7 +240,7 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
 }
 
 // Individual monster types: Goblin.
-fn goblin(ecs: &mut World, x: i32, y: i32) {
+fn goblin_basic(ecs: &mut World, x: i32, y: i32) {
     spawn_monster(
         ecs,
         MonsterSpawnData {
@@ -250,7 +250,7 @@ fn goblin(ecs: &mut World, x: i32, y: i32) {
             glyph: rltk::to_cp437('g'),
             color: RGB::named(rltk::CORAL),
             view_range: DEFAULT_VIEW_RANGE,
-            movement_ai: MonsterMovementAI {
+            movement_ai: MonsterBasicAI {
                 ..DEFAULT_MOVEMENT_AI
             },
             combat_stats: CombatStats {
@@ -264,7 +264,7 @@ fn goblin(ecs: &mut World, x: i32, y: i32) {
 }
 
 // Individual monster types: Orc.
-fn orc(ecs: &mut World, x: i32, y: i32) {
+fn orc_basic(ecs: &mut World, x: i32, y: i32) {
     spawn_monster(
         ecs,
         MonsterSpawnData {
@@ -274,7 +274,7 @@ fn orc(ecs: &mut World, x: i32, y: i32) {
             glyph: rltk::to_cp437('O'),
             color: RGB::named(rltk::YELLOW_GREEN),
             view_range: DEFAULT_VIEW_RANGE,
-            movement_ai: MonsterMovementAI {
+            movement_ai: MonsterBasicAI {
                 ..DEFAULT_MOVEMENT_AI
             },
             combat_stats: CombatStats {

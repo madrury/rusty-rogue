@@ -636,7 +636,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Hazard>();
     gs.ecs.register::<IsEntityKind>();
-    gs.ecs.register::<MonsterMovementAI>();
+    gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<SpellCharges>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();
