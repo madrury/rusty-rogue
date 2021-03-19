@@ -30,8 +30,6 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] Magic damage stats.
 
 #### Spellcasting
-  - [ ] A spell of fireball. ♠
-  - [ ] A spell of icespike. ♦
   - [ ] A spell of healing.
   - [ ] Defense and attack buff spells.
   - [ ] Some spell which is a combination of fire and ice elements.
@@ -66,6 +64,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] An elemental damage system.
   - [x] Immunities to elemental damage.
   - [x] Chill.
+  - [x] A spell of fireball. ♠
+  - [x] A spell of icespike. ♦
 
 ## Progress In Tutorial:
 

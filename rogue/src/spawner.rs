@@ -136,6 +136,7 @@ enum ItemType {
     FireblastScroll,
     FireballScroll,
     IceblastScroll,
+    IcespikeScroll,
 }
 fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let item: Option<ItemType>;
@@ -152,8 +153,9 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
             .insert(ItemType::FireblastScroll, 1 + depth)
-            .insert(ItemType::FireballScroll, 200 + depth)
+            .insert(ItemType::FireballScroll, 1 + depth)
             .insert(ItemType::IceblastScroll, 1 + depth)
+            .insert(ItemType::IcespikeScroll, 200 + depth)
             .insert(ItemType::None, 100)
             .roll(&mut rng);
     }
@@ -169,6 +171,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::FireblastScroll) => fireblast(ecs, x, y),
         Some(ItemType::FireballScroll) => fireball(ecs, x, y),
         Some(ItemType::IceblastScroll) => iceblast(ecs, x, y),
+        Some(ItemType::IcespikeScroll) => icespike(ecs, x, y),
         Some(ItemType::None) => {},
         None => {}
     }
@@ -804,6 +807,45 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) {
         })
         .with(AreaOfEffectAnimationWhenTargeted {
             radius: 2,
+            fg: RGB::named(rltk::WHITE),
+            bg: RGB::named(rltk::LIGHT_BLUE),
+            glyph: rltk::to_cp437('*')
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn icespike(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::LIGHT_BLUE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Scroll of Icespike".to_string()})
+        .with(PickUpable {})
+        .with(Castable {})
+        .with(SpellCharges {
+            max_charges: 5,
+            charges: 2,
+            regen_time: 100,
+            time: 0
+        })
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AlongRay
+        })
+        .with(InflictsDamageWhenTargeted {
+            damage: 10,
+            kind: ElementalDamageKind::Chill
+        })
+        .with(InflictsFreezingWhenTargeted {
+            turns: 6,
+        })
+        .with(AlongRayAnimationWhenTargeted {
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::LIGHT_BLUE),
             glyph: rltk::to_cp437('*')
