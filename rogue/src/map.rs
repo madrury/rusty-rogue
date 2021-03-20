@@ -78,7 +78,7 @@ impl Map {
     }
 
     pub fn within_bounds(&self, x: i32, y: i32) -> bool {
-        x >= 1 || x <= self.width - 1 || y >= 1 || y <= self.height - 1
+        x >= 1 && x <= self.width - 1 && y >= 1 && y <= self.height - 1
     }
 
     pub fn random_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
@@ -169,7 +169,11 @@ impl Map {
             circle.push(Point {x: source.x + radius - i, y: source.y + radius});
             circle.push(Point {x: source.x - radius, y: source.y + radius - i});
         }
-        circle
+        // println!("L INF CIRCLE:");
+        // for pt in circle.iter() {
+        //     println!("    {:?}", pt);
+        // }
+        circle.into_iter().filter(|pt| self.within_bounds(pt.x, pt.y)).collect()
     }
 
     pub fn populate_blocked(&mut self) {
@@ -304,7 +308,7 @@ impl RoutingMap {
     }
 
     fn within_bounds(&self, x: i32, y: i32) -> bool {
-        x >= 1 || x <= self.width - 1 || y >= 1 || y <= self.height - 1
+        x >= 1 && x <= self.width - 1 && y >= 1 && y <= self.height - 1
     }
 
     fn is_exit_valid(&self, x: i32, y: i32) -> bool {

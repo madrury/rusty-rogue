@@ -159,6 +159,7 @@ pub struct MonsterAttackSpellcasterAISystemData<'a> {
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
+    wants_to_melee: WriteStorage<'a, WantsToMeleeAttack>,
     in_spellbooks: ReadStorage<'a, InSpellBook>,
     castables: ReadStorage<'a, Castable>,
     charges: ReadStorage<'a, SpellCharges>,
@@ -180,6 +181,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             mut can_acts,
             mut positions,
             mut wants_to_target,
+            mut wants_to_melee,
             in_spellbooks,
             castables,
             charges
@@ -201,10 +203,10 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
 
             // Our decision for what to do is conditional on this data.
             let in_viewshed = viewshed.visible_tiles.contains(&*ppos);
-            let l_infinity_distance_to_player = i32::max(
-                i32::abs(pos.x - ppos.x),
-                i32::abs(pos.y - ppos.y),
-            );
+            let next_to_player = rltk::DistanceAlg::Pythagoras.distance2d(
+                Point::new(pos.x, pos.y),
+                *ppos
+            ) < 1.5;
             let mut spells = (&entities, &in_spellbooks, &castables, &charges)
                 .join()
                 .filter(|(_spell, book, _cast, charge)|
@@ -217,28 +219,38 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             // Monster can cast spell branch.
             // The monster can see the player and has a spell charge to expend,
             // so they will cast the spell on the player.
-            if has_spell_to_cast && in_viewshed {
+            if in_viewshed && has_spell_to_cast {
                 if let Some(spell) = spell_to_cast {
                     wants_to_target
                         .insert(entity, WantsToUseTargeted {thing: spell, target: *ppos})
                         .expect("Could not insert WantsToUseTargeted from Monster Spellcaster AI.");
                 }
-            } else if in_viewshed  && l_infinity_distance_to_player < ai.distance_to_keep_away {
+            // Monster next to player branch.
+            // If we're next to the player, and have no spell to cast, we'll
+            // resort to melee attacks.
+            } else if next_to_player {
+                wants_to_melee
+                    .insert(entity, WantsToMeleeAttack {target: *player})
+                    .expect("Failed to insert player as melee target.");
+            // Monster can see player but has no spell to cast.
+            // The monster will try to keep a fixed distance from the player
+            // (within spell range) until their spell recharges.
+            } else if in_viewshed {
                 let zero_indicies: Vec<usize> = map
-                    .get_l_infinity_circle_around(pos.to_point(), ai.distance_to_keep_away)
+                    .get_l_infinity_circle_around(*ppos, ai.distance_to_keep_away)
                     .iter()
                     .map(|pt| map.xy_idx(pt.x, pt.y))
                     .collect();
                 let routing_map = &RoutingMap::from_map(&*map, &ai.routing_options);
-                let flee_map = rltk::DijkstraMap::new(
+                let dmap = rltk::DijkstraMap::new(
                     map.width,
                     map.height,
                     &zero_indicies,
                     routing_map,
                     100.0
                 );
-                let flee_target = rltk::DijkstraMap::find_highest_exit(
-                    &flee_map, map.xy_idx(pos.x, pos.y), routing_map
+                let flee_target = rltk::DijkstraMap::find_lowest_exit(
+                    &dmap, map.xy_idx(pos.x, pos.y), routing_map
                 );
                 if let Some(flee_target) = flee_target {
                     let flee_target_pos = map.idx_xy(flee_target);
