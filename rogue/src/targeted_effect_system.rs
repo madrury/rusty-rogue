@@ -90,7 +90,7 @@ impl<'a> System<'a> for TargetedSystem {
         //--------------------------------------------------------------------
         // Main loop through all the targets.
         //--------------------------------------------------------------------
-        for (user, want_target) in (&entities, &wants_target).join() {
+        for (user, mut user_position, want_target) in (&entities, &mut positions, &wants_target).join() {
 
             // In the case we are casting a spell, we guard against the case
             // that we have no spell charges left.
@@ -109,19 +109,20 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Gather up all the entities that are either at the targeted
             // position or within the area of effect.
+            let user_point = Point {x: user_position.x, y: user_position.y};
             let target_point = want_target.target;
             let targeting_kind = targeteds
                 .get(want_target.thing)
                 .map(|t| t.kind.clone())
                 .expect("Tried to target but no Targeted component.");
-            let targets: Vec<&Entity> = find_targets(&*map, *ppos, target_point, targeting_kind)
+            let targets: Vec<(&Entity, Point)> = find_targets(&*map, user_point, target_point, targeting_kind)
                 .into_iter()
-                .filter(|&e| *e != user)
+                .filter(|(&e, pt)| e != user)
                 .collect();
 
             // Apply the effect to each target in turn. This is essentially a
             // bit switch over the possible types of effects.
-            for target in targets {
+            for (target, target_point) in targets {
 
                 // Component: ProvidesHealing.
                 let thing_heals = healing.get(want_target.thing);
@@ -137,12 +138,11 @@ impl<'a> System<'a> for TargetedSystem {
                             target_name.name
                         ));
                     }
-                    let pos = positions.get(*target);
                     let render = renderables.get(*target);
-                    if let(Some(pos), Some(render)) = (pos, render) {
+                    if let Some(render) = render {
                         animation_builder.request(AnimationRequest::Healing {
-                            x: pos.x,
-                            y: pos.y,
+                            x: target_point.x,
+                            y: target_point.y,
                             fg: render.fg,
                             bg: render.bg,
                             glyph: render.glyph,
@@ -151,28 +151,28 @@ impl<'a> System<'a> for TargetedSystem {
                 }
 
                 // Compontnet: MovesToRandomPosition
-                let thing_teleports = teleports.get(want_target.thing);
-                let target_pos = positions.get_mut(*target);
-                if let (Some(_), Some(tpos)) = (thing_teleports, target_pos) {
-                    let new_pos = map.random_unblocked_point(10, &mut *rng);
-                    if let Some(new_pos) = new_pos {
-                        tpos.x = new_pos.0;
-                        tpos.y = new_pos.1;
-                        let target_viewshed = viewsheds.get_mut(*target);
-                        if let Some(tviewshed) = target_viewshed {
-                            tviewshed.dirty = true;
-                        }
-                        let target_name = names.get(*target);
-                        if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                            log.entries.push(format!(
-                                "You {} the {}, and {} disappears.",
-                                verb,
-                                thing_name.name,
-                                target_name.name
-                            ));
-                        }
-                    }
-                }
+                // let thing_teleports = teleports.get(want_target.thing);
+                // let target_pos = positions.get_mut(*target);
+                // if let (Some(_), Some(tpos)) = (thing_teleports, target_pos) {
+                //     let new_pos = map.random_unblocked_point(10, &mut *rng);
+                //     if let Some(new_pos) = new_pos {
+                //         tpos.x = new_pos.0;
+                //         tpos.y = new_pos.1;
+                //         let target_viewshed = viewsheds.get_mut(*target);
+                //         if let Some(tviewshed) = target_viewshed {
+                //             tviewshed.dirty = true;
+                //         }
+                //         let target_name = names.get(*target);
+                //         if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                //             log.entries.push(format!(
+                //                 "You {} the {}, and {} disappears.",
+                //                 verb,
+                //                 thing_name.name,
+                //                 target_name.name
+                //             ));
+                //         }
+                //     }
+                // }
 
                 // Component: InflictsDamageWhenTargeted
                 let stats = combat_stats.get_mut(*target);
@@ -260,11 +260,10 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Component: AlongRayAnimationWhenTargeted
             let has_ray_animation = along_ray_animations.get(want_target.thing);
-            let user_position = positions.get(user);
-            if let (Some(has_ray_animation), Some(user_position)) = (has_ray_animation, user_position) {
+            if let Some(has_ray_animation) = has_ray_animation {
                 animation_builder.request(AnimationRequest::AlongRay {
-                    source_x: user_position.x,
-                    source_y: user_position.y,
+                    source_x: user_point.x,
+                    source_y: user_point.y,
                     target_x: target_point.x,
                     target_y: target_point.y,
                     fg: has_ray_animation.fg,
@@ -309,34 +308,34 @@ impl<'a> System<'a> for TargetedSystem {
 //   - Along Ray Case: Draw a ray from the source to the target point, stopping
 //     when the ray encounters a blocked tile. Target all entities in the final
 //     tile.
-fn find_targets<'a>(map: &'a Map, ppos: Point, pt: Point, kind: TargetingKind) -> Vec<&'a Entity> {
-    let mut targets: Vec<&Entity> = Vec::new();
-    let idx = map.xy_idx(pt.x, pt.y);
+fn find_targets<'a>(map: &'a Map, user_pos: Point, target_pos: Point, kind: TargetingKind) -> Vec<(&'a Entity, Point)> {
+    let mut targets: Vec<(&Entity, Point)> = Vec::new();
+    let idx = map.xy_idx(target_pos.x, target_pos.y);
     match kind {
         TargetingKind::Simple => {
             for target in map.tile_content[idx].iter() {
-                targets.push(target);
+                targets.push((target, target_pos));
             }
         }
         TargetingKind::AreaOfEffect {radius} => {
-            let mut blast_tiles = map.get_aoe_tiles(pt, radius);
+            let mut blast_tiles = map.get_aoe_tiles(target_pos, radius);
             blast_tiles.retain(
                 |p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1
             );
             for tile in blast_tiles.iter() {
                 let idx = map.xy_idx(tile.x, tile.y);
                 for target in map.tile_content[idx].iter() {
-                    targets.push(target);
+                    targets.push((target, *tile));
                 }
             }
         }
         TargetingKind::AlongRay => {
-            let tiles = map.get_ray_tiles(ppos, pt);
+            let tiles = map.get_ray_tiles(user_pos, target_pos);
             let last_tile = tiles.last();
             if let Some(tile) = last_tile {
                 let idx = map.xy_idx(tile.x, tile.y);
                 for target in map.tile_content[idx].iter() {
-                    targets.push(target);
+                    targets.push((target, *tile));
                 }
             }
         }
