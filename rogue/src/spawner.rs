@@ -172,9 +172,9 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::Dagger) => dagger(ecs, x, y),
         Some(ItemType::LeatherArmor) => leather_armor(ecs, x, y),
         Some(ItemType::FireblastScroll) => fireblast(ecs, x, y),
-        Some(ItemType::FireballScroll) => fireball(ecs, x, y),
+        Some(ItemType::FireballScroll) => fireball(ecs, x, y, 5, 2),
         Some(ItemType::IceblastScroll) => iceblast(ecs, x, y),
-        Some(ItemType::IcespikeScroll) => icespike(ecs, x, y),
+        Some(ItemType::IcespikeScroll) => icespike(ecs, x, y, 5, 2),
         Some(ItemType::None) => {None},
         None => {None}
     };
@@ -308,12 +308,14 @@ fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         map.blocked[idx] = true;
     }
     {
-        // Make a fireball spell and put give it to the goblin.
-        let spell = fireball(ecs, 0, 0)
+        // Make a fireball spell and put it in the goblin's spellbook.
+        let spell = fireball(ecs, 0, 0, 2, 1)
             .expect("Could not construct fireball spell to put in spellbook.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
         in_spellbooks.insert(spell, InSpellBook {owner: goblin})
             .expect("Failed to insert fireball spell in goblin's spellbook.");
+        let mut positions = ecs.write_storage::<Position>();
+        positions.remove(spell);
     }
     Some(goblin)
 }
@@ -804,7 +806,7 @@ fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(entity)
 }
 
-fn fireball(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
@@ -817,8 +819,8 @@ fn fireball(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(PickUpable {})
         .with(Castable {})
         .with(SpellCharges {
-            max_charges: 5,
-            charges: 2,
+            max_charges: max_charges,
+            charges: charges,
             regen_time: 100,
             time: 0
         })
@@ -891,7 +893,7 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(entity)
 }
 
-fn icespike(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {

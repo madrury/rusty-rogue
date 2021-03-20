@@ -117,7 +117,7 @@ impl<'a> System<'a> for TargetedSystem {
                 .expect("Tried to target but no Targeted component.");
             let targets: Vec<(&Entity, Point)> = find_targets(&*map, user_point, target_point, targeting_kind)
                 .into_iter()
-                .filter(|(&e, pt)| e != user)
+                .filter(|(&e, _pt)| e != user)
                 .collect();
 
             // Apply the effect to each target in turn. This is essentially a
