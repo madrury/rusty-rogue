@@ -155,6 +155,23 @@ impl Map {
             .collect()
     }
 
+    pub fn get_l_infinity_circle_around(&self, source: Point, radius: i32) -> Vec<Point> {
+        let diameter = 2*radius;
+        let mut circle: Vec<Point> = vec![
+            Point {x: source.x - radius, y: source.y - radius},
+            Point {x: source.x + radius, y: source.y - radius},
+            Point {x: source.x - radius, y: source.y + radius},
+            Point {x: source.x + radius, y: source.y + radius},
+        ];
+        for i in 1..diameter {
+            circle.push(Point {x: source.x - radius + i, y: source.y - radius});
+            circle.push(Point {x: source.x + radius, y: source.y - radius + i});
+            circle.push(Point {x: source.x + radius - i, y: source.y + radius});
+            circle.push(Point {x: source.x - radius, y: source.y + radius - i});
+        }
+        circle
+    }
+
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.blocked[i] = *tile == TileType::Wall;

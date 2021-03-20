@@ -214,16 +214,35 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             let spell_to_cast = spells.next();
             let has_spell_to_cast = spell_to_cast.is_some();
 
-            // Monster seeking player branch:
-            //   This branch is taken if the monster is currently seeking the
-            //   player, i.e., the monster is currently attempting to move towards
-            //   the player until they are adjacent.
-            if l_infinity_distance_to_player == ai.distance_to_keep_away && has_spell_to_cast {
-                println!("Gonna cast the spell!");
+            // Monster can cast spell branch.
+            // The monster can see the player and has a spell charge to expend,
+            // so they will cast the spell on the player.
+            if has_spell_to_cast && in_viewshed {
                 if let Some(spell) = spell_to_cast {
                     wants_to_target
                         .insert(entity, WantsToUseTargeted {thing: spell, target: *ppos})
                         .expect("Could not insert WantsToUseTargeted from Monster Spellcaster AI.");
+                }
+            } else if in_viewshed  && l_infinity_distance_to_player < ai.distance_to_keep_away {
+                let zero_indicies: Vec<usize> = map
+                    .get_l_infinity_circle_around(pos.to_point(), ai.distance_to_keep_away)
+                    .iter()
+                    .map(|pt| map.xy_idx(pt.x, pt.y))
+                    .collect();
+                let routing_map = &RoutingMap::from_map(&*map, &ai.routing_options);
+                let flee_map = rltk::DijkstraMap::new(
+                    map.width,
+                    map.height,
+                    &zero_indicies,
+                    routing_map,
+                    100.0
+                );
+                let flee_target = rltk::DijkstraMap::find_highest_exit(
+                    &flee_map, map.xy_idx(pos.x, pos.y), routing_map
+                );
+                if let Some(flee_target) = flee_target {
+                    let flee_target_pos = map.idx_xy(flee_target);
+                    move_monster(&mut map, &mut pos, flee_target_pos.0, flee_target_pos.1, &mut viewshed);
                 }
             }
             // We're done acting, so we've used up our action for the turn.

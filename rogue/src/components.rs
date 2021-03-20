@@ -76,6 +76,11 @@ pub struct Position {
     pub x: i32,
     pub y: i32,
 }
+impl Position {
+    pub fn to_point(&self) -> Point {
+        Point {x: self.x, y: self.y}
+    }
+}
 
 // Component for all named enetities.
 #[derive(Component, ConvertSaveload, Clone)]
