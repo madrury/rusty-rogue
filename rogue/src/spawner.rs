@@ -13,7 +13,7 @@ use super::{
     ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
     GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
     ProvidesChillImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind,
+    ElementalDamageKind, InSpellBook,
     MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
@@ -307,7 +307,14 @@ fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         let idx = map.xy_idx(x, y);
         map.blocked[idx] = true;
     }
-    let spell = fireball(ecs, 0, 0);
+    {
+        // Make a fireball spell and put give it to the goblin.
+        let spell = fireball(ecs, 0, 0)
+            .expect("Could not construct fireball spell to put in spellbook.");
+        let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
+        in_spellbooks.insert(spell, InSpellBook {owner: goblin})
+            .expect("Failed to insert fireball spell in goblin's spellbook.");
+    }
     Some(goblin)
 }
 

@@ -219,6 +219,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             //   player, i.e., the monster is currently attempting to move towards
             //   the player until they are adjacent.
             if l_infinity_distance_to_player == ai.distance_to_keep_away && has_spell_to_cast {
+                println!("Gonna cast the spell!");
                 if let Some(spell) = spell_to_cast {
                     wants_to_target
                         .insert(entity, WantsToUseTargeted {thing: spell, target: *ppos})
