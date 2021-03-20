@@ -102,6 +102,7 @@ enum MonsterType {
     None,
     GoblinBasic,
     GoblinFirecaster,
+    GoblinChillcaster,
     Orc
 }
 fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
@@ -110,9 +111,10 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
-            .insert(MonsterType::GoblinBasic, 2)
-            .insert(MonsterType::GoblinFirecaster, 2000)
-            .insert(MonsterType::Orc, 5 + 5 * (depth-1))
+            .insert(MonsterType::GoblinBasic, 20)
+            .insert(MonsterType::GoblinFirecaster, 1 + depth)
+            .insert(MonsterType::GoblinChillcaster, 1 + depth)
+            .insert(MonsterType::Orc, 3 + 3 * (depth-1))
             .insert(MonsterType::None, 70 - depth)
             .roll(&mut rng);
     }
@@ -120,6 +122,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(MonsterType::Orc) => orc_basic(ecs, x, y),
         Some(MonsterType::GoblinBasic) => goblin_basic(ecs, x, y),
         Some(MonsterType::GoblinFirecaster) => goblin_firecaster(ecs, x, y),
+        Some(MonsterType::GoblinChillcaster) => goblin_chillcaster(ecs, x, y),
         _ => {None}
     };
 }
@@ -155,10 +158,10 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::FreezingPotion, 2 + depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
-            .insert(ItemType::FireblastScroll, 1 + depth)
-            .insert(ItemType::FireballScroll, 200 + depth)
-            .insert(ItemType::IceblastScroll, 1 + depth)
-            .insert(ItemType::IcespikeScroll, 100 + depth)
+            .insert(ItemType::FireblastScroll, depth)
+            .insert(ItemType::FireballScroll, 1 + depth)
+            .insert(ItemType::IceblastScroll, depth)
+            .insert(ItemType::IcespikeScroll, 1 + depth)
             .insert(ItemType::None, 100)
             .roll(&mut rng);
     }
@@ -269,7 +272,8 @@ fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     goblin
 }
 
-// Individual monster types: Basic Goblin.
+// Individual monster types: Goblin firecaster.
+// A goblin spellcaster wielding basic fire magic.
 fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let goblin;
     {
@@ -310,6 +314,58 @@ fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     {
         // Make a fireball spell and put it in the goblin's spellbook.
         let spell = fireball(ecs, 0, 0, 2, 1)
+            .expect("Could not construct fireball spell to put in spellbook.");
+        let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
+        in_spellbooks.insert(spell, InSpellBook {owner: goblin})
+            .expect("Failed to insert fireball spell in goblin's spellbook.");
+        let mut positions = ecs.write_storage::<Position>();
+        positions.remove(spell);
+    }
+    Some(goblin)
+}
+
+// Individual monster types: Goblin chillcaster.
+// A goblin spellcaster wielding basic chill magic.
+fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let goblin;
+    {
+        goblin = ecs.create_entity()
+            .with(Position {
+                x: x,
+                y: y
+            })
+            .with(Monster {})
+            .with(Renderable {
+                glyph: rltk::to_cp437('g'),
+                fg: RGB::named(rltk::LIGHT_BLUE),
+                bg: RGB::named(rltk::BLACK),
+                order: 1
+            })
+            .with(Viewshed {
+                visible_tiles: Vec::new(),
+                range: 8,
+                dirty: true,
+            })
+            .with(Name {
+                name: "Goblin Firecaster".to_string(),
+            })
+            .with(MonsterAttackSpellcasterAI {
+                distance_to_keep_away: 4,
+                routing_options: MovementRoutingOptions {
+                    ..DEAFULT_ROUTING_OPTIONS
+                }
+            })
+            .with(CombatStats {..DEFAULT_COMBAT_STATS})
+            .with(BlocksTile {})
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        let mut map = ecs.fetch_mut::<Map>();
+        let idx = map.xy_idx(x, y);
+        map.blocked[idx] = true;
+    }
+    {
+        // Make a fireball spell and put it in the goblin's spellbook.
+        let spell = icespike(ecs, 0, 0, 2, 1)
             .expect("Could not construct fireball spell to put in spellbook.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
         in_spellbooks.insert(spell, InSpellBook {owner: goblin})
