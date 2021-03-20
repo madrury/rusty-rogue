@@ -195,6 +195,8 @@ impl State {
         spellcasters.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
+        let mut targeteds = TargetedSystem{};
+        targeteds.run_now(&self.ecs);
         let mut status = StatusEffectSystem{};
         status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
