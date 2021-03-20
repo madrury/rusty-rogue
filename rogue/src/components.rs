@@ -235,8 +235,11 @@ impl SpellCharges {
     // Return value indicated if a cast has recharged.
     pub fn tick(&mut self) -> bool {
         self.time = i32::min(self.time + 1, self.regen_time);
+        println!("Time {}", self.time);
+
         if self.time == self.regen_time && self.charges < self.max_charges {
             self.charges += 1;
+            self.time = 0;
             return true
         }
         // We don't want to let the time fill when we're at max charges, since

@@ -147,6 +147,7 @@ impl Map {
         let mut tiles: Vec<Point> = Bresenham::new(source, target).collect();
         tiles.push(target);
         tiles.into_iter()
+            .skip(1)
             .take_until(|p| {
                 let idx = self.xy_idx(p.x, p.y);
                 self.blocked[idx]

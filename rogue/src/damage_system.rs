@@ -24,7 +24,7 @@ impl DamageSystem {
                     // player vs. some other entity.
                     let player = players.get(entity);
                     match player {
-                        Some(_) => println!("You are dead."),
+                        Some(_) => {}//println!("You are dead."),
                         None => {
                             let victim = names.get(entity);
                             if let Some(victim) = victim {

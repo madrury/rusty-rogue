@@ -110,8 +110,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
-            .insert(MonsterType::GoblinBasic, 200)
-            .insert(MonsterType::GoblinFirecaster, 200)
+            .insert(MonsterType::GoblinBasic, 2)
+            .insert(MonsterType::GoblinFirecaster, 2000)
             .insert(MonsterType::Orc, 5 + 5 * (depth-1))
             .insert(MonsterType::None, 70 - depth)
             .roll(&mut rng);
@@ -294,7 +294,7 @@ fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 name: "Goblin Firecaster".to_string(),
             })
             .with(MonsterAttackSpellcasterAI {
-                distance_to_keep_away: 3,
+                distance_to_keep_away: 4,
                 routing_options: MovementRoutingOptions {
                     ..DEAFULT_ROUTING_OPTIONS
                 }
