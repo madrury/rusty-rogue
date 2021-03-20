@@ -191,6 +191,8 @@ impl State {
         can_act.run_now(&self.ecs);
         let mut mob = MonsterBasicAISystem{};
         mob.run_now(&self.ecs);
+        let mut spellcasters = MonsterAttackSpellcasterAISystem{};
+        spellcasters.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
         melee.run_now(&self.ecs);
         let mut status = StatusEffectSystem{};
@@ -640,6 +642,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<MonsterBasicAI>();
+    gs.ecs.register::<MonsterAttackSpellcasterAI>();
     gs.ecs.register::<SpellCharges>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();

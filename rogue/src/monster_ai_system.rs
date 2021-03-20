@@ -1,7 +1,7 @@
 use specs::prelude::*;
 use super::{
-    Viewshed, Monster, CanAct, MonsterBasicAI, Position, Map,
-    RoutingMap, WantsToMeleeAttack, StatusIsFrozen
+    Viewshed, Monster, CanAct, MonsterBasicAI, MonsterAttackSpellcasterAI, Position, Map,
+    RoutingMap, WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen
 };
 use rltk::{Point, RandomNumberGenerator};
 
@@ -136,6 +136,81 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             } else if !in_viewshed && ai.no_visibility_wander {
                 let new_pos = random_adjacent_position(&map, pos);
                 move_monster(&mut map, &mut pos, new_pos.0, new_pos.1, &mut viewshed)
+            }
+            // We're done acting, so we've used up our action for the turn.
+            can_acts.remove(entity).expect("Unable to remove CanAct component.");
+        }
+    }
+}
+
+
+pub struct MonsterAttackSpellcasterAISystem {}
+
+#[derive(SystemData)]
+pub struct MonsterAttackSpellcasterAISystemData<'a> {
+    entities: Entities<'a>,
+    map: WriteExpect<'a, Map>,
+    ppos: ReadExpect<'a, Point>,
+    player: ReadExpect<'a, Entity>,
+    monsters: ReadStorage<'a, Monster>,
+    viewsheds: WriteStorage<'a, Viewshed>,
+    attack_spellcaster_ais: WriteStorage<'a, MonsterAttackSpellcasterAI>,
+    can_acts: WriteStorage<'a, CanAct>,
+    positions: WriteStorage<'a, Position>,
+    wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
+}
+
+impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
+
+    type SystemData = MonsterAttackSpellcasterAISystemData<'a>;
+
+    fn run(&mut self, data: Self::SystemData) {
+        let MonsterAttackSpellcasterAISystemData {
+            entities,
+            mut map,
+            ppos,
+            player,
+            monsters,
+            mut viewsheds,
+            mut attack_spellcaster_ais,
+            mut can_acts,
+            mut positions,
+            mut wants_to_target,
+        } = data;
+
+        let iter = (
+            &entities,
+            &monsters,
+            &mut viewsheds,
+            &mut attack_spellcaster_ais,
+            &mut positions).join();
+
+        for (entity, _m, mut viewshed, ai, mut pos) in iter {
+
+            // If the entity cannot act, bail out.
+            if can_acts.get(entity).is_none() {
+                continue
+            }
+
+            // Our decision for what to do is conditional on this data.
+            let in_viewshed = viewshed.visible_tiles.contains(&*ppos);
+            let l1_distance_to_player = 3;
+
+            // Monster seeking player branch:
+            //   This branch is taken if the monster is currently seeking the
+            //   player, i.e., the monster is currently attempting to move towards
+            //   the player until they are adjacent.
+            if in_viewshed {
+                let path = rltk::a_star_search(
+                    map.xy_idx(pos.x, pos.y) as i32,
+                    map.xy_idx(ppos.x, ppos.y) as i32,
+                    &RoutingMap::from_map(&*map, &ai.routing_options)
+                );
+                if path.success && path.steps.len() > 1 {
+                    let new_x = path.steps[1] as i32 % map.width;
+                    let new_y = path.steps[1] as i32 / map.width;
+                    move_monster(&mut map, &mut pos, new_x, new_y, &mut viewshed);
+                }
             }
             // We're done acting, so we've used up our action for the turn.
             can_acts.remove(entity).expect("Unable to remove CanAct component.");

@@ -8,12 +8,14 @@ use super::{
 
 pub struct MeleeCombatSystem {}
 
+//----------------------------------------------------------------------------
 // A system for processing melee combat.
 //
-// This system scans all entities for a WantsToMelee component, which signals
-// that the entity has requested to enter melee combat against some target.
-// If the combat is successful, we attaach a SufferDamage component to the
-// target, which is processed by the DamageSystem.
+// This system scans all entities for a WantsToMeleeAttack component, which
+// signals that the entity has requested to enter melee combat against some
+// target. If the combat is successful, we attaach a SufferDamage component to
+// the target, which is processed by the DamageSystem.
+//----------------------------------------------------------------------------
 impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
         Entities<'a>,
