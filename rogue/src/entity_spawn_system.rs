@@ -82,7 +82,7 @@ pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
                 fire(ecs, request.x, request.y, spread_chance, dissipate_chance),
             EntitySpawnKind::Chill {spread_chance, dissipate_chance} =>
                 chill(ecs, request.x, request.y, spread_chance, dissipate_chance),
-        }
+        };
     }
     let mut spawn_buffer = ecs.fetch_mut::<EntitySpawnRequestBuffer>();
     spawn_buffer.requests.clear();

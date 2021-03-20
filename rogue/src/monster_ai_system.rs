@@ -1,7 +1,8 @@
 use specs::prelude::*;
 use super::{
     Viewshed, Monster, CanAct, MonsterBasicAI, MonsterAttackSpellcasterAI, Position, Map,
-    RoutingMap, WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen
+    RoutingMap, WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen,
+    InSpellBook, Castable, SpellCharges
 };
 use rltk::{Point, RandomNumberGenerator};
 
@@ -158,6 +159,9 @@ pub struct MonsterAttackSpellcasterAISystemData<'a> {
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
+    in_spellbooks: ReadStorage<'a, InSpellBook>,
+    castables: ReadStorage<'a, Castable>,
+    charges: ReadStorage<'a, SpellCharges>,
 }
 
 impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
@@ -176,6 +180,9 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             mut can_acts,
             mut positions,
             mut wants_to_target,
+            in_spellbooks,
+            castables,
+            charges
         } = data;
 
         let iter = (
@@ -194,22 +201,28 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
 
             // Our decision for what to do is conditional on this data.
             let in_viewshed = viewshed.visible_tiles.contains(&*ppos);
-            let l1_distance_to_player = 3;
+            let l_infinity_distance_to_player = i32::max(
+                i32::abs(pos.x - ppos.x),
+                i32::abs(pos.y - ppos.y),
+            );
+            let mut spells = (&entities, &in_spellbooks, &castables, &charges)
+                .join()
+                .filter(|(_spell, book, _cast, charge)|
+                    book.owner == entity && charge.charges > 0
+                )
+                .map(|(spell, _book, _cast, _charge)| spell);
+            let spell_to_cast = spells.next();
+            let has_spell_to_cast = spell_to_cast.is_some();
 
             // Monster seeking player branch:
             //   This branch is taken if the monster is currently seeking the
             //   player, i.e., the monster is currently attempting to move towards
             //   the player until they are adjacent.
-            if in_viewshed {
-                let path = rltk::a_star_search(
-                    map.xy_idx(pos.x, pos.y) as i32,
-                    map.xy_idx(ppos.x, ppos.y) as i32,
-                    &RoutingMap::from_map(&*map, &ai.routing_options)
-                );
-                if path.success && path.steps.len() > 1 {
-                    let new_x = path.steps[1] as i32 % map.width;
-                    let new_y = path.steps[1] as i32 / map.width;
-                    move_monster(&mut map, &mut pos, new_x, new_y, &mut viewshed);
+            if l_infinity_distance_to_player == ai.distance_to_keep_away && has_spell_to_cast {
+                if let Some(spell) = spell_to_cast {
+                    wants_to_target
+                        .insert(entity, WantsToUseTargeted {thing: spell, target: *ppos})
+                        .expect("Could not insert WantsToUseTargeted from Monster Spellcaster AI.");
                 }
             }
             // We're done acting, so we've used up our action for the turn.

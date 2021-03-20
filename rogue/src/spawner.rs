@@ -110,7 +110,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
-            .insert(MonsterType::GoblinBasic, 25)
+            .insert(MonsterType::GoblinBasic, 200)
             .insert(MonsterType::GoblinFirecaster, 200)
             .insert(MonsterType::Orc, 5 + 5 * (depth-1))
             .insert(MonsterType::None, 70 - depth)
@@ -120,8 +120,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(MonsterType::Orc) => orc_basic(ecs, x, y),
         Some(MonsterType::GoblinBasic) => goblin_basic(ecs, x, y),
         Some(MonsterType::GoblinFirecaster) => goblin_firecaster(ecs, x, y),
-        _ => {}
-    }
+        _ => {None}
+    };
 }
 
 // Spawns a randomly chosen item at a specified location.
@@ -175,9 +175,9 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::FireballScroll) => fireball(ecs, x, y),
         Some(ItemType::IceblastScroll) => iceblast(ecs, x, y),
         Some(ItemType::IcespikeScroll) => icespike(ecs, x, y),
-        Some(ItemType::None) => {},
-        None => {}
-    }
+        Some(ItemType::None) => {None},
+        None => {None}
+    };
 }
 
 //----------------------------------------------------------------------------
@@ -215,8 +215,8 @@ const DEFAULT_COMBAT_STATS: CombatStats = CombatStats {
 };
 
 // Spawn a generic monster.
-fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
-    ecs.create_entity()
+fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) -> Option<Entity> {
+    let entity = ecs.create_entity()
         .with(Position {
             x: data.x,
             y: data.y,
@@ -241,11 +241,12 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
         .with(BlocksTile {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+        Some(entity)
 }
 
 // Individual monster types: Basic Goblin.
-fn goblin_basic(ecs: &mut World, x: i32, y: i32) {
-    spawn_monster(
+fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let goblin = spawn_monster(
         ecs,
         MonsterSpawnData {
             x: x,
@@ -265,48 +266,54 @@ fn goblin_basic(ecs: &mut World, x: i32, y: i32) {
     let mut map = ecs.fetch_mut::<Map>();
     let idx = map.xy_idx(x, y);
     map.blocked[idx] = true;
+    goblin
 }
 
 // Individual monster types: Basic Goblin.
-fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position {
-            x: x,
-            y: y
-        })
-        .with(Monster {})
-        .with(Renderable {
-            glyph: rltk::to_cp437('g'),
-            fg: RGB::named(rltk::ORANGE),
-            bg: RGB::named(rltk::BLACK),
-            order: 1
-        })
-        .with(Viewshed {
-            visible_tiles: Vec::new(),
-            range: 8,
-            dirty: true,
-        })
-        .with(Name {
-            name: "Goblin Firecaster".to_string(),
-        })
-        .with(MonsterAttackSpellcasterAI {
-            distance_to_keep_away: 3,
-            routing_options: MovementRoutingOptions {
-                ..DEAFULT_ROUTING_OPTIONS
-            }
-        })
-        .with(CombatStats {..DEFAULT_COMBAT_STATS})
-        .with(BlocksTile {})
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-    let mut map = ecs.fetch_mut::<Map>();
-    let idx = map.xy_idx(x, y);
-    map.blocked[idx] = true;
+fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let goblin;
+    {
+        goblin = ecs.create_entity()
+            .with(Position {
+                x: x,
+                y: y
+            })
+            .with(Monster {})
+            .with(Renderable {
+                glyph: rltk::to_cp437('g'),
+                fg: RGB::named(rltk::ORANGE),
+                bg: RGB::named(rltk::BLACK),
+                order: 1
+            })
+            .with(Viewshed {
+                visible_tiles: Vec::new(),
+                range: 8,
+                dirty: true,
+            })
+            .with(Name {
+                name: "Goblin Firecaster".to_string(),
+            })
+            .with(MonsterAttackSpellcasterAI {
+                distance_to_keep_away: 3,
+                routing_options: MovementRoutingOptions {
+                    ..DEAFULT_ROUTING_OPTIONS
+                }
+            })
+            .with(CombatStats {..DEFAULT_COMBAT_STATS})
+            .with(BlocksTile {})
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        let mut map = ecs.fetch_mut::<Map>();
+        let idx = map.xy_idx(x, y);
+        map.blocked[idx] = true;
+    }
+    let spell = fireball(ecs, 0, 0);
+    Some(goblin)
 }
 
 // Individual monster types: Orc.
-fn orc_basic(ecs: &mut World, x: i32, y: i32) {
-    spawn_monster(
+fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let orc = spawn_monster(
         ecs,
         MonsterSpawnData {
             x: x,
@@ -329,6 +336,7 @@ fn orc_basic(ecs: &mut World, x: i32, y: i32) {
     let mut map = ecs.fetch_mut::<Map>();
     let idx = map.xy_idx(x, y);
     map.blocked[idx] = true;
+    orc
 }
 
 //----------------------------------------------------------------------------
@@ -337,7 +345,7 @@ fn orc_basic(ecs: &mut World, x: i32, y: i32) {
 // Spawn a fire entity in the ecs, representing a burning tile that can spread
 // and dissipate. All spawning of fire MUST use this function, since it handles
 // syncronizing the map.fire array.
-pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) {
+pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
     let can_spawn: bool;
     let idx: usize;
     {
@@ -345,8 +353,9 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
         idx = map.xy_idx(x, y);
         can_spawn = !map.fire[idx] && map.tiles[idx] != TileType::Wall;
     }
+    let entity;
     if can_spawn {
-        ecs.create_entity()
+        entity = ecs.create_entity()
             .with(Position {x, y})
             .with(Renderable {
                 glyph: rltk::to_cp437('^'),
@@ -382,6 +391,9 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
             .build();
         let mut map = ecs.fetch_mut::<Map>();
         map.fire[idx] = true;
+        Some(entity)
+    } else {
+        None
     }
 }
 pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
@@ -413,7 +425,7 @@ pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
 // Spawn a chill entity in the ecs, representing freezing air that can spread
 // and dissipate. All spawning of chill MUST use this function, since it handles
 // syncronizing the map.chill array.
-pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) {
+pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
     let can_spawn: bool;
     let idx: usize;
     {
@@ -421,8 +433,9 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
         idx = map.xy_idx(x, y);
         can_spawn = !map.chill[idx] && map.tiles[idx] != TileType::Wall;
     }
+    let entity;
     if can_spawn {
-        ecs.create_entity()
+        entity = ecs.create_entity()
             .with(Position {x, y})
             .with(Renderable {
                 fg: RGB::named(rltk::WHITE),
@@ -458,6 +471,9 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
             .build();
         let mut map = ecs.fetch_mut::<Map>();
         map.chill[idx] = true;
+        Some(entity)
+    } else {
+        None
     }
 }
 pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
@@ -489,197 +505,204 @@ pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
 //----------------------------------------------------------------------------
 // Potions
 //----------------------------------------------------------------------------
-fn health_potion(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-    .with(Position {x, y})
-    .with(Renderable {
-        glyph: rltk::to_cp437('¿'),
-        fg: RGB::named(rltk::RED),
-        bg: RGB::named(rltk::BLACK),
-        order: 2,
-    })
-    .with(Name {name: "Potion of Healing".to_string()})
-    .with(PickUpable {})
-    .with(Useable {})
-    .with(Untargeted {verb: "drinks".to_string()})
-    .with(Throwable {})
-    .with(Targeted {
-        verb: "throws".to_string(),
-        range: 6.5,
-        kind: TargetingKind::Simple
-    })
-    .with(Consumable {})
-    // TODO: We probably want a component for triggering the healing animation.
-    .with(ProvidesFullHealing {})
-    .with(IncreasesMaxHpWhenUsed {amount: 5})
-    .marked::<SimpleMarker<SerializeMe>>()
-    .build();
+fn health_potion(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity   = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('¿'),
+            fg: RGB::named(rltk::RED),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Potion of Healing".to_string()})
+        .with(PickUpable {})
+        .with(Useable {})
+        .with(Untargeted {verb: "drinks".to_string()})
+        .with(Throwable {})
+        .with(Targeted {
+            verb: "throws".to_string(),
+            range: 6.5,
+            kind: TargetingKind::Simple
+        })
+        .with(Consumable {})
+        // TODO: We probably want a component for triggering the healing
+        // animation.
+        .with(ProvidesFullHealing {})
+        .with(IncreasesMaxHpWhenUsed {amount: 5})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+        Some(entity)
 }
 
-fn fire_potion(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-    .with(Position {x, y})
-    .with(Renderable {
-        glyph: rltk::to_cp437('¿'),
-        fg: RGB::named(rltk::ORANGE),
-        bg: RGB::named(rltk::BLACK),
-        order: 2,
-    })
-    .with(Name {name: "Potion of Fire".to_string()})
-    .with(PickUpable {})
-    .with(Useable {})
-    .with(Untargeted {verb: "drinks".to_string()})
-    .with(Throwable {})
-    .with(Targeted {
-        verb: "throws".to_string(),
-        range: 6.5,
-        kind: TargetingKind::AreaOfEffect {radius: 2.5}
-    })
-    .with(Consumable {})
-    .with(ProvidesFireImmunityWhenUsed {turns: 50})
-    .with(InflictsDamageWhenTargeted {
-        damage: 10,
-        kind: ElementalDamageKind::Fire
-    })
-    .with(InflictsBurningWhenTargeted {
-        turns: 5,
-        tick_damage: 2
-    })
-    .with(SpawnsEntityInAreaWhenTargeted {
-        radius: 1,
-        kind: EntitySpawnKind::Fire {
-            spread_chance: 50,
-            dissipate_chance: 50,
-        }
-    })
-    .with(AreaOfEffectAnimationWhenTargeted {
-        radius: 2,
-        fg: RGB::named(rltk::ORANGE),
-        bg: RGB::named(rltk::RED),
-        glyph: rltk::to_cp437('^')
-    })
-    .marked::<SimpleMarker<SerializeMe>>()
-    .build();
+fn fire_potion(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('¿'),
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Potion of Fire".to_string()})
+        .with(PickUpable {})
+        .with(Useable {})
+        .with(Untargeted {verb: "drinks".to_string()})
+        .with(Throwable {})
+        .with(Targeted {
+            verb: "throws".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AreaOfEffect {radius: 2.5}
+        })
+        .with(Consumable {})
+        .with(ProvidesFireImmunityWhenUsed {turns: 50})
+        .with(InflictsDamageWhenTargeted {
+            damage: 10,
+            kind: ElementalDamageKind::Fire
+        })
+        .with(InflictsBurningWhenTargeted {
+            turns: 5,
+            tick_damage: 2
+        })
+        .with(SpawnsEntityInAreaWhenTargeted {
+            radius: 1,
+            kind: EntitySpawnKind::Fire {
+                spread_chance: 50,
+                dissipate_chance: 50,
+            }
+        })
+        .with(AreaOfEffectAnimationWhenTargeted {
+            radius: 2,
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::RED),
+            glyph: rltk::to_cp437('^')
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+        Some(entity)
 }
 
-fn freezing_potion(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-    .with(Position {x, y})
-    .with(Renderable {
-        glyph: rltk::to_cp437('¿'),
-        fg: RGB::named(rltk::LIGHT_BLUE),
-        bg: RGB::named(rltk::BLACK),
-        order: 2,
-    })
-    .with(Name {name: "Potion of Freezing".to_string()})
-    .with(PickUpable {})
-    .with(Useable {})
-    .with(Untargeted {verb: "drinks".to_string()})
-    .with(Throwable {})
-    .with(Targeted {
-        verb: "throws".to_string(),
-        range: 6.5,
-        kind: TargetingKind::AreaOfEffect {radius: 2.5}
-    })
-    .with(Consumable {})
-    .with(ProvidesChillImmunityWhenUsed {turns: 50})
-    .with(InflictsDamageWhenTargeted {
-        damage: 10,
-        kind: ElementalDamageKind::Chill
-    })
-    .with(InflictsFreezingWhenTargeted {turns: 6})
-    .with(SpawnsEntityInAreaWhenTargeted {
-        radius: 1,
-        kind: EntitySpawnKind::Chill {
-            spread_chance: 20,
-            dissipate_chance: 60,
-        }
-    })
-    .with(AreaOfEffectAnimationWhenTargeted {
-        radius: 2,
-        fg: RGB::named(rltk::WHITE),
-        bg: RGB::named(rltk::LIGHT_BLUE),
-        glyph: rltk::to_cp437('*')
-    })
-    .marked::<SimpleMarker<SerializeMe>>()
-    .build();
+fn freezing_potion(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('¿'),
+            fg: RGB::named(rltk::LIGHT_BLUE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Potion of Freezing".to_string()})
+        .with(PickUpable {})
+        .with(Useable {})
+        .with(Untargeted {verb: "drinks".to_string()})
+        .with(Throwable {})
+        .with(Targeted {
+            verb: "throws".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AreaOfEffect {radius: 2.5}
+        })
+        .with(Consumable {})
+        .with(ProvidesChillImmunityWhenUsed {turns: 50})
+        .with(InflictsDamageWhenTargeted {
+            damage: 10,
+            kind: ElementalDamageKind::Chill
+        })
+        .with(InflictsFreezingWhenTargeted {turns: 6})
+        .with(SpawnsEntityInAreaWhenTargeted {
+            radius: 1,
+            kind: EntitySpawnKind::Chill {
+                spread_chance: 20,
+                dissipate_chance: 60,
+            }
+        })
+        .with(AreaOfEffectAnimationWhenTargeted {
+            radius: 2,
+            fg: RGB::named(rltk::WHITE),
+            bg: RGB::named(rltk::LIGHT_BLUE),
+            glyph: rltk::to_cp437('*')
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+        Some(entity)
 }
 
-fn teleportation_potion(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-    .with(Position {x, y})
-    .with(Renderable {
-        glyph: rltk::to_cp437('¿'),
-        fg: RGB::named(rltk::MEDIUM_PURPLE),
-        bg: RGB::named(rltk::BLACK),
-        order: 2,
-    })
-    .with(Name {name: "Potion of Teleportation".to_string()})
-    .with(PickUpable {})
-    .with(Useable {})
-    .with(Untargeted{ verb: "drinks".to_string()})
-    .with(Throwable {})
-    .with(Targeted {
-        verb: "throws".to_string(),
-        range: 6.5,
-        kind: TargetingKind::Simple
-    })
-    .with(Consumable {})
-    .with(MovesToRandomPosition {})
-    .marked::<SimpleMarker<SerializeMe>>()
-    .build();
+fn teleportation_potion(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('¿'),
+            fg: RGB::named(rltk::MEDIUM_PURPLE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Potion of Teleportation".to_string()})
+        .with(PickUpable {})
+        .with(Useable {})
+        .with(Untargeted{ verb: "drinks".to_string()})
+        .with(Throwable {})
+        .with(Targeted {
+            verb: "throws".to_string(),
+            range: 6.5,
+            kind: TargetingKind::Simple
+        })
+        .with(Consumable {})
+        .with(MovesToRandomPosition {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+        Some(entity)
 }
 
 //----------------------------------------------------------------------------
 // Food
 //----------------------------------------------------------------------------
-fn turnip(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-    .with(Position {x, y})
-    .with(Renderable {
-        glyph: rltk::to_cp437(';'),
-        fg: RGB::named(rltk::WHITE),
-        bg: RGB::named(rltk::BLACK),
-        order: 2,
-    })
-    .with(Name {name: "Turnip".to_string()})
-    .with(PickUpable {})
-    .with(Useable {})
-    .with(Consumable {})
-    .with(Untargeted {verb: "eats".to_string()})
-    // TODO: We probably want a component for triggering the healing animation.
-    .with(ProvidesFullFood {})
-    .marked::<SimpleMarker<SerializeMe>>()
-    .build();
+fn turnip(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437(';'),
+            fg: RGB::named(rltk::WHITE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Turnip".to_string()})
+        .with(PickUpable {})
+        .with(Useable {})
+        .with(Consumable {})
+        .with(Untargeted {verb: "eats".to_string()})
+        // TODO: We probably want a component for triggering the healing animation.
+        .with(ProvidesFullFood {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+        Some(entity)
 }
 
-fn pomegranate(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-    .with(Position {x, y})
-    .with(Renderable {
-        glyph: rltk::to_cp437(';'),
-        fg: RGB::named(rltk::RED),
-        bg: RGB::named(rltk::BLACK),
-        order: 2,
-    })
-    .with(Name {name: "Pomegranate".to_string()})
-    .with(PickUpable {})
-    .with(Useable {})
-    .with(Consumable {})
-    .with(Untargeted {verb: "eats".to_string()})
-    // TODO: We probably want a component for triggering the healing animation.
-    .with(ProvidesFullFood {})
-    .with(ProvidesFullHealing {})
-    .with(IncreasesMaxHpWhenUsed {amount: 5})
-    .marked::<SimpleMarker<SerializeMe>>()
-    .build();
+fn pomegranate(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437(';'),
+            fg: RGB::named(rltk::RED),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Pomegranate".to_string()})
+        .with(PickUpable {})
+        .with(Useable {})
+        .with(Consumable {})
+        .with(Untargeted {verb: "eats".to_string()})
+        // TODO: We probably want a component for triggering the healing animation.
+        .with(ProvidesFullFood {})
+        .with(ProvidesFullHealing {})
+        .with(IncreasesMaxHpWhenUsed {amount: 5})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+        Some(entity)
 }
 
 //----------------------------------------------------------------------------
 // Equipment
 //----------------------------------------------------------------------------
-fn dagger(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
+fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
+    let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('↑'),
@@ -701,10 +724,11 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
         .with(InflictsDamageWhenTargeted {damage: 15, kind: ElementalDamageKind::Physical})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+        Some(entity)
 }
 
-fn leather_armor(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
+fn leather_armor(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437(']'),
@@ -718,13 +742,14 @@ fn leather_armor(ecs: &mut World, x: i32, y: i32) {
         .with(GrantsMeleeDefenseBonus {bonus: 3})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    Some(entity)
 }
 
 //----------------------------------------------------------------------------
 // Spells (well, Scrolls for now).
 //----------------------------------------------------------------------------
-fn fireblast(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
+fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('♪'),
@@ -769,10 +794,11 @@ fn fireblast(ecs: &mut World, x: i32, y: i32) {
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    Some(entity)
 }
 
-fn fireball(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
+fn fireball(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('♪'),
@@ -809,10 +835,11 @@ fn fireball(ecs: &mut World, x: i32, y: i32) {
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    Some(entity)
 }
 
-fn iceblast(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
+fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('♪'),
@@ -854,10 +881,11 @@ fn iceblast(ecs: &mut World, x: i32, y: i32) {
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    Some(entity)
 }
 
-fn icespike(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
+fn icespike(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('♪'),
@@ -893,4 +921,5 @@ fn icespike(ecs: &mut World, x: i32, y: i32) {
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    Some(entity)
 }
