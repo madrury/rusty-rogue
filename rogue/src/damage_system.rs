@@ -2,7 +2,7 @@ use specs::prelude::*;
 use super::{
     CombatStats, WantsToTakeDamage, Player, Name, GameLog, Equipped,
     ElementalDamageKind, GrantsMeleeDefenseBonus, StatusIsImmuneToFire,
-    StatusIsImmuneToChill
+    StatusIsImmuneToChill, InSpellBook
 };
 
 pub struct DamageSystem {}
@@ -30,6 +30,11 @@ impl DamageSystem {
                             if let Some(victim) = victim {
                                 log.entries.push(format!("{} is dead.", victim.name));
                             }
+                            // Grab any entities owned by the dead entity. I.e. spells, etc.
+                            let spells = DamageSystem::get_any_owned_entities(ecs, &entity);
+                            for spell in spells {
+                                dead.push(spell);
+                            }
                             dead.push(entity);
                         }
                     }
@@ -39,6 +44,18 @@ impl DamageSystem {
         for victim in dead {
             ecs.delete_entity(victim).expect("Unable to delete a dead entity.")
         }
+    }
+
+    // Find any entities that are owned by a given entity. I.e., they are in the
+    // entities backpack or spellbook.
+    fn get_any_owned_entities(ecs: &World, entity: &Entity) -> Vec<Entity> {
+        let entities = ecs.entities();
+        let spellbooks = ecs.read_storage::<InSpellBook>();
+        let spells_owned_by_entity: Vec<Entity> = (&entities, &spellbooks).join()
+            .filter(|(_e, book)| book.owner == *entity)
+            .map(|(e, _book)| e)
+            .collect();
+        spells_owned_by_entity
     }
 
 }

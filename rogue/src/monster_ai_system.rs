@@ -145,6 +145,13 @@ impl<'a> System<'a> for MonsterBasicAISystem {
 }
 
 
+//----------------------------------------------------------------------------
+// System for the most basic monster AI.
+//
+// Monsters with this AI type are attack spellcasters, i.e., they have spells
+// that they will attempt to target at the player. Otherwise, they attempt to
+// keep a ranged distance to the player and wait for their spells to recharge.
+//----------------------------------------------------------------------------
 pub struct MonsterAttackSpellcasterAISystem {}
 
 #[derive(SystemData)]
