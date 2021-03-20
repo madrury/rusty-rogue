@@ -214,6 +214,9 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
                 Point::new(pos.x, pos.y),
                 *ppos
             ) < 1.5;
+            let l_infinity_distance_to_player = i32::max(
+                i32::abs(pos.x - ppos.x), i32::abs(pos.y - ppos.y)
+            );
             let mut spells = (&entities, &in_spellbooks, &castables, &charges)
                 .join()
                 .filter(|(_spell, book, _cast, charge)|
@@ -226,7 +229,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             // Monster can cast spell branch.
             // The monster can see the player and has a spell charge to expend,
             // so they will cast the spell on the player.
-            if in_viewshed && has_spell_to_cast {
+            if in_viewshed && has_spell_to_cast && l_infinity_distance_to_player <= ai.distance_to_keep_away{
                 if let Some(spell) = spell_to_cast {
                     wants_to_target
                         .insert(entity, WantsToUseTargeted {thing: spell, target: *ppos})
