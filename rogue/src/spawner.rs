@@ -1,6 +1,6 @@
 use super::{
     Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
-    HungerState, Monster, Hazard, IsEntityKind, MonsterBasicAI,
+    HungerState, Monster, Hazard, IsEntityKind, MonsterBasicAI, MonsterAttackSpellcasterAI,
     MovementRoutingOptions, Name, Player, Position, Renderable, Viewshed,
     PickUpable, Useable, Castable, SpellCharges, Equippable, EquipmentSlot,
     Throwable, Targeted, TargetingKind, Untargeted, Consumable,
@@ -100,7 +100,8 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
 #[derive(Clone, Copy)]
 enum MonsterType {
     None,
-    Goblin,
+    GoblinBasic,
+    GoblinFirecaster,
     Orc
 }
 fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
@@ -109,14 +110,16 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
-            .insert(MonsterType::Goblin, 25)
-            .insert(MonsterType::Orc, 5 + 5 * depth)
+            .insert(MonsterType::GoblinBasic, 25)
+            .insert(MonsterType::GoblinFirecaster, 200)
+            .insert(MonsterType::Orc, 5 + 5 * (depth-1))
             .insert(MonsterType::None, 70 - depth)
             .roll(&mut rng);
     }
     match monster {
         Some(MonsterType::Orc) => orc_basic(ecs, x, y),
-        Some(MonsterType::Goblin) => goblin_basic(ecs, x, y),
+        Some(MonsterType::GoblinBasic) => goblin_basic(ecs, x, y),
+        Some(MonsterType::GoblinFirecaster) => goblin_firecaster(ecs, x, y),
         _ => {}
     }
 }
@@ -192,16 +195,17 @@ struct MonsterSpawnData<S: ToString> {
 }
 
 const DEFAULT_VIEW_RANGE: i32 = 8;
+const DEAFULT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
+    avoid_blocked: true,
+    avoid_fire: true,
+    avoid_chill: true
+};
 const DEFAULT_MOVEMENT_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
     lost_visibility_keep_following_turns_max: 2,
     lost_visibility_keep_following_turns_remaining: 2,
-    routing_options: MovementRoutingOptions {
-        avoid_blocked: true,
-        avoid_fire: true,
-        avoid_chill: true
-    }
+    routing_options: MovementRoutingOptions {..DEAFULT_ROUTING_OPTIONS}
 };
 const DEFAULT_COMBAT_STATS: CombatStats = CombatStats {
     max_hp: 15,
@@ -239,7 +243,7 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) {
         .build();
 }
 
-// Individual monster types: Goblin.
+// Individual monster types: Basic Goblin.
 fn goblin_basic(ecs: &mut World, x: i32, y: i32) {
     spawn_monster(
         ecs,
@@ -258,6 +262,43 @@ fn goblin_basic(ecs: &mut World, x: i32, y: i32) {
             },
         },
     );
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+}
+
+// Individual monster types: Basic Goblin.
+fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('g'),
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::BLACK),
+            order: 1
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: 8,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Goblin Firecaster".to_string(),
+        })
+        .with(MonsterAttackSpellcasterAI {
+            distance_to_keep_away: 3,
+            routing_options: MovementRoutingOptions {
+                ..DEAFULT_ROUTING_OPTIONS
+            }
+        })
+        .with(CombatStats {..DEFAULT_COMBAT_STATS})
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
     let mut map = ecs.fetch_mut::<Map>();
     let idx = map.xy_idx(x, y);
     map.blocked[idx] = true;
