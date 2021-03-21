@@ -6,7 +6,6 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
 ## Additional Stuff We've Planned
 
 #### General
-  - [ ] Pause the game during animations.
   - [ ] A swimming system.
 
 #### Terrain and Hazards
@@ -18,7 +17,6 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
 
 #### Monsters
   - [ ] Goblin Warleader (buff spells).
-  - [ ] Goblin Spellcaster (attack spells).
   - [ ] Goblin Cleric (healing spells).
   - [ ] Orc Warleader.
   - [ ] Orc Spellcaster.
@@ -30,6 +28,7 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] Magic damage stats.
 
 #### Spellcasting
+  - [ ] A spell of magic missle (small non-elemental damage, quick recharging)
   - [ ] A spell of healing.
   - [ ] Defense and attack buff spells.
   - [ ] Some spell which is a combination of fire and ice elements.
@@ -66,6 +65,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] Chill.
   - [x] A spell of fireball. ♠
   - [x] A spell of icespike. ♦
+  - [x] Goblin Spellcaster (attack spells).
+  - [x] Pause the game during animations.
 
 ## Progress In Tutorial:
 
