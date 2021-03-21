@@ -4,7 +4,7 @@ use specs::prelude::*;
 use super::MapBuilder;
 use super::{
     Map, TileType, Position, Rectangle, MAP_WIDTH, MAP_HEIGHT,
-    DEBUG_VISUALIZE_MAPGEN, spawner, apply_room, apply_horizontal_tunnel,
+    DEBUG_VISUALIZE_MAPGEN, entity_spawners, apply_room, apply_horizontal_tunnel,
     apply_vertical_tunnel
 };
 
@@ -47,7 +47,7 @@ impl MapBuilder for SimpleMapBuilder {
                     }
                 }
             }
-            spawner::spawn_region(ecs, &region, self.depth);
+            entity_spawners::spawn_region(ecs, &region, self.depth);
         }
     }
 

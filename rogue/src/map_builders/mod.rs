@@ -1,5 +1,5 @@
 use super::{
-    World, Map, TileType, Position, spawner,
+    World, Map, TileType, Position, entity_spawners,
     DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
 mod simple_map;

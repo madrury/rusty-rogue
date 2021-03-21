@@ -4,7 +4,7 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, TileType, Position, spawner, DEBUG_VISUALIZE_MAPGEN
+    Map, TileType, Position, entity_spawners, DEBUG_VISUALIZE_MAPGEN
 };
 
 //const MIN_ROOM_SIZE : i32 = 8;
@@ -68,7 +68,7 @@ impl MapBuilder for CellularAutomataBuilder {
 
     fn spawn_entities(&mut self, ecs: &mut World) {
         for area in self.noise_areas.iter() {
-            spawner::spawn_region(ecs, area.1, self.depth);
+            entity_spawners::spawn_region(ecs, area.1, self.depth);
         }
     }
 

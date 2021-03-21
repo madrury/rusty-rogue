@@ -5,6 +5,7 @@ use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
 mod components;
 pub use components::*;
 pub mod map_builders;
+pub mod entity_spawners;
 mod map;
 pub use map::*;
 mod save_load;
@@ -13,8 +14,6 @@ mod player;
 use player::*;
 mod gui;
 use gui::*;
-mod spawner;
-use spawner::*;
 mod visibility_system;
 use visibility_system::*;
 mod monster_ai_system;
@@ -690,7 +689,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(ParticleBuilder::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
 
-    let player = spawner::spawn_player(&mut gs.ecs, 0, 0);
+    let player = entity_spawners::spawn_player(&mut gs.ecs, 0, 0);
     gs.ecs.insert(player);
 
     gs.generate_map(1);
