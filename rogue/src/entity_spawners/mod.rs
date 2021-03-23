@@ -22,6 +22,7 @@ mod potions;
 mod equipment;
 mod spells;
 mod monsters;
+mod food;
 
 const MAX_MONSTERS_IN_ROOM: i32 = 4;
 const MAX_ITEMS_IN_ROOM: i32 = 2;
@@ -170,8 +171,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .roll(&mut rng);
     }
     match item {
-        Some(ItemType::Turnip) => turnip(ecs, x, y),
-        Some(ItemType::Pomegranate) => pomegranate(ecs, x, y),
+        Some(ItemType::Turnip) => food::turnip(ecs, x, y),
+        Some(ItemType::Pomegranate) => food::pomegranate(ecs, x, y),
         Some(ItemType::HealthPotion) => potions::health(ecs, x, y),
         Some(ItemType::TeleportationPotion) => potions::teleportation(ecs, x, y),
         Some(ItemType::FirePotion) => potions::fire(ecs, x, y),
@@ -350,52 +351,3 @@ pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
     }
     ecs.delete_entity(*entity).expect("Unable to remove chill entity.");
 }
-
-
-//----------------------------------------------------------------------------
-// Food
-//----------------------------------------------------------------------------
-fn turnip(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
-    let entity = ecs.create_entity()
-        .with(Position {x, y})
-        .with(Renderable {
-            glyph: rltk::to_cp437(';'),
-            fg: RGB::named(rltk::WHITE),
-            bg: RGB::named(rltk::BLACK),
-            order: 2,
-        })
-        .with(Name {name: "Turnip".to_string()})
-        .with(PickUpable {})
-        .with(Useable {})
-        .with(Consumable {})
-        .with(Untargeted {verb: "eats".to_string()})
-        // TODO: We probably want a component for triggering the healing animation.
-        .with(ProvidesFullFood {})
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-        Some(entity)
-}
-
-fn pomegranate(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
-    let entity = ecs.create_entity()
-        .with(Position {x, y})
-        .with(Renderable {
-            glyph: rltk::to_cp437(';'),
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-            order: 2,
-        })
-        .with(Name {name: "Pomegranate".to_string()})
-        .with(PickUpable {})
-        .with(Useable {})
-        .with(Consumable {})
-        .with(Untargeted {verb: "eats".to_string()})
-        // TODO: We probably want a component for triggering the healing animation.
-        .with(ProvidesFullFood {})
-        .with(ProvidesFullHealing {})
-        .with(IncreasesMaxHpWhenUsed {amount: 5})
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-        Some(entity)
-}
-
