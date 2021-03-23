@@ -53,8 +53,8 @@ impl DissipationSystem {
                 }
                 (victim, Some(is_entity_kind)) => {
                     match is_entity_kind.kind {
-                        EntitySpawnKind::Fire {..} => entity_spawners::destroy_fire(ecs, &victim),
-                        EntitySpawnKind::Chill {..} => entity_spawners::destroy_chill(ecs, &victim),
+                        EntitySpawnKind::Fire {..} => entity_spawners::hazards::destroy_fire(ecs, &victim),
+                        EntitySpawnKind::Chill {..} => entity_spawners::hazards::destroy_chill(ecs, &victim),
                     }
                 }
             }
