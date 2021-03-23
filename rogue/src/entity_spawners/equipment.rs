@@ -3,7 +3,7 @@ use super::{
     Throwable, Targeted, TargetingKind, Consumable,
     InflictsDamageWhenTargeted, GrantsMeleeAttackBonus,
     GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind,
+    ElementalDamageKind, AlongRayAnimationWhenTargeted
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -31,6 +31,11 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .with(InflictsDamageWhenTargeted {
             damage: 15,
             kind: ElementalDamageKind::Physical
+        })
+        .with(AlongRayAnimationWhenTargeted {
+            fg: RGB::named(rltk::WHITE),
+            bg: RGB::named(rltk::BLACK),
+            glyph: rltk::to_cp437('•')
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
