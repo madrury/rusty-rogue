@@ -1,16 +1,16 @@
 use super::{
     Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
     EntitySpawnRequestBuffer, EntitySpawnRequest, Name, Renderable,
-    Consumable, SpellCharges, Position, Viewshed, WantsToUseTargeted,
-    Targeted, TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
+    Consumable, SpellCharges, Position, WantsToUseTargeted, Targeted,
+    TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
-    AlongRayAnimationWhenTargeted, WantsToTakeDamage, StatusIsFrozen,
-    StatusIsBurning, SpawnsEntityInAreaWhenTargeted, StatusIsImmuneToFire,
+    AlongRayAnimationWhenTargeted, WantsToTakeDamage,
+    WantsToMoveToRandomPosition, StatusIsFrozen, StatusIsBurning,
+    SpawnsEntityInAreaWhenTargeted, StatusIsImmuneToFire,
     StatusIsImmuneToChill
 };
 use specs::prelude::*;
-use rltk::RandomNumberGenerator;
 
 pub struct TargetedSystem {}
 
@@ -21,15 +21,12 @@ pub struct TargetedSystem {}
 pub struct TargetedSystemData<'a> {
         entities: Entities<'a>,
         map: ReadExpect<'a, Map>,
-        ppos: ReadExpect<'a, Point>,
         log: WriteExpect<'a, GameLog>,
         animation_builder: WriteExpect<'a, AnimationBuilder>,
         spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
-        rng: WriteExpect<'a, RandomNumberGenerator>,
         names: ReadStorage<'a, Name>,
         renderables: ReadStorage<'a, Renderable>,
         positions: WriteStorage<'a, Position>,
-        viewsheds: WriteStorage<'a, Viewshed>,
         consumables: ReadStorage<'a, Consumable>,
         spell_charges: WriteStorage<'a, SpellCharges>,
         targeteds: ReadStorage<'a, Targeted>,
@@ -44,6 +41,7 @@ pub struct TargetedSystemData<'a> {
         spawns_entity_in_area: ReadStorage<'a, SpawnsEntityInAreaWhenTargeted>,
         apply_damages: WriteStorage<'a, WantsToTakeDamage>,
         teleports: ReadStorage<'a, MovesToRandomPosition>,
+        wants_to_teleport: WriteStorage<'a, WantsToMoveToRandomPosition>,
         is_frozen: WriteStorage<'a, StatusIsFrozen>,
         is_burning: WriteStorage<'a, StatusIsBurning>,
         is_fire_immune: ReadStorage<'a, StatusIsImmuneToFire>,
@@ -58,15 +56,12 @@ impl<'a> System<'a> for TargetedSystem {
         let TargetedSystemData {
             entities,
             map,
-            ppos,
             mut log,
             mut animation_builder,
             mut spawn_buffer,
-            mut rng,
             names,
             renderables,
             mut positions,
-            mut viewsheds,
             consumables,
             mut spell_charges,
             targeteds,
@@ -80,6 +75,7 @@ impl<'a> System<'a> for TargetedSystem {
             along_ray_animations,
             mut apply_damages,
             teleports,
+            mut wants_to_teleport,
             mut is_frozen,
             mut is_burning,
             spawns_entity_in_area,
@@ -90,7 +86,7 @@ impl<'a> System<'a> for TargetedSystem {
         //--------------------------------------------------------------------
         // Main loop through all the targets.
         //--------------------------------------------------------------------
-        for (user, mut user_position, want_target) in (&entities, &mut positions, &wants_target).join() {
+        for (user, want_target) in (&entities, &wants_target).join() {
 
             // In the case we are casting a spell, we guard against the case
             // that we have no spell charges left.
@@ -109,6 +105,7 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Gather up all the entities that are either at the targeted
             // position or within the area of effect.
+            let user_position = positions.get(user).unwrap_or(&Position {x: 0, y: 0});
             let user_point = Point {x: user_position.x, y: user_position.y};
             let target_point = want_target.target;
             let targeting_kind = targeteds
@@ -151,28 +148,21 @@ impl<'a> System<'a> for TargetedSystem {
                 }
 
                 // Compontnet: MovesToRandomPosition
-                // let thing_teleports = teleports.get(want_target.thing);
-                // let target_pos = positions.get_mut(*target);
-                // if let (Some(_), Some(tpos)) = (thing_teleports, target_pos) {
-                //     let new_pos = map.random_unblocked_point(10, &mut *rng);
-                //     if let Some(new_pos) = new_pos {
-                //         tpos.x = new_pos.0;
-                //         tpos.y = new_pos.1;
-                //         let target_viewshed = viewsheds.get_mut(*target);
-                //         if let Some(tviewshed) = target_viewshed {
-                //             tviewshed.dirty = true;
-                //         }
-                //         let target_name = names.get(*target);
-                //         if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                //             log.entries.push(format!(
-                //                 "You {} the {}, and {} disappears.",
-                //                 verb,
-                //                 thing_name.name,
-                //                 target_name.name
-                //             ));
-                //         }
-                //     }
-                // }
+                let thing_teleports = teleports.get(want_target.thing);
+                let target_pos = positions.get_mut(*target);
+                if let (Some(_), Some(_)) = (thing_teleports, target_pos) {
+                    wants_to_teleport.insert(*target, WantsToMoveToRandomPosition {})
+                        .expect("Failed to insert WantsToMoveToRandomPostion.");
+                    let target_name = names.get(*target);
+                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                        log.entries.push(format!(
+                            "You {} the {}, and {} disappears.",
+                            verb,
+                            thing_name.name,
+                            target_name.name
+                        ));
+                    }
+                }
 
                 // Component: InflictsDamageWhenTargeted
                 let stats = combat_stats.get_mut(*target);

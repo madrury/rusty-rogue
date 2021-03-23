@@ -46,6 +46,8 @@ mod dissipation_system;
 use entity_spawn_system::*;
 mod encroachment_system;
 use encroachment_system::*;
+mod general_movement_system;
+use general_movement_system::*;
 mod gamelog;
 use gamelog::{GameLog};
 
@@ -160,6 +162,8 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut hunger = HungerSystem{};
         hunger.run_now(&self.ecs);
+        let mut teleport = TeleportationSystem{};
+        teleport.run_now(&self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
@@ -200,6 +204,8 @@ impl State {
         status.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
+        let mut teleport = TeleportationSystem{};
+        teleport.run_now(&self.ecs);
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);

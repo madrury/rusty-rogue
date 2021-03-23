@@ -1,14 +1,13 @@
 
 use super::{
-    Map, Point, CombatStats, HungerClock, GameLog, AnimationBuilder,
-    AnimationRequest, Name, Renderable, Position, Viewshed,
-    WantsToUseUntargeted, Consumable, Untargeted, ProvidesFullHealing,
-    ProvidesFullFood, MovesToRandomPosition, IncreasesMaxHpWhenUsed,
+    CombatStats, HungerClock, GameLog, AnimationBuilder, AnimationRequest,
+    Name, Position, Renderable, WantsToUseUntargeted, Consumable, Untargeted,
+    ProvidesFullHealing, ProvidesFullFood, MovesToRandomPosition,
+    WantsToMoveToRandomPosition, IncreasesMaxHpWhenUsed,
     ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
     StatusIsImmuneToFire, StatusIsImmuneToChill
 };
 use specs::prelude::*;
-use rltk::RandomNumberGenerator;
 
 
 pub struct UntargetedSystem {}
@@ -18,16 +17,11 @@ pub struct UntargetedSystem {}
 #[derive(SystemData)]
 pub struct UntargetedSystemData<'a> {
     entities: Entities<'a>,
-    player: ReadExpect<'a, Entity>,
-    player_position: WriteExpect<'a, Point>,
-    map: ReadExpect<'a, Map>,
     log: WriteExpect<'a, GameLog>,
     animation_builder: WriteExpect<'a, AnimationBuilder>,
-    rng: WriteExpect<'a, RandomNumberGenerator>,
     names: ReadStorage<'a, Name>,
+    positions: ReadStorage<'a, Position>,
     renderables: ReadStorage<'a, Renderable>,
-    positions: WriteStorage<'a, Position>,
-    viewsheds: WriteStorage<'a, Viewshed>,
     consumables: ReadStorage<'a, Consumable>,
     untargeteds: ReadStorage<'a, Untargeted>,
     wants_use: WriteStorage<'a, WantsToUseUntargeted>,
@@ -37,6 +31,7 @@ pub struct UntargetedSystemData<'a> {
     healing: ReadStorage<'a, ProvidesFullHealing>,
     foods: ReadStorage<'a, ProvidesFullFood>,
     teleports: ReadStorage<'a, MovesToRandomPosition>,
+    wants_to_teleport: WriteStorage<'a, WantsToMoveToRandomPosition>,
     combat_stats: WriteStorage<'a, CombatStats>,
     hunger_clocks: WriteStorage<'a, HungerClock>,
     status_fire_immunity: WriteStorage<'a, StatusIsImmuneToFire>,
@@ -51,16 +46,11 @@ impl<'a> System<'a> for UntargetedSystem {
 
         let UntargetedSystemData {
             entities,
-            player,
-            mut player_position,
-            map,
             mut log,
             mut animation_builder,
-            mut rng,
             names,
+            positions,
             renderables,
-            mut positions,
-            mut viewsheds,
             consumables,
             untargeteds,
             mut wants_use,
@@ -70,6 +60,7 @@ impl<'a> System<'a> for UntargetedSystem {
             healing,
             foods,
             teleports,
+            mut wants_to_teleport,
             mut combat_stats,
             mut hunger_clocks,
             mut status_fire_immunity,
@@ -178,39 +169,16 @@ impl<'a> System<'a> for UntargetedSystem {
             // Compontnet: MovesToRandomPosition
             let thing_teleports = teleports.get(want_use.thing);
             if let Some(_) = thing_teleports {
-                let new_pos = map.random_unblocked_point(10, &mut *rng);
-                let pos = positions.get_mut(entity);
-                if let (Some(pos), Some(new_pos)) = (pos, new_pos) {
-                    pos.x = new_pos.0;
-                    pos.y = new_pos.1;
-                    let viewshed = viewsheds.get_mut(entity);
-                    if let Some(viewshed) = viewshed {
-                        viewshed.dirty = true;
-                    }
-                    let name = names.get(entity);
-                    if let (Some(name), Some(thing_name)) = (name, thing_name) {
-                        log.entries.push(format!(
-                            "{} {} the {}, and vanishes!",
-                            name.name,
-                            verb,
-                            thing_name.name
-                        ));
-                    }
-                    let render = renderables.get(entity);
-                    if let Some(render) = render {
-                        animation_builder.request(AnimationRequest::Teleportation {
-                            x: pos.x,
-                            y: pos.y,
-                            bg: render.bg,
-                        })
-                    }
-                    // If the using entity is the player, we have to keep the
-                    // player's position synchronized in both their Position
-                    // component AND their position as a resource in the ECS.
-                    if entity == *player {
-                        player_position.x = new_pos.0;
-                        player_position.y = new_pos.1;
-                    }
+                wants_to_teleport.insert(entity, WantsToMoveToRandomPosition {})
+                    .expect("Failed to insert WantsToMoveToRandomPosition");
+                let user_name = names.get(entity);
+                if let (Some(thing_name), Some(user_name)) = (thing_name, user_name) {
+                    log.entries.push(format!(
+                        "You {} the {}, and {} disappears.",
+                        verb,
+                        thing_name.name,
+                        user_name.name
+                    ));
                 }
             }
 

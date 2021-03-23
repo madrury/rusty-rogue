@@ -90,9 +90,9 @@ pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
     ecs.delete_entity(*entity).expect("Unable to remove fire entity.");
 }
 
-// A chill entity. Represents freezing air that can spread
-// and dissipate. All spawning of chill MUST use this function, since it handles
-// syncronizing the map.chill array.
+// A chill entity. Represents freezing air that can spread and dissipate. All
+// spawning of chill MUST use this function, since it handles syncronizing the
+// map.chill array.
 pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
     let can_spawn: bool;
     let idx: usize;
