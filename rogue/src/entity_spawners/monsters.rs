@@ -1,23 +1,11 @@
 
 use super::{
-    Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
-    HungerState, Monster, Hazard, IsEntityKind, MonsterBasicAI, MonsterAttackSpellcasterAI,
-    MovementRoutingOptions, Name, Player, Position, Renderable, Viewshed,
-    PickUpable, Useable, Castable, SpellCharges, Equippable, EquipmentSlot,
-    Throwable, Targeted, TargetingKind, Untargeted, Consumable,
-    ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
-    InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
-    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
-    AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
-    MovesToRandomPosition, SpawnsEntityInAreaWhenTargeted,
-    ChanceToSpawnAdjacentEntity, ChanceToDissipate, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
-    ProvidesChillImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, InSpellBook,
-    MAP_WIDTH, random_table
+    Map, BlocksTile, CombatStats, Monster, MonsterBasicAI,
+    MonsterAttackSpellcasterAI, MovementRoutingOptions, Name, Position,
+    Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
+    InSpellBook, spells
 };
-use rltk::{RandomNumberGenerator, RGB};
+use rltk::{RGB};
 use specs::prelude::*;
 
 struct MonsterSpawnData<S: ToString> {
@@ -31,28 +19,31 @@ struct MonsterSpawnData<S: ToString> {
     combat_stats: CombatStats,
 }
 
-const DEFAULT_VIEW_RANGE: i32 = 8;
-const DEAFULT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
+const GOBLIN_VIEW_RANGE: i32 = 8;
+const GOBLIN_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
     avoid_blocked: true,
     avoid_fire: true,
     avoid_chill: true
 };
-const DEFAULT_MOVEMENT_AI: MonsterBasicAI = MonsterBasicAI {
+const GOBLIN_MOVEMENT_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
     lost_visibility_keep_following_turns_max: 2,
     lost_visibility_keep_following_turns_remaining: 2,
-    routing_options: MovementRoutingOptions {..DEAFULT_ROUTING_OPTIONS}
+    routing_options: MovementRoutingOptions {..GOBLIN_ROUTING_OPTIONS}
 };
-const DEFAULT_COMBAT_STATS: CombatStats = CombatStats {
+const GOBLIN_COMBAT_STATS: CombatStats = CombatStats {
     max_hp: 15,
     hp: 15,
-    defense: 1,
+    defense: 0,
     power: 3,
 };
 
 // Spawn a generic monster.
-fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) -> Option<Entity> {
+fn spawn_monster<S: ToString>(
+    ecs: &mut World,
+    data: MonsterSpawnData<S>
+) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {
             x: data.x,
@@ -81,8 +72,16 @@ fn spawn_monster<S: ToString>(ecs: &mut World, data: MonsterSpawnData<S>) -> Opt
         Some(entity)
 }
 
+//----------------------------------------------------------------------------
+// Goblins.
+//
+// The generaic antagonists of the lower dungeon. Once the player is seen, they
+// will stupidly attack untill killed, never fleeing. The basic goblin comes in
+// other flavors, with either enhanced attacks or the ability to assist their
+// friends.
+//----------------------------------------------------------------------------
 // Individual monster types: Basic Goblin.
-fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let goblin = spawn_monster(
         ecs,
         MonsterSpawnData {
@@ -90,13 +89,13 @@ fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             y: y,
             name: "Goblin",
             glyph: rltk::to_cp437('g'),
-            color: RGB::named(rltk::CORAL),
-            view_range: DEFAULT_VIEW_RANGE,
+            color: RGB::named(rltk::BROWN1),
+            view_range: GOBLIN_VIEW_RANGE,
             movement_ai: MonsterBasicAI {
-                ..DEFAULT_MOVEMENT_AI
+                ..GOBLIN_MOVEMENT_AI
             },
             combat_stats: CombatStats {
-                ..DEFAULT_COMBAT_STATS
+                ..GOBLIN_COMBAT_STATS
             },
         },
     );
@@ -108,7 +107,7 @@ fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
 
 // Individual monster types: Goblin firecaster.
 // A goblin spellcaster wielding basic fire magic.
-fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let goblin;
     {
         goblin = ecs.create_entity()
@@ -134,10 +133,10 @@ fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(MonsterAttackSpellcasterAI {
                 distance_to_keep_away: 4,
                 routing_options: MovementRoutingOptions {
-                    ..DEAFULT_ROUTING_OPTIONS
+                    ..GOBLIN_ROUTING_OPTIONS
                 }
             })
-            .with(CombatStats {..DEFAULT_COMBAT_STATS})
+            .with(CombatStats {..GOBLIN_COMBAT_STATS})
             .with(BlocksTile {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -160,7 +159,7 @@ fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
 
 // Individual monster types: Goblin chillcaster.
 // A goblin spellcaster wielding basic chill magic.
-fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let goblin;
     {
         goblin = ecs.create_entity()
@@ -186,10 +185,10 @@ fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(MonsterAttackSpellcasterAI {
                 distance_to_keep_away: 4,
                 routing_options: MovementRoutingOptions {
-                    ..DEAFULT_ROUTING_OPTIONS
+                    ..GOBLIN_ROUTING_OPTIONS
                 }
             })
-            .with(CombatStats {..DEFAULT_COMBAT_STATS})
+            .with(CombatStats {..GOBLIN_COMBAT_STATS})
             .with(BlocksTile {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -210,8 +209,32 @@ fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(goblin)
 }
 
-// Individual monster types: Orc.
-fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+//----------------------------------------------------------------------------
+// Orcs.
+//
+// Basically a beefier goblin.
+//----------------------------------------------------------------------------
+const ORC_VIEW_RANGE: i32 = 8;
+const ORC_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
+    avoid_blocked: true,
+    avoid_fire: true,
+    avoid_chill: true
+};
+const ORC_MOVEMENT_AI: MonsterBasicAI = MonsterBasicAI {
+    only_follow_within_viewshed: true,
+    no_visibility_wander: true,
+    lost_visibility_keep_following_turns_max: 5,
+    lost_visibility_keep_following_turns_remaining: 5,
+    routing_options: MovementRoutingOptions {..ORC_ROUTING_OPTIONS}
+};
+const ORC_COMBAT_STATS: CombatStats = CombatStats {
+    max_hp: 30,
+    hp: 30,
+    defense: 0,
+    power: 5,
+};
+
+pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let orc = spawn_monster(
         ecs,
         MonsterSpawnData {
@@ -220,15 +243,15 @@ fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             name: "Orc",
             glyph: rltk::to_cp437('O'),
             color: RGB::named(rltk::YELLOW_GREEN),
-            view_range: DEFAULT_VIEW_RANGE,
+            view_range: ORC_VIEW_RANGE,
             movement_ai: MonsterBasicAI {
-                ..DEFAULT_MOVEMENT_AI
+                ..ORC_MOVEMENT_AI
             },
             combat_stats: CombatStats {
                 max_hp: 20,
                 hp: 20,
                 power: 5,
-                ..DEFAULT_COMBAT_STATS
+                ..ORC_COMBAT_STATS
             },
         },
     );

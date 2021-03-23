@@ -21,6 +21,7 @@ use specs::prelude::*;
 mod potions;
 mod equipment;
 mod spells;
+mod monsters;
 
 const MAX_MONSTERS_IN_ROOM: i32 = 4;
 const MAX_ITEMS_IN_ROOM: i32 = 2;
@@ -122,10 +123,10 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .roll(&mut rng);
     }
     match monster {
-        Some(MonsterType::Orc) => orc_basic(ecs, x, y),
-        Some(MonsterType::GoblinBasic) => goblin_basic(ecs, x, y),
-        Some(MonsterType::GoblinFirecaster) => goblin_firecaster(ecs, x, y),
-        Some(MonsterType::GoblinChillcaster) => goblin_chillcaster(ecs, x, y),
+        Some(MonsterType::GoblinBasic) => monsters::goblin_basic(ecs, x, y),
+        Some(MonsterType::GoblinFirecaster) => monsters::goblin_firecaster(ecs, x, y),
+        Some(MonsterType::GoblinChillcaster) => monsters::goblin_chillcaster(ecs, x, y),
+        Some(MonsterType::Orc) => monsters::orc_basic(ecs, x, y),
         _ => {None}
     };
 }
