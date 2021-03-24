@@ -10,6 +10,9 @@ use super::{
 use rltk::{RGB};
 use specs::prelude::*;
 
+//----------------------------------------------------------------------------
+// Fire elemental attack spells.
+//----------------------------------------------------------------------------
 pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
@@ -100,6 +103,9 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
     Some(entity)
 }
 
+//----------------------------------------------------------------------------
+// Chill elemental attack spells.
+//----------------------------------------------------------------------------
 pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
@@ -180,6 +186,46 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::LIGHT_BLUE),
             glyph: rltk::to_cp437('*')
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+    Some(entity)
+}
+
+//----------------------------------------------------------------------------
+// Non-elemental attack spells.
+//----------------------------------------------------------------------------
+pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::WHITE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Scroll of Magic Missile".to_string()})
+        .with(PickUpable {})
+        .with(Castable {})
+        .with(SpellCharges {
+            max_charges: max_charges,
+            charges: charges,
+            regen_time: 50,
+            time: 0
+        })
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AlongRay
+        })
+        .with(InflictsDamageWhenTargeted {
+            damage: 10,
+            kind: ElementalDamageKind::Physical
+        })
+        .with(AlongRayAnimationWhenTargeted {
+            fg: RGB::named(rltk::GOLD),
+            bg: RGB::named(rltk::BLACK),
+            glyph: rltk::to_cp437('•')
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();

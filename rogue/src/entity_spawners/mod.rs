@@ -145,6 +145,7 @@ enum ItemType {
     FreezingPotion,
     Dagger,
     LeatherArmor,
+    MagicMissileScroll,
     FireblastScroll,
     FireballScroll,
     IceblastScroll,
@@ -162,8 +163,9 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, 2 + depth)
             .insert(ItemType::FreezingPotion, 2 + depth)
-            .insert(ItemType::Dagger, 200 + depth)
+            .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
+            .insert(ItemType::MagicMissileScroll, depth)
             .insert(ItemType::FireblastScroll, depth)
             .insert(ItemType::FireballScroll, depth)
             .insert(ItemType::IceblastScroll, depth)
@@ -180,6 +182,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::FreezingPotion) => potions::freezing(ecs, x, y),
         Some(ItemType::Dagger) => equipment::dagger(ecs, x, y),
         Some(ItemType::LeatherArmor) => equipment::leather_armor(ecs, x, y),
+        Some(ItemType::MagicMissileScroll) => spells::magic_missile(ecs, x, y, 10, 5),
         Some(ItemType::FireblastScroll) => spells::fireblast(ecs, x, y),
         Some(ItemType::FireballScroll) => spells::fireball(ecs, x, y, 5, 2),
         Some(ItemType::IceblastScroll) => spells::iceblast(ecs, x, y),
