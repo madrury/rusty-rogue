@@ -141,6 +141,12 @@ impl State {
         vis.run_now(&self.ecs);
     }
 
+    fn run_cleanup_systems(&mut self) {
+        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
+        DamageSystem::clean_up_the_dead(&mut self.ecs);
+        self.ecs.maintain();
+    }
+
     fn run_player_turn_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
@@ -168,7 +174,7 @@ impl State {
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
-        DamageSystem::clean_up_the_dead(&mut self.ecs);
+        // DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -182,8 +188,8 @@ impl State {
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);
-        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
-        DamageSystem::clean_up_the_dead(&mut self.ecs);
+        // DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
+        // DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -213,7 +219,7 @@ impl State {
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
-        DamageSystem::clean_up_the_dead(&mut self.ecs);
+        // DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -409,6 +415,7 @@ impl GameState for State {
                 if is_any_animation_alive(&self.ecs) {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
+                    self.run_cleanup_systems();
                     let next_state = self.next_state
                         .expect("Returning from animation, but no next_state to return to.");
                     newrunstate = next_state;
@@ -421,6 +428,7 @@ impl GameState for State {
                     self.next_state = Some(RunState::HazardTurn);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
+                    self.run_cleanup_systems();
                     newrunstate = RunState::HazardTurn;
                 }
             }
@@ -431,6 +439,7 @@ impl GameState for State {
                     self.next_state = Some(RunState::MonsterTurn);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
+                    self.run_cleanup_systems();
                     newrunstate = RunState::MonsterTurn;
                 }
             }
@@ -441,6 +450,7 @@ impl GameState for State {
                     self.next_state = Some(RunState::UpkeepTrun);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
+                    self.run_cleanup_systems();
                     newrunstate = RunState::UpkeepTrun
                 }
             }

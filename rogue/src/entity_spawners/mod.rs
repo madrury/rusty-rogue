@@ -162,7 +162,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, 2 + depth)
             .insert(ItemType::FreezingPotion, 2 + depth)
-            .insert(ItemType::Dagger, depth)
+            .insert(ItemType::Dagger, 200 + depth)
             .insert(ItemType::LeatherArmor, depth)
             .insert(ItemType::FireblastScroll, depth)
             .insert(ItemType::FireballScroll, depth)
