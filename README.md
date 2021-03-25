@@ -28,7 +28,6 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] Magic damage stats.
 
 #### Spellcasting
-  - [ ] A spell of magic missle (small non-elemental damage, quick recharging)
   - [ ] A spell of healing.
   - [ ] Defense and attack buff spells.
   - [ ] Some spell which is a combination of fire and ice elements.
@@ -67,6 +66,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] A spell of icespike. ♦
   - [x] Goblin Spellcaster (attack spells).
   - [x] Pause the game during animations.
+  - [x] A spell of magic missle (small non-elemental damage, quick recharging)
+  - [x] A spell of blinking (teleportation along a ray)
 
 ## Progress In Tutorial:
 
