@@ -4,8 +4,8 @@ use super::{
     SpellCharges, Targeted, TargetingKind, InflictsDamageWhenTargeted,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
-    SpawnsEntityInAreaWhenTargeted, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind,
+    SpawnsEntityInAreaWhenTargeted, MoveToPositionWhenTargeted, SimpleMarker,
+    SerializeMe, MarkedBuilder, ElementalDamageKind,
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -83,7 +83,7 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         .with(Targeted {
             verb: "casts".to_string(),
             range: 6.5,
-            kind: TargetingKind::AlongRay
+            kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(InflictsDamageWhenTargeted {
             damage: 10,
@@ -96,7 +96,8 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         .with(AlongRayAnimationWhenTargeted {
             fg: RGB::named(rltk::ORANGE),
             bg: RGB::named(rltk::RED),
-            glyph: rltk::to_cp437('^')
+            glyph: rltk::to_cp437('^'),
+            until_blocked: true
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -173,7 +174,7 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         .with(Targeted {
             verb: "casts".to_string(),
             range: 6.5,
-            kind: TargetingKind::AlongRay
+            kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(InflictsDamageWhenTargeted {
             damage: 10,
@@ -185,7 +186,8 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         .with(AlongRayAnimationWhenTargeted {
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::LIGHT_BLUE),
-            glyph: rltk::to_cp437('*')
+            glyph: rltk::to_cp437('*'),
+            until_blocked: true
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -216,7 +218,7 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
         .with(Targeted {
             verb: "casts".to_string(),
             range: 6.5,
-            kind: TargetingKind::AlongRay
+            kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(InflictsDamageWhenTargeted {
             damage: 10,
@@ -225,7 +227,46 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
         .with(AlongRayAnimationWhenTargeted {
             fg: RGB::named(rltk::GOLD),
             bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('•')
+            glyph: rltk::to_cp437('•'),
+            until_blocked: true
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+    Some(entity)
+}
+
+//----------------------------------------------------------------------------
+// Non-attack spells.
+//----------------------------------------------------------------------------
+pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::WHITE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Scroll of Blinking".to_string()})
+        .with(PickUpable {})
+        .with(Castable {})
+        .with(SpellCharges {
+            max_charges: 3,
+            charges: 1,
+            regen_time: 100,
+            time: 0
+        })
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 8.5,
+            kind: TargetingKind::AlongRay {until_blocked: false}
+        })
+        .with(MoveToPositionWhenTargeted {})
+        .with(AlongRayAnimationWhenTargeted {
+            fg: RGB::named(rltk::PURPLE),
+            bg: RGB::named(rltk::BLACK),
+            glyph: rltk::to_cp437('@'),
+            until_blocked: false
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();

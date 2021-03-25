@@ -143,14 +143,15 @@ impl Map {
             .collect()
     }
 
-    pub fn get_ray_tiles(&self, source: Point, target: Point) -> Vec<Point> {
+    // Todo: Add take_until_blocked parameter.
+    pub fn get_ray_tiles(&self, source: Point, target: Point, take_until_blocked: bool) -> Vec<Point> {
         let mut tiles: Vec<Point> = Bresenham::new(source, target).collect();
         tiles.push(target);
         tiles.into_iter()
             .skip(1)
             .take_until(|p| {
                 let idx = self.xy_idx(p.x, p.y);
-                self.blocked[idx]
+                take_until_blocked && self.blocked[idx]
             })
             .collect()
     }

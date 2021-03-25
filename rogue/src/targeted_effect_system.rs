@@ -4,10 +4,11 @@ use super::{
     Consumable, SpellCharges, Position, WantsToUseTargeted, Targeted,
     TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
-    InflictsBurningWhenTargeted, AreaOfEffectAnimationWhenTargeted,
-    AlongRayAnimationWhenTargeted, WantsToTakeDamage,
-    WantsToMoveToRandomPosition, StatusIsFrozen, StatusIsBurning,
-    SpawnsEntityInAreaWhenTargeted, StatusIsImmuneToFire,
+    InflictsBurningWhenTargeted, MoveToPositionWhenTargeted,
+    AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
+    WantsToTakeDamage, WantsToMoveToPosition, WantsToMoveToRandomPosition,
+    StatusIsFrozen, StatusIsBurning, SpawnsEntityInAreaWhenTargeted,
+    StatusIsImmuneToFire,
     StatusIsImmuneToChill
 };
 use specs::prelude::*;
@@ -36,11 +37,13 @@ pub struct TargetedSystemData<'a> {
         does_damage: ReadStorage<'a, InflictsDamageWhenTargeted>,
         does_freeze: WriteStorage<'a, InflictsFreezingWhenTargeted>,
         does_burn: WriteStorage<'a, InflictsBurningWhenTargeted>,
+        moves_to_position: ReadStorage<'a, MoveToPositionWhenTargeted>,
         aoe_animations: ReadStorage<'a, AreaOfEffectAnimationWhenTargeted>,
         along_ray_animations: ReadStorage<'a, AlongRayAnimationWhenTargeted>,
         spawns_entity_in_area: ReadStorage<'a, SpawnsEntityInAreaWhenTargeted>,
         apply_damages: WriteStorage<'a, WantsToTakeDamage>,
         teleports: ReadStorage<'a, MovesToRandomPosition>,
+        wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
         wants_to_teleport: WriteStorage<'a, WantsToMoveToRandomPosition>,
         is_frozen: WriteStorage<'a, StatusIsFrozen>,
         is_burning: WriteStorage<'a, StatusIsBurning>,
@@ -71,10 +74,12 @@ impl<'a> System<'a> for TargetedSystem {
             does_damage,
             does_freeze,
             does_burn,
+            moves_to_position,
             aoe_animations,
             along_ray_animations,
             mut apply_damages,
             teleports,
+            mut wants_to_move,
             mut wants_to_teleport,
             mut is_frozen,
             mut is_burning,
@@ -235,6 +240,26 @@ impl<'a> System<'a> for TargetedSystem {
                 }
             }
 
+            // Component: SpawnsEntityInAreaWhenTargeted
+            let spawns_entities_when_targeted = spawns_entity_in_area.get(want_target.thing);
+            if let Some(spawns) = spawns_entities_when_targeted {
+                let points = rltk::field_of_view(target_point, spawns.radius, &*map);
+                for pt in points.iter() {
+                    spawn_buffer.request(EntitySpawnRequest {
+                        x: pt.x,
+                        y: pt.y,
+                        kind: spawns.kind
+                    })
+                }
+            }
+
+            // Component: MoveToPositionWhenTargeted
+            let moves_to_point = moves_to_position.get(want_target.thing);
+            if let Some(moves_to_point) = moves_to_point {
+                wants_to_move.insert(user, WantsToMoveToPosition {pt: target_point.clone()})
+                    .expect("Could not insert WantsToMoveToPosition.");
+            }
+
             // Component: AreaOfEffectAnimationWhenTargeted
             let has_aoe_animation = aoe_animations.get(want_target.thing);
             if let Some(has_aoe_animation) = has_aoe_animation {
@@ -258,21 +283,9 @@ impl<'a> System<'a> for TargetedSystem {
                     target_y: target_point.y,
                     fg: has_ray_animation.fg,
                     bg: has_ray_animation.bg,
-                    glyph: has_ray_animation.glyph
+                    glyph: has_ray_animation.glyph,
+                    until_blocked: has_ray_animation.until_blocked
                 })
-            }
-
-            // Component: SpawnsEntityInAreaWhenTargeted
-            let spawns_entities_when_targeted = spawns_entity_in_area.get(want_target.thing);
-            if let Some(spawns) = spawns_entities_when_targeted {
-                let points = rltk::field_of_view(target_point, spawns.radius, &*map);
-                for pt in points.iter() {
-                    spawn_buffer.request(EntitySpawnRequest {
-                        x: pt.x,
-                        y: pt.y,
-                        kind: spawns.kind
-                    })
-                }
             }
 
             // If the thing was single use, clean it up.
@@ -319,8 +332,8 @@ fn find_targets<'a>(map: &'a Map, user_pos: Point, target_pos: Point, kind: Targ
                 }
             }
         }
-        TargetingKind::AlongRay => {
-            let tiles = map.get_ray_tiles(user_pos, target_pos);
+        TargetingKind::AlongRay {until_blocked} => {
+            let tiles = map.get_ray_tiles(user_pos, target_pos, until_blocked);
             let last_tile = tiles.last();
             if let Some(tile) = last_tile {
                 let idx = map.xy_idx(tile.x, tile.y);

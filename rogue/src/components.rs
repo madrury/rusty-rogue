@@ -43,7 +43,7 @@ pub struct Castable {}
 pub enum TargetingKind {
     Simple,
     AreaOfEffect {radius: f32},
-    AlongRay
+    AlongRay {until_blocked: bool}
 }
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Targeted {
@@ -159,7 +159,8 @@ pub struct AreaOfEffectAnimationWhenTargeted {
 pub struct AlongRayAnimationWhenTargeted {
     pub fg: RGB,
     pub bg: RGB,
-    pub glyph: rltk::FontCharType
+    pub glyph: rltk::FontCharType,
+    pub until_blocked: bool
 }
 
 //------------------------------------------------------------------
@@ -405,6 +406,10 @@ pub struct ProvidesChillImmunityWhenUsed {
 // position.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct MovesToRandomPosition {}
+
+// An eintity with this compoent move the using entity to a targeted position.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct MoveToPositionWhenTargeted {}
 
 // Component indicates that the entity has a random chance to spawn entities in
 // an adjacent space.
@@ -665,6 +670,12 @@ pub struct WantsToEquipItem {
 pub struct WantsToRemoveItem {
     pub item: Entity,
     pub slot: EquipmentSlot,
+}
+
+// The entiity has requested to move to a specific map position.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct WantsToMoveToPosition {
+    pub pt: Point
 }
 
 // The entiity has requested to teleport to a random map position.

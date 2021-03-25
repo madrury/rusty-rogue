@@ -35,7 +35,8 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .with(AlongRayAnimationWhenTargeted {
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('•')
+            glyph: rltk::to_cp437('•'),
+            until_blocked: true
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();

@@ -45,6 +45,7 @@ pub enum AnimationRequest {
         fg: RGB,
         bg: RGB,
         glyph: rltk::FontCharType,
+        until_blocked: bool
     },
     Teleportation {
         x: i32,
@@ -111,13 +112,15 @@ impl<'a> System<'a> for AnimationInitSystem {
                     fg,
                     bg,
                     glyph,
+                    until_blocked
                 } => make_along_ray_animation(
                     &*map,
                     Point {x: *source_x, y: *source_y},
                     Point {x: *target_x, y: *target_y},
                     *fg,
                     *bg,
-                    *glyph
+                    *glyph,
+                    *until_blocked
                 ),
                 AnimationRequest::Teleportation {x, y, bg}
                     => make_teleportation_animation(*x, *y, *bg),
@@ -219,10 +222,11 @@ fn make_along_ray_animation(
     target: Point,
     fg: RGB,
     bg: RGB,
-    glyph: rltk::FontCharType
+    glyph: rltk::FontCharType,
+    until_blocked: bool
 ) -> Vec<ParticleRequest> {
     let mut particles = Vec::new();
-    let tiles = map.get_ray_tiles(source, target);
+    let tiles = map.get_ray_tiles(source, target, until_blocked);
     for (i, tile) in tiles.into_iter().enumerate() {
         particles.push(ParticleRequest {
             x: tile.x,

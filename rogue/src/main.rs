@@ -142,6 +142,8 @@ impl State {
     }
 
     fn run_cleanup_systems(&mut self) {
+        let mut pos = PositionMovementSystem {};
+        pos.run_now(&self.ecs);
         DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
@@ -668,6 +670,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToUseTargeted>();
     gs.ecs.register::<WantsToEquipItem>();
     gs.ecs.register::<WantsToRemoveItem>();
+    gs.ecs.register::<WantsToMoveToPosition>();
     gs.ecs.register::<WantsToMoveToRandomPosition>();
     gs.ecs.register::<WantsToDissipate>();
     gs.ecs.register::<ProvidesFullHealing>();
@@ -680,6 +683,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsDamageWhenEncroachedUpon>();
     gs.ecs.register::<InflictsFreezingWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenTargeted>();
+    gs.ecs.register::<MoveToPositionWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenEncroachedUpon>();
     gs.ecs.register::<InflictsFreezingWhenEncroachedUpon>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();

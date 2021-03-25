@@ -879,8 +879,8 @@ fn draw_targeting_system(
                     ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
                 }
             }
-            TargetingKind::AlongRay => {
-                let ray = map.get_ray_tiles(*ppos, *target);
+            TargetingKind::AlongRay {until_blocked} => {
+                let ray = map.get_ray_tiles(*ppos, *target, until_blocked);
                 if mouse_within_range && ray.contains(point) {
                     ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
                 }
