@@ -1,4 +1,3 @@
-use super::components::*;
 use specs::error::NoError;
 use specs::prelude::*;
 use specs::saveload::{
@@ -7,6 +6,10 @@ use specs::saveload::{
 use std::fs;
 use std::fs::File;
 use std::path::Path;
+
+use super::components::*;
+use super::components::animation::*;
+
 
 macro_rules! serialize_individually {
     ($ecs:expr, $ser:expr, $data:expr, $( $type:ty),*) => {

@@ -1,7 +1,7 @@
 use specs::prelude::*;
 use super::{
     Map, TileType, CombatStats, WantsToMeleeAttack, Name, WantsToTakeDamage,
-    GameLog, Renderable, Position, AnimationBuilder, AnimationRequest,
+    GameLog, Renderable, Position, AnimationRequestBuffer, AnimationRequest,
     Equipped, GrantsMeleeAttackBonus,
     ElementalDamageKind
 };
@@ -21,7 +21,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         Entities<'a>,
         WriteExpect<'a, Map>,
         WriteExpect<'a, GameLog>,
-        WriteExpect<'a, AnimationBuilder>,
+        WriteExpect<'a, AnimationRequestBuffer>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, CombatStats>,
         ReadStorage<'a, Equipped>,

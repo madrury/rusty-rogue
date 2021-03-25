@@ -1,4 +1,4 @@
-use super::{ParticleLifetime, Position, Renderable};
+use super::{GameAnimationParticle, Position, Renderable};
 use rltk::{Rltk, RGB};
 use specs::prelude::*;
 
@@ -33,12 +33,12 @@ pub struct ParticleRequest {
 
 // A container for requests to add particles to the ECS. This is added to the
 // ECS as a writable resource.
-pub struct ParticleBuilder {
+pub struct ParticleRequestBuffer {
     requests: Vec<ParticleRequest>,
 }
-impl ParticleBuilder {
-    pub fn new() -> ParticleBuilder {
-        ParticleBuilder {
+impl ParticleRequestBuffer {
+    pub fn new() -> ParticleRequestBuffer {
+        ParticleRequestBuffer {
             requests: Vec::new(),
         }
     }
@@ -52,17 +52,19 @@ impl ParticleBuilder {
     }
 }
 
+//----------------------------------------------------------------------------
 // A system responsible for monitoring the ParticleBuilder contianer and
 // actually adding any requested particles (represented as ParticleLifetime
 // objects) to the ECS.
+//----------------------------------------------------------------------------
 pub struct ParticleInitSystem {}
 
 impl<'a> System<'a> for ParticleInitSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         Entities<'a>,
-        WriteStorage<'a, ParticleLifetime>,
-        WriteExpect<'a, ParticleBuilder>,
+        WriteStorage<'a, GameAnimationParticle>,
+        WriteExpect<'a, ParticleRequestBuffer>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -72,7 +74,7 @@ impl<'a> System<'a> for ParticleInitSystem {
             particles
                 .insert(
                     p,
-                    ParticleLifetime {
+                    GameAnimationParticle {
                         lifetime: request.lifetime,
                         delay: request.delay,
                         displayed: false,
@@ -99,7 +101,7 @@ impl<'a> System<'a> for ParticleRenderSystem {
         Entities<'a>,
         WriteStorage<'a, Position>,
         WriteStorage<'a, Renderable>,
-        WriteStorage<'a, ParticleLifetime>,
+        WriteStorage<'a, GameAnimationParticle>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -132,7 +134,7 @@ impl<'a> System<'a> for ParticleRenderSystem {
 pub fn update_particle_lifetimes(ecs: &mut World, ctx: &Rltk) {
     let mut dead_particles: Vec<Entity> = Vec::new();
     {
-        let mut particles = ecs.write_storage::<ParticleLifetime>();
+        let mut particles = ecs.write_storage::<GameAnimationParticle>();
         let entities = ecs.entities();
         for (entity, mut particle) in (&entities, &mut particles).join() {
             if particle.lifetime <= 0.0 {
@@ -150,6 +152,6 @@ pub fn update_particle_lifetimes(ecs: &mut World, ctx: &Rltk) {
 }
 
 pub fn is_any_animation_alive(ecs: &World) -> bool {
-    let particles = ecs.read_storage::<ParticleLifetime>();
+    let particles = ecs.read_storage::<GameAnimationParticle>();
     particles.join().next().is_some()
 }

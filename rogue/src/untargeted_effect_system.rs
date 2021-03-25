@@ -1,6 +1,6 @@
 
 use super::{
-    CombatStats, HungerClock, GameLog, AnimationBuilder, AnimationRequest,
+    CombatStats, HungerClock, GameLog, AnimationRequestBuffer, AnimationRequest,
     Name, Position, Renderable, WantsToUseUntargeted, Consumable, Untargeted,
     ProvidesFullHealing, ProvidesFullFood, MovesToRandomPosition,
     WantsToMoveToRandomPosition, IncreasesMaxHpWhenUsed,
@@ -18,7 +18,7 @@ pub struct UntargetedSystem {}
 pub struct UntargetedSystemData<'a> {
     entities: Entities<'a>,
     log: WriteExpect<'a, GameLog>,
-    animation_builder: WriteExpect<'a, AnimationBuilder>,
+    animation_builder: WriteExpect<'a, AnimationRequestBuffer>,
     names: ReadStorage<'a, Name>,
     positions: ReadStorage<'a, Position>,
     renderables: ReadStorage<'a, Renderable>,

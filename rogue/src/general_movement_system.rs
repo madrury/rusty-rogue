@@ -1,6 +1,6 @@
 use super::{
     Map, Point, Position, Viewshed, Renderable, BlocksTile,
-    WantsToMoveToRandomPosition, WantsToMoveToPosition, AnimationBuilder,
+    WantsToMoveToRandomPosition, WantsToMoveToPosition, AnimationRequestBuffer,
     AnimationRequest
 };
 use specs::prelude::*;
@@ -14,7 +14,7 @@ pub struct TeleportationSystemData<'a> {
     entities: Entities<'a>,
     map: ReadExpect<'a, Map>,
     rng: WriteExpect<'a, RandomNumberGenerator>,
-    animation_builder: WriteExpect<'a, AnimationBuilder>,
+    animation_builder: WriteExpect<'a, AnimationRequestBuffer>,
     positions: WriteStorage<'a, Position>,
     renderables: ReadStorage<'a, Renderable>,
     wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,

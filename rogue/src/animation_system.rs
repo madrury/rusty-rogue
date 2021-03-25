@@ -1,4 +1,4 @@
-use super::{Map, ParticleBuilder, ParticleRequest};
+use super::{Map, ParticleRequestBuffer, ParticleRequest};
 use rltk::{Point, RGB};
 use specs::prelude::*;
 
@@ -56,12 +56,12 @@ pub enum AnimationRequest {
 
 //  A buffer for holding current animation requests. Added to the ECS as a
 //  resource, so any entity may access it.
-pub struct AnimationBuilder {
+pub struct AnimationRequestBuffer {
     requests: Vec<AnimationRequest>,
 }
-impl AnimationBuilder {
-    pub fn new() -> AnimationBuilder {
-        AnimationBuilder {
+impl AnimationRequestBuffer {
+    pub fn new() -> AnimationRequestBuffer {
+        AnimationRequestBuffer {
             requests: Vec::new(),
         }
     }
@@ -78,14 +78,14 @@ impl<'a> System<'a> for AnimationInitSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         ReadExpect<'a, Map>,
-        WriteExpect<'a, AnimationBuilder>,
-        WriteExpect<'a, ParticleBuilder>,
+        WriteExpect<'a, AnimationRequestBuffer>,
+        WriteExpect<'a, ParticleRequestBuffer>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (map, mut animation_builder, mut particle_builder) = data;
+        let (map, mut animation_builder, mut particle_request_buffer) = data;
         for request in animation_builder.requests.iter() {
-            particle_builder.request_many(match request {
+            particle_request_buffer.request_many(match request {
                 AnimationRequest::MeleeAttack {x, y, bg, glyph} => {
                     make_melee_animation(*x, *y, *bg, *glyph)
                 }

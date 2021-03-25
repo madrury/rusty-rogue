@@ -4,6 +4,8 @@ use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
 
 mod components;
 pub use components::*;
+pub use components::animation::*;
+pub use components::*;
 pub mod map_builders;
 pub mod entity_spawners;
 mod save_load;
@@ -695,7 +697,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusIsBurning>();
     gs.ecs.register::<StatusIsImmuneToFire>();
     gs.ecs.register::<StatusIsImmuneToChill>();
-    gs.ecs.register::<ParticleLifetime>();
+    gs.ecs.register::<GameAnimationParticle>();
     gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
     gs.ecs.register::<AlongRayAnimationWhenTargeted>();
 
@@ -705,8 +707,8 @@ fn main() -> rltk::BError {
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     gs.ecs.insert(RunState::MapGeneration {});
     gs.ecs.insert(GameLog::new());
-    gs.ecs.insert(AnimationBuilder::new());
-    gs.ecs.insert(ParticleBuilder::new());
+    gs.ecs.insert(AnimationRequestBuffer::new());
+    gs.ecs.insert(ParticleRequestBuffer::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
 
     let player = entity_spawners::spawn_player(&mut gs.ecs, 0, 0);

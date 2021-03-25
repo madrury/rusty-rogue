@@ -6,6 +6,8 @@ use serde::{Serialize, Deserialize};
 use rltk::{RGB, Point};
 use super::{GameLog};
 
+pub mod animation;
+
 
 //----------------------------------------------------------------------------
 // Tagging Components
@@ -124,44 +126,6 @@ pub struct InBackpack {
     pub owner: Entity
 }
 
-//------------------------------------------------------------------
-// Animation System Components
-//------------------------------------------------------------------
-// Represents an atomic piece of game animation.
-#[derive(Component)]
-pub struct ParticleLifetime {
-    pub lifetime : f32,
-    // How many milliseconds after the animation starts should this particle be
-    // displayed?
-    pub delay: f32,
-    // For how long should this particle be displayed?
-    pub displayed: bool,
-    pub x: i32,
-    pub y: i32,
-    pub fg: RGB,
-    pub bg: RGB,
-    pub glyph: rltk::FontCharType
-}
-
-// Component for effects that create an area of effect animation when
-// used as a targeted effect.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct AreaOfEffectAnimationWhenTargeted {
-    pub radius: i32,
-    pub fg: RGB,
-    pub bg: RGB,
-    pub glyph: rltk::FontCharType
-}
-
-// Component for effects that create an animation along a ray (so, say a
-// fireball) when used as a targeted effect.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct AlongRayAnimationWhenTargeted {
-    pub fg: RGB,
-    pub bg: RGB,
-    pub glyph: rltk::FontCharType,
-    pub until_blocked: bool
-}
 
 //------------------------------------------------------------------
 // Entity Stats Components

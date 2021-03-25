@@ -1,5 +1,5 @@
 use super::{
-    Map, Point, CombatStats, GameLog, AnimationBuilder, AnimationRequest,
+    Map, Point, CombatStats, GameLog, AnimationRequestBuffer, AnimationRequest,
     EntitySpawnRequestBuffer, EntitySpawnRequest, Name, Renderable,
     Consumable, SpellCharges, Position, WantsToUseTargeted, Targeted,
     TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
@@ -23,7 +23,7 @@ pub struct TargetedSystemData<'a> {
         entities: Entities<'a>,
         map: ReadExpect<'a, Map>,
         log: WriteExpect<'a, GameLog>,
-        animation_builder: WriteExpect<'a, AnimationBuilder>,
+        animation_builder: WriteExpect<'a, AnimationRequestBuffer>,
         spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
         names: ReadStorage<'a, Name>,
         renderables: ReadStorage<'a, Renderable>,
