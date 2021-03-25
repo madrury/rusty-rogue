@@ -9,6 +9,7 @@ use std::path::Path;
 
 use super::components::*;
 use super::components::animation::*;
+use super::components::hunger::*;
 
 
 macro_rules! serialize_individually {

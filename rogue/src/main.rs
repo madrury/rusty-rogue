@@ -5,7 +5,7 @@ use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
 mod components;
 pub use components::*;
 pub use components::animation::*;
-pub use components::*;
+pub use components::hunger::*;
 pub mod map_builders;
 pub mod entity_spawners;
 mod save_load;

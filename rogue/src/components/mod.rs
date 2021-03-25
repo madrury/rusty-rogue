@@ -7,6 +7,7 @@ use rltk::{RGB, Point};
 use super::{GameLog};
 
 pub mod animation;
+pub mod hunger;
 
 
 //----------------------------------------------------------------------------
@@ -154,31 +155,6 @@ impl CombatStats {
     }
     pub fn increase_max_hp(&mut self, amount: i32) {
         self.max_hp += amount;
-    }
-}
-
-//------------------------------------------------------------------
-// Hunger System Components
-//------------------------------------------------------------------
-#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum HungerState {
-    WellFed,
-    Normal,
-    Hungry,
-    Starving
-}
-
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct HungerClock {
-    pub state: HungerState,
-    pub state_duration: i32,
-    pub time: i32,
-    pub tick_damage: i32
-}
-impl HungerClock {
-    pub fn satiate(&mut self) {
-        self.state = HungerState::WellFed;
-        self.time = self.state_duration;
     }
 }
 
