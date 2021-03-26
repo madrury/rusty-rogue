@@ -14,6 +14,7 @@ use super::components::magic::*;
 use super::components::ai::*;
 use super::components::game_effects::*;
 use super::components::spawn_despawn::*;
+use super::components::status_effects::*;
 
 
 macro_rules! serialize_individually {
