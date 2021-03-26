@@ -3,9 +3,11 @@ use specs::prelude::*;
 use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
 
 mod components;
-pub use components::*;
-pub use components::animation::*;
-pub use components::hunger::*;
+use components::*;
+use components::animation::*;
+use components::hunger::*;
+use components::magic::*;
+
 pub mod map_builders;
 pub mod entity_spawners;
 mod save_load;

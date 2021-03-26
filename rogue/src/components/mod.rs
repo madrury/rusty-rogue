@@ -8,6 +8,7 @@ use super::{GameLog};
 
 pub mod animation;
 pub mod hunger;
+pub mod magic;
 
 
 //----------------------------------------------------------------------------
@@ -158,47 +159,10 @@ impl CombatStats {
     }
 }
 
-//------------------------------------------------------------------
-// Magic System Components
-//------------------------------------------------------------------
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InSpellBook {
-    pub owner: Entity
-}
-
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct SpellCharges {
-    pub max_charges: i32,
-    pub charges: i32,
-    pub regen_time: i32,
-    pub time: i32
-}
-impl SpellCharges {
-    pub fn expend_charge(&mut self) {
-        self.charges = i32::max(0, self.charges - 1);
-        self.time = 0;
-    }
-    // Return value indicated if a cast has recharged.
-    pub fn tick(&mut self) -> bool {
-        self.time = i32::min(self.time + 1, self.regen_time);
-        if self.time == self.regen_time && self.charges < self.max_charges {
-            self.charges += 1;
-            self.time = 0;
-            return true
-        }
-        // We don't want to let the time fill when we're at max charges, since
-        // then we could spam spells at max charge each turn.
-        if self.charges == self.max_charges {
-            self.time = 0;
-        }
-        false
-    }
-}
 
 //------------------------------------------------------------------
 // Monster AI Components
 //------------------------------------------------------------------
-
 // Component tags monsters if they can act in a given turn.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct CanAct {}
@@ -236,7 +200,6 @@ pub struct MonsterAttackSpellcasterAI {
     pub distance_to_keep_away: i32,
     pub routing_options: MovementRoutingOptions
 }
-
 
 //------------------------------------------------------------------
 // Spawn Components
