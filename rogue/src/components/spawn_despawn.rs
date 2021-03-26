@@ -47,3 +47,8 @@ pub struct ChanceToSpawnAdjacentEntity {
 pub struct ChanceToDissipate {
     pub chance: i32,
 }
+
+// An entity with this component has dissipated and should be removed from the
+// ECS at the end of the current turn.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct WantsToDissipate {}

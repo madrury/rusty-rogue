@@ -3,7 +3,7 @@ use specs_derive::*;
 use specs::saveload::{ConvertSaveload, Marker};
 use specs::error::NoError;
 use serde::{Serialize, Deserialize};
-use super::{ElementalDamageKind};
+use super::signaling::{ElementalDamageKind};
 
 //------------------------------------------------------------------
 // Game effects components
