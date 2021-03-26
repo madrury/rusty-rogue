@@ -7,6 +7,7 @@ use components::*;
 use components::animation::*;
 use components::hunger::*;
 use components::magic::*;
+use components::ai::*;
 
 pub mod map_builders;
 pub mod entity_spawners;

@@ -11,6 +11,7 @@ use super::components::*;
 use super::components::animation::*;
 use super::components::hunger::*;
 use super::components::magic::*;
+use super::components::ai::*;
 
 
 macro_rules! serialize_individually {

@@ -9,6 +9,7 @@ use super::{GameLog};
 pub mod animation;
 pub mod hunger;
 pub mod magic;
+pub mod ai;
 
 
 //----------------------------------------------------------------------------
@@ -117,11 +118,6 @@ pub struct IsEntityKind {
     pub kind: EntitySpawnKind
 }
 
-//------------------------------------------------------------------
-// Location components.
-// These components tag an entity as in some (abstract, non-physical) location.
-// In someone's inventory or spellbook, for example.
-//------------------------------------------------------------------
 // Component for a held item. Points to the entity that owns it.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InBackpack {
@@ -160,46 +156,6 @@ impl CombatStats {
 }
 
 
-//------------------------------------------------------------------
-// Monster AI Components
-//------------------------------------------------------------------
-// Component tags monsters if they can act in a given turn.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct CanAct {}
-
-// Comonent holding data determining a monster's movement behaviour.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct MovementRoutingOptions {
-    pub avoid_blocked: bool,
-    pub avoid_fire: bool,
-    pub avoid_chill: bool
-}
-
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct MonsterBasicAI {
-    pub only_follow_within_viewshed: bool,
-    pub no_visibility_wander: bool,
-    pub lost_visibility_keep_following_turns_max: i32,
-    pub lost_visibility_keep_following_turns_remaining: i32,
-    pub routing_options: MovementRoutingOptions
-}
-impl MonsterBasicAI {
-    pub fn reset_keep_following(&mut self) {
-        self.lost_visibility_keep_following_turns_remaining = self.lost_visibility_keep_following_turns_max
-    }
-    pub fn do_keep_following(&self) -> bool {
-        self.lost_visibility_keep_following_turns_remaining > 0
-    }
-    pub fn decrement_keep_following(&mut self) {
-        self.lost_visibility_keep_following_turns_remaining -= 1
-    }
-}
-
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct MonsterAttackSpellcasterAI {
-    pub distance_to_keep_away: i32,
-    pub routing_options: MovementRoutingOptions
-}
 
 //------------------------------------------------------------------
 // Spawn Components
