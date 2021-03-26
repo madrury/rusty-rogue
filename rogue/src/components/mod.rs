@@ -10,6 +10,8 @@ pub mod animation;
 pub mod hunger;
 pub mod magic;
 pub mod ai;
+pub mod game_effects;
+pub mod spawn_despawn;
 
 
 //----------------------------------------------------------------------------
@@ -153,135 +155,6 @@ impl CombatStats {
     pub fn increase_max_hp(&mut self, amount: i32) {
         self.max_hp += amount;
     }
-}
-
-
-
-//------------------------------------------------------------------
-// Spawn Components
-//
-// These components influence entity spawning behaviour.
-//------------------------------------------------------------------
-// Enumerates the various types of entities that can spawn. Used to tag a spawn
-// request to lookup the appropriate function used to spawn the entity.
-#[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
-pub enum EntitySpawnKind {
-    Fire {spread_chance: i32, dissipate_chance: i32},
-    Chill {spread_chance: i32, dissipate_chance: i32},
-}
-// Component indicates that a targeted effect spawns new entities when resolved.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct SpawnsEntityInAreaWhenTargeted {
-    pub radius: i32,
-    pub kind: EntitySpawnKind
-}
-
-//------------------------------------------------------------------
-// Game effects components
-//------------------------------------------------------------------
-// Component for effects that increase the user's maximum hp.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct IncreasesMaxHpWhenUsed {
-    pub amount: i32
-}
-
-// Component for effects that inflict damage when thrown or cast.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsDamageWhenTargeted {
-    pub damage: i32,
-    pub kind: ElementalDamageKind
-}
-
-// Component for entities that inflict damage on any other entity occupying the
-// same position.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsDamageWhenEncroachedUpon {
-    pub damage: i32,
-    pub kind: ElementalDamageKind
-}
-
-// Component for effects that inflict the frozen status.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsFreezingWhenTargeted {
-    pub turns: i32
-}
-
-// Component for effects that inflict the burning status when used as a targeted
-// effect.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsBurningWhenTargeted {
-    pub turns: i32,
-    pub tick_damage: i32
-}
-
-// Component for effects that inflict the burning status on any other entity
-// occupyting the same space.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsBurningWhenEncroachedUpon {
-    pub turns: i32,
-    pub tick_damage: i32
-}
-
-// Component for effects that inflict the freezing status on any other entity
-// occupyting the same space.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsFreezingWhenEncroachedUpon {
-    pub turns: i32,
-}
-
-// Component for effects that grant a MeleeAttackBonus
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct GrantsMeleeAttackBonus {
-    pub bonus: i32
-}
-
-// Component for effects that grant a MeleeAttackBonus
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct GrantsMeleeDefenseBonus {
-    pub bonus: i32
-}
-
-// An entity with this component, when used, restores all of the users hp.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct ProvidesFullHealing {}
-
-// An entity with this component, when used, restores the user to well fed.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct ProvidesFullFood {}
-
-// An entity with this component, when used, grants fire immunity.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct ProvidesFireImmunityWhenUsed {
-    pub turns: i32
-}
-
-// An entity with this component, when used, grants chill immunity.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct ProvidesChillImmunityWhenUsed {
-    pub turns: i32
-}
-
-// An entity with this component, when used, teleports the user to a random
-// position.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct MovesToRandomPosition {}
-
-// An eintity with this compoent move the using entity to a targeted position.
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct MoveToPositionWhenTargeted {}
-
-// Component indicates that the entity has a random chance to spawn entities in
-// an adjacent space.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct ChanceToSpawnAdjacentEntity {
-    pub chance: i32,
-    pub kind: EntitySpawnKind
-}
-
-// An entity with this component has a chance to dissipate every turn.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct ChanceToDissipate {
-    pub chance: i32,
 }
 
 //------------------------------------------------------------------

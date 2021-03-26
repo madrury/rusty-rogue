@@ -12,6 +12,8 @@ use super::components::animation::*;
 use super::components::hunger::*;
 use super::components::magic::*;
 use super::components::ai::*;
+use super::components::game_effects::*;
+use super::components::spawn_despawn::*;
 
 
 macro_rules! serialize_individually {

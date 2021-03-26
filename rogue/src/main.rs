@@ -8,6 +8,8 @@ use components::animation::*;
 use components::hunger::*;
 use components::magic::*;
 use components::ai::*;
+use components::game_effects::*;
+use components::spawn_despawn::*;
 
 pub mod map_builders;
 pub mod entity_spawners;
