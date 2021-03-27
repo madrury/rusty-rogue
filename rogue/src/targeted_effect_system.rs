@@ -8,8 +8,7 @@ use super::{
     AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
     WantsToTakeDamage, WantsToMoveToPosition, WantsToMoveToRandomPosition,
     StatusIsFrozen, StatusIsBurning, SpawnsEntityInAreaWhenTargeted,
-    StatusIsImmuneToFire,
-    StatusIsImmuneToChill
+    StatusIsImmuneToFire, StatusIsImmuneToChill, new_status_with_immunity
 };
 use specs::prelude::*;
 
@@ -47,8 +46,8 @@ pub struct TargetedSystemData<'a> {
         wants_to_teleport: WriteStorage<'a, WantsToMoveToRandomPosition>,
         is_frozen: WriteStorage<'a, StatusIsFrozen>,
         is_burning: WriteStorage<'a, StatusIsBurning>,
-        is_fire_immune: ReadStorage<'a, StatusIsImmuneToFire>,
-        is_chill_immune: ReadStorage<'a, StatusIsImmuneToChill>,
+        is_fire_immune: WriteStorage<'a, StatusIsImmuneToFire>,
+        is_chill_immune: WriteStorage<'a, StatusIsImmuneToChill>,
 }
 
 impl<'a> System<'a> for TargetedSystem {
@@ -195,48 +194,47 @@ impl<'a> System<'a> for TargetedSystem {
                 // Component: InflictsFreezingWhenTargeted
                 let thing_freezes = does_freeze.get(want_target.thing);
                 if let Some(thing_freezes) = thing_freezes {
-                    let play_message = StatusIsFrozen::new_status(
+                    let play_message = new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
                         &mut is_frozen,
                         &is_chill_immune,
                         *target,
                         thing_freezes.turns
                     );
-                    let thing_name = names.get(want_target.thing);
-                    let target_name = names.get(*target);
-                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                        if play_message {
-                            log.entries.push(format!(
-                                "You {} the {}, freezing {} in place.",
-                                verb,
-                                thing_name.name,
-                                target_name.name,
-                            ))
-                        }
-                    }
+                    // let thing_name = names.get(want_target.thing);
+                    // let target_name = names.get(*target);
+                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                    //     if play_message {
+                    //         log.entries.push(format!(
+                    //             "You {} the {}, freezing {} in place.",
+                    //             verb,
+                    //             thing_name.name,
+                    //             target_name.name,
+                    //         ))
+                    //     }
+                    // }
                 }
 
                 // Component: InflictsBurningWhenTargeted
                 let thing_burns = does_burn.get(want_target.thing);
                 if let Some(thing_burns) = thing_burns {
-                    let play_message = StatusIsBurning::new_status(
+                    let play_message = new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                         &mut is_burning,
                         &is_fire_immune,
                         *target,
                         thing_burns.turns,
-                        thing_burns.tick_damage
                     );
-                    let thing_name = names.get(want_target.thing);
-                    let target_name = names.get(*target);
-                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                        if play_message {
-                            log.entries.push(format!(
-                                "You {} the {}, stting {} ablaze.",
-                                verb,
-                                thing_name.name,
-                                target_name.name,
-                            ))
-                        }
-                    }
+                //     let thing_name = names.get(want_target.thing);
+                //     let target_name = names.get(*target);
+                //     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                //         if play_message {
+                //             log.entries.push(format!(
+                //                 "You {} the {}, stting {} ablaze.",
+                //                 verb,
+                //                 thing_name.name,
+                //                 target_name.name,
+                //             ))
+                //         }
+                //     }
                 }
             }
 

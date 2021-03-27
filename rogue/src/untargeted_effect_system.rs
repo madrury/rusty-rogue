@@ -5,7 +5,7 @@ use super::{
     ProvidesFullHealing, ProvidesFullFood, MovesToRandomPosition,
     WantsToMoveToRandomPosition, IncreasesMaxHpWhenUsed,
     ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
-    StatusIsImmuneToFire, StatusIsImmuneToChill
+    StatusIsImmuneToFire, StatusIsImmuneToChill, new_status
 };
 use specs::prelude::*;
 
@@ -131,39 +131,39 @@ impl<'a> System<'a> for UntargetedSystem {
             // Component: ProvidesFireImmunityWhenUsed
             let thing_provides_fire_immunity = provides_fire_immunity.get(want_use.thing);
             if let Some(provides_immunity) = thing_provides_fire_immunity {
-                StatusIsImmuneToFire::new_status(
+                new_status::<StatusIsImmuneToFire>(
                     &mut status_fire_immunity,
                     entity,
                     provides_immunity.turns
                 );
-                let name = names.get(entity);
-                if let (Some(name), Some(thing_name)) = (name, thing_name) {
-                    log.entries.push(format!(
-                        "{} {} the {}, and no longer fears fire.",
-                        name.name,
-                        verb,
-                        thing_name.name
-                    ));
-                }
+                // let name = names.get(entity);
+                // if let (Some(name), Some(thing_name)) = (name, thing_name) {
+                //     log.entries.push(format!(
+                //         "{} {} the {}, and no longer fears fire.",
+                //         name.name,
+                //         verb,
+                //         thing_name.name
+                //     ));
+                // }
             }
 
             // Component: ProvidesFireImmunityWhenUsed
             let thing_provides_chill_immunity = provides_chill_immunity.get(want_use.thing);
             if let Some(provides_immunity) = thing_provides_chill_immunity {
-                StatusIsImmuneToChill::new_status(
+                new_status::<StatusIsImmuneToChill>(
                     &mut status_chill_immunity,
                     entity,
                     provides_immunity.turns
                 );
-                let name = names.get(entity);
-                if let (Some(name), Some(thing_name)) = (name, thing_name) {
-                    log.entries.push(format!(
-                        "{} {} the {}, and no longer fears cold.",
-                        name.name,
-                        verb,
-                        thing_name.name
-                    ));
-                }
+                // let name = names.get(entity);
+                // if let (Some(name), Some(thing_name)) = (name, thing_name) {
+                //     log.entries.push(format!(
+                //         "{} {} the {}, and no longer fears cold.",
+                //         name.name,
+                //         verb,
+                //         thing_name.name
+                //     ));
+                // }
             }
 
             // Compontnet: MovesToRandomPosition

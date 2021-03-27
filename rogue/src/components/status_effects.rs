@@ -1,114 +1,137 @@
-use specs::prelude::*;
-use specs_derive::*;
-use specs::saveload::{ConvertSaveload, Marker};
+use super::GameLog;
+use serde::{Deserialize, Serialize};
 use specs::error::NoError;
-use serde::{Serialize, Deserialize};
-use super::{GameLog};
+use specs::prelude::*;
+use specs::saveload::{ConvertSaveload, Marker};
+use specs_derive::*;
+
+pub fn new_status<Status: Component + StatusEffect>(
+    store: &mut WriteStorage<Status>,
+    e: Entity,
+    turns: i32,
+) {
+    if let Some(status) = store.get_mut(e) {
+        status.set_remaining_turns(i32::max(status.remaining_turns(), turns));
+    } else {
+        let status = Status::new(turns);
+        store
+            .insert(e, status)
+            .expect("Unable to insert StatusIsImmuneToFire component.");
+    }
+}
+
+pub fn new_status_with_immunity<Status, StatusImmune>(
+    store: &mut WriteStorage<Status>,
+    immune: &WriteStorage<StatusImmune>,
+    e: Entity,
+    turns: i32,
+) where
+    Status: Component + StatusEffect,
+    StatusImmune: Component + StatusEffect,
+{
+    if let Some(status) = store.get_mut(e) {
+        status.set_remaining_turns(i32::max(status.remaining_turns(), turns));
+    } else {
+        let is_immune = immune.get(e).is_some();
+        if !is_immune {
+            let status = Status::new(turns);
+            store
+                .insert(e, status)
+                .expect("Unable to insert StatusIsImmuneToFire component.");
+        }
+    }
+}
+
+pub fn tick_status<Status: Component + StatusEffect>(
+    store: &mut WriteStorage<Status>,
+    log: &mut GameLog,
+    entity: Entity,
+    msg: Option<String>,
+) {
+    let status = store.get_mut(entity);
+    if let Some(status) = status {
+        if status.remaining_turns() <= 0 {
+            store.remove(entity);
+            if let Some(msg) = msg {
+                log.entries.push(msg);
+            }
+        } else {
+            status.set_remaining_turns(status.remaining_turns() - 1);
+        }
+    }
+}
+
+pub fn tick_status_with_immunity<Status, StatusImmune>(
+    store: &mut WriteStorage<Status>,
+    immune: &WriteStorage<StatusImmune>,
+    log: &mut GameLog,
+    entity: Entity,
+    msg: Option<String>,
+) where
+    Status: Component + StatusEffect,
+    StatusImmune: Component + StatusEffect,
+{
+    let status = store.get_mut(entity);
+    let is_immune = immune.get(entity).is_some();
+    if let Some(status) = status {
+        if status.remaining_turns() <= 0 || is_immune {
+            store.remove(entity);
+            if let Some(msg) = msg {
+                log.entries.push(msg);
+            }
+        } else {
+            status.set_remaining_turns(status.remaining_turns() - 1);
+        }
+    }
+}
 
 //------------------------------------------------------------------
 // Status Effect Components
 //------------------------------------------------------------------
-// TODO: Figure out how to write a generalized tick function.
+
+pub trait StatusEffect {
+    fn new(turns: i32) -> Self;
+    fn remaining_turns(&self) -> i32;
+    fn set_remaining_turns(&mut self, turns: i32);
+}
 
 // Component indicating the entity is frozen.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct StatusIsFrozen {
-    pub remaining_turns: i32
+    pub remaining_turns: i32,
 }
-impl StatusIsFrozen {
-    // Attempt to add the burning status to an enetity and return a boolean
-    // indicating if this was successful.
-    pub fn new_status(
-        store: &mut WriteStorage<StatusIsFrozen>,
-        immune: &ReadStorage<StatusIsImmuneToChill>,
-        victim: Entity,
-        turns: i32) -> bool
-    {
-        if immune.get(victim).is_some() {
-            return false
-        }
-        if let Some(frozen) = store.get_mut(victim) {
-            frozen.remaining_turns = i32::max(frozen.remaining_turns, turns);
-            return false
-        } else {
-            let frozen = StatusIsFrozen{remaining_turns: turns};
-            store.insert(victim, frozen)
-                .expect("Unable to insert StatusIsFrozen component.");
-            return true
+impl StatusEffect for StatusIsFrozen {
+    fn new(turns: i32) -> StatusIsFrozen {
+        StatusIsFrozen {
+            remaining_turns: turns,
         }
     }
-
-    pub fn tick(
-        store: &mut WriteStorage<StatusIsFrozen>,
-        immune: &mut WriteStorage<StatusIsImmuneToChill>,
-        log: &mut GameLog,
-        entity: Entity,
-        msg: Option<String>)
-    {
-        let frozen = store.get_mut(entity);
-        let is_immune = immune.get(entity).is_some();
-        if let Some(frozen) = frozen {
-            if frozen.remaining_turns <= 0 || is_immune {
-                store.remove(entity);
-                if let Some(msg) = msg {
-                    log.entries.push(msg);
-                }
-            } else {
-                frozen.remaining_turns -= 1;
-            }
-        }
+    fn remaining_turns(&self) -> i32 {
+        self.remaining_turns
+    }
+    fn set_remaining_turns(&mut self, turns: i32) {
+        self.remaining_turns = turns
     }
 }
 
 // Component indicating the entity is burning.
+pub const BURNING_TICK_DAMAGE: i32 = 3;
+
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct StatusIsBurning {
     pub remaining_turns: i32,
-    pub tick_damage: i32,
 }
-impl StatusIsBurning {
-    // Attempt to add the burning status to an enetity and return a boolean
-    // indicating if this was successful.
-    pub fn new_status(
-        store: &mut WriteStorage<StatusIsBurning>,
-        immune: &ReadStorage<StatusIsImmuneToFire>,
-        victim: Entity,
-        turns: i32,
-        dmg: i32) -> bool
-    {
-        if immune.get(victim).is_some() {
-            return false
-        }
-        if let Some(burning) = store.get_mut(victim) {
-            burning.remaining_turns = i32::max(burning.remaining_turns, turns);
-            burning.tick_damage = i32::max(dmg, burning.tick_damage);
-            return false
-        } else {
-            let burning = StatusIsBurning{remaining_turns: turns, tick_damage: dmg};
-            store.insert(victim, burning)
-                .expect("Unable to insert StatusIsBurning component.");
-            return true
+impl StatusEffect for StatusIsBurning {
+    fn new(turns: i32) -> StatusIsBurning {
+        StatusIsBurning {
+            remaining_turns: turns,
         }
     }
-    pub fn tick(
-        store: &mut WriteStorage<StatusIsBurning>,
-        immune: &mut WriteStorage<StatusIsImmuneToFire>,
-        log: &mut GameLog,
-        entity: Entity,
-        msg: Option<String>)
-    {
-        let burning = store.get_mut(entity);
-        let is_immune = immune.get(entity).is_some();
-        if let Some(burning) = burning {
-            if burning.remaining_turns <= 0 || is_immune {
-                store.remove(entity);
-                if let Some(msg) = msg {
-                    log.entries.push(msg);
-                }
-            } else {
-                burning.remaining_turns -= 1;
-            }
-        }
+    fn remaining_turns(&self) -> i32 {
+        self.remaining_turns
+    }
+    fn set_remaining_turns(&mut self, turns: i32) {
+        self.remaining_turns = turns
     }
 }
 
@@ -118,33 +141,17 @@ impl StatusIsBurning {
 pub struct StatusIsImmuneToFire {
     pub remaining_turns: i32,
 }
-impl StatusIsImmuneToFire {
-    pub fn new_status(store: &mut WriteStorage<StatusIsImmuneToFire>, e: Entity, turns: i32) {
-        if let Some(immune) = store.get_mut(e) {
-            immune.remaining_turns = i32::max(immune.remaining_turns, turns);
-        } else {
-            let immune = StatusIsImmuneToFire{remaining_turns: turns};
-            store.insert(e, immune)
-                .expect("Unable to insert StatusIsImmuneToFire component.");
+impl StatusEffect for StatusIsImmuneToFire {
+    fn new(turns: i32) -> StatusIsImmuneToFire {
+        StatusIsImmuneToFire {
+            remaining_turns: turns,
         }
     }
-    pub fn tick(
-        store: &mut WriteStorage<StatusIsImmuneToFire>,
-        log: &mut GameLog,
-        entity: Entity,
-        msg: Option<String>)
-    {
-        let is_immune = store.get_mut(entity);
-        if let Some(is_immune) = is_immune {
-            if is_immune.remaining_turns <= 0 {
-                store.remove(entity);
-                if let Some(msg) = msg {
-                    log.entries.push(msg);
-                }
-            } else {
-                is_immune.remaining_turns -= 1;
-            }
-        }
+    fn remaining_turns(&self) -> i32 {
+        self.remaining_turns
+    }
+    fn set_remaining_turns(&mut self, turns: i32) {
+        self.remaining_turns = turns
     }
 }
 
@@ -154,32 +161,16 @@ impl StatusIsImmuneToFire {
 pub struct StatusIsImmuneToChill {
     pub remaining_turns: i32,
 }
-impl StatusIsImmuneToChill {
-    pub fn new_status(store: &mut WriteStorage<StatusIsImmuneToChill>, e: Entity, turns: i32) {
-        if let Some(immune) = store.get_mut(e) {
-            immune.remaining_turns = i32::max(immune.remaining_turns, turns);
-        } else {
-            let immune = StatusIsImmuneToChill{remaining_turns: turns};
-            store.insert(e, immune)
-                .expect("Unable to insert StatusIsImmuneToChill component.");
+impl StatusEffect for StatusIsImmuneToChill {
+    fn new(turns: i32) -> StatusIsImmuneToChill {
+        StatusIsImmuneToChill {
+            remaining_turns: turns,
         }
     }
-    pub fn tick(
-        store: &mut WriteStorage<StatusIsImmuneToChill>,
-        log: &mut GameLog,
-        entity: Entity,
-        msg: Option<String>)
-    {
-        let is_immune = store.get_mut(entity);
-        if let Some(is_immune) = is_immune {
-            if is_immune.remaining_turns <= 0 {
-                store.remove(entity);
-                if let Some(msg) = msg {
-                    log.entries.push(msg);
-                }
-            } else {
-                is_immune.remaining_turns -= 1;
-            }
-        }
+    fn remaining_turns(&self) -> i32 {
+        self.remaining_turns
+    }
+    fn set_remaining_turns(&mut self, turns: i32) {
+        self.remaining_turns = turns
     }
 }

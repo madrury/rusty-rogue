@@ -3,7 +3,7 @@ use super::{
     Map, Position, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire,
-    StatusIsImmuneToChill
+    StatusIsImmuneToChill, new_status, new_status_with_immunity
 };
 
 
@@ -17,8 +17,8 @@ pub struct EncroachmentSystemData<'a> {
     damage_when_encroached: ReadStorage<'a, InflictsDamageWhenEncroachedUpon>,
     burning_when_encroached: ReadStorage<'a, InflictsBurningWhenEncroachedUpon>,
     freezing_when_encroached: ReadStorage<'a, InflictsFreezingWhenEncroachedUpon>,
-    is_fire_immune: ReadStorage<'a, StatusIsImmuneToFire>,
-    is_chill_immune: ReadStorage<'a, StatusIsImmuneToChill>,
+    is_fire_immune: WriteStorage<'a, StatusIsImmuneToFire>,
+    is_chill_immune: WriteStorage<'a, StatusIsImmuneToChill>,
     wants_damage: WriteStorage<'a, WantsToTakeDamage>,
     is_burning: WriteStorage<'a, StatusIsBurning>,
     is_frozen: WriteStorage<'a, StatusIsFrozen>,
@@ -59,23 +59,22 @@ impl<'a> System<'a> for EncroachmentSystem {
                 // Component: InflictsBurningWhenEncroachedUpon.
                 let burning = burning_when_encroached.get(entity);
                 if let Some(burning) = burning {
-                    let _ = StatusIsBurning::new_status(
+                    new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                         &mut is_burning,
                         &is_fire_immune,
                         *encroaching,
                         burning.turns,
-                        burning.tick_damage
-                    );
+                    )
                 }
                 // Component: InflictsFreezingWhenEncroachedUpon.
                 let freezing = freezing_when_encroached.get(entity);
                 if let Some(freezing) = freezing {
-                    let _ =StatusIsFrozen::new_status(
+                    new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
                         &mut is_frozen,
                         &is_chill_immune,
                         *encroaching,
                         freezing.turns,
-                    );
+                    )
                 }
             }
         }

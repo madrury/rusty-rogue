@@ -4,7 +4,8 @@ use rltk::{RGB};
 use super::{
     GameLog, Name, RunState, Monster, Hazard, StatusIsFrozen,
     StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
-    WantsToTakeDamage, ElementalDamageKind
+    WantsToTakeDamage, ElementalDamageKind, tick_status,
+    tick_status_with_immunity, BURNING_TICK_DAMAGE
 };
 
 //----------------------------------------------------------------------------
@@ -43,7 +44,7 @@ impl<'a> System<'a> for StatusTickSystem {
             // expired or if the entity has aquired fire immunity.
             let msg = names.get(entity)
                 .map(|nm| format!("{} is no longer burning.", nm.name));
-            StatusIsBurning::tick(
+            tick_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                 &mut status_burning,
                 &mut status_immune_fire,
                 &mut log,
@@ -54,7 +55,7 @@ impl<'a> System<'a> for StatusTickSystem {
             // expired.
             let msg = names.get(entity)
                 .map(|nm| format!("{} is no longer frozen.", nm.name));
-            StatusIsFrozen::tick(
+            tick_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
                 &mut status_frozen,
                 &mut status_immune_chill,
                 &mut log,
@@ -65,7 +66,7 @@ impl<'a> System<'a> for StatusTickSystem {
             // status if expired.
             let msg = names.get(entity)
                 .map(|nm| format!("{} is no longer immune to flames.", nm.name));
-            StatusIsImmuneToFire::tick(
+            tick_status::<StatusIsImmuneToFire>(
                 &mut status_immune_fire,
                 &mut log,
                 entity,
@@ -75,7 +76,7 @@ impl<'a> System<'a> for StatusTickSystem {
             // status if expired.
             let msg = names.get(entity)
                 .map(|nm| format!("{} is no longer immune to chill.", nm.name));
-            StatusIsImmuneToChill::tick(
+            tick_status::<StatusIsImmuneToChill>(
                 &mut status_immune_chill,
                 &mut log,
                 entity,
@@ -143,7 +144,7 @@ impl<'a> System<'a> for StatusEffectSystem {
                     WantsToTakeDamage::new_damage(
                         &mut wants_damages,
                         entity,
-                        burning.tick_damage,
+                        BURNING_TICK_DAMAGE,
                         ElementalDamageKind::Fire
                     );
                 }
