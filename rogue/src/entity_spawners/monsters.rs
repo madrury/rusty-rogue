@@ -89,7 +89,7 @@ pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             y: y,
             name: "Goblin",
             glyph: rltk::to_cp437('g'),
-            color: RGB::named(rltk::BROWN1),
+            color: RGB::named(rltk::SADDLE_BROWN),
             view_range: GOBLIN_VIEW_RANGE,
             movement_ai: MonsterBasicAI {
                 ..GOBLIN_MOVEMENT_AI
@@ -136,7 +136,11 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                     ..GOBLIN_ROUTING_OPTIONS
                 }
             })
-            .with(CombatStats {..GOBLIN_COMBAT_STATS})
+            .with(CombatStats {
+                max_hp: 10,
+                hp: 5,
+                ..GOBLIN_COMBAT_STATS
+            })
             .with(BlocksTile {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -188,7 +192,11 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                     ..GOBLIN_ROUTING_OPTIONS
                 }
             })
-            .with(CombatStats {..GOBLIN_COMBAT_STATS})
+            .with(CombatStats {
+                max_hp: 10,
+                hp: 5,
+                ..GOBLIN_COMBAT_STATS
+            })
             .with(BlocksTile {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -228,19 +236,24 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             })
             .with(Viewshed {
                 visible_tiles: Vec::new(),
-                range: 4,
+                range: 8,
                 dirty: true,
             })
             .with(Name {
                 name: "Goblin Cleric".to_string(),
             })
             .with(MonsterClericAI {
-                distance_to_keep_away: 2,
+                distance_to_keep_away_from_monsters: 2,
+                distance_to_keep_away_from_player: 4,
                 routing_options: MovementRoutingOptions {
                     ..GOBLIN_ROUTING_OPTIONS
                 }
             })
-            .with(CombatStats {..GOBLIN_COMBAT_STATS})
+            .with(CombatStats {
+                max_hp: 10,
+                hp: 5,
+                ..GOBLIN_COMBAT_STATS
+            })
             .with(BlocksTile {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();

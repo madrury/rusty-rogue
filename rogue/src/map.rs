@@ -170,10 +170,6 @@ impl Map {
             circle.push(Point {x: source.x + radius - i, y: source.y + radius});
             circle.push(Point {x: source.x - radius, y: source.y + radius - i});
         }
-        // println!("L INF CIRCLE:");
-        // for pt in circle.iter() {
-        //     println!("    {:?}", pt);
-        // }
         circle.into_iter().filter(|pt| self.within_bounds(pt.x, pt.y)).collect()
     }
 

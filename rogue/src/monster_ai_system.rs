@@ -356,17 +356,24 @@ impl<'a> System<'a> for MonsterClericAISystem {
             let spell_to_cast = spells.next();
             let has_spell_to_cast = spell_to_cast.is_some();
 
+            let mut monsters_within_viewshed = (&entities, &monsters, &positions).join()
+                .filter(|(_e, _m, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
+                .map(|(e, _m, _p)| e)
+                .filter(|e| *e != entity);
+            let any_monsters_within_viewshed = monsters_within_viewshed.next().is_some();
+
             let mut monsters_to_heal_within_viewshed = (&entities, &monsters, &stats, &positions).join()
                 .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
-                .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp)
-                .map(|(e, _m, _s, _p)| e);
+                .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp / 2)
+                .map(|(e, _m, _s, _p)| e)
+                .filter(|e| *e != entity);
             // TODO: Take the closest monster, smrt.
             let monster_to_heal = monsters_to_heal_within_viewshed.next();
             let has_monster_to_heal = monster_to_heal.is_some();
 
             // Monster can cast spell branch.
-            // The monster can see the player and has a spell charge to expend,
-            // so they will cast the spell on the player.
+            // The monster can see a valid target and has a spell charge to
+            // expend, so they will cast the spell on that target .
             if has_spell_to_cast && has_monster_to_heal {
                 if let (Some(spell), Some(monster)) = (spell_to_cast, monster_to_heal) {
                     let mpos = positions.get(monster)
@@ -382,13 +389,26 @@ impl<'a> System<'a> for MonsterClericAISystem {
                 wants_to_melee
                     .insert(entity, WantsToMeleeAttack {target: *player})
                     .expect("Failed to insert player as melee target.");
-            // Monster can see player but has no spell to cast.
-            // The monster will try to keep a fixed distance from the player
-            // (within spell range) until their spell recharges.
-            } else if in_viewshed {
-                let zero_indicies: Vec<usize> = map
-                    .get_l_infinity_circle_around(*ppos, ai.distance_to_keep_away)
-                    .iter()
+            // TODO: Implement a bettter algorithm for positioning the cleric.
+            } else if any_monsters_within_viewshed {
+                let mut zero_indicies: Vec<usize> = (&entities, &monsters, &positions).join()
+                    .filter(|(_e, _m, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
+                    .filter(|(e, _m, _pos)| *e != entity)
+                    .map(|(_e, _m, pos)| map.get_l_infinity_circle_around(
+                        pos.to_point(), ai.distance_to_keep_away_from_monsters
+                    ))
+                    .map(|circle| {
+                        let mut furthest_point = Point {x: 0, y: 0};
+                        let mut largest_distance = 0.0;
+                        for pt in circle {
+                            let dist = rltk::DistanceAlg::Pythagoras.distance2d(pt, *ppos);
+                            if dist > largest_distance {
+                                largest_distance = dist;
+                                furthest_point = pt;
+                            }
+                        }
+                        furthest_point
+                    })
                     .map(|pt| map.xy_idx(pt.x, pt.y))
                     .collect();
                 let routing_map = &RoutingMap::from_map(&*map, &ai.routing_options);
@@ -406,6 +426,31 @@ impl<'a> System<'a> for MonsterClericAISystem {
                     let flee_target_pos = map.idx_xy(flee_target);
                     movement_buffer.push((entity, flee_target_pos))
                     // move_monster(&mut map, &mut pos, flee_target_pos.0, flee_target_pos.1, &mut viewshed);
+                }
+            // Monster can see player but no monsters.
+            // The monster will try to keep a fixed distance from the player
+            // (within spell range) until their spell recharges.
+            // TODO: The monster should flee here.
+            } else if in_viewshed {
+                let zero_indicies: Vec<usize> = map
+                    .get_l_infinity_circle_around(*ppos, ai.distance_to_keep_away_from_player)
+                    .iter()
+                    .map(|pt| map.xy_idx(pt.x, pt.y))
+                    .collect();
+                let routing_map = &RoutingMap::from_map(&*map, &ai.routing_options);
+                let dmap = rltk::DijkstraMap::new(
+                    map.width,
+                    map.height,
+                    &zero_indicies,
+                    routing_map,
+                    100.0
+                );
+                let flee_target = rltk::DijkstraMap::find_lowest_exit(
+                    &dmap, map.xy_idx(pos.x, pos.y), routing_map
+                );
+                if let Some(flee_target) = flee_target {
+                    let flee_target_pos = map.idx_xy(flee_target);
+                    movement_buffer.push((entity, flee_target_pos))
                 }
             }
             // We're done acting, so we've used up our action for the turn.
