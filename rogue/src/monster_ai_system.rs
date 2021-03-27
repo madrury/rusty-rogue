@@ -1,8 +1,9 @@
 use specs::prelude::*;
 use super::{
-    Viewshed, Monster, CanAct, MonsterBasicAI, MonsterAttackSpellcasterAI, Position, Map,
-    RoutingMap, WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen,
-    InSpellBook, Castable, SpellCharges
+    Viewshed, Monster, CombatStats, CanAct, MonsterBasicAI,
+    MonsterAttackSpellcasterAI, MonsterClericAI, Position, Map, RoutingMap,
+    WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen, InSpellBook,
+    Castable, SpellCharges
 };
 use rltk::{Point, RandomNumberGenerator};
 
@@ -146,7 +147,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
 
 
 //----------------------------------------------------------------------------
-// System for the most basic monster AI.
+// System for a spellcasting monster.
 //
 // Monsters with this AI type are attack spellcasters, i.e., they have spells
 // that they will attempt to target at the player. Otherwise, they attempt to
@@ -269,6 +270,154 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             }
             // We're done acting, so we've used up our action for the turn.
             can_acts.remove(entity).expect("Unable to remove CanAct component.");
+        }
+    }
+}
+
+//----------------------------------------------------------------------------
+// System for the most basic monster AI.
+//
+// Monsters with this AI type are attack spellcasters, i.e., they have spells
+// that they will attempt to target at the player. Otherwise, they attempt to
+// keep a ranged distance to the player and wait for their spells to recharge.
+//----------------------------------------------------------------------------
+pub struct MonsterClericAISystem {}
+
+#[derive(SystemData)]
+pub struct MonsterClericAISystemData<'a> {
+    entities: Entities<'a>,
+    map: WriteExpect<'a, Map>,
+    ppos: ReadExpect<'a, Point>,
+    player: ReadExpect<'a, Entity>,
+    monsters: ReadStorage<'a, Monster>,
+    stats: ReadStorage<'a, CombatStats>,
+    viewsheds: WriteStorage<'a, Viewshed>,
+    cleric_ais: WriteStorage<'a, MonsterClericAI>,
+    can_acts: WriteStorage<'a, CanAct>,
+    positions: WriteStorage<'a, Position>,
+    wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
+    wants_to_melee: WriteStorage<'a, WantsToMeleeAttack>,
+    in_spellbooks: ReadStorage<'a, InSpellBook>,
+    castables: ReadStorage<'a, Castable>,
+    charges: ReadStorage<'a, SpellCharges>,
+}
+
+impl<'a> System<'a> for MonsterClericAISystem {
+
+    type SystemData = MonsterClericAISystemData<'a>;
+
+    fn run(&mut self, data: Self::SystemData) {
+        let MonsterClericAISystemData {
+            entities,
+            mut map,
+            ppos,
+            player,
+            monsters,
+            stats,
+            mut viewsheds,
+            mut cleric_ais,
+            mut can_acts,
+            mut positions,
+            mut wants_to_target,
+            mut wants_to_melee,
+            in_spellbooks,
+            castables,
+            charges
+        } = data;
+
+        let mut movement_buffer: Vec<(Entity, (i32, i32))> = Vec::new();
+
+        let iter = (
+            &entities,
+            &monsters,
+            &mut viewsheds,
+            &mut cleric_ais,
+            &positions).join();
+
+        for (entity, _m, mut viewshed, ai, pos) in iter {
+
+            // If the entity cannot act, bail out.
+            if can_acts.get(entity).is_none() {
+                continue
+            }
+
+            // Our decision for what to do is conditional on this data.
+            let in_viewshed = viewshed.visible_tiles.contains(&*ppos);
+            let next_to_player = rltk::DistanceAlg::Pythagoras.distance2d(
+                Point::new(pos.x, pos.y),
+                *ppos
+            ) < 1.5;
+            let mut spells = (&entities, &in_spellbooks, &castables, &charges)
+                .join()
+                .filter(|(_spell, book, _cast, charge)|
+                    book.owner == entity && charge.charges > 0
+                )
+                .map(|(spell, _book, _cast, _charge)| spell);
+            let spell_to_cast = spells.next();
+            let has_spell_to_cast = spell_to_cast.is_some();
+
+            let mut monsters_to_heal_within_viewshed = (&entities, &monsters, &stats, &positions).join()
+                .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
+                .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp)
+                .map(|(e, _m, _s, _p)| e);
+            // TODO: Take the closest monster, smrt.
+            let monster_to_heal = monsters_to_heal_within_viewshed.next();
+            let has_monster_to_heal = monster_to_heal.is_some();
+
+            // Monster can cast spell branch.
+            // The monster can see the player and has a spell charge to expend,
+            // so they will cast the spell on the player.
+            if has_spell_to_cast && has_monster_to_heal {
+                if let (Some(spell), Some(monster)) = (spell_to_cast, monster_to_heal) {
+                    let mpos = positions.get(monster)
+                        .expect("Monster to heal has no position.");
+                    wants_to_target
+                        .insert(entity, WantsToUseTargeted {thing: spell, target: mpos.to_point()})
+                        .expect("Could not insert WantsToUseTargeted from Monster Spellcaster AI.");
+                }
+            // Monster next to player branch.
+            // If we're next to the player, and have no spell to cast, we'll
+            // resort to melee attacks.
+            } else if next_to_player {
+                wants_to_melee
+                    .insert(entity, WantsToMeleeAttack {target: *player})
+                    .expect("Failed to insert player as melee target.");
+            // Monster can see player but has no spell to cast.
+            // The monster will try to keep a fixed distance from the player
+            // (within spell range) until their spell recharges.
+            } else if in_viewshed {
+                let zero_indicies: Vec<usize> = map
+                    .get_l_infinity_circle_around(*ppos, ai.distance_to_keep_away)
+                    .iter()
+                    .map(|pt| map.xy_idx(pt.x, pt.y))
+                    .collect();
+                let routing_map = &RoutingMap::from_map(&*map, &ai.routing_options);
+                let dmap = rltk::DijkstraMap::new(
+                    map.width,
+                    map.height,
+                    &zero_indicies,
+                    routing_map,
+                    100.0
+                );
+                let flee_target = rltk::DijkstraMap::find_lowest_exit(
+                    &dmap, map.xy_idx(pos.x, pos.y), routing_map
+                );
+                if let Some(flee_target) = flee_target {
+                    let flee_target_pos = map.idx_xy(flee_target);
+                    movement_buffer.push((entity, flee_target_pos))
+                    // move_monster(&mut map, &mut pos, flee_target_pos.0, flee_target_pos.1, &mut viewshed);
+                }
+            }
+            // We're done acting, so we've used up our action for the turn.
+            can_acts.remove(entity).expect("Unable to remove CanAct component.");
+        }
+
+        for (monster, (x, y)) in movement_buffer {
+            let pos = positions.get_mut(monster);
+            let viewshed = viewsheds.get_mut(monster);
+            if let(Some(mut pos), Some(mut viewshed)) = (pos, viewshed) {
+                move_monster(&mut map, &mut pos, x, y, &mut viewshed);
+            }
         }
     }
 }

@@ -1,9 +1,9 @@
 
 use super::{
     Map, BlocksTile, CombatStats, Monster, MonsterBasicAI,
-    MonsterAttackSpellcasterAI, MovementRoutingOptions, Name, Position,
-    Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
-    InSpellBook, spells
+    MonsterAttackSpellcasterAI, MonsterClericAI, MovementRoutingOptions,
+    Name, Position, Renderable, Viewshed, SimpleMarker, SerializeMe,
+    MarkedBuilder, InSpellBook, spells
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -209,6 +209,57 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(goblin)
 }
 
+// Individual monster types: Goblin chillcaster.
+// A goblin spellcaster wielding basic chill magic.
+pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let goblin;
+    {
+        goblin = ecs.create_entity()
+            .with(Position {
+                x: x,
+                y: y
+            })
+            .with(Monster {})
+            .with(Renderable {
+                glyph: rltk::to_cp437('g'),
+                fg: RGB::named(rltk::RED),
+                bg: RGB::named(rltk::BLACK),
+                order: 1
+            })
+            .with(Viewshed {
+                visible_tiles: Vec::new(),
+                range: 4,
+                dirty: true,
+            })
+            .with(Name {
+                name: "Goblin Cleric".to_string(),
+            })
+            .with(MonsterClericAI {
+                distance_to_keep_away: 2,
+                routing_options: MovementRoutingOptions {
+                    ..GOBLIN_ROUTING_OPTIONS
+                }
+            })
+            .with(CombatStats {..GOBLIN_COMBAT_STATS})
+            .with(BlocksTile {})
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        let mut map = ecs.fetch_mut::<Map>();
+        let idx = map.xy_idx(x, y);
+        map.blocked[idx] = true;
+    }
+    {
+        // Make a fireball spell and put it in the goblin's spellbook.
+        let spell = spells::health(ecs, 0, 0, 2, 1)
+            .expect("Could not construct healing spell to put in spellbook.");
+        let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
+        in_spellbooks.insert(spell, InSpellBook {owner: goblin})
+            .expect("Failed to insert healing spell in goblin's spellbook.");
+        let mut positions = ecs.write_storage::<Position>();
+        positions.remove(spell);
+    }
+    Some(goblin)
+}
 //----------------------------------------------------------------------------
 // Orcs.
 //

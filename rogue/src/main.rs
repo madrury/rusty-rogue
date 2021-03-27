@@ -212,6 +212,8 @@ impl State {
         can_act.run_now(&self.ecs);
         let mut mob = MonsterBasicAISystem{};
         mob.run_now(&self.ecs);
+        let mut clerics = MonsterClericAISystem{};
+        clerics.run_now(&self.ecs);
         let mut spellcasters = MonsterAttackSpellcasterAISystem{};
         spellcasters.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
@@ -672,6 +674,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
+    gs.ecs.register::<MonsterClericAI>();
     gs.ecs.register::<SpellCharges>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();

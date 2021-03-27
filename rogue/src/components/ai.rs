@@ -48,3 +48,9 @@ pub struct MonsterAttackSpellcasterAI {
     pub distance_to_keep_away: i32,
     pub routing_options: MovementRoutingOptions
 }
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct MonsterClericAI {
+    pub distance_to_keep_away: i32,
+    pub routing_options: MovementRoutingOptions
+}
