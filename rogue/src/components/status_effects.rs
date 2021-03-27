@@ -5,6 +5,19 @@ use specs::prelude::*;
 use specs::saveload::{ConvertSaveload, Marker};
 use specs_derive::*;
 
+
+//------------------------------------------------------------------
+// Generic functions for creating and ticking status effects.
+//
+// These functions are generic over types implementing the StatusEffect trait,
+// and are used to create new status effects, and tick already existing status
+// effects. There are two types;
+//
+//   - new_status and tick_status are the basic implementations.
+//   - new_status_with_immunity and tick_status_with_immunity are used for status
+//     for which immunity can be granted, and we need to check if the targeted
+//     entity is immune before applying the status.
+//------------------------------------------------------------------
 pub fn new_status<Status: Component + StatusEffect>(
     store: &mut WriteStorage<Status>,
     e: Entity,
@@ -86,16 +99,16 @@ pub fn tick_status_with_immunity<Status, StatusImmune>(
 }
 
 //------------------------------------------------------------------
-// Status Effect Components
+// Status Effect Components.
 //------------------------------------------------------------------
-
 pub trait StatusEffect {
     fn new(turns: i32) -> Self;
     fn remaining_turns(&self) -> i32;
     fn set_remaining_turns(&mut self, turns: i32);
 }
 
-// Component indicating the entity is frozen.
+// Component indicating the entity is frozen. A frozen entity cannot take any
+// action until the status has expired, or is removed.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct StatusIsFrozen {
     pub remaining_turns: i32,
@@ -114,7 +127,8 @@ impl StatusEffect for StatusIsFrozen {
     }
 }
 
-// Component indicating the entity is burning.
+// Component indicating the entity is burning. A burning entity takes a small
+// amount of damage each turn.
 pub const BURNING_TICK_DAMAGE: i32 = 3;
 
 #[derive(Component, ConvertSaveload, Clone)]
