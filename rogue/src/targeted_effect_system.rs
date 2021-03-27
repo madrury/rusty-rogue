@@ -200,18 +200,18 @@ impl<'a> System<'a> for TargetedSystem {
                         *target,
                         thing_freezes.turns
                     );
-                    // let thing_name = names.get(want_target.thing);
-                    // let target_name = names.get(*target);
-                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                    //     if play_message {
-                    //         log.entries.push(format!(
-                    //             "You {} the {}, freezing {} in place.",
-                    //             verb,
-                    //             thing_name.name,
-                    //             target_name.name,
-                    //         ))
-                    //     }
-                    // }
+                    let thing_name = names.get(want_target.thing);
+                    let target_name = names.get(*target);
+                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                        if play_message {
+                            log.entries.push(format!(
+                                "You {} the {}, freezing {} in place.",
+                                verb,
+                                thing_name.name,
+                                target_name.name,
+                            ))
+                        }
+                    }
                 }
 
                 // Component: InflictsBurningWhenTargeted
@@ -223,18 +223,18 @@ impl<'a> System<'a> for TargetedSystem {
                         *target,
                         thing_burns.turns,
                     );
-                //     let thing_name = names.get(want_target.thing);
-                //     let target_name = names.get(*target);
-                //     if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                //         if play_message {
-                //             log.entries.push(format!(
-                //                 "You {} the {}, stting {} ablaze.",
-                //                 verb,
-                //                 thing_name.name,
-                //                 target_name.name,
-                //             ))
-                //         }
-                //     }
+                    let thing_name = names.get(want_target.thing);
+                    let target_name = names.get(*target);
+                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                        if play_message {
+                            log.entries.push(format!(
+                                "You {} the {}, stting {} ablaze.",
+                                verb,
+                                thing_name.name,
+                                target_name.name,
+                            ))
+                        }
+                    }
                 }
             }
 
@@ -253,7 +253,7 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Component: MoveToPositionWhenTargeted
             let moves_to_point = moves_to_position.get(want_target.thing);
-            if let Some(moves_to_point) = moves_to_point {
+            if let Some(_) = moves_to_point {
                 wants_to_move.insert(user, WantsToMoveToPosition {pt: target_point.clone()})
                     .expect("Could not insert WantsToMoveToPosition.");
             }

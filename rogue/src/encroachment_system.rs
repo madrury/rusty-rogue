@@ -1,9 +1,9 @@
 use specs::prelude::*;
 use super::{
-    Map, Position, InflictsDamageWhenEncroachedUpon,
+    Map, Name, GameLog, Position, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, new_status, new_status_with_immunity
+    StatusIsImmuneToChill, new_status_with_immunity
 };
 
 
@@ -13,7 +13,9 @@ pub struct EncroachmentSystem {}
 pub struct EncroachmentSystemData<'a> {
     entities: Entities<'a>,
     map: ReadExpect<'a, Map>,
+    log: WriteExpect<'a, GameLog>,
     positions: ReadStorage<'a, Position>,
+    names: ReadStorage<'a, Name>,
     damage_when_encroached: ReadStorage<'a, InflictsDamageWhenEncroachedUpon>,
     burning_when_encroached: ReadStorage<'a, InflictsBurningWhenEncroachedUpon>,
     freezing_when_encroached: ReadStorage<'a, InflictsFreezingWhenEncroachedUpon>,
@@ -31,7 +33,9 @@ impl<'a> System<'a> for EncroachmentSystem {
         let EncroachmentSystemData {
             entities,
             map,
+            mut log,
             positions,
+            names,
             damage_when_encroached,
             burning_when_encroached,
             freezing_when_encroached,
@@ -45,7 +49,6 @@ impl<'a> System<'a> for EncroachmentSystem {
         for (entity, pos) in (&entities, &positions).join() {
             let idx = map.xy_idx(pos.x, pos.y);
             for encroaching in map.tile_content[idx].iter().filter(|e| **e != entity) {
-
                 // Component: InflictsDamageWhenEncroachedUpon.
                 let dmg = damage_when_encroached.get(entity);
                 if let Some(dmg) = dmg {
@@ -59,22 +62,44 @@ impl<'a> System<'a> for EncroachmentSystem {
                 // Component: InflictsBurningWhenEncroachedUpon.
                 let burning = burning_when_encroached.get(entity);
                 if let Some(burning) = burning {
-                    new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
+                    let play_message = new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                         &mut is_burning,
                         &is_fire_immune,
                         *encroaching,
                         burning.turns,
-                    )
+                    );
+                    if play_message {
+                        let burner_name = names.get(entity);
+                        let target_name = names.get(*encroaching);
+                        if let (Some(bnm), Some(tnm)) = (burner_name, target_name) {
+                            log.entries.push(format!(
+                                "{} encroaches on {}, and it set aflame.",
+                                tnm.name,
+                                bnm.name,
+                            ))
+                        }
+                    }
                 }
                 // Component: InflictsFreezingWhenEncroachedUpon.
                 let freezing = freezing_when_encroached.get(entity);
                 if let Some(freezing) = freezing {
-                    new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
+                    let play_message = new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
                         &mut is_frozen,
                         &is_chill_immune,
                         *encroaching,
                         freezing.turns,
-                    )
+                    );
+                    if play_message {
+                        let freezer_name = names.get(entity);
+                        let target_name = names.get(*encroaching);
+                        if let (Some(fnm), Some(tnm)) = (freezer_name, target_name) {
+                            log.entries.push(format!(
+                                "{} encroaches on {}, and is frozen in place.",
+                                tnm.name,
+                                fnm.name,
+                            ))
+                        }
+                    }
                 }
             }
         }

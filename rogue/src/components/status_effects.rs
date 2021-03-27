@@ -22,7 +22,7 @@ pub fn new_status<Status: Component + StatusEffect>(
     store: &mut WriteStorage<Status>,
     e: Entity,
     turns: i32,
-) {
+) -> bool {
     if let Some(status) = store.get_mut(e) {
         status.set_remaining_turns(i32::max(status.remaining_turns(), turns));
     } else {
@@ -30,7 +30,9 @@ pub fn new_status<Status: Component + StatusEffect>(
         store
             .insert(e, status)
             .expect("Unable to insert StatusIsImmuneToFire component.");
+        return true
     }
+    return false
 }
 
 pub fn new_status_with_immunity<Status, StatusImmune>(
@@ -38,7 +40,7 @@ pub fn new_status_with_immunity<Status, StatusImmune>(
     immune: &WriteStorage<StatusImmune>,
     e: Entity,
     turns: i32,
-) where
+) -> bool where
     Status: Component + StatusEffect,
     StatusImmune: Component + StatusEffect,
 {
@@ -51,8 +53,10 @@ pub fn new_status_with_immunity<Status, StatusImmune>(
             store
                 .insert(e, status)
                 .expect("Unable to insert StatusIsImmuneToFire component.");
+            return true
         }
     }
+    return false
 }
 
 pub fn tick_status<Status: Component + StatusEffect>(

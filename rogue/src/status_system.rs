@@ -139,7 +139,7 @@ impl<'a> System<'a> for StatusEffectSystem {
             // fire immunity.
             let burning = status_burning.get_mut(entity);
             let is_fire_immune = status_immune_fire.get(entity).is_some();
-            if let Some(burning) = burning {
+            if let Some(_burning) = burning {
                 if !is_fire_immune {
                     WantsToTakeDamage::new_damage(
                         &mut wants_damages,
