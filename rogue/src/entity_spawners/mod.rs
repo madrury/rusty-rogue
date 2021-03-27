@@ -151,7 +151,6 @@ enum ItemType {
     LeatherArmor,
     MagicMissileScroll,
     BlinkScroll,
-    HealingScroll,
     FireblastScroll,
     FireballScroll,
     IceblastScroll,
@@ -172,7 +171,6 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
             .insert(ItemType::MagicMissileScroll, depth)
-            .insert(ItemType::HealingScroll, 100 + depth)
             .insert(ItemType::BlinkScroll, depth)
             .insert(ItemType::FireblastScroll, depth)
             .insert(ItemType::FireballScroll, depth)
@@ -191,7 +189,6 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::Dagger) => equipment::dagger(ecs, x, y),
         Some(ItemType::LeatherArmor) => equipment::leather_armor(ecs, x, y),
         Some(ItemType::MagicMissileScroll) => spells::magic_missile(ecs, x, y, 10, 5),
-        Some(ItemType::HealingScroll) => spells::health(ecs, x, y, 5, 1),
         Some(ItemType::BlinkScroll) => spells::blink(ecs, x, y),
         Some(ItemType::FireblastScroll) => spells::fireblast(ecs, x, y),
         Some(ItemType::FireballScroll) => spells::fireball(ecs, x, y, 5, 1),
