@@ -275,11 +275,13 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
 }
 
 //----------------------------------------------------------------------------
-// System for the most basic monster AI.
+// System for a cleric.
 //
-// Monsters with this AI type are attack spellcasters, i.e., they have spells
-// that they will attempt to target at the player. Otherwise, they attempt to
-// keep a ranged distance to the player and wait for their spells to recharge.
+// Monsters with this AI type are healers, i.e., they have spells
+// that they will attempt to target at allied monsters to keep them at full health.
+// They try to position themselves near other monsters (but as far away from the
+// player within that constraint), then will cast a healing spell if they see a
+// monster at less than half health.
 //----------------------------------------------------------------------------
 pub struct MonsterClericAISystem {}
 
