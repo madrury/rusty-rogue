@@ -3,7 +3,8 @@ use super::{
     Viewshed, Monster, CombatStats, CanAct, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI, Position, Map, RoutingMap,
     WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen, InSpellBook,
-    Castable, SpellCharges, MovementRoutingOptions
+    Castable, SpellCharges, MovementRoutingOptions, SupportSpellcasterKind,
+    StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed
 };
 use rltk::{Point, RandomNumberGenerator};
 
@@ -191,7 +192,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             mut wants_to_melee,
             in_spellbooks,
             castables,
-            charges
+            charges,
         } = data;
 
         let iter = (
@@ -292,6 +293,8 @@ pub struct MonsterSupportSpellcasterAISystemData<'a> {
     in_spellbooks: ReadStorage<'a, InSpellBook>,
     castables: ReadStorage<'a, Castable>,
     charges: ReadStorage<'a, SpellCharges>,
+    is_attack_buffed: ReadStorage<'a, StatusIsMeleeAttackBuffed>,
+    is_defense_buffed: ReadStorage<'a, StatusIsPhysicalDefenseBuffed>,
 }
 
 impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
@@ -314,7 +317,9 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             mut wants_to_melee,
             in_spellbooks,
             castables,
-            charges
+            charges,
+            is_attack_buffed,
+            is_defense_buffed
         } = data;
 
         // A data structure to buffer movement results for each monster with
@@ -358,13 +363,27 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
 
             // We want to heal any monsters we can see that are below half health.
             // TODO: Generalize this one.
-            let mut monsters_to_heal_within_viewshed = (&entities, &monsters, &stats, &positions).join()
-                .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
-                .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp / 2)
-                .map(|(e, _m, _s, _p)| e)
-                .filter(|e| *e != entity);
-            // TODO: Take the closest monster, smrt.
-            let monster_to_heal = monsters_to_heal_within_viewshed.next();
+            // let mut monsters_to_heal_within_viewshed = (&entities, &monsters, &stats, &positions).join()
+            //     .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
+            //     .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp / 2)
+            //     .map(|(e, _m, _s, _p)| e)
+            //     .filter(|e| *e != entity);
+            // // TODO: Take the closest monster, smrt.
+            // let monster_to_heal = monsters_to_heal_within_viewshed.next();
+
+            let monster_to_target = get_monster_to_target(
+                &*map,
+                &entity,
+                ai.support_kind,
+                in_viewshed,
+                &entities,
+                &monsters,
+                &positions,
+                &stats,
+                &is_attack_buffed,
+                &is_defense_buffed,
+                &viewshed
+            );
 
             // Monster can cast spell branch.
             // The monster can see a valid target (in this case another monster
@@ -373,7 +392,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             // TODO: We should probably check that the spell will actually hit
             // the target here, it's very possible that the monster casts the
             // spell, but the path is blocked by a wall.
-            if let (Some(spell), Some(monster)) = (spell_to_cast, monster_to_heal) {
+            if let (Some(spell), Some(monster)) = (spell_to_cast, monster_to_target) {
                 let mpos = positions.get(monster)
                     .expect("Monster to heal has no position.");
                 wants_to_target
@@ -438,6 +457,54 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             let viewshed = viewsheds.get_mut(monster);
             if let(Some(mut pos), Some(mut viewshed)) = (pos, viewshed) {
                 move_monster(&mut map, &mut pos, x, y, &mut viewshed);
+            }
+        }
+    }
+}
+
+fn get_monster_to_target(
+    map: &Map,
+    entity: &Entity,
+    kind: SupportSpellcasterKind,
+    player_in_viewshed: bool,
+    entities: &Entities,
+    monsters: &ReadStorage<Monster>,
+    positions: &WriteStorage<Position>,
+    stats: &ReadStorage<CombatStats>,
+    is_attack_buffed: &ReadStorage<StatusIsMeleeAttackBuffed>,
+    is_defense_buffed: &ReadStorage<StatusIsPhysicalDefenseBuffed>,
+    viewshed: &Viewshed,
+) -> Option<Entity> {
+    match kind {
+        SupportSpellcasterKind::Cleric => {
+            let mut monsters_to_heal_within_viewshed = (entities, monsters, stats, positions).join()
+                .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
+                .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp / 2)
+                .map(|(e, _m, _s, _p)| e)
+                .filter(|e| *e != *entity);
+            // TODO: Take the closest monster, smrt.
+            monsters_to_heal_within_viewshed.next()
+        }
+        SupportSpellcasterKind::EnchanterAttack => {
+            let mut monsters_to_buff_within_viewshed = (entities, monsters, !is_attack_buffed, positions).join()
+                .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
+                .map(|(e, _m, _s, _p)| e)
+                .filter(|e| *e != *entity);
+            if player_in_viewshed {
+                monsters_to_buff_within_viewshed.next()
+            } else {
+                None
+            }
+        }
+        SupportSpellcasterKind::EnchanterDefense => {
+            let mut monsters_to_buff_within_viewshed = (entities, monsters, !is_defense_buffed, positions).join()
+                .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
+                .map(|(e, _m, _s, _p)| e)
+                .filter(|e| *e != *entity);
+            if player_in_viewshed {
+                monsters_to_buff_within_viewshed.next()
+            } else {
+                None
             }
         }
     }

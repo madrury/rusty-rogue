@@ -162,7 +162,7 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(goblin)
 }
 
-// Individual monster types: Goblin chillcaster.
+// Individual monster types: Goblin Chillcaster.
 // A goblin spellcaster wielding basic chill magic.
 pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let goblin;
@@ -218,8 +218,8 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(goblin)
 }
 
-// Individual monster types: Goblin chillcaster.
-// A goblin spellcaster wielding basic chill magic.
+// Individual monster types: Goblin Cleric.
+// A goblin spellcaster wielding basic healing magic.
 pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let goblin;
     {
@@ -276,6 +276,8 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(goblin)
 }
 
+// Individual monster types: Goblin Enchanter.
+// A goblin spellcaster wielding basic attack/defense buff magic.
 pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let goblin;
     {
@@ -348,6 +350,7 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     }
     Some(goblin)
 }
+
 //----------------------------------------------------------------------------
 // Orcs.
 //
