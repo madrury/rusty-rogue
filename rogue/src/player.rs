@@ -79,14 +79,11 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) {
             match target {
                 None => {}
                 Some(_t) => {
-                    wants_to_melee
-                        .insert(
-                            entity,
-                            WantsToMeleeAttack {
-                                target: *potential_target,
-                            },
-                        )
-                        .expect("Insert of WantsToMelee into ECS failed.");
+                    wants_to_melee.insert(
+                        entity, WantsToMeleeAttack {
+                            target: *potential_target,
+                        },
+                    ).expect("Insert of WantsToMelee into ECS failed.");
                     return; // Do not move after attacking.
                 }
             }

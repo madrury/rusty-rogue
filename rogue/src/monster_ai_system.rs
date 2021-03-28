@@ -3,7 +3,7 @@ use super::{
     Viewshed, Monster, CombatStats, CanAct, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterClericAI, Position, Map, RoutingMap,
     WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen, InSpellBook,
-    Castable, SpellCharges
+    Castable, SpellCharges, MovementRoutingOptions
 };
 use rltk::{Point, RandomNumberGenerator};
 
@@ -247,25 +247,16 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             // The monster will try to keep a fixed distance from the player
             // (within spell range) until their spell recharges.
             } else if in_viewshed {
-                let zero_indicies: Vec<usize> = map
-                    .get_l_infinity_circle_around(*ppos, ai.distance_to_keep_away)
-                    .iter()
-                    .map(|pt| map.xy_idx(pt.x, pt.y))
-                    .collect();
-                let routing_map = &RoutingMap::from_map(&*map, &ai.routing_options);
-                let dmap = rltk::DijkstraMap::new(
-                    map.width,
-                    map.height,
-                    &zero_indicies,
-                    routing_map,
-                    100.0
+                let target_idx = get_position_at_range_from_player (
+                    &*map,
+                    &*ppos,
+                    pos,
+                    &ai.routing_options,
+                    ai.distance_to_keep_away
                 );
-                let flee_target = rltk::DijkstraMap::find_lowest_exit(
-                    &dmap, map.xy_idx(pos.x, pos.y), routing_map
-                );
-                if let Some(flee_target) = flee_target {
-                    let flee_target_pos = map.idx_xy(flee_target);
-                    move_monster(&mut map, &mut pos, flee_target_pos.0, flee_target_pos.1, &mut viewshed);
+                if let Some(target_idx) = target_idx {
+                    let target_pos = map.idx_xy(target_idx);
+                    move_monster(&mut map, &mut pos, target_pos.0, target_pos.1, &mut viewshed);
                 }
             }
             // We're done acting, so we've used up our action for the turn.
@@ -327,6 +318,10 @@ impl<'a> System<'a> for MonsterClericAISystem {
             charges
         } = data;
 
+        // A data structure to buffer movement results for each monster with
+        // this AI behaviour. We need this to satisfy the borrow checker, as we
+        // need to keep our mutable reference to Positions seperate from our
+        // immuntable ones used during the computations below.
         let mut movement_buffer: Vec<(Entity, (i32, i32))> = Vec::new();
 
         let iter = (
@@ -336,14 +331,13 @@ impl<'a> System<'a> for MonsterClericAISystem {
             &mut cleric_ais,
             &positions).join();
 
-        for (entity, _m, mut viewshed, ai, pos) in iter {
+        for (entity, _m, viewshed, ai, pos) in iter {
 
             // If the entity cannot act, bail out.
             if can_acts.get(entity).is_none() {
                 continue
             }
 
-            // Our decision for what to do is conditional on this data.
             let in_viewshed = viewshed.visible_tiles.contains(&*ppos);
             let next_to_player = rltk::DistanceAlg::Pythagoras.distance2d(
                 Point::new(pos.x, pos.y),
@@ -356,7 +350,6 @@ impl<'a> System<'a> for MonsterClericAISystem {
                 )
                 .map(|(spell, _book, _cast, _charge)| spell);
             let spell_to_cast = spells.next();
-            let has_spell_to_cast = spell_to_cast.is_some();
 
             let mut monsters_within_viewshed = (&entities, &monsters, &positions).join()
                 .filter(|(_e, _m, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
@@ -364,6 +357,7 @@ impl<'a> System<'a> for MonsterClericAISystem {
                 .filter(|e| *e != entity);
             let any_monsters_within_viewshed = monsters_within_viewshed.next().is_some();
 
+            // We want to heal any monsters we can see that are below half health.
             let mut monsters_to_heal_within_viewshed = (&entities, &monsters, &stats, &positions).join()
                 .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
                 .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp / 2)
@@ -371,19 +365,20 @@ impl<'a> System<'a> for MonsterClericAISystem {
                 .filter(|e| *e != entity);
             // TODO: Take the closest monster, smrt.
             let monster_to_heal = monsters_to_heal_within_viewshed.next();
-            let has_monster_to_heal = monster_to_heal.is_some();
 
             // Monster can cast spell branch.
-            // The monster can see a valid target and has a spell charge to
-            // expend, so they will cast the spell on that target .
-            if has_spell_to_cast && has_monster_to_heal {
-                if let (Some(spell), Some(monster)) = (spell_to_cast, monster_to_heal) {
-                    let mpos = positions.get(monster)
-                        .expect("Monster to heal has no position.");
-                    wants_to_target
-                        .insert(entity, WantsToUseTargeted {thing: spell, target: mpos.to_point()})
-                        .expect("Could not insert WantsToUseTargeted from Monster Spellcaster AI.");
-                }
+            // The monster can see a valid target (in this case another monster
+            // with below half hp) and has a spell charge to expend, so they
+            // will cast the spell on that target.
+            // TODO: We should probably check that the spell will actually hit
+            // the target here, it's very possible that the monster casts the
+            // spell, but the path is blocked by a wall.
+            if let (Some(spell), Some(monster)) = (spell_to_cast, monster_to_heal) {
+                let mpos = positions.get(monster)
+                    .expect("Monster to heal has no position.");
+                wants_to_target
+                    .insert(entity, WantsToUseTargeted {thing: spell, target: mpos.to_point()})
+                    .expect("Could not insert WantsToUseTargeted from Monster Spellcaster AI.");
             // Monster next to player branch.
             // If we're next to the player, and have no spell to cast, we'll
             // resort to melee attacks.
@@ -391,68 +386,45 @@ impl<'a> System<'a> for MonsterClericAISystem {
                 wants_to_melee
                     .insert(entity, WantsToMeleeAttack {target: *player})
                     .expect("Failed to insert player as melee target.");
-            // TODO: Implement a bettter algorithm for positioning the cleric.
+            // Monster can see other potential targets branch.
+            // The monster can see potential targets, but they are not in a
+            // state where it is benificial to cast the spell (so in this case,
+            // can see other monsters, but they are not below half hp). The
+            // monster then moves to a positon at a range to the potential
+            // targets, and chooses amongst these by moving to the possition at
+            // a given range from a target that is furthest from the player.
             } else if any_monsters_within_viewshed {
-                let mut zero_indicies: Vec<usize> = (&entities, &monsters, &positions).join()
-                    .filter(|(_e, _m, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
-                    .filter(|(e, _m, _pos)| *e != entity)
-                    .map(|(_e, _m, pos)| map.get_l_infinity_circle_around(
-                        pos.to_point(), ai.distance_to_keep_away_from_monsters
-                    ))
-                    .map(|circle| {
-                        let mut furthest_point = Point {x: 0, y: 0};
-                        let mut largest_distance = 0.0;
-                        for pt in circle {
-                            let dist = rltk::DistanceAlg::Pythagoras.distance2d(pt, *ppos);
-                            if dist > largest_distance {
-                                largest_distance = dist;
-                                furthest_point = pt;
-                            }
-                        }
-                        furthest_point
-                    })
-                    .map(|pt| map.xy_idx(pt.x, pt.y))
-                    .collect();
-                let routing_map = &RoutingMap::from_map(&*map, &ai.routing_options);
-                let dmap = rltk::DijkstraMap::new(
-                    map.width,
-                    map.height,
-                    &zero_indicies,
-                    routing_map,
-                    100.0
+                let target_idx = get_position_at_range_from_other_monsters(
+                    &*map,
+                    &entity,
+                    &*ppos,
+                    pos,
+                    &entities,
+                    &monsters,
+                    &positions,
+                    viewshed,
+                    &ai.routing_options,
+                    ai.distance_to_keep_away_from_monsters
                 );
-                let flee_target = rltk::DijkstraMap::find_lowest_exit(
-                    &dmap, map.xy_idx(pos.x, pos.y), routing_map
-                );
-                if let Some(flee_target) = flee_target {
-                    let flee_target_pos = map.idx_xy(flee_target);
+                if let Some(target_idx) = target_idx {
+                    let flee_target_pos = map.idx_xy(target_idx);
                     movement_buffer.push((entity, flee_target_pos))
-                    // move_monster(&mut map, &mut pos, flee_target_pos.0, flee_target_pos.1, &mut viewshed);
                 }
             // Monster can see player but no monsters.
             // The monster will try to keep a fixed distance from the player
             // (within spell range) until their spell recharges.
             // TODO: The monster should flee here.
             } else if in_viewshed {
-                let zero_indicies: Vec<usize> = map
-                    .get_l_infinity_circle_around(*ppos, ai.distance_to_keep_away_from_player)
-                    .iter()
-                    .map(|pt| map.xy_idx(pt.x, pt.y))
-                    .collect();
-                let routing_map = &RoutingMap::from_map(&*map, &ai.routing_options);
-                let dmap = rltk::DijkstraMap::new(
-                    map.width,
-                    map.height,
-                    &zero_indicies,
-                    routing_map,
-                    100.0
+                let target_idx = get_position_at_range_from_player (
+                    &*map,
+                    &*ppos,
+                    pos,
+                    &ai.routing_options,
+                    ai.distance_to_keep_away_from_player
                 );
-                let flee_target = rltk::DijkstraMap::find_lowest_exit(
-                    &dmap, map.xy_idx(pos.x, pos.y), routing_map
-                );
-                if let Some(flee_target) = flee_target {
-                    let flee_target_pos = map.idx_xy(flee_target);
-                    movement_buffer.push((entity, flee_target_pos))
+                if let Some(target_idx) = target_idx {
+                    let target_pos = map.idx_xy(target_idx);
+                    movement_buffer.push((entity, target_pos))
                 }
             }
             // We're done acting, so we've used up our action for the turn.
@@ -469,11 +441,84 @@ impl<'a> System<'a> for MonsterClericAISystem {
     }
 }
 
+
+fn get_position_at_range_from_player (
+    map: &Map,
+    ppos: &Point,
+    pos: &Position,
+    routing_options: &MovementRoutingOptions,
+    distance_to_keep_away: i32,
+) -> Option<usize> {
+    let zero_indicies: Vec<usize> = map
+        .get_l_infinity_circle_around(*ppos, distance_to_keep_away)
+        .iter()
+        .map(|pt| map.xy_idx(pt.x, pt.y))
+        .collect();
+    let routing_map = &RoutingMap::from_map(&*map, routing_options);
+    let dmap = rltk::DijkstraMap::new(
+        map.width,
+        map.height,
+        &zero_indicies,
+        routing_map,
+        100.0
+    );
+    rltk::DijkstraMap::find_lowest_exit(
+        &dmap, map.xy_idx(pos.x, pos.y), routing_map
+    )
+}
+
+fn get_position_at_range_from_other_monsters(
+    map: &Map,
+    entity: &Entity,
+    ppos: &Point,
+    pos: &Position,
+    entities: &Entities,
+    monsters: &ReadStorage<Monster>,
+    positions: &WriteStorage<Position>,
+    viewshed: &Viewshed,
+    routing_options: &MovementRoutingOptions,
+    distance_to_keep_away: i32,
+) -> Option<usize> {
+    let zero_indicies: Vec<usize> = (entities, monsters, positions).join()
+        .filter(|(_e, _m, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
+        .filter(|(e, _m, _pos)| *e != *entity)
+        .map(|(_e, _m, pos)| map.get_l_infinity_circle_around(
+            pos.to_point(), distance_to_keep_away
+        ))
+        .map(|circle| {
+            let mut furthest_point = Point {x: 0, y: 0};
+            let mut largest_distance = 0.0;
+            for pt in circle {
+                let dist = rltk::DistanceAlg::Pythagoras.distance2d(pt, *ppos);
+                if dist > largest_distance {
+                    largest_distance = dist;
+                    furthest_point = pt;
+                }
+            }
+            furthest_point
+        })
+        .map(|pt| map.xy_idx(pt.x, pt.y))
+        .collect();
+    let routing_map = &RoutingMap::from_map(&*map, routing_options);
+    let dmap = rltk::DijkstraMap::new(
+        map.width,
+        map.height,
+        &zero_indicies,
+        routing_map,
+        100.0
+    );
+    rltk::DijkstraMap::find_lowest_exit(
+        &dmap, map.xy_idx(pos.x, pos.y), routing_map
+    )
+}
+
 // Move a monster to a new postions.
-// **THIS METHOD ASSUMES THE NEW POSITION IS SAFE TO MOVE INTO!**
 fn move_monster(map: &mut Map, pos: &mut Position, newposx: i32, newposy: i32, viewshed: &mut Viewshed) {
     let new_idx = map.xy_idx(newposx, newposy);
     let old_idx = map.xy_idx(pos.x, pos.y);
+    if map.blocked[new_idx] {
+        return
+    }
     // We need to update the blocking information *now*, since we do
     // not want later monsters in the move queue to move into the
     // same position as this monster.
