@@ -4,6 +4,7 @@ use rltk::{RGB};
 use super::{
     GameLog, Name, RunState, Monster, Hazard, StatusIsFrozen,
     StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
+    StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed,
     WantsToTakeDamage, ElementalDamageKind, tick_status,
     tick_status_with_immunity, BURNING_TICK_DAMAGE
 };
@@ -22,6 +23,8 @@ pub struct StatusTickSystemData<'a> {
     status_burning: WriteStorage<'a, StatusIsBurning>,
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
     status_immune_chill: WriteStorage<'a, StatusIsImmuneToChill>,
+    status_attack_buffed: WriteStorage<'a, StatusIsMeleeAttackBuffed>,
+    status_defense_buffed: WriteStorage<'a, StatusIsPhysicalDefenseBuffed>,
 }
 
 impl<'a> System<'a> for StatusTickSystem {
@@ -37,6 +40,8 @@ impl<'a> System<'a> for StatusTickSystem {
             mut status_burning,
             mut status_immune_fire,
             mut status_immune_chill,
+            mut status_attack_buffed,
+            mut status_defense_buffed
         } = data;
 
         for entity in entities.join() {
@@ -78,6 +83,24 @@ impl<'a> System<'a> for StatusTickSystem {
                 .map(|nm| format!("{} is no longer immune to chill.", nm.name));
             tick_status::<StatusIsImmuneToChill>(
                 &mut status_immune_chill,
+                &mut log,
+                entity,
+                msg
+            );
+            // StatusIsMeleeAttackBuffed
+            let msg = names.get(entity)
+                .map(|nm| format!("{} is no longer feeling invogroated.", nm.name));
+                tick_status::<StatusIsMeleeAttackBuffed>(
+                &mut status_attack_buffed,
+                &mut log,
+                entity,
+                msg
+            );
+            // StatusIsPhysicalDefenseBuffed
+            let msg = names.get(entity)
+                .map(|nm| format!("{} is no longer feeling protected.", nm.name));
+                tick_status::<StatusIsPhysicalDefenseBuffed>(
+                &mut status_defense_buffed,
                 &mut log,
                 entity,
                 msg
@@ -192,6 +215,18 @@ pub fn get_status_indicators(ecs: &World, entity: &Entity) -> Vec<StatusIndicato
     if let Some(_) = fire_immunities.get(*entity) {
         indicators.push(
             StatusIndicatorGlyph {glyph: rltk::to_cp437('♠'), color: RGB::named(rltk::WHITE)}
+        )
+    }
+    let attack_buffed = ecs.read_storage::<StatusIsMeleeAttackBuffed>();
+    if let Some(_) = attack_buffed.get(*entity) {
+        indicators.push(
+            StatusIndicatorGlyph {glyph: rltk::to_cp437('▲'), color: RGB::named(rltk::RED)}
+        )
+    }
+    let defense_buffed = ecs.read_storage::<StatusIsPhysicalDefenseBuffed>();
+    if let Some(_) = defense_buffed.get(*entity) {
+        indicators.push(
+            StatusIndicatorGlyph {glyph: rltk::to_cp437('▲'), color: RGB::named(rltk::BLUE)}
         )
     }
     indicators

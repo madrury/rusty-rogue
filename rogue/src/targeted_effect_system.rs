@@ -5,10 +5,12 @@ use super::{
     TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, MoveToPositionWhenTargeted,
+    BuffsMeleeAttackWhenTargeted, BuffsPhysicalDefenseWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
     WantsToTakeDamage, WantsToMoveToPosition, WantsToMoveToRandomPosition,
     StatusIsFrozen, StatusIsBurning, SpawnsEntityInAreaWhenTargeted,
-    StatusIsImmuneToFire, StatusIsImmuneToChill, new_status_with_immunity
+    StatusIsImmuneToFire, StatusIsImmuneToChill, StatusIsMeleeAttackBuffed,
+    StatusIsPhysicalDefenseBuffed, new_status, new_status_with_immunity
 };
 use specs::prelude::*;
 
@@ -36,6 +38,8 @@ pub struct TargetedSystemData<'a> {
         does_damage: ReadStorage<'a, InflictsDamageWhenTargeted>,
         does_freeze: WriteStorage<'a, InflictsFreezingWhenTargeted>,
         does_burn: WriteStorage<'a, InflictsBurningWhenTargeted>,
+        does_buff_attack: WriteStorage<'a, BuffsMeleeAttackWhenTargeted>,
+        does_buff_defense: WriteStorage<'a, BuffsPhysicalDefenseWhenTargeted>,
         moves_to_position: ReadStorage<'a, MoveToPositionWhenTargeted>,
         aoe_animations: ReadStorage<'a, AreaOfEffectAnimationWhenTargeted>,
         along_ray_animations: ReadStorage<'a, AlongRayAnimationWhenTargeted>,
@@ -48,6 +52,8 @@ pub struct TargetedSystemData<'a> {
         is_burning: WriteStorage<'a, StatusIsBurning>,
         is_fire_immune: WriteStorage<'a, StatusIsImmuneToFire>,
         is_chill_immune: WriteStorage<'a, StatusIsImmuneToChill>,
+        has_buffed_attack: WriteStorage<'a, StatusIsMeleeAttackBuffed>,
+        has_buffed_defense: WriteStorage<'a, StatusIsPhysicalDefenseBuffed>,
 }
 
 impl<'a> System<'a> for TargetedSystem {
@@ -73,6 +79,8 @@ impl<'a> System<'a> for TargetedSystem {
             does_damage,
             does_freeze,
             does_burn,
+            does_buff_attack,
+            does_buff_defense,
             moves_to_position,
             aoe_animations,
             along_ray_animations,
@@ -84,7 +92,9 @@ impl<'a> System<'a> for TargetedSystem {
             mut is_burning,
             spawns_entity_in_area,
             is_fire_immune,
-            is_chill_immune
+            is_chill_immune,
+            mut has_buffed_attack,
+            mut has_buffed_defense,
         } = data;
 
         //--------------------------------------------------------------------
@@ -202,16 +212,17 @@ impl<'a> System<'a> for TargetedSystem {
                     );
                     let thing_name = names.get(want_target.thing);
                     let target_name = names.get(*target);
-                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                        if play_message {
-                            log.entries.push(format!(
-                                "You {} the {}, freezing {} in place.",
-                                verb,
-                                thing_name.name,
-                                target_name.name,
-                            ))
-                        }
-                    }
+                    // TODO: This should not refer to the player.
+                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                    //     if play_message {
+                    //         log.entries.push(format!(
+                    //             "You {} the {}, freezing {} in place.",
+                    //             verb,
+                    //             thing_name.name,
+                    //             target_name.name,
+                    //         ))
+                    //     }
+                    // }
                 }
 
                 // Component: InflictsBurningWhenTargeted
@@ -223,18 +234,41 @@ impl<'a> System<'a> for TargetedSystem {
                         *target,
                         thing_burns.turns,
                     );
-                    let thing_name = names.get(want_target.thing);
-                    let target_name = names.get(*target);
-                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                        if play_message {
-                            log.entries.push(format!(
-                                "You {} the {}, stting {} ablaze.",
-                                verb,
-                                thing_name.name,
-                                target_name.name,
-                            ))
-                        }
-                    }
+                    // TODO: This should not refer to the player.
+                    // let thing_name = names.get(want_target.thing);
+                    // let target_name = names.get(*target);
+                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                    //     if play_message {
+                    //         log.entries.push(format!(
+                    //             "You {} the {}, stting {} ablaze.",
+                    //             verb,
+                    //             thing_name.name,
+                    //             target_name.name,
+                    //         ))
+                    //     }
+                    // }
+                }
+
+                // Component: BuffsMeleeAttackWhenTargeted
+                let thing_buffs_attack = does_buff_attack.get(want_target.thing);
+                if let Some(thing_buffs_attack) = thing_buffs_attack {
+                    let play_message = new_status::<StatusIsMeleeAttackBuffed>(
+                        &mut has_buffed_attack,
+                        *target,
+                        thing_buffs_attack.turns,
+                    );
+                    // TODO: Add a game message here.
+                }
+
+                // Component: BuffsPhysicalDefenseWhenTargeted
+                let thing_buffs_defense = does_buff_defense.get(want_target.thing);
+                if let Some(thing_buffs_defense) = thing_buffs_defense {
+                    let play_message = new_status::<StatusIsPhysicalDefenseBuffed>(
+                        &mut has_buffed_defense,
+                        *target,
+                        thing_buffs_defense.turns,
+                    );
+                    // TODO: Add a game message here.
                 }
             }
 

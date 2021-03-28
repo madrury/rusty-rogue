@@ -2,7 +2,7 @@ use specs::prelude::*;
 use super::{
     Map, TileType, CombatStats, WantsToMeleeAttack, Name, WantsToTakeDamage,
     GameLog, Renderable, Position, AnimationRequestBuffer, AnimationRequest,
-    Equipped, GrantsMeleeAttackBonus,
+    Equipped, GrantsMeleeAttackBonus, StatusIsMeleeAttackBuffed,
     ElementalDamageKind
 };
 
@@ -26,6 +26,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, CombatStats>,
         ReadStorage<'a, Equipped>,
         ReadStorage<'a, GrantsMeleeAttackBonus>,
+        ReadStorage<'a, StatusIsMeleeAttackBuffed>,
         WriteStorage<'a, WantsToMeleeAttack>,
         WriteStorage<'a, WantsToTakeDamage>,
         WriteStorage<'a, Position>,
@@ -41,7 +42,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
             names,
             combat_stats,
             equipped,
-            attack_bonuses,
+            weapon_attack_bonuses,
+            is_melee_buffs,
             mut melee_attacks,
             mut damagees,
             positions,
@@ -54,21 +56,29 @@ impl<'a> System<'a> for MeleeCombatSystem {
             // As a rule, entities cannot target themselves in melee combat.
             // This happens if, for example, the player passes a turn.
             if attacker == target {continue;}
+            // TODO: this unwrap is dodgy. Can we really not get here if the
+            // target does not have combat stats? If we have a blocking entity
+            // without combat stats, are we gonna be ok here?
             let target_stats = combat_stats.get(target).unwrap();
             if target_stats.hp > 0 {
-
                 let target_name = names.get(target).unwrap();
-                let attack_bonus: i32 = (&entities, &attack_bonuses, &equipped)
+                let weapon_attack_bonus: i32 = (&entities, &weapon_attack_bonuses, &equipped)
                     .join()
                     .filter(|(_e, _ab, eq)| eq.owner == attacker)
                     .map(|(_e, ab, _eq)| ab.bonus)
                     .sum();
-                let damage = i32::max(0, stats.power + attack_bonus);
+                // Factor is 2 if the attacker is buffed, 1 otherwise.
+                let attack_buff_factor: i32 = is_melee_buffs.get(attacker)
+                    .map_or(1, |b| 2);
+                let damage = i32::max(0, attack_buff_factor * (stats.power + weapon_attack_bonus));
+                // TODO: This message should be created further down the turn
+                // pipeline. Probably where damage is actually applied.
                 if damage == 0 {
                     log.entries.push(
                         format!("{} is unable to damage {}.", &name.name, &target_name.name)
                     );
                 } else {
+                    // TODO: This is not right. This message needs to happen AFTER defense buffs are applied.
                     log.entries.push(
                         format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
                     );
@@ -80,6 +90,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     );
                     // Animate the damage with a flash, and render a bloodstain
                     // where the damage was inflicted.
+                    // TODO: Same here. This should be created after damage is actually created.
                     let pos = positions.get(melee.target);
                     let render = renderables.get(melee.target);
                     if let(Some(pos), Some(render)) = (pos, render) {

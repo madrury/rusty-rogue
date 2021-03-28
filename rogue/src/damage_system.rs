@@ -2,7 +2,7 @@ use specs::prelude::*;
 use super::{
     CombatStats, WantsToTakeDamage, Player, Name, GameLog, Equipped,
     ElementalDamageKind, GrantsMeleeDefenseBonus, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, InSpellBook
+    StatusIsImmuneToChill, StatusIsPhysicalDefenseBuffed, InSpellBook
 };
 
 pub struct DamageSystem {}
@@ -71,6 +71,7 @@ impl<'a> System<'a> for DamageSystem {
         ReadStorage<'a, GrantsMeleeDefenseBonus>,
         ReadStorage<'a, StatusIsImmuneToFire>,
         ReadStorage<'a, StatusIsImmuneToChill>,
+        ReadStorage<'a, StatusIsPhysicalDefenseBuffed>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -82,22 +83,25 @@ impl<'a> System<'a> for DamageSystem {
             melee_defense_bonus,
             status_fire_immunity,
             status_chill_immunity,
+            is_defense_buffs,
         ) = data;
 
         for (entity, stats, damage) in (&entities, &mut stats, &wants_to_take_damage).join() {
 
-            let defense_bonus: i32 = (&entities, &melee_defense_bonus, &equipped)
+            let melee_defense_bonus: i32 = (&entities, &melee_defense_bonus, &equipped)
                 .join()
                 .filter(|(_e, _ab, eq)| eq.owner == entity)
                 .map(|(_e, ab, _eq)| ab.bonus)
                 .sum();
+            let defense_buff_factor: i32 = is_defense_buffs.get(entity)
+                .map_or(1, |b_| 2);
             let is_immune_to_fire: bool = status_fire_immunity.get(entity).is_some();
             let is_immune_to_chill: bool = status_chill_immunity.get(entity).is_some();
 
             for (dmg, kind) in damage.amounts.iter().zip(&damage.kinds) {
                 match *kind {
                     ElementalDamageKind::Physical => {
-                        stats.take_damage(i32::max(0, dmg - defense_bonus));
+                        stats.take_damage(i32::max(0, (dmg - melee_defense_bonus) / defense_buff_factor));
                     }
                     ElementalDamageKind::Hunger => {
                         stats.take_damage(*dmg);

@@ -196,6 +196,7 @@ impl StatusEffect for StatusIsImmuneToChill {
 // Component indicating that the entity's melee attacks are buffed (do double
 // damage).
 #[derive(Component, ConvertSaveload, Clone)]
+
 pub struct StatusIsMeleeAttackBuffed {
     pub remaining_turns: i32,
 }
