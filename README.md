@@ -16,8 +16,9 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] Ice.
 
 #### Monsters
-  - [ ] Goblin Warleader (buff spells).
-  - [ ] Orc Warleader.
+  - [ ] Rat (Easy monster that runs away when hit).
+  - [ ] Bat (Easy monster with somewhat random movement).
+  - [ ] Orc Enchanter.
   - [ ] Orc Spellcaster.
   - [ ] Pink Jelly (spawns another jelly when hit)
   - [ ] Red Jelly (spawns fire when hit).
@@ -27,7 +28,6 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] Magic damage stats.
 
 #### Spellcasting
-  - [ ] Defense and attack buff spells.
   - [ ] Some spell which is a combination of fire and ice elements.
 
 #### Equipment
@@ -68,6 +68,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] A spell of blinking (teleportation along a ray)
   - [x] A spell of healing.
   - [x] Goblin Cleric (healing spells).
+  - [x] Defense and attack buff spells.
+  - [x] Goblin Enchanter (buff spells).
 
 ## Progress In Tutorial:
 

@@ -266,13 +266,19 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
 }
 
 //----------------------------------------------------------------------------
-// System for a cleric.
+// System for a support spellcaster.
 //
-// Monsters with this AI type are healers, i.e., they have spells
-// that they will attempt to target at allied monsters to keep them at full health.
+// Monsters with this AI type are support spellcasters, i.e., they have spells
+// that they will attempt to target at allied monsters.
+//
+// - Clerics: These monsters have healing spells, and attempt to keep allies at
+//   full health.
+// - Enchanter (Attack): These monsters have melee attack buff spells.
+// - Enchanter (Defense): These monsters have pysical defense buff spells.
+//
 // They try to position themselves near other monsters (but as far away from the
-// player within that constraint), then will cast a healing spell if they see a
-// monster at less than half health.
+// player within that constraint), then will cast a spell if they are within
+// range of a valid target.
 //----------------------------------------------------------------------------
 pub struct MonsterSupportSpellcasterAISystem {}
 
@@ -462,6 +468,13 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
     }
 }
 
+// Determine if a support spell has any valid targets.
+//   - Healing Spells: Are there any monsters within view and range that are below
+//   half health.
+//   - Buff Spell: Are there any monsters within view and range that are not
+//   curently buffed. We additionally make sure that the spellcaster can see the
+//   *player*, so that they don't just immediately spam their buffs in the first
+//   turns of the level.
 fn get_monster_to_target(
     map: &Map,
     entity: &Entity,
