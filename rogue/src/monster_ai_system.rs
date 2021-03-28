@@ -145,7 +145,6 @@ impl<'a> System<'a> for MonsterBasicAISystem {
     }
 }
 
-
 //----------------------------------------------------------------------------
 // System for a spellcasting monster.
 //
@@ -441,8 +440,9 @@ impl<'a> System<'a> for MonsterClericAISystem {
     }
 }
 
-
-fn get_position_at_range_from_player (
+// Use a dijkstra map to find a position that is either at a given range from
+// the player, or moves the monster towards such a position.
+fn get_position_at_range_from_player(
     map: &Map,
     ppos: &Point,
     pos: &Position,
@@ -467,6 +467,9 @@ fn get_position_at_range_from_player (
     )
 }
 
+// Use a dijkstra map to find a position that is either at range from another
+// monster (and is the position furthest away from the player satisfying that
+// condition), or moves the monster towards such a position.
 fn get_position_at_range_from_other_monsters(
     map: &Map,
     entity: &Entity,
