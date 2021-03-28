@@ -192,3 +192,42 @@ impl StatusEffect for StatusIsImmuneToChill {
         self.remaining_turns = turns
     }
 }
+
+// Component indicating that the entity's melee attacks are buffed (do double
+// damage).
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct StatusIsMeleeAttackBuffed {
+    pub remaining_turns: i32,
+}
+impl StatusEffect for StatusIsMeleeAttackBuffed {
+    fn new(turns: i32) -> StatusIsMeleeAttackBuffed {
+        StatusIsMeleeAttackBuffed {
+            remaining_turns: turns,
+        }
+    }
+    fn remaining_turns(&self) -> i32 {
+        self.remaining_turns
+    }
+    fn set_remaining_turns(&mut self, turns: i32) {
+        self.remaining_turns = turns
+    }
+}
+
+// Component indicating that the entity's pysical defense is (damage is halved)/
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct StatusIsPhysicalDefenseBuffed {
+    pub remaining_turns: i32,
+}
+impl StatusEffect for StatusIsPhysicalDefenseBuffed {
+    fn new(turns: i32) -> StatusIsPhysicalDefenseBuffed {
+        StatusIsPhysicalDefenseBuffed {
+            remaining_turns: turns,
+        }
+    }
+    fn remaining_turns(&self) -> i32 {
+        self.remaining_turns
+    }
+    fn set_remaining_turns(&mut self, turns: i32) {
+        self.remaining_turns = turns
+    }
+}

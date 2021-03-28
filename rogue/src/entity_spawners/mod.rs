@@ -1,13 +1,15 @@
 use super::{
     Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
     HungerState, Monster, Hazard, IsEntityKind, MonsterBasicAI,
-    MonsterAttackSpellcasterAI, MonsterClericAI, MovementRoutingOptions,
-    Name, Player, Position, Renderable, Viewshed, PickUpable, Useable,
-    Castable, SpellCharges, Equippable, EquipmentSlot, Throwable, Targeted,
-    TargetingKind, Untargeted, Consumable, ProvidesFullHealing,
-    ProvidesFullFood, IncreasesMaxHpWhenUsed, InflictsDamageWhenTargeted,
+    MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
+    SupportSpellcasterKind, MovementRoutingOptions, Name, Player, Position,
+    Renderable, Viewshed, PickUpable, Useable, Castable, SpellCharges,
+    Equippable, EquipmentSlot, Throwable, Targeted, TargetingKind,
+    Untargeted, Consumable, ProvidesFullHealing, ProvidesFullFood,
+    IncreasesMaxHpWhenUsed, InflictsDamageWhenTargeted,
     InflictsDamageWhenEncroachedUpon, InflictsFreezingWhenTargeted,
-    InflictsBurningWhenTargeted, InflictsBurningWhenEncroachedUpon,
+    InflictsBurningWhenTargeted, BuffsMeleeAttackWhenTargeted,
+    BuffsPhysicalDefenseWhenTargeted, InflictsBurningWhenEncroachedUpon,
     InflictsFreezingWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
     AlongRayAnimationWhenTargeted, MovesToRandomPosition,
     MoveToPositionWhenTargeted, SpawnsEntityInAreaWhenTargeted,
@@ -109,6 +111,7 @@ enum MonsterType {
     None,
     GoblinBasic,
     GoblinCleric,
+    GoblinEnchanter,
     GoblinFirecaster,
     GoblinChillcaster,
     Orc
@@ -120,7 +123,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
             .insert(MonsterType::GoblinBasic, 50)
-            .insert(MonsterType::GoblinCleric, 20)
+            .insert(MonsterType::GoblinCleric, 0)
+            .insert(MonsterType::GoblinEnchanter, 25)
             .insert(MonsterType::GoblinFirecaster, 1 + depth)
             .insert(MonsterType::GoblinChillcaster, 1 + depth)
             .insert(MonsterType::Orc, 3 + 3 * (depth-1))
@@ -130,6 +134,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
     match monster {
         Some(MonsterType::GoblinBasic) => monsters::goblin_basic(ecs, x, y),
         Some(MonsterType::GoblinCleric) => monsters::goblin_cleric(ecs, x, y),
+        Some(MonsterType::GoblinEnchanter) => monsters::goblin_enchanter(ecs, x, y),
         Some(MonsterType::GoblinFirecaster) => monsters::goblin_firecaster(ecs, x, y),
         Some(MonsterType::GoblinChillcaster) => monsters::goblin_chillcaster(ecs, x, y),
         Some(MonsterType::Orc) => monsters::orc_basic(ecs, x, y),

@@ -58,6 +58,19 @@ pub struct InflictsBurningWhenTargeted {
     pub tick_damage: i32
 }
 
+// Component for effects that buff melee attack damage for a number of turns.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct BuffsMeleeAttackWhenTargeted {
+    pub turns: i32,
+}
+
+// Component for effects that buff melee physical defense for a number of
+// turns.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct BuffsPhysicalDefenseWhenTargeted {
+    pub turns: i32,
+}
+
 // Component for effects that inflict the burning status on any other entity
 // occupyting the same space.
 #[derive(Component, ConvertSaveload, Clone)]

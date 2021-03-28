@@ -49,8 +49,15 @@ pub struct MonsterAttackSpellcasterAI {
     pub routing_options: MovementRoutingOptions
 }
 
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
+pub enum SupportSpellcasterKind {
+    Cleric,
+    EnchanterAttack,
+    EnchanterDefense,
+}
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct MonsterClericAI {
+pub struct MonsterSupportSpellcasterAI {
+    pub support_kind: SupportSpellcasterKind,
     pub distance_to_keep_away_from_player: i32,
     pub distance_to_keep_away_from_monsters: i32,
     pub routing_options: MovementRoutingOptions

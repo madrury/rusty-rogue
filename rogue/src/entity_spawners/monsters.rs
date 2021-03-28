@@ -1,11 +1,12 @@
 
 use super::{
     Map, BlocksTile, CombatStats, Monster, MonsterBasicAI,
-    MonsterAttackSpellcasterAI, MonsterClericAI, MovementRoutingOptions,
-    Name, Position, Renderable, Viewshed, SimpleMarker, SerializeMe,
-    MarkedBuilder, InSpellBook, spells
+    MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
+    SupportSpellcasterKind, MovementRoutingOptions, Name, Position,
+    Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
+    InSpellBook, spells
 };
-use rltk::{RGB};
+use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
 
 struct MonsterSpawnData<S: ToString> {
@@ -242,7 +243,8 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Name {
                 name: "Goblin Cleric".to_string(),
             })
-            .with(MonsterClericAI {
+            .with(MonsterSupportSpellcasterAI {
+                support_kind: SupportSpellcasterKind::Cleric,
                 distance_to_keep_away_from_monsters: 2,
                 distance_to_keep_away_from_player: 4,
                 routing_options: MovementRoutingOptions {
@@ -268,6 +270,79 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
         in_spellbooks.insert(spell, InSpellBook {owner: goblin})
             .expect("Failed to insert healing spell in goblin's spellbook.");
+        let mut positions = ecs.write_storage::<Position>();
+        positions.remove(spell);
+    }
+    Some(goblin)
+}
+
+pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let goblin;
+    {
+        goblin = ecs.create_entity()
+            .with(Position {
+                x: x,
+                y: y
+            })
+            .with(Monster {})
+            .with(Renderable {
+                glyph: rltk::to_cp437('g'),
+                fg: RGB::named(rltk::GREY),
+                bg: RGB::named(rltk::BLACK),
+                order: 1
+            })
+            .with(Viewshed {
+                visible_tiles: Vec::new(),
+                range: 8,
+                dirty: true,
+            })
+            .with(Name {
+                name: "Goblin Enchanter".to_string(),
+            })
+            .with(CombatStats {
+                max_hp: 10,
+                hp: 5,
+                ..GOBLIN_COMBAT_STATS
+            })
+            .with(BlocksTile {})
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        let mut map = ecs.fetch_mut::<Map>();
+        let idx = map.xy_idx(x, y);
+        map.blocked[idx] = true;
+    }
+    // There are two options for what buff spell we give to the monster here: do
+    // they buff attack of defense?
+    {
+        let mut rng = RandomNumberGenerator::new();
+        let roll = rng.roll_dice(1, 2);
+        let spell: Entity;
+        let spellcaster_kind: SupportSpellcasterKind;
+        match roll {
+            1 => {
+                spellcaster_kind = SupportSpellcasterKind::EnchanterAttack;
+                spell = spells::invigorate(ecs, 0, 0, 2, 1)
+                    .expect("Could not construct invigorate spell to put in spellbook.");
+            }
+            2 => {
+                spellcaster_kind = SupportSpellcasterKind::EnchanterDefense;
+                spell = spells::protect(ecs, 0, 0, 2, 1)
+                    .expect("Could not construct protect spell to put in spellbook.");
+            }
+            _ => {panic!("Got random number out of range, no associated enchantertype.")}
+        }
+        let mut ais = ecs.write_storage::<MonsterSupportSpellcasterAI>();
+        ais.insert(goblin, MonsterSupportSpellcasterAI {
+            support_kind: spellcaster_kind,
+            distance_to_keep_away_from_monsters: 2,
+            distance_to_keep_away_from_player: 4,
+            routing_options: MovementRoutingOptions {
+                ..GOBLIN_ROUTING_OPTIONS
+            }
+        }) .expect("Could not insert MonsterSupportSpellcasterAI.");
+        let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
+        in_spellbooks.insert(spell, InSpellBook {owner: goblin})
+            .expect("Failed to insert spell in goblin's spellbook.");
         let mut positions = ecs.write_storage::<Position>();
         positions.remove(spell);
     }

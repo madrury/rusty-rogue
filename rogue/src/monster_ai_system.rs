@@ -1,7 +1,7 @@
 use specs::prelude::*;
 use super::{
     Viewshed, Monster, CombatStats, CanAct, MonsterBasicAI,
-    MonsterAttackSpellcasterAI, MonsterClericAI, Position, Map, RoutingMap,
+    MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI, Position, Map, RoutingMap,
     WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen, InSpellBook,
     Castable, SpellCharges, MovementRoutingOptions
 };
@@ -273,10 +273,10 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
 // player within that constraint), then will cast a healing spell if they see a
 // monster at less than half health.
 //----------------------------------------------------------------------------
-pub struct MonsterClericAISystem {}
+pub struct MonsterSupportSpellcasterAISystem {}
 
 #[derive(SystemData)]
-pub struct MonsterClericAISystemData<'a> {
+pub struct MonsterSupportSpellcasterAISystemData<'a> {
     entities: Entities<'a>,
     map: WriteExpect<'a, Map>,
     ppos: ReadExpect<'a, Point>,
@@ -284,7 +284,7 @@ pub struct MonsterClericAISystemData<'a> {
     monsters: ReadStorage<'a, Monster>,
     stats: ReadStorage<'a, CombatStats>,
     viewsheds: WriteStorage<'a, Viewshed>,
-    cleric_ais: WriteStorage<'a, MonsterClericAI>,
+    support_ais: WriteStorage<'a, MonsterSupportSpellcasterAI>,
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
@@ -294,12 +294,12 @@ pub struct MonsterClericAISystemData<'a> {
     charges: ReadStorage<'a, SpellCharges>,
 }
 
-impl<'a> System<'a> for MonsterClericAISystem {
+impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
 
-    type SystemData = MonsterClericAISystemData<'a>;
+    type SystemData = MonsterSupportSpellcasterAISystemData<'a>;
 
     fn run(&mut self, data: Self::SystemData) {
-        let MonsterClericAISystemData {
+        let MonsterSupportSpellcasterAISystemData {
             entities,
             mut map,
             ppos,
@@ -307,7 +307,7 @@ impl<'a> System<'a> for MonsterClericAISystem {
             monsters,
             stats,
             mut viewsheds,
-            mut cleric_ais,
+            mut support_ais,
             mut can_acts,
             mut positions,
             mut wants_to_target,
@@ -327,7 +327,7 @@ impl<'a> System<'a> for MonsterClericAISystem {
             &entities,
             &monsters,
             &mut viewsheds,
-            &mut cleric_ais,
+            &mut support_ais,
             &positions).join();
 
         for (entity, _m, viewshed, ai, pos) in iter {
@@ -357,6 +357,7 @@ impl<'a> System<'a> for MonsterClericAISystem {
             let any_monsters_within_viewshed = monsters_within_viewshed.next().is_some();
 
             // We want to heal any monsters we can see that are below half health.
+            // TODO: Generalize this one.
             let mut monsters_to_heal_within_viewshed = (&entities, &monsters, &stats, &positions).join()
                 .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
                 .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp / 2)
@@ -430,6 +431,8 @@ impl<'a> System<'a> for MonsterClericAISystem {
             can_acts.remove(entity).expect("Unable to remove CanAct component.");
         }
 
+        // Clear the movement bufffer and acutally commit the monsters to new
+        // positions.
         for (monster, (x, y)) in movement_buffer {
             let pos = positions.get_mut(monster);
             let viewshed = viewsheds.get_mut(monster);

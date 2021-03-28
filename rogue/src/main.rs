@@ -212,8 +212,8 @@ impl State {
         can_act.run_now(&self.ecs);
         let mut mob = MonsterBasicAISystem{};
         mob.run_now(&self.ecs);
-        let mut clerics = MonsterClericAISystem{};
-        clerics.run_now(&self.ecs);
+        let mut supports = MonsterSupportSpellcasterAISystem{};
+        supports.run_now(&self.ecs);
         let mut spellcasters = MonsterAttackSpellcasterAISystem{};
         spellcasters.run_now(&self.ecs);
         let mut melee = MeleeCombatSystem{};
@@ -674,7 +674,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
-    gs.ecs.register::<MonsterClericAI>();
+    gs.ecs.register::<MonsterSupportSpellcasterAI>();
     gs.ecs.register::<SpellCharges>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();
@@ -697,6 +697,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsFreezingWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenTargeted>();
     gs.ecs.register::<MoveToPositionWhenTargeted>();
+    gs.ecs.register::<BuffsMeleeAttackWhenTargeted>();
+    gs.ecs.register::<BuffsPhysicalDefenseWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenEncroachedUpon>();
     gs.ecs.register::<InflictsFreezingWhenEncroachedUpon>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
@@ -708,6 +710,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusIsBurning>();
     gs.ecs.register::<StatusIsImmuneToFire>();
     gs.ecs.register::<StatusIsImmuneToChill>();
+    gs.ecs.register::<StatusIsMeleeAttackBuffed>();
+    gs.ecs.register::<StatusIsPhysicalDefenseBuffed>();
     gs.ecs.register::<GameAnimationParticle>();
     gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
     gs.ecs.register::<AlongRayAnimationWhenTargeted>();

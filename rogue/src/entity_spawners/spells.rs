@@ -3,6 +3,7 @@ use super::{
     EntitySpawnKind, Name, Position, Renderable, PickUpable, Castable,
     SpellCharges, Targeted, TargetingKind, InflictsDamageWhenTargeted,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
+    BuffsMeleeAttackWhenTargeted, BuffsPhysicalDefenseWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
     ProvidesFullHealing, SpawnsEntityInAreaWhenTargeted,
     MoveToPositionWhenTargeted, SimpleMarker, SerializeMe, MarkedBuilder,
@@ -302,6 +303,76 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
             fg: RGB::named(rltk::RED),
             bg: RGB::named(rltk::BLACK),
             glyph: rltk::to_cp437('♥'),
+            until_blocked: true
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+    Some(entity)
+}
+
+pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::RED),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Scroll of Invigorate".to_string()})
+        .with(PickUpable {})
+        .with(Castable {})
+        .with(SpellCharges {
+            max_charges: max_charges,
+            charges: charges,
+            regen_time: 100,
+            time: 0
+        })
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AlongRay {until_blocked: true}
+        })
+        .with(BuffsMeleeAttackWhenTargeted {turns: 10})
+        .with(AlongRayAnimationWhenTargeted {
+            fg: RGB::named(rltk::RED),
+            bg: RGB::named(rltk::BLACK),
+            glyph: rltk::to_cp437('▲'),
+            until_blocked: true
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+    Some(entity)
+}
+
+pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::RED),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+        })
+        .with(Name {name: "Scroll of Healing".to_string()})
+        .with(PickUpable {})
+        .with(Castable {})
+        .with(SpellCharges {
+            max_charges: max_charges,
+            charges: charges,
+            regen_time: 100,
+            time: 0
+        })
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AlongRay {until_blocked: true}
+        })
+        .with(BuffsPhysicalDefenseWhenTargeted {turns: 10})
+        .with(AlongRayAnimationWhenTargeted {
+            fg: RGB::named(rltk::BLUE),
+            bg: RGB::named(rltk::BLACK),
+            glyph: rltk::to_cp437('▲'),
             until_blocked: true
         })
         .marked::<SimpleMarker<SerializeMe>>()
