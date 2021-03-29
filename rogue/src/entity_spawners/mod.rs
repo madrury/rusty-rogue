@@ -175,7 +175,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Pomegranate, depth)
             .insert(ItemType::HealthPotion, 4 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, depth)
+            .insert(ItemType::FirePotion, 200 + depth)
             .insert(ItemType::FreezingPotion, depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)

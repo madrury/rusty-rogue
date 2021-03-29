@@ -65,7 +65,6 @@ impl MapBuilder for SimpleMapBuilder {
             }
             terrain_spawners::spawn_region(ecs, &self.map, &region, self.depth);
         }
-
     }
 
     fn take_snapshot(&mut self) {

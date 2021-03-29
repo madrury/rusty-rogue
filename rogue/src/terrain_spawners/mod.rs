@@ -2,7 +2,7 @@
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    EntitySpawnKind
+    EntitySpawnKind, Hazard
 };
 use::rand;
 use rltk::{RandomNumberGenerator, RGB};

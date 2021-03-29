@@ -191,9 +191,11 @@ impl State {
         self.ecs.maintain();
     }
 
-    fn run_terrain_turn_systems(&mut self) {
+    fn run_hazard_turn_systems(&mut self) {
         let mut encroachment = EncroachmentSystem{};
         encroachment.run_now(&self.ecs);
+        let mut status_effects = StatusEffectSystem {};
+        status_effects.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
         let mut dissipates = DissipationSystem{};
@@ -201,8 +203,6 @@ impl State {
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);
-        // DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
-        // DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -264,7 +264,7 @@ impl State {
             player_start = builder.starting_position();
         }
         builder.spawn_entities(&mut self.ecs);
-        // builder.spawn_terrain(&mut self.ecs);
+        builder.spawn_terrain(&mut self.ecs);
 
         // Place the player and update the player's associated ECS resources.
         let (player_x, player_y) = (player_start.x, player_start.y);
@@ -449,7 +449,7 @@ impl GameState for State {
                 }
             }
             RunState::HazardTurn => {
-                self.run_terrain_turn_systems();
+                self.run_hazard_turn_systems();
                 self.run_map_indexing_system();
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(RunState::MonsterTurn);

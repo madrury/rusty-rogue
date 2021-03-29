@@ -5,8 +5,8 @@ use super::{
     GameLog, Name, RunState, Monster, Hazard, StatusIsFrozen,
     StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
     StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed,
-    WantsToTakeDamage, ElementalDamageKind, tick_status,
-    tick_status_with_immunity, BURNING_TICK_DAMAGE
+    WantsToTakeDamage, WantsToDissipate, ElementalDamageKind, DissipateWhenBurning,
+    tick_status, tick_status_with_immunity, BURNING_TICK_DAMAGE
 };
 
 //----------------------------------------------------------------------------
@@ -124,7 +124,9 @@ pub struct StatusEffectSystemData<'a> {
     hazards: ReadStorage<'a, Hazard>,
     status_burning: WriteStorage<'a, StatusIsBurning>,
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
-    wants_damages: WriteStorage<'a, WantsToTakeDamage>
+    dissipate_when_burning: ReadStorage<'a, DissipateWhenBurning>,
+    wants_damages: WriteStorage<'a, WantsToTakeDamage>,
+    wants_dissipates: WriteStorage<'a, WantsToDissipate>
 }
 
 impl<'a> System<'a> for StatusEffectSystem {
@@ -140,7 +142,9 @@ impl<'a> System<'a> for StatusEffectSystem {
             hazards,
             mut status_burning,
             status_immune_fire,
-            mut wants_damages
+            dissipate_when_burning,
+            mut wants_damages,
+            mut wants_dissipates
         } = data;
 
         for entity in entities.join() {
@@ -160,9 +164,15 @@ impl<'a> System<'a> for StatusEffectSystem {
             // StatusIsBurning: Tick burning entities, apply the tick damage,
             // and remove the status if expired or if the entity has aquired
             // fire immunity.
+            // Note: It's ok to add a WantsToTakeDamage component to entities
+            // without any combat stats component, it is ignored in
+            // damage_system.
             let burning = status_burning.get_mut(entity);
             let is_fire_immune = status_immune_fire.get(entity).is_some();
+            let does_dissipate_when_burning = dissipate_when_burning.get(entity).is_some();
             if let Some(_burning) = burning {
+                // Entities with combat stats (in this case, with hp, so
+                // succeptable to damage) take tick damage when burning.
                 if !is_fire_immune {
                     WantsToTakeDamage::new_damage(
                         &mut wants_damages,
@@ -170,6 +180,11 @@ impl<'a> System<'a> for StatusEffectSystem {
                         BURNING_TICK_DAMAGE,
                         ElementalDamageKind::Fire
                     );
+                }
+                // Some entities (i.e. grass) are destroyed when burning.
+                if does_dissipate_when_burning {
+                    wants_dissipates.insert(entity, WantsToDissipate {})
+                        .expect("Unable to insert WantsToDissipate.");
                 }
             }
         }

@@ -1,7 +1,7 @@
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    EntitySpawnKind
+    EntitySpawnKind, Hazard
 };
 use rand::seq::SliceRandom;
 use rltk::{RGB};
@@ -47,6 +47,8 @@ pub fn grass(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             order: 2,
         })
         .with(Name {name: "Grass".to_string()})
+        // Hard to justify? Well, it needs to take a turn ok?
+        .with(Hazard {})
         .with(DissipateWhenBurning {})
         .with(ChanceToSpawnEntityWhenBurning {
             kind: EntitySpawnKind::Fire {
