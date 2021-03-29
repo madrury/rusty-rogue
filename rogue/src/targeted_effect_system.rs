@@ -204,14 +204,14 @@ impl<'a> System<'a> for TargetedSystem {
                 // Component: InflictsFreezingWhenTargeted
                 let thing_freezes = does_freeze.get(want_target.thing);
                 if let Some(thing_freezes) = thing_freezes {
-                    let play_message = new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
+                    let _play_message = new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
                         &mut is_frozen,
                         &is_chill_immune,
                         *target,
                         thing_freezes.turns
                     );
-                    let thing_name = names.get(want_target.thing);
-                    let target_name = names.get(*target);
+                    // let thing_name = names.get(want_target.thing);
+                    // let target_name = names.get(*target);
                     // TODO: This should not refer to the player.
                     // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
                     //     if play_message {
@@ -228,7 +228,7 @@ impl<'a> System<'a> for TargetedSystem {
                 // Component: InflictsBurningWhenTargeted
                 let thing_burns = does_burn.get(want_target.thing);
                 if let Some(thing_burns) = thing_burns {
-                    let play_message = new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
+                    let _play_message = new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                         &mut is_burning,
                         &is_fire_immune,
                         *target,
@@ -252,7 +252,7 @@ impl<'a> System<'a> for TargetedSystem {
                 // Component: BuffsMeleeAttackWhenTargeted
                 let thing_buffs_attack = does_buff_attack.get(want_target.thing);
                 if let Some(thing_buffs_attack) = thing_buffs_attack {
-                    let play_message = new_status::<StatusIsMeleeAttackBuffed>(
+                    let _play_message = new_status::<StatusIsMeleeAttackBuffed>(
                         &mut has_buffed_attack,
                         *target,
                         thing_buffs_attack.turns,
@@ -263,7 +263,7 @@ impl<'a> System<'a> for TargetedSystem {
                 // Component: BuffsPhysicalDefenseWhenTargeted
                 let thing_buffs_defense = does_buff_defense.get(want_target.thing);
                 if let Some(thing_buffs_defense) = thing_buffs_defense {
-                    let play_message = new_status::<StatusIsPhysicalDefenseBuffed>(
+                    let _play_message = new_status::<StatusIsPhysicalDefenseBuffed>(
                         &mut has_buffed_defense,
                         *target,
                         thing_buffs_defense.turns,

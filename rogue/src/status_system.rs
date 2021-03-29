@@ -181,18 +181,17 @@ impl<'a> System<'a> for StatusEffectSystem {
             // StatusIsBurning: Tick burning entities, apply the tick damage,
             // and remove the status if expired or if the entity has aquired
             // fire immunity.
-            // Note: It's ok to add a WantsToTakeDamage component to entities
-            // without any combat stats component, it is ignored in
-            // damage_system.
             let burning = status_burning.get_mut(entity);
             let pos = positions.get(entity);
             let chance_to_spawn = chance_to_spawn_when_burning.get(entity);
             let is_fire_immune = status_immune_fire.get(entity).is_some();
             let does_dissipate_when_burning = dissipate_when_burning.get(entity).is_some();
             if let Some(_burning) = burning {
-
                 // Entities with combat stats (in this case, with hp, so
                 // succeptable to damage) take tick damage when burning.
+                // Note: It's ok to add a WantsToTakeDamage component to
+                // entities without any combat stats component, it is ignored in
+                // damage_system.
                 if !is_fire_immune {
                     WantsToTakeDamage::new_damage(
                         &mut wants_damages,
@@ -221,7 +220,9 @@ impl<'a> System<'a> for StatusEffectSystem {
                 }
             }
 
-            // ChanceToInflictBurningOnAdjacentEntities: ...
+            // ChanceToInflictBurningOnAdjacentEntities.
+            // Grab all entities in a tile adjaent to this one, roll a die, and
+            // maybe burn them.
             let chance_to_spread_burning = chance_to_inflict_burning_on_adjacent.get(entity);
             if let (Some(spread_chance), Some(pos)) = (chance_to_spread_burning, pos) {
                 let adjacent = get_adjacent_entities(&*map, pos);

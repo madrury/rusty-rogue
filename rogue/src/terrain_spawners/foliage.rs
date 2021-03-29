@@ -8,6 +8,7 @@ use rltk::{RGB};
 use specs::prelude::*;
 
 
+// Spawn a patch of short grass.
 pub fn spawn_short_grass_patch(ecs: &mut World, map: &Map, region: &[usize]) {
     let idx: Option<&usize> = region.choose(&mut rand::thread_rng());
     if let Some(idx) = idx {
@@ -19,9 +20,11 @@ pub fn spawn_short_grass_patch(ecs: &mut World, map: &Map, region: &[usize]) {
     }
 }
 
-fn grow_patch_from_seed(seed: usize, map: &Map, N: i32) -> Vec<usize> {
+// Grow a contiguous patch of tiles outwards from a seed tile.
+// TODO: Maybe we should use the noise capabilities of RLTK here?
+fn grow_patch_from_seed(seed: usize, map: &Map, n: i32) -> Vec<usize> {
     let mut patch = vec![seed];
-    for _ in 0..N {
+    for _ in 0..n {
         let pt: Option<(i32, i32)> = patch.choose(&mut rand::thread_rng())
             .map(|idx| map.idx_xy(*idx));
         if let Some(pt) = pt {
@@ -37,6 +40,8 @@ fn grow_patch_from_seed(seed: usize, map: &Map, N: i32) -> Vec<usize> {
     patch
 }
 
+// Grass growing serenely in a tile. Does not do much but offer kindling for
+// other effects.
 pub fn grass(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})

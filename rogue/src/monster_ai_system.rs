@@ -72,7 +72,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
     fn run(&mut self, data: Self::SystemData) {
         let MonsterBasicAISystemData {
             entities,
-            mut map,
+            map,
             ppos,
             player,
             monsters,
@@ -91,7 +91,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             &mut basic_ais,
             &mut positions).join();
 
-        for (entity, _m, mut viewshed, ai, mut pos) in iter {
+        for (entity, _m, viewshed, ai, pos) in iter {
 
             // If the entity cannot act, bail out.
             if can_acts.get(entity).is_none() {
@@ -189,7 +189,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
     fn run(&mut self, data: Self::SystemData) {
         let MonsterAttackSpellcasterAISystemData {
             entities,
-            mut map,
+            map,
             ppos,
             player,
             monsters,
@@ -212,7 +212,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             &mut attack_spellcaster_ais,
             &mut positions).join();
 
-        for (entity, _m, mut viewshed, ai, mut pos) in iter {
+        for (entity, _m, viewshed, ai, pos) in iter {
 
             // If the entity cannot act, bail out.
             if can_acts.get(entity).is_none() {
@@ -323,7 +323,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
     fn run(&mut self, data: Self::SystemData) {
         let MonsterSupportSpellcasterAISystemData {
             entities,
-            mut map,
+            map,
             ppos,
             player,
             monsters,
@@ -392,7 +392,6 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             // let monster_to_heal = monsters_to_heal_within_viewshed.next();
 
             let monster_to_target = get_monster_to_target(
-                &*map,
                 &entity,
                 ai.support_kind,
                 in_viewshed,
@@ -475,7 +474,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
         for (monster, (x, y)) in movement_buffer {
             let pos = positions.get_mut(monster);
             let viewshed = viewsheds.get_mut(monster);
-            if let(Some(mut pos), Some(mut viewshed)) = (pos, viewshed) {
+            if let(Some(_pos), Some(_viewshed)) = (pos, viewshed) {
                 wants_to_move.insert(monster, WantsToMoveToPosition {
                     pt: Point {x: x, y: y}
                 }).expect("Could not insert WantsToMoveToPosition.");
@@ -492,7 +491,6 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
 //   *player*, so that they don't just immediately spam their buffs in the first
 //   turns of the level.
 fn get_monster_to_target(
-    map: &Map,
     entity: &Entity,
     kind: SupportSpellcasterKind,
     player_in_viewshed: bool,
