@@ -11,7 +11,7 @@ use specs::prelude::*;
 pub fn spawn_short_grass_patch(ecs: &mut World, map: &Map, region: &[usize]) {
     let idx: Option<&usize> = region.choose(&mut rand::thread_rng());
     if let Some(idx) = idx {
-        let patch = grow_patch_from_seed(*idx, map, 40);
+        let patch = grow_patch_from_seed(*idx, map, 80);
         for idx_ in patch {
             let (x, y) = map.idx_xy(idx_);
             let _g = grass(ecs, x, y);

@@ -2,13 +2,14 @@
 use specs::prelude::*;
 use rltk::{RGB, RandomNumberGenerator};
 use super::{
-    GameLog, Name, RunState, Monster, Hazard, Position, StatusIsFrozen,
+    Map, GameLog, Name, RunState, Monster, Hazard, Position, StatusIsFrozen,
     StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
     StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed,
     WantsToTakeDamage, WantsToDissipate, ElementalDamageKind,
     DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    EntitySpawnRequestBuffer, EntitySpawnRequest, tick_status,
-    tick_status_with_immunity, BURNING_TICK_DAMAGE
+    ChanceToInflictBurningOnAdjacentEntities, EntitySpawnRequestBuffer,
+    EntitySpawnRequest, tick_status, tick_status_with_immunity,
+    new_status_with_immunity, BURNING_TICK_DAMAGE
 };
 
 //----------------------------------------------------------------------------
@@ -121,6 +122,7 @@ pub struct StatusEffectSystem {}
 pub struct StatusEffectSystemData<'a> {
     entities: Entities<'a>,
     runstate: ReadExpect<'a, RunState>,
+    map: ReadExpect<'a, Map>,
     rng: WriteExpect<'a, RandomNumberGenerator>,
     spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
     player: ReadExpect<'a, Entity>,
@@ -131,6 +133,8 @@ pub struct StatusEffectSystemData<'a> {
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
     dissipate_when_burning: ReadStorage<'a, DissipateWhenBurning>,
     chance_to_spawn_when_burning: ReadStorage<'a, ChanceToSpawnEntityWhenBurning>,
+    chance_to_inflict_burning_on_adjacent:
+       ReadStorage<'a, ChanceToInflictBurningOnAdjacentEntities>,
     wants_damages: WriteStorage<'a, WantsToTakeDamage>,
     wants_dissipates: WriteStorage<'a, WantsToDissipate>,
 
@@ -144,6 +148,7 @@ impl<'a> System<'a> for StatusEffectSystem {
         let StatusEffectSystemData {
             entities,
             runstate,
+            map,
             mut rng,
             mut spawn_buffer,
             player,
@@ -153,6 +158,7 @@ impl<'a> System<'a> for StatusEffectSystem {
             mut status_burning,
             status_immune_fire,
             chance_to_spawn_when_burning,
+            chance_to_inflict_burning_on_adjacent,
             dissipate_when_burning,
             mut wants_damages,
             mut wants_dissipates
@@ -184,6 +190,7 @@ impl<'a> System<'a> for StatusEffectSystem {
             let is_fire_immune = status_immune_fire.get(entity).is_some();
             let does_dissipate_when_burning = dissipate_when_burning.get(entity).is_some();
             if let Some(_burning) = burning {
+
                 // Entities with combat stats (in this case, with hp, so
                 // succeptable to damage) take tick damage when burning.
                 if !is_fire_immune {
@@ -199,6 +206,9 @@ impl<'a> System<'a> for StatusEffectSystem {
                     wants_dissipates.insert(entity, WantsToDissipate {})
                         .expect("Unable to insert WantsToDissipate.");
                 }
+                // Some entities spawn other entities (usually fire) when
+                // burning. For example, grass spawn fire in its space when it
+                // is burned.
                 if let (Some(chance_to_spawn), Some(pos)) = (chance_to_spawn, pos) {
                     let roll = rng.roll_dice(1, 100);
                     if roll <= chance_to_spawn.chance {
@@ -207,6 +217,23 @@ impl<'a> System<'a> for StatusEffectSystem {
                             y: pos.y,
                             kind: chance_to_spawn.kind
                         })
+                    }
+                }
+            }
+
+            // ChanceToInflictBurningOnAdjacentEntities: ...
+            let chance_to_spread_burning = chance_to_inflict_burning_on_adjacent.get(entity);
+            if let (Some(spread_chance), Some(pos)) = (chance_to_spread_burning, pos) {
+                let adjacent = get_adjacent_entities(&*map, pos);
+                for entity in adjacent {
+                    let roll = rng.roll_dice(1, 100);
+                    if roll <= spread_chance.chance {
+                        new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
+                            &mut status_burning,
+                            &status_immune_fire,
+                            *entity,
+                            5
+                        );
                     }
                 }
             }
@@ -268,4 +295,17 @@ pub fn get_status_indicators(ecs: &World, entity: &Entity) -> Vec<StatusIndicato
         )
     }
     indicators
+}
+
+
+fn get_adjacent_entities<'a>(map: &'a Map, pos: &Position) -> Vec<&'a Entity> {
+    let mut entities: Vec<&Entity> = Vec::new();
+    let adjacent_tiles = map.get_adjacent_tiles(pos.x, pos.y);
+    for (x, y) in adjacent_tiles {
+        let idx = map.xy_idx(x, y);
+        for e in map.tile_content[idx].iter() {
+            entities.push(&e);
+        }
+    }
+    entities
 }

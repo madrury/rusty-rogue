@@ -107,6 +107,16 @@ impl Map {
         return None;
     }
 
+    pub fn get_adjacent_tiles(&self, x: i32, y: i32) -> Vec<(i32, i32)> {
+        let dxs = vec![-1, 0, 1];
+        let dys = vec![-1, 0, 1];
+        dxs.into_iter().zip(dys)
+            .map(|(dx, dy)| (x + dx, y + dy))
+            .filter(|(x, y)| *x != 0 || *y != 0)
+            .filter(|(x, y)| self.within_bounds(*x, *y))
+            .collect()
+    }
+
     pub fn random_adjacent_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
