@@ -27,6 +27,7 @@ mod spells;
 mod monsters;
 mod food;
 pub mod hazards;
+pub mod terrain;
 
 const MAX_MONSTERS_IN_ROOM: i32 = 4;
 const MAX_ITEMS_IN_ROOM: i32 = 2;
@@ -68,6 +69,8 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
 
 // Populate a reigon (defined by a container of map indexes) with monsters and
 // items.
+// TODO: This should jsut get the map so we don't need to import the MAP_WIDTH
+// and MAP_HEIGHT constants.
 pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
     let mut areas : Vec<usize> = Vec::from(region);
     if areas.is_empty() {return;}

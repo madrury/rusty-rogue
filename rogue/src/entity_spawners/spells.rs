@@ -315,7 +315,7 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('♪'),
-            fg: RGB::named(rltk::RED),
+            fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
         })
@@ -350,11 +350,11 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('♪'),
-            fg: RGB::named(rltk::RED),
+            fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
         })
-        .with(Name {name: "Scroll of Healing".to_string()})
+        .with(Name {name: "Scroll of Protection".to_string()})
         .with(PickUpable {})
         .with(Castable {})
         .with(SpellCharges {

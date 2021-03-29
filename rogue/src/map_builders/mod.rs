@@ -1,5 +1,5 @@
 use super::{
-    World, Map, TileType, Position, entity_spawners,
+    World, Map, TileType, Position, entity_spawners, terrain_spawners,
     DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
 mod simple_map;
@@ -20,6 +20,7 @@ Various apgorithms for map building.
 
 pub trait MapBuilder {
     fn build_map(&mut self);
+    fn spawn_terrain(&mut self, ecs: &mut World);
     fn spawn_entities(&mut self, ecs: &mut World);
     fn map(&self) -> Map;
     fn starting_position(&self) -> Position;

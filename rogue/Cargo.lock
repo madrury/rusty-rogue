@@ -1462,6 +1462,7 @@ dependencies = [
 name = "roguelike"
 version = "0.1.0"
 dependencies = [
+ "rand",
  "rltk",
  "serde",
  "serde_json",

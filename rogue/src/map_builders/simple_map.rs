@@ -4,8 +4,8 @@ use specs::prelude::*;
 use super::MapBuilder;
 use super::{
     Map, TileType, Position, Rectangle, MAP_WIDTH, MAP_HEIGHT,
-    DEBUG_VISUALIZE_MAPGEN, entity_spawners, apply_room, apply_horizontal_tunnel,
-    apply_vertical_tunnel
+    DEBUG_VISUALIZE_MAPGEN, entity_spawners, terrain_spawners, apply_room,
+    apply_horizontal_tunnel, apply_vertical_tunnel
 };
 
 //----------------------------------------------------------------------------
@@ -49,6 +49,22 @@ impl MapBuilder for SimpleMapBuilder {
             }
             entity_spawners::spawn_region(ecs, &region, self.depth);
         }
+    }
+
+    fn spawn_terrain(&mut self, ecs: &mut World) {
+        for room in self.rooms.iter().skip(1) {
+            let mut region: Vec<usize> = Vec::new();
+            for y in room.y1 + 1 .. room.y2 {
+                for x in room.x1 + 1 .. room.x2 {
+                    let idx = self.map.xy_idx(x, y);
+                    if self.map.tiles[idx] == TileType::Floor {
+                        region.push(idx);
+                    }
+                }
+            }
+            terrain_spawners::spawn_region(ecs, &self.map, &region, self.depth);
+        }
+
     }
 
     fn take_snapshot(&mut self) {

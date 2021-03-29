@@ -69,7 +69,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     .sum();
                 // Factor is 2 if the attacker is buffed, 1 otherwise.
                 let attack_buff_factor: i32 = is_melee_buffs.get(attacker)
-                    .map_or(1, |b| 2);
+                    .map_or(1, |_b| 2);
                 let damage = i32::max(0, attack_buff_factor * (stats.power + weapon_attack_bonus));
                 // TODO: This message should be created further down the turn
                 // pipeline. Probably where damage is actually applied.

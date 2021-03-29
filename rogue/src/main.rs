@@ -16,6 +16,7 @@ use components::signaling::*;
 
 pub mod map_builders;
 pub mod entity_spawners;
+pub mod terrain_spawners;
 mod save_load;
 mod random_table;
 mod map;
@@ -62,8 +63,8 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_DRAW_ALL_MAP: bool = true;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 
@@ -263,6 +264,7 @@ impl State {
             player_start = builder.starting_position();
         }
         builder.spawn_entities(&mut self.ecs);
+        builder.spawn_terrain(&mut self.ecs);
 
         // Place the player and update the player's associated ECS resources.
         let (player_x, player_y) = (player_start.x, player_start.y);

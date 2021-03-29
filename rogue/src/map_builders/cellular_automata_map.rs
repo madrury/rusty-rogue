@@ -4,7 +4,8 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, TileType, Position, entity_spawners, DEBUG_VISUALIZE_MAPGEN
+    Map, TileType, Position, entity_spawners, terrain_spawners,
+    DEBUG_VISUALIZE_MAPGEN
 };
 
 //const MIN_ROOM_SIZE : i32 = 8;
@@ -64,6 +65,12 @@ impl MapBuilder for CellularAutomataBuilder {
         self.compute_starting_position();
         self.place_stairs();
         self.populate_noise_areas();
+    }
+
+    fn spawn_terrain(&mut self, ecs: &mut World) {
+        for area in self.noise_areas.iter() {
+            terrain_spawners::spawn_region(ecs, &self.map, area.1, self.depth);
+        }
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {
