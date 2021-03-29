@@ -1,6 +1,6 @@
 
 use specs::prelude::*;
-use rltk::{RGB};
+use rltk::{RGB, RandomNumberGenerator};
 use super::{
     GameLog, Name, RunState, Monster, Hazard, Position, StatusIsFrozen,
     StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
@@ -121,6 +121,7 @@ pub struct StatusEffectSystem {}
 pub struct StatusEffectSystemData<'a> {
     entities: Entities<'a>,
     runstate: ReadExpect<'a, RunState>,
+    rng: WriteExpect<'a, RandomNumberGenerator>,
     spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
     player: ReadExpect<'a, Entity>,
     monsters: ReadStorage<'a, Monster>,
@@ -143,6 +144,7 @@ impl<'a> System<'a> for StatusEffectSystem {
         let StatusEffectSystemData {
             entities,
             runstate,
+            mut rng,
             mut spawn_buffer,
             player,
             monsters,
@@ -198,11 +200,14 @@ impl<'a> System<'a> for StatusEffectSystem {
                         .expect("Unable to insert WantsToDissipate.");
                 }
                 if let (Some(chance_to_spawn), Some(pos)) = (chance_to_spawn, pos) {
-                    spawn_buffer.request(EntitySpawnRequest {
-                        x: pos.x,
-                        y: pos.y,
-                        kind: chance_to_spawn.kind
-                    })
+                    let roll = rng.roll_dice(1, 100);
+                    if roll <= chance_to_spawn.chance {
+                        spawn_buffer.request(EntitySpawnRequest {
+                            x: pos.x,
+                            y: pos.y,
+                            kind: chance_to_spawn.kind
+                        })
+                    }
                 }
             }
         }
