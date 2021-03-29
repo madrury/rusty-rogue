@@ -688,6 +688,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToMoveToPosition>();
     gs.ecs.register::<WantsToMoveToRandomPosition>();
     gs.ecs.register::<WantsToDissipate>();
+    gs.ecs.register::<DissipateWhenBurning>();
     gs.ecs.register::<ProvidesFullHealing>();
     gs.ecs.register::<ProvidesFullFood>();
     gs.ecs.register::<IncreasesMaxHpWhenUsed>();
@@ -705,6 +706,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsFreezingWhenEncroachedUpon>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<ChanceToSpawnAdjacentEntity>();
+    gs.ecs.register::<ChanceToSpawnEntityWhenBurning>();
+    gs.ecs.register::<ChanceToInflictBurningOnAdjacentEntities>();
     gs.ecs.register::<ChanceToDissipate>();
     gs.ecs.register::<GrantsMeleeAttackBonus>();
     gs.ecs.register::<GrantsMeleeDefenseBonus>();

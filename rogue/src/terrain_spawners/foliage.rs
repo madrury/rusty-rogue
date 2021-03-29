@@ -1,6 +1,7 @@
 use super::{
-    Map, TileType, Position, Renderable, Name, SimpleMarker, SerializeMe,
-    MarkedBuilder, MAP_WIDTH
+    Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
+    MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
+    EntitySpawnKind
 };
 use rand::seq::SliceRandom;
 use rltk::{RGB};
@@ -46,6 +47,14 @@ pub fn grass(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             order: 2,
         })
         .with(Name {name: "Grass".to_string()})
+        .with(DissipateWhenBurning {})
+        .with(ChanceToSpawnEntityWhenBurning {
+            kind: EntitySpawnKind::Fire {
+                spread_chance: 50,
+                dissipate_chance: 50
+            },
+            chance: 100
+        })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)

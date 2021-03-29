@@ -3,7 +3,8 @@ use super::{
     Map, TileType, EntitySpawnKind, Hazard, IsEntityKind, Name, Position,
     Renderable, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
-    ChanceToSpawnAdjacentEntity, ChanceToDissipate, SimpleMarker, SerializeMe,
+    ChanceToSpawnAdjacentEntity, ChanceToDissipate,
+    ChanceToInflictBurningOnAdjacentEntities, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind
 };
 use rltk::{RGB};
@@ -44,6 +45,9 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
                     spread_chance: i32::max(0, spread_chance - 20),
                     dissipate_chance: i32::max(0, dissipate_chance + 20),
                 }
+            })
+            .with(ChanceToInflictBurningOnAdjacentEntities {
+                chance: 50
             })
             .with(ChanceToDissipate {
                 chance: dissipate_chance

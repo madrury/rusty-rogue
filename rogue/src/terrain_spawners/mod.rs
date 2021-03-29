@@ -1,7 +1,8 @@
 
 use super::{
-    Map, TileType, Position, Renderable, Name, SimpleMarker, SerializeMe,
-    MarkedBuilder, MAP_WIDTH
+    Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
+    MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
+    EntitySpawnKind
 };
 use::rand;
 use rltk::{RandomNumberGenerator, RGB};

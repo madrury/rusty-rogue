@@ -79,6 +79,13 @@ pub struct InflictsBurningWhenEncroachedUpon {
     pub tick_damage: i32
 }
 
+// Component for entities that inflict (maybe) inflict burning on adjacent
+// entities.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct ChanceToInflictBurningOnAdjacentEntities {
+    pub chance: i32
+}
+
 // Component for effects that inflict the freezing status on any other entity
 // occupyting the same space.
 #[derive(Component, ConvertSaveload, Clone)]

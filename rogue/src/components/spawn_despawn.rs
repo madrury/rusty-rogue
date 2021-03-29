@@ -42,11 +42,24 @@ pub struct ChanceToSpawnAdjacentEntity {
     pub kind: EntitySpawnKind
 }
 
+// Component indicates that an entity will spawn another entity in the same
+// space when burning (so, for example, grass will spawn fire when burned).
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct ChanceToSpawnEntityWhenBurning {
+    pub kind: EntitySpawnKind,
+    pub chance: i32
+}
+
 // An entity with this component has a chance to dissipate every turn.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct ChanceToDissipate {
     pub chance: i32,
+
 }
+// Component indicates that an entity dissipates (i.e. is destroyed) when it is
+// burning. I.e., grass is destroyed when burned.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct DissipateWhenBurning {}
 
 // An entity with this component has dissipated and should be removed from the
 // ECS at the end of the current turn.
