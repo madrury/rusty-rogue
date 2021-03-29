@@ -2,11 +2,13 @@
 use specs::prelude::*;
 use rltk::{RGB};
 use super::{
-    GameLog, Name, RunState, Monster, Hazard, StatusIsFrozen,
+    GameLog, Name, RunState, Monster, Hazard, Position, StatusIsFrozen,
     StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
     StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed,
-    WantsToTakeDamage, WantsToDissipate, ElementalDamageKind, DissipateWhenBurning,
-    tick_status, tick_status_with_immunity, BURNING_TICK_DAMAGE
+    WantsToTakeDamage, WantsToDissipate, ElementalDamageKind,
+    DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
+    EntitySpawnRequestBuffer, EntitySpawnRequest, tick_status,
+    tick_status_with_immunity, BURNING_TICK_DAMAGE
 };
 
 //----------------------------------------------------------------------------
@@ -119,14 +121,18 @@ pub struct StatusEffectSystem {}
 pub struct StatusEffectSystemData<'a> {
     entities: Entities<'a>,
     runstate: ReadExpect<'a, RunState>,
+    spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
     player: ReadExpect<'a, Entity>,
     monsters: ReadStorage<'a, Monster>,
     hazards: ReadStorage<'a, Hazard>,
+    positions: ReadStorage<'a, Position>,
     status_burning: WriteStorage<'a, StatusIsBurning>,
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
     dissipate_when_burning: ReadStorage<'a, DissipateWhenBurning>,
+    chance_to_spawn_when_burning: ReadStorage<'a, ChanceToSpawnEntityWhenBurning>,
     wants_damages: WriteStorage<'a, WantsToTakeDamage>,
-    wants_dissipates: WriteStorage<'a, WantsToDissipate>
+    wants_dissipates: WriteStorage<'a, WantsToDissipate>,
+
 }
 
 impl<'a> System<'a> for StatusEffectSystem {
@@ -137,11 +143,14 @@ impl<'a> System<'a> for StatusEffectSystem {
         let StatusEffectSystemData {
             entities,
             runstate,
+            mut spawn_buffer,
             player,
             monsters,
             hazards,
+            positions,
             mut status_burning,
             status_immune_fire,
+            chance_to_spawn_when_burning,
             dissipate_when_burning,
             mut wants_damages,
             mut wants_dissipates
@@ -168,6 +177,8 @@ impl<'a> System<'a> for StatusEffectSystem {
             // without any combat stats component, it is ignored in
             // damage_system.
             let burning = status_burning.get_mut(entity);
+            let pos = positions.get(entity);
+            let chance_to_spawn = chance_to_spawn_when_burning.get(entity);
             let is_fire_immune = status_immune_fire.get(entity).is_some();
             let does_dissipate_when_burning = dissipate_when_burning.get(entity).is_some();
             if let Some(_burning) = burning {
@@ -185,6 +196,13 @@ impl<'a> System<'a> for StatusEffectSystem {
                 if does_dissipate_when_burning {
                     wants_dissipates.insert(entity, WantsToDissipate {})
                         .expect("Unable to insert WantsToDissipate.");
+                }
+                if let (Some(chance_to_spawn), Some(pos)) = (chance_to_spawn, pos) {
+                    spawn_buffer.request(EntitySpawnRequest {
+                        x: pos.x,
+                        y: pos.y,
+                        kind: chance_to_spawn.kind
+                    })
                 }
             }
         }

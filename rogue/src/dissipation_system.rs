@@ -47,10 +47,14 @@ impl DissipationSystem {
         // Actually call the apppropriate destructors.
         for (victim, kind) in dissipated {
             match (victim, kind) {
+                // If the victim does not have a registered kind (type), then we
+                // assume there is no custom destructor.
                 (_, None) => {
                     ecs.delete_entity(victim)
                         .expect("Unable to dissipate an entitiy that requested it.");
                 }
+                // If the victim does have a registered kind, then we lookup the
+                // approporiate destructor.
                 (victim, Some(is_entity_kind)) => {
                     match is_entity_kind.kind {
                         EntitySpawnKind::Fire {..} => entity_spawners::hazards::destroy_fire(ecs, &victim),
