@@ -34,6 +34,7 @@ impl MapBuilder for SimpleMapBuilder {
 
     fn build_map(&mut self) {
         self.rooms_and_corridors();
+        self.map.populate_blocked();
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {

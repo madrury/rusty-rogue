@@ -94,7 +94,7 @@ impl<'a> System<'a> for DamageSystem {
                 .map(|(_e, ab, _eq)| ab.bonus)
                 .sum();
             let defense_buff_factor: i32 = is_defense_buffs.get(entity)
-                .map_or(1, |b_| 2);
+                .map_or(1, |_b| 2);
             let is_immune_to_fire: bool = status_fire_immunity.get(entity).is_some();
             let is_immune_to_chill: bool = status_chill_immunity.get(entity).is_some();
 

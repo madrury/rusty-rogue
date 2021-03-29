@@ -26,7 +26,10 @@ fn grow_patch_from_seed(seed: usize, map: &Map, N: i32) -> Vec<usize> {
         if let Some(pt) = pt {
             let next = map.random_adjacent_unblocked_point(pt.0, pt.1);
             if let Some(next) = next {
-                patch.push(map.xy_idx(next.0, next.1));
+                let next_idx = map.xy_idx(next.0, next.1);
+                if !patch.contains(&next_idx) {
+                    patch.push(next_idx);
+                }
             }
         }
     }

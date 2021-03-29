@@ -1,9 +1,10 @@
 use specs::prelude::*;
 use super::{
     Viewshed, Monster, CombatStats, CanAct, MonsterBasicAI,
-    MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI, Position, Map, RoutingMap,
-    WantsToMeleeAttack, WantsToUseTargeted, StatusIsFrozen, InSpellBook,
-    Castable, SpellCharges, MovementRoutingOptions, SupportSpellcasterKind,
+    MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI, Position, Map,
+    RoutingMap, WantsToMeleeAttack, WantsToUseTargeted,
+    WantsToMoveToPosition, StatusIsFrozen, InSpellBook, Castable,
+    SpellCharges, MovementRoutingOptions, SupportSpellcasterKind,
     StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed
 };
 use rltk::{Point, RandomNumberGenerator};
@@ -61,6 +62,7 @@ pub struct MonsterBasicAISystemData<'a> {
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_melee_attack: WriteStorage<'a, WantsToMeleeAttack>,
+    wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
 }
 
 impl<'a> System<'a> for MonsterBasicAISystem {
@@ -79,6 +81,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             mut can_acts,
             mut positions,
             mut wants_melee_attack,
+            mut wants_to_move,
         } = data;
 
         let iter = (
@@ -120,9 +123,12 @@ impl<'a> System<'a> for MonsterBasicAISystem {
                     &RoutingMap::from_map(&*map, &ai.routing_options)
                 );
                 if path.success && path.steps.len() > 1 {
-                    let new_x = path.steps[1] as i32 % map.width;
-                    let new_y = path.steps[1] as i32 / map.width;
-                    move_monster(&mut map, &mut pos, new_x, new_y, &mut viewshed);
+                    wants_to_move.insert(entity, WantsToMoveToPosition {
+                        pt: Point {
+                            x: path.steps[1] as i32 % map.width,
+                            y: path.steps[1] as i32 / map.width
+                        }
+                    }).expect("Could not instert WantsToMoveToPosition.");
                 }
                 // Update our monster's propensity to keep following the player
                 // when they lose visual contact. After a specified amount of
@@ -138,7 +144,9 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             //   visible range.
             } else if !in_viewshed && ai.no_visibility_wander {
                 let new_pos = random_adjacent_position(&map, pos);
-                move_monster(&mut map, &mut pos, new_pos.0, new_pos.1, &mut viewshed)
+                wants_to_move.insert(entity, WantsToMoveToPosition {
+                    pt: Point {x: new_pos.0, y: new_pos.1}
+                }).expect("Could not instert WantsToMoveToPosition.");
             }
             // We're done acting, so we've used up our action for the turn.
             can_acts.remove(entity).expect("Unable to remove CanAct component.");
@@ -168,6 +176,7 @@ pub struct MonsterAttackSpellcasterAISystemData<'a> {
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
     wants_to_melee: WriteStorage<'a, WantsToMeleeAttack>,
+    wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
     in_spellbooks: ReadStorage<'a, InSpellBook>,
     castables: ReadStorage<'a, Castable>,
     charges: ReadStorage<'a, SpellCharges>,
@@ -190,6 +199,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             mut positions,
             mut wants_to_target,
             mut wants_to_melee,
+            mut wants_to_move,
             in_spellbooks,
             castables,
             charges,
@@ -256,7 +266,9 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
                 );
                 if let Some(target_idx) = target_idx {
                     let target_pos = map.idx_xy(target_idx);
-                    move_monster(&mut map, &mut pos, target_pos.0, target_pos.1, &mut viewshed);
+                    wants_to_move.insert(entity, WantsToMoveToPosition{
+                        pt: Point{x: target_pos.0, y: target_pos.1}
+                    }).expect("Could not insert WantsToMoveToPosition.");
                 }
             }
             // We're done acting, so we've used up our action for the turn.
@@ -296,6 +308,7 @@ pub struct MonsterSupportSpellcasterAISystemData<'a> {
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
     wants_to_melee: WriteStorage<'a, WantsToMeleeAttack>,
+    wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
     in_spellbooks: ReadStorage<'a, InSpellBook>,
     castables: ReadStorage<'a, Castable>,
     charges: ReadStorage<'a, SpellCharges>,
@@ -321,6 +334,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             mut positions,
             mut wants_to_target,
             mut wants_to_melee,
+            mut wants_to_move,
             in_spellbooks,
             castables,
             charges,
@@ -462,7 +476,9 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             let pos = positions.get_mut(monster);
             let viewshed = viewsheds.get_mut(monster);
             if let(Some(mut pos), Some(mut viewshed)) = (pos, viewshed) {
-                move_monster(&mut map, &mut pos, x, y, &mut viewshed);
+                wants_to_move.insert(monster, WantsToMoveToPosition {
+                    pt: Point {x: x, y: y}
+                }).expect("Could not insert WantsToMoveToPosition.");
             }
         }
     }
@@ -596,23 +612,6 @@ fn get_position_at_range_from_other_monsters(
     rltk::DijkstraMap::find_lowest_exit(
         &dmap, map.xy_idx(pos.x, pos.y), routing_map
     )
-}
-
-// Move a monster to a new postions.
-fn move_monster(map: &mut Map, pos: &mut Position, newposx: i32, newposy: i32, viewshed: &mut Viewshed) {
-    let new_idx = map.xy_idx(newposx, newposy);
-    let old_idx = map.xy_idx(pos.x, pos.y);
-    if map.blocked[new_idx] {
-        return
-    }
-    // We need to update the blocking information *now*, since we do
-    // not want later monsters in the move queue to move into the
-    // same position as this monster.
-    map.blocked[old_idx] = false;
-    map.blocked[new_idx] = true;
-    pos.x = newposx;
-    pos.y = newposy;
-    viewshed.dirty = true;
 }
 
 // Return a random adjcaent position to pos that is not currently blocked.

@@ -264,7 +264,7 @@ impl State {
             player_start = builder.starting_position();
         }
         builder.spawn_entities(&mut self.ecs);
-        builder.spawn_terrain(&mut self.ecs);
+        // builder.spawn_terrain(&mut self.ecs);
 
         // Place the player and update the player's associated ECS resources.
         let (player_x, player_y) = (player_start.x, player_start.y);

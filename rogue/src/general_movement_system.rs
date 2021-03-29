@@ -66,6 +66,19 @@ impl<'a> System<'a> for TeleportationSystem {
 }
 
 
+//----------------------------------------------------------------------------
+// Process Requests to Change Position on the Map.
+//
+// This system is used by monsters and hazzards to change position, instead of
+// mutating their state inside the system that determines a position change is
+// needed. This works around some subtle issues of timing, where monsters
+// targeting other monsters could have unpredictable effects depending on what
+// orded movement is processes. Instead, we buffer requests to move and them
+// process them inbatch here.
+//
+// This has one drawback: a monster will not know a tile they request movement
+// into will become blocked at the time they are buffering their move request.
+//----------------------------------------------------------------------------
 pub struct PositionMovementSystem {}
 
 #[derive(SystemData)]
@@ -100,9 +113,16 @@ impl<'a> System<'a> for PositionMovementSystem {
         for (entity, pos, wants_to_move) in (&entities, &mut positions, &wants_to_move).join() {
 
             let old_pos = pos.clone();
+            let new_pos = wants_to_move.pt;
+            let old_idx = map.xy_idx(old_pos.x, old_pos.y);
+            let new_idx = map.xy_idx(new_pos.x, new_pos.y);
+
             let is_player = entity == *player;
             let is_blocking = is_blockings.get(entity).is_some();
-            let new_pos = wants_to_move.pt;
+
+            if map.blocked[new_idx] {
+                continue
+            }
 
             pos.x = new_pos.x;
             pos.y = new_pos.y;
@@ -111,8 +131,6 @@ impl<'a> System<'a> for PositionMovementSystem {
                 player_pos.y = new_pos.y;
             }
             if is_blocking {
-                let old_idx = map.xy_idx(old_pos.x, old_pos.y);
-                let new_idx = map.xy_idx(new_pos.x, new_pos.y);
                 map.blocked[old_idx] = false;
                 map.blocked[new_idx] = true;
             }
