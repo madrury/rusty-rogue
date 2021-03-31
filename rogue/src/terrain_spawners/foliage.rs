@@ -1,6 +1,7 @@
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
+    DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     EntitySpawnKind, Hazard, Opaque, color, noise
 };
 use rand::seq::SliceRandom;
@@ -24,7 +25,7 @@ pub fn spawn_short_grass(ecs: &mut World, map: &Map) {
                 // Trial and error.
                 let colorseed = vnoise + 0.3 * wnoise + 0.6;
                 let gcolor = color::grass_green_from_noise(colorseed);
-                grass(ecs, x, y, gcolor, RGB::named(rltk::BLACK));
+                grass(ecs, x, y, gcolor);
             }
         }
     }
@@ -40,11 +41,11 @@ pub fn spawn_sporadic_grass(ecs: &mut World, map: &Map) {
                 if wnoise > SPORADIC_TALL_GRASS_NOISE_THRESHOLD {
                     let colorseed = vnoise + 0.3 * wnoise;
                     let gcolor = color::grass_green_from_noise(colorseed);
-                    tall_grass(ecs, x, y, gcolor, RGB::named(rltk::BLACK));
+                    tall_grass(ecs, x, y, gcolor);
                 } else {
                     let colorseed = vnoise + 0.3 * wnoise + 0.6;
                     let gcolor = color::grass_green_from_noise(colorseed);
-                    grass(ecs, x, y, gcolor, RGB::named(rltk::BLACK));
+                    grass(ecs, x, y, gcolor);
                 }
             }
         }
@@ -54,13 +55,13 @@ pub fn spawn_sporadic_grass(ecs: &mut World, map: &Map) {
 
 // Grass growing serenely in a tile. Does not do much but offer kindling for
 // other effects.
-pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -> Option<Entity> {
+pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('"'),
             fg: fgcolor,
-            bg: bgcolor,
+            bg: RGB::named(rltk::BLACK),
             order: 3,
         })
         .with(Name {name: "Grass".to_string()})
@@ -81,13 +82,13 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -> Opt
 
 // Grass growing serenely in a tile. Does not do much but offer kindling for
 // other effects.
-pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -> Option<Entity> {
+pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('♣'),
             fg: fgcolor,
-            bg: bgcolor,
+            bg: RGB::named(rltk::BLACK),
             order: 3,
         })
         .with(Name {name: "Tall Grass".to_string()})
@@ -95,6 +96,11 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .with(Hazard {})
         .with(Opaque {})
         .with(DissipateWhenBurning {})
+        .with(DissipateWhenEnchroachedUpon {})
+        .with(SpawnEntityWhenEncroachedUpon {
+            chance: 100,
+            kind: EntitySpawnKind::Grass {fg: fgcolor}
+        })
         .with(ChanceToSpawnEntityWhenBurning {
             kind: EntitySpawnKind::Fire {
                 spread_chance: 50,
@@ -109,4 +115,27 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
     map.ok_to_spawn[idx] = false;
     map.opaque[idx] = true;
     Some(entity)
+}
+
+pub fn destroy_long_grass(ecs: &mut World, entity: &Entity) {
+    let idx;
+    { // Contain first borrow of ECS.
+        let positions = ecs.read_storage::<Position>();
+        let map = ecs.fetch::<Map>();
+        let pos = positions.get(*entity);
+        match pos {
+            Some(pos) => {
+                idx = map.xy_idx(pos.x, pos.y);
+                if !map.opaque[idx] {
+                    panic!("Attempted to delete long grass but map arrays are unsynchronized.")
+                }
+            }
+            None => panic!("Attempted to delete long grass, but long grass has no position.")
+        }
+    }
+    { // Contain second borrow of ECS.
+        let mut map = ecs.fetch_mut::<Map>();
+        map.opaque[idx] = false;
+    }
+    ecs.delete_entity(*entity).expect("Unable to remove long_grass entity.");
 }

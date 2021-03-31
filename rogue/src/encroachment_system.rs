@@ -1,9 +1,13 @@
-use specs::prelude::*;
+use specs::{prelude::*, rayon::spawn};
+use rltk::RandomNumberGenerator;
 use super::{
-    Map, Name, GameLog, Position, InflictsDamageWhenEncroachedUpon,
+    Map, Name, GameLog, Position, EntitySpawnRequest,
+    EntitySpawnRequestBuffer, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
+    DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, new_status_with_immunity
+    StatusIsImmuneToChill, WantsToDissipate,
+    new_status_with_immunity
 };
 
 
@@ -14,14 +18,19 @@ pub struct EncroachmentSystemData<'a> {
     entities: Entities<'a>,
     map: ReadExpect<'a, Map>,
     log: WriteExpect<'a, GameLog>,
+    rng: WriteExpect<'a, RandomNumberGenerator>,
+    spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
     positions: ReadStorage<'a, Position>,
     names: ReadStorage<'a, Name>,
     damage_when_encroached: ReadStorage<'a, InflictsDamageWhenEncroachedUpon>,
     burning_when_encroached: ReadStorage<'a, InflictsBurningWhenEncroachedUpon>,
     freezing_when_encroached: ReadStorage<'a, InflictsFreezingWhenEncroachedUpon>,
+    dissipate_when_encroached: ReadStorage<'a, DissipateWhenEnchroachedUpon>,
+    spawn_when_encroached: ReadStorage<'a, SpawnEntityWhenEncroachedUpon>,
     is_fire_immune: WriteStorage<'a, StatusIsImmuneToFire>,
     is_chill_immune: WriteStorage<'a, StatusIsImmuneToChill>,
     wants_damage: WriteStorage<'a, WantsToTakeDamage>,
+    wants_dissipate: WriteStorage<'a, WantsToDissipate>,
     is_burning: WriteStorage<'a, StatusIsBurning>,
     is_frozen: WriteStorage<'a, StatusIsFrozen>,
 }
@@ -34,14 +43,19 @@ impl<'a> System<'a> for EncroachmentSystem {
             entities,
             map,
             mut log,
+            mut rng,
+            mut spawn_buffer,
             positions,
             names,
             damage_when_encroached,
             burning_when_encroached,
             freezing_when_encroached,
+            dissipate_when_encroached,
+            spawn_when_encroached,
             is_fire_immune,
             is_chill_immune,
             mut wants_damage,
+            mut wants_dissipate,
             mut is_burning,
             mut is_frozen
         } = data;
@@ -59,6 +73,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                         dmg.kind
                     );
                 }
+
                 // Component: InflictsBurningWhenEncroachedUpon.
                 let burning = burning_when_encroached.get(entity);
                 if let Some(burning) = burning {
@@ -80,6 +95,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                         }
                     }
                 }
+
                 // Component: InflictsFreezingWhenEncroachedUpon.
                 let freezing = freezing_when_encroached.get(entity);
                 if let Some(freezing) = freezing {
@@ -101,7 +117,25 @@ impl<'a> System<'a> for EncroachmentSystem {
                         }
                     }
                 }
+
+                // Component: DissipatesWhenEncroachedUpon.
+                let dissipate = dissipate_when_encroached.get(entity).is_some();
+                if dissipate {
+                    wants_dissipate.insert(entity, WantsToDissipate {})
+                        .expect("Could not insert wants to dissipate upon encroachement.");
+                }
+
+                // SpawnEntityWhenEncroachedUpon.
+                let spawn = spawn_when_encroached.get(entity);
+                if let Some(spawn) = spawn {
+                    spawn_buffer.request(EntitySpawnRequest {
+                        x: pos.x,
+                        y: pos.y,
+                        kind: spawn.kind
+                    })
+                }
             }
+
         }
     }
 }

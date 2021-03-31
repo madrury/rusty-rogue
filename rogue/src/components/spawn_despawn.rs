@@ -3,7 +3,7 @@ use specs_derive::*;
 use specs::saveload::{ConvertSaveload, Marker};
 use specs::error::NoError;
 use serde::{Serialize, Deserialize};
-// use super::{ElementalDamageKind, EntitySpawnKind};
+use rltk::RGB;
 
 
 //------------------------------------------------------------------
@@ -18,6 +18,7 @@ use serde::{Serialize, Deserialize};
 pub enum EntitySpawnKind {
     Fire {spread_chance: i32, dissipate_chance: i32},
     Chill {spread_chance: i32, dissipate_chance: i32},
+    Grass {fg: RGB}
 }
 
 // Tags entitys with a specific type. This is used to lookup the apropriate
@@ -31,6 +32,13 @@ pub struct IsEntityKind {
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct SpawnsEntityInAreaWhenTargeted {
     pub radius: i32,
+    pub kind: EntitySpawnKind
+}
+// Component indicates that the entity has a random chance to spawn entities in
+// an adjacent space.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnEntityWhenEncroachedUpon {
+    pub chance: i32,
     pub kind: EntitySpawnKind
 }
 
@@ -60,6 +68,11 @@ pub struct ChanceToDissipate {
 // burning. I.e., grass is destroyed when burned.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct DissipateWhenBurning {}
+
+// Component indicates that an entity dissipates when another entity encroaches
+// on it's position. For example: long grass.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct DissipateWhenEnchroachedUpon {}
 
 // An entity with this component has dissipated and should be removed from the
 // ECS at the end of the current turn.

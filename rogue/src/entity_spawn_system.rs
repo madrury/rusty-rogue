@@ -1,4 +1,4 @@
-use super::{World, Map, EntitySpawnKind, Position, ChanceToSpawnAdjacentEntity, entity_spawners};
+use super::{World, Map, EntitySpawnKind, Position, ChanceToSpawnAdjacentEntity, entity_spawners, terrain_spawners};
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
 
@@ -82,6 +82,8 @@ pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
                 entity_spawners::hazards::fire(ecs, request.x, request.y, spread_chance, dissipate_chance),
             EntitySpawnKind::Chill {spread_chance, dissipate_chance} =>
                 entity_spawners::hazards::chill(ecs, request.x, request.y, spread_chance, dissipate_chance),
+            EntitySpawnKind::Grass {fg} =>
+                terrain_spawners::foliage::grass(ecs, request.x, request.y, fg)
         };
     }
     let mut spawn_buffer = ecs.fetch_mut::<EntitySpawnRequestBuffer>();
