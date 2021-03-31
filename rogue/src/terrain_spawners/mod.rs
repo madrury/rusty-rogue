@@ -12,5 +12,5 @@ pub mod foliage;
 
 
 pub fn spawn_terrain(ecs: &mut World, map: &Map, depth: i32) {
-    foliage::spawn_sporadic_grass(ecs, map);
+    foliage::spawn_grove_grass(ecs, map);
 }

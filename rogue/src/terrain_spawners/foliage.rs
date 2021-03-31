@@ -8,13 +8,18 @@ use rand::seq::SliceRandom;
 use rltk::{RGB};
 use specs::prelude::*;
 
-
-
 const GRASS_NOISE_THRESHOLD: f32 = 0.0;
 const SPORADIC_TALL_GRASS_NOISE_THRESHOLD: f32 = 0.8;
+const GROVE_TALL_GRASS_NOISE_THRESHOLD: f32 = 0.4;
 
+//----------------------------------------------------------------------------
+// Foliage.
+//
+// Functions for spawning grass and other foliage. These provide multiple
+// options to support different gameply feels.
+//----------------------------------------------------------------------------
 
-// Spawn a patch of short grass.
+// Spawn a filed of short grass on the map.
 pub fn spawn_short_grass(ecs: &mut World, map: &Map) {
     let grass_noise = noise::grass_noisemap(map);
     for x in 0..map.width {
@@ -31,6 +36,7 @@ pub fn spawn_short_grass(ecs: &mut World, map: &Map) {
     }
 }
 
+// Spawn a filed of short grass with spradically placed tall grass.
 pub fn spawn_sporadic_grass(ecs: &mut World, map: &Map) {
     let grass_noise = noise::grass_noisemap(map);
     for x in 0..map.width {
@@ -39,6 +45,28 @@ pub fn spawn_sporadic_grass(ecs: &mut World, map: &Map) {
             let (vnoise, wnoise) = grass_noise[idx];
             if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
                 if wnoise > SPORADIC_TALL_GRASS_NOISE_THRESHOLD {
+                    let colorseed = vnoise + 0.3 * wnoise;
+                    let gcolor = color::grass_green_from_noise(colorseed);
+                    tall_grass(ecs, x, y, gcolor);
+                } else {
+                    let colorseed = vnoise + 0.3 * wnoise + 0.6;
+                    let gcolor = color::grass_green_from_noise(colorseed);
+                    grass(ecs, x, y, gcolor);
+                }
+            }
+        }
+    }
+}
+
+// Spawn a filed of short grass with tall grass placed in the densest areas.
+pub fn spawn_grove_grass(ecs: &mut World, map: &Map) {
+    let grass_noise = noise::grass_noisemap(map);
+    for x in 0..map.width {
+        for y in 0..map.height {
+            let idx = map.xy_idx(x, y);
+            let (vnoise, wnoise) = grass_noise[idx];
+            if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
+                if vnoise > GROVE_TALL_GRASS_NOISE_THRESHOLD {
                     let colorseed = vnoise + 0.3 * wnoise;
                     let gcolor = color::grass_green_from_noise(colorseed);
                     tall_grass(ecs, x, y, gcolor);
@@ -80,8 +108,9 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
     Some(entity)
 }
 
-// Grass growing serenely in a tile. Does not do much but offer kindling for
-// other effects.
+// Tall grass growing serenely in a tile.
+// Tall grass blocks entities vision (so you can hide behind it). When
+// encroached upon, it is replaced by short grass.
 pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
