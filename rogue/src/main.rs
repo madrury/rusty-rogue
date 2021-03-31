@@ -17,6 +17,8 @@ use components::signaling::*;
 pub mod map_builders;
 pub mod entity_spawners;
 pub mod terrain_spawners;
+pub mod noise;
+pub mod color;
 mod save_load;
 mod random_table;
 mod map;

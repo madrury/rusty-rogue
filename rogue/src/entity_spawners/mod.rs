@@ -28,7 +28,6 @@ mod spells;
 mod monsters;
 mod food;
 pub mod hazards;
-pub mod terrain;
 
 const MAX_MONSTERS_IN_ROOM: i32 = 4;
 const MAX_ITEMS_IN_ROOM: i32 = 2;

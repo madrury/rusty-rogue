@@ -68,9 +68,7 @@ impl MapBuilder for CellularAutomataBuilder {
     }
 
     fn spawn_terrain(&mut self, ecs: &mut World) {
-        for area in self.noise_areas.iter() {
-            terrain_spawners::spawn_region(ecs, &self.map, area.1, self.depth);
-        }
+        terrain_spawners::spawn_terrain(ecs, &self.map, self.depth);
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {
