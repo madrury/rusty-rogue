@@ -134,10 +134,10 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
             .insert(MonsterType::GoblinBasic, 50)
-            .insert(MonsterType::GoblinCleric, 0)
-            .insert(MonsterType::GoblinEnchanter, 25)
-            .insert(MonsterType::GoblinFirecaster, 1 + depth)
-            .insert(MonsterType::GoblinChillcaster, 1 + depth)
+            .insert(MonsterType::GoblinCleric, 5)
+            .insert(MonsterType::GoblinEnchanter, 5)
+            .insert(MonsterType::GoblinFirecaster, depth)
+            .insert(MonsterType::GoblinChillcaster, depth)
             .insert(MonsterType::Orc, 3 + 3 * (depth-1))
             .insert(MonsterType::None, 70 - depth)
             .roll(&mut rng);
@@ -182,7 +182,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Pomegranate, depth)
             .insert(ItemType::HealthPotion, 4 + depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, 200 + depth)
+            .insert(ItemType::FirePotion, depth)
             .insert(ItemType::FreezingPotion, depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
