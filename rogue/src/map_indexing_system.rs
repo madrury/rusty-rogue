@@ -27,6 +27,7 @@ impl<'a> System<'a> for MapIndexingSystem {
 
         // Re-initialize each of the map attributes.
         map.intitialize_blocked();
+        map.intitialize_opaque();
         for e in map.fire.iter_mut() {*e = false}
         map.clear_tile_content();
 

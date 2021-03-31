@@ -35,9 +35,9 @@ pub struct Map {
     pub visible_tiles: Vec<bool>,
     // Is the tile currently blocked for movement? This array needs to be kept
     // synced with game state.
-    // TODO: Is there a better way to keep this synced, a generic move entity
-    // function that is always used?
     pub blocked: Vec<bool>,
+    // Is the tile currently opaque, i.e., does it block visibility?
+    pub opaque: Vec<bool>,
     // Is the tile currently occuped by fire? We only want to spawn one fire
     // entity in each tile, so we need a source of truth for this.
     pub fire: Vec<bool>,
@@ -69,11 +69,44 @@ impl Map {
             revealed_tiles : vec![false; MAP_SIZE],
             visible_tiles : vec![false; MAP_SIZE],
             blocked : vec![false; MAP_SIZE],
+            opaque : vec![false; MAP_SIZE],
             fire: vec![false; MAP_SIZE],
             chill: vec![false; MAP_SIZE],
             tile_content : vec![Vec::new(); MAP_SIZE],
             ok_to_spawn: vec![true; MAP_SIZE],
         }
+    }
+
+    pub fn intitialize_blocked(&mut self) {
+        for (i, tile) in self.tiles.iter().enumerate() {
+            self.blocked[i] = *tile == TileType::Wall;
+        }
+    }
+
+    pub fn intitialize_opaque(&mut self) {
+        for (i, tile) in self.tiles.iter().enumerate() {
+            self.opaque[i] = *tile == TileType::Wall;
+        }
+    }
+
+    pub fn intitialize_ok_to_spawn(&mut self) {
+        for (i, tile) in self.tiles.iter().enumerate() {
+            self.ok_to_spawn[i] = *tile != TileType::Wall;
+        }
+    }
+
+    pub fn clear_tile_content(&mut self) {
+        for content in self.tile_content.iter_mut() {
+            content.clear();
+        }
+    }
+
+    fn is_exit_valid(&self, x: i32, y: i32) -> bool {
+        if !self.within_bounds(x, y) {
+            return false;
+        }
+        let idx = self.xy_idx(x, y);
+        !self.blocked[idx]
     }
 
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
@@ -160,7 +193,6 @@ impl Map {
             .collect()
     }
 
-    // Todo: Add take_until_blocked parameter.
     pub fn get_ray_tiles(&self, source: Point, target: Point, take_until_blocked: bool) -> Vec<Point> {
         let mut tiles: Vec<Point> = Bresenham::new(source, target).collect();
         tiles.push(target);
@@ -190,36 +222,11 @@ impl Map {
         circle.into_iter().filter(|pt| self.within_bounds(pt.x, pt.y)).collect()
     }
 
-    pub fn intitialize_blocked(&mut self) {
-        for (i, tile) in self.tiles.iter().enumerate() {
-            self.blocked[i] = *tile == TileType::Wall;
-        }
-    }
-
-    pub fn intitialize_ok_to_spawn(&mut self) {
-        for (i, tile) in self.tiles.iter().enumerate() {
-            self.ok_to_spawn[i] = *tile != TileType::Wall;
-        }
-    }
-
-    pub fn clear_tile_content(&mut self) {
-        for content in self.tile_content.iter_mut() {
-            content.clear();
-        }
-    }
-
-    fn is_exit_valid(&self, x: i32, y: i32) -> bool {
-        if !self.within_bounds(x, y) {
-            return false;
-        }
-        let idx = self.xy_idx(x, y);
-        !self.blocked[idx]
-    }
 }
 
 impl BaseMap for Map {
-    fn is_opaque(&self, idx:usize) -> bool {
-        self.tiles[idx] == TileType::Wall
+    fn is_opaque(&self, idx: usize) -> bool {
+        self.opaque[idx]
     }
 
     fn get_available_exits(&self, idx: usize) -> rltk::SmallVec<[(usize, f32); 10]> {

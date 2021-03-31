@@ -35,6 +35,7 @@ impl MapBuilder for SimpleMapBuilder {
     fn build_map(&mut self) {
         self.rooms_and_corridors();
         self.map.intitialize_blocked();
+        self.map.intitialize_opaque();
         self.map.intitialize_ok_to_spawn();
     }
 

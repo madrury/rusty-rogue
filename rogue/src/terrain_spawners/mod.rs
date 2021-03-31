@@ -4,7 +4,6 @@ use super::{
     MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
     EntitySpawnKind, Hazard, color, noise
 };
-use::rand;
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
 

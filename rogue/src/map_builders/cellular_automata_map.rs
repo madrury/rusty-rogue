@@ -65,6 +65,7 @@ impl MapBuilder for CellularAutomataBuilder {
         self.compute_starting_position();
         self.place_stairs();
         self.populate_noise_areas();
+        self.map.intitialize_opaque();
         self.map.intitialize_ok_to_spawn();
     }
 
