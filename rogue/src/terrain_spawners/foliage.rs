@@ -1,7 +1,7 @@
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    EntitySpawnKind, Hazard, color, noise
+    EntitySpawnKind, Hazard, Opaque, color, noise
 };
 use rand::seq::SliceRandom;
 use rltk::{RGB};
@@ -93,6 +93,7 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .with(Name {name: "Tall Grass".to_string()})
         // Hard to justify? Well, it needs to take a turn ok?
         .with(Hazard {})
+        .with(Opaque {})
         .with(DissipateWhenBurning {})
         .with(ChanceToSpawnEntityWhenBurning {
             kind: EntitySpawnKind::Fire {
@@ -106,5 +107,6 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
     let mut map = ecs.write_resource::<Map>();
     let idx = map.xy_idx(x, y);
     map.ok_to_spawn[idx] = false;
+    map.opaque[idx] = true;
     Some(entity)
 }

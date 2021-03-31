@@ -1,6 +1,6 @@
 use std::matches;
 use specs::prelude::*;
-use super::{Map, Position, BlocksTile, IsEntityKind, EntitySpawnKind};
+use super::{Map, Position, BlocksTile, Opaque, IsEntityKind, EntitySpawnKind};
 
 pub struct MapIndexingSystem {}
 
@@ -18,12 +18,13 @@ impl<'a> System<'a> for MapIndexingSystem {
         WriteExpect<'a, Map>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, BlocksTile>,
+        ReadStorage<'a, Opaque>,
         ReadStorage<'a, IsEntityKind>,
         Entities<'a>
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut map, positions, blockers, kind, entities) = data;
+        let (mut map, positions, blockers, is_opaque, kind, entities) = data;
 
         // Re-initialize each of the map attributes.
         map.intitialize_blocked();
@@ -35,6 +36,8 @@ impl<'a> System<'a> for MapIndexingSystem {
             let idx = map.xy_idx(pos.x, pos.y);
             // Syncronize map.blocked.
             map.blocked[idx] |= blockers.get(entity).is_some();
+            // Syncronize map.opaque.
+            map.opaque[idx] |= is_opaque.get(entity).is_some();
             // Syncronize map.fire.
             let is_fire = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Fire {..}));

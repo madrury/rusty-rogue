@@ -76,6 +76,10 @@ pub struct BlocksTile {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Consumable {}
 
+// An entity with this component blocks vision.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Opaque {}
+
 //------------------------------------------------------------------
 // Core Data Components:
 // These components have some data associated with them core to gameplay.

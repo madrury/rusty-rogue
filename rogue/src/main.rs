@@ -665,6 +665,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Throwable>();
     gs.ecs.register::<PickUpable>();
     gs.ecs.register::<Consumable>();
+    gs.ecs.register::<Opaque>();
     gs.ecs.register::<Equippable>();
     gs.ecs.register::<Castable>();
     gs.ecs.register::<Targeted>();
