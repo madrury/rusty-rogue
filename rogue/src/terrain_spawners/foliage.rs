@@ -19,7 +19,7 @@ pub fn spawn_short_grass_patch(ecs: &mut World, map: &Map) {
         for y in 0..map.height {
             let idx = map.xy_idx(x, y);
             let (vnoise, wnoise) = grass_noise[idx];
-            if vnoise > GRASS_NOISE_THRESHOLD {
+            if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
                 // Trial and error.
                 let colorseed = vnoise + 0.3 * wnoise + 0.6;
                 let gcolor = color::grass_green_from_noise(colorseed);

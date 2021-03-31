@@ -50,6 +50,12 @@ pub struct Map {
     // Convenience vector of all the entities occupying a tile. This array is
     // updated each turn in map_indexing_system.rs.
     pub tile_content: Vec<Vec<Entity>>,
+
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
+    // Helper vector used ONLY when generating a new map (so, this has no
+    // gameplay application).
+    pub ok_to_spawn: Vec<bool>
 }
 
 impl Map {
@@ -66,6 +72,7 @@ impl Map {
             fire: vec![false; MAP_SIZE],
             chill: vec![false; MAP_SIZE],
             tile_content : vec![Vec::new(); MAP_SIZE],
+            ok_to_spawn: vec![true; MAP_SIZE],
         }
     }
 
@@ -183,9 +190,15 @@ impl Map {
         circle.into_iter().filter(|pt| self.within_bounds(pt.x, pt.y)).collect()
     }
 
-    pub fn populate_blocked(&mut self) {
+    pub fn intitialize_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.blocked[i] = *tile == TileType::Wall;
+        }
+    }
+
+    pub fn intitialize_ok_to_spawn(&mut self) {
+        for (i, tile) in self.tiles.iter().enumerate() {
+            self.ok_to_spawn[i] = *tile != TileType::Wall;
         }
     }
 

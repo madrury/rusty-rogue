@@ -61,10 +61,11 @@ impl MapBuilder for CellularAutomataBuilder {
         // player's spawn position. To do so, we need the blocked array
         // populated correctly, as we rely on this for the is_exit_valid method
         // on Map.
-        self.map.populate_blocked();
+        self.map.intitialize_blocked();
         self.compute_starting_position();
         self.place_stairs();
         self.populate_noise_areas();
+        self.map.intitialize_ok_to_spawn();
     }
 
     fn spawn_terrain(&mut self, ecs: &mut World) {

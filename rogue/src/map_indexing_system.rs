@@ -26,7 +26,7 @@ impl<'a> System<'a> for MapIndexingSystem {
         let (mut map, positions, blockers, kind, entities) = data;
 
         // Re-initialize each of the map attributes.
-        map.populate_blocked();
+        map.intitialize_blocked();
         for e in map.fire.iter_mut() {*e = false}
         map.clear_tile_content();
 
