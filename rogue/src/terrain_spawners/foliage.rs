@@ -61,7 +61,7 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -> Opt
             glyph: rltk::to_cp437('"'),
             fg: fgcolor,
             bg: bgcolor,
-            order: 2,
+            order: 3,
         })
         .with(Name {name: "Grass".to_string()})
         // Hard to justify? Well, it needs to take a turn ok?
@@ -88,7 +88,7 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
             glyph: rltk::to_cp437('♣'),
             fg: fgcolor,
             bg: bgcolor,
-            order: 2,
+            order: 3,
         })
         .with(Name {name: "Tall Grass".to_string()})
         // Hard to justify? Well, it needs to take a turn ok?
@@ -103,5 +103,8 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    let mut map = ecs.write_resource::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.ok_to_spawn[idx] = false;
     Some(entity)
 }

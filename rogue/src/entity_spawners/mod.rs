@@ -100,10 +100,18 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
 
     for idx in monster_spawn_points.iter() {
         let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
+        { // Holy scopes!
+            let mut map = ecs.write_resource::<Map>();
+            map.ok_to_spawn[*idx] = false;
+        }
         spawn_random_monster(ecs, x, y, depth);
     }
     for idx in item_spawn_points.iter() {
         let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
+        {
+            let mut map = ecs.write_resource::<Map>();
+            map.ok_to_spawn[*idx] = false;
+        }
         spawn_random_item(ecs, x, y, depth);
     }
 }
