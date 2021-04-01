@@ -5,13 +5,13 @@ use super::{
     SpawnEntityWhenEncroachedUpon, ChanceToSpawnEntityWhenBurning,
     EntitySpawnKind, Hazard, Opaque, color, noise
 };
-use rltk::{RandomNumberGenerator, RGB};
+use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
 
 pub mod foliage;
 
 
-pub fn spawn_terrain(ecs: &mut World, map: &Map, depth: i32) {
+pub fn spawn_terrain(ecs: &mut World, map: &Map, _depth: i32) {
     let roll;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();

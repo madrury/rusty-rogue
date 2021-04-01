@@ -4,7 +4,6 @@ use super::{
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     EntitySpawnKind, Hazard, Opaque, color, noise
 };
-use rand::seq::SliceRandom;
 use rltk::{RGB};
 use specs::prelude::*;
 

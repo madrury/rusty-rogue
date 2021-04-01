@@ -9,7 +9,6 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [ ] A swimming system.
 
 #### Terrain and Hazards
-  - [ ] Grass.
   - [ ] Water.
   - [ ] Lava.
   - [ ] Steam.
@@ -70,6 +69,8 @@ We're following the [Rust Roguelike Tutorial](https://bfnightly.bracketproductio
   - [x] Goblin Cleric (healing spells).
   - [x] Defense and attack buff spells.
   - [x] Goblin Enchanter (buff spells).
+  - [x] Grass.
+  - [x] Long grass (blocks vision and can be trampled).
 
 ## Progress In Tutorial:
 

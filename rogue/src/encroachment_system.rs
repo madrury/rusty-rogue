@@ -1,4 +1,4 @@
-use specs::{prelude::*, rayon::spawn};
+use specs::prelude::*;
 use rltk::RandomNumberGenerator;
 use super::{
     Map, Name, GameLog, Position, EntitySpawnRequest,
@@ -18,7 +18,6 @@ pub struct EncroachmentSystemData<'a> {
     entities: Entities<'a>,
     map: ReadExpect<'a, Map>,
     log: WriteExpect<'a, GameLog>,
-    rng: WriteExpect<'a, RandomNumberGenerator>,
     spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
     positions: ReadStorage<'a, Position>,
     names: ReadStorage<'a, Name>,
@@ -43,7 +42,6 @@ impl<'a> System<'a> for EncroachmentSystem {
             entities,
             map,
             mut log,
-            mut rng,
             mut spawn_buffer,
             positions,
             names,
