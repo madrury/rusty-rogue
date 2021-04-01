@@ -1,5 +1,4 @@
 use specs::prelude::*;
-use rltk::RandomNumberGenerator;
 use super::{
     Map, Name, GameLog, Position, EntitySpawnRequest,
     EntitySpawnRequestBuffer, InflictsDamageWhenEncroachedUpon,
