@@ -119,6 +119,7 @@ impl<'a> System<'a> for ParticleRenderSystem {
                             bg: p.bg,
                             glyph: p.glyph,
                             order: 0,
+                            visible_out_of_fov: false
                         },
                     )
                     .expect("Unable to insert particle renderable.");

@@ -15,7 +15,8 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             glyph: rltk::to_cp437('↑'),
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
-            order: 2
+            order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name : "Dagger".to_string()})
         .with(PickUpable {})
@@ -50,7 +51,8 @@ pub fn leather_armor(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             glyph: rltk::to_cp437(']'),
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
-            order: 2
+            order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name : "Leather Armor".to_string()})
         .with(PickUpable {})

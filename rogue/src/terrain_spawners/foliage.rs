@@ -91,6 +91,7 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
             fg: fgcolor,
             bg: RGB::named(rltk::BLACK),
             order: 3,
+            visible_out_of_fov: true
         })
         .with(Name {name: "Grass".to_string()})
         // Hard to justify? Well, it needs to take a turn ok?
@@ -119,6 +120,7 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entit
             fg: fgcolor,
             bg: RGB::named(rltk::BLACK),
             order: 3,
+            visible_out_of_fov: true
         })
         .with(Name {name: "Tall Grass".to_string()})
         // Hard to justify? Well, it needs to take a turn ok?

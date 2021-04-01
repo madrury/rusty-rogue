@@ -65,8 +65,8 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = true;
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 
@@ -136,6 +136,8 @@ impl State {
             let idx = map.xy_idx(pos.x, pos.y);
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
+            } else if map.revealed_tiles[idx] && render.visible_out_of_fov {
+                ctx.set(pos.x, pos.y, render.fg.to_greyscale(), render.bg, render.glyph);
             }
         }
         if DEBUG_HIGHLIGHT_FIRE {
@@ -633,7 +635,7 @@ impl GameState for State {
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::simple80x50()
-        .with_fps_cap(60.0)
+        .with_fps_cap(40.0)
         .with_title("Roguelike Tutorial")
         .build()?;
 

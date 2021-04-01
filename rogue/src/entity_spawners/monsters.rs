@@ -55,7 +55,8 @@ fn spawn_monster<S: ToString>(
             glyph: data.glyph,
             fg: data.color,
             bg: RGB::named(rltk::BLACK),
-            order: 1
+            order: 1,
+            visible_out_of_fov: false
         })
         .with(Viewshed {
             visible_tiles: Vec::new(),
@@ -121,7 +122,8 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 glyph: rltk::to_cp437('g'),
                 fg: RGB::named(rltk::ORANGE),
                 bg: RGB::named(rltk::BLACK),
-                order: 1
+                order: 1,
+                visible_out_of_fov: false
             })
             .with(Viewshed {
                 visible_tiles: Vec::new(),
@@ -177,7 +179,8 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 glyph: rltk::to_cp437('g'),
                 fg: RGB::named(rltk::LIGHT_BLUE),
                 bg: RGB::named(rltk::BLACK),
-                order: 1
+                order: 1,
+                visible_out_of_fov: false
             })
             .with(Viewshed {
                 visible_tiles: Vec::new(),
@@ -233,7 +236,8 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 glyph: rltk::to_cp437('g'),
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::BLACK),
-                order: 1
+                order: 1,
+                visible_out_of_fov: false
             })
             .with(Viewshed {
                 visible_tiles: Vec::new(),
@@ -291,7 +295,8 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 glyph: rltk::to_cp437('g'),
                 fg: RGB::named(rltk::GREY),
                 bg: RGB::named(rltk::BLACK),
-                order: 1
+                order: 1,
+                visible_out_of_fov: false
             })
             .with(Viewshed {
                 visible_tiles: Vec::new(),

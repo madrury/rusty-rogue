@@ -23,6 +23,7 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::ORANGE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Fireblast".to_string()})
         .with(PickUpable {})
@@ -72,6 +73,7 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             fg: RGB::named(rltk::ORANGE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Fireball".to_string()})
         .with(PickUpable {})
@@ -117,6 +119,7 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::LIGHT_BLUE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Iceblast".to_string()})
         .with(PickUpable {})
@@ -163,6 +166,7 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             fg: RGB::named(rltk::LIGHT_BLUE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Icespike".to_string()})
         .with(PickUpable {})
@@ -207,6 +211,7 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Magic Missile".to_string()})
         .with(PickUpable {})
@@ -248,6 +253,7 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Blinking".to_string()})
         .with(PickUpable {})
@@ -283,6 +289,7 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
             fg: RGB::named(rltk::RED),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Healing".to_string()})
         .with(PickUpable {})
@@ -318,6 +325,7 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Invigorate".to_string()})
         .with(PickUpable {})
@@ -353,6 +361,7 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Protection".to_string()})
         .with(PickUpable {})

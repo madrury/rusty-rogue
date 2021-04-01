@@ -31,6 +31,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::ORANGE),
                 order: 2,
+                visible_out_of_fov: false
             })
             .with(Name {name: "Fire".to_string()})
             .with(Hazard {})
@@ -114,6 +115,7 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
                 bg: RGB::named(rltk::LIGHT_BLUE),
                 glyph: rltk::to_cp437('*'),
                 order: 2,
+                visible_out_of_fov: false
             })
             .with(Name {name: "Chill".to_string()})
             .with(Hazard {})

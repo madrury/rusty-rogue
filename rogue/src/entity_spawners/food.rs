@@ -16,6 +16,7 @@ pub fn turnip(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::WHITE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Turnip".to_string()})
         .with(PickUpable {})
@@ -38,6 +39,7 @@ pub fn pomegranate(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::RED),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Pomegranate".to_string()})
         .with(PickUpable {})

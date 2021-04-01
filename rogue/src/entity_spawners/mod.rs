@@ -40,7 +40,8 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
-            order: 0
+            order: 0,
+            visible_out_of_fov: true
         })
         .with(Player {})
         .with(Viewshed {

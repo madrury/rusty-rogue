@@ -19,6 +19,7 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::RED),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Healing".to_string()})
         .with(PickUpable {})
@@ -48,6 +49,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::ORANGE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Fire".to_string()})
         .with(PickUpable {})
@@ -95,6 +97,7 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::LIGHT_BLUE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Freezing".to_string()})
         .with(PickUpable {})
@@ -139,6 +142,7 @@ pub fn teleportation(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             fg: RGB::named(rltk::MEDIUM_PURPLE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
+            visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Teleportation".to_string()})
         .with(PickUpable {})
