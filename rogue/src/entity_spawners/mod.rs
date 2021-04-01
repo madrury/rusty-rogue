@@ -59,9 +59,9 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             power: 5,
         })
         .with(HungerClock {
-            state: HungerState::Normal,
-            state_duration: 200,
-            time: 200,
+            state: HungerState::WellFed,
+            state_duration: 300,
+            time: 300,
             tick_damage: 1
         })
         .marked::<SimpleMarker<SerializeMe>>()
