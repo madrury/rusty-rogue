@@ -634,8 +634,11 @@ impl GameState for State {
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple80x50()
+    let context = RltkBuilder::new()
         .with_fps_cap(40.0)
+        .with_resource_path("resources".to_string())
+        .with_font("terminal8x8.png".to_string(), 8, 8)
+        .with_simple8x8()
         .with_title("Roguelike Tutorial")
         .build()?;
 
@@ -732,7 +735,6 @@ fn main() -> rltk::BError {
     gs.ecs.insert(Point::new(0, 0)); // Player position.
     gs.ecs.insert(Map::new(1));
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
-    gs.ecs.insert(RunState::MapGeneration {});
     gs.ecs.insert(GameLog::new());
     gs.ecs.insert(AnimationRequestBuffer::new());
     gs.ecs.insert(ParticleRequestBuffer::new());
@@ -740,6 +742,7 @@ fn main() -> rltk::BError {
 
     let player = entity_spawners::spawn_player(&mut gs.ecs, 0, 0);
     gs.ecs.insert(player);
+    gs.ecs.insert(RunState::MapGeneration {});
 
     gs.generate_map(1);
 

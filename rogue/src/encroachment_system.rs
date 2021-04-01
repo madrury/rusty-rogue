@@ -61,6 +61,7 @@ impl<'a> System<'a> for EncroachmentSystem {
         for (entity, pos) in (&entities, &positions).join() {
             let idx = map.xy_idx(pos.x, pos.y);
             for encroaching in map.tile_content[idx].iter().filter(|e| **e != entity) {
+
                 // Component: InflictsDamageWhenEncroachedUpon.
                 let dmg = damage_when_encroached.get(entity);
                 if let Some(dmg) = dmg {
