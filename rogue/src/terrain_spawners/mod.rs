@@ -3,7 +3,7 @@ use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, DissipateWhenEnchroachedUpon,
     SpawnEntityWhenEncroachedUpon, ChanceToSpawnEntityWhenBurning,
-    EntitySpawnKind, Hazard, Opaque, color, noise
+    EntitySpawnKind, Hazard, Opaque, TileType, color, noise
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;

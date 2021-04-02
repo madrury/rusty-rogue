@@ -68,6 +68,7 @@ use gamelog::{GameLog};
 const DEBUG_DRAW_ALL_MAP: bool = true;
 const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
+const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
@@ -141,6 +142,9 @@ impl State {
         }
         if DEBUG_HIGHLIGHT_FIRE {
             self.debug_highlight_fire(ctx);
+        }
+        if DEBUG_HIGHLIGHT_FLOOR {
+            self.debug_highlight_floor(ctx);
         }
     }
 
@@ -345,6 +349,19 @@ impl State {
     }
 
     #[allow(dead_code)]
+    fn debug_highlight_floor(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.tiles[idx] == TileType::Floor {
+                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
+                }
+            }
+        }
+    }
+
+    #[allow(dead_code)]
     fn debug_highlight_fire(&self, ctx: &mut Rltk) {
         let map = self.ecs.fetch::<Map>();
         for x in 0..map.width {
@@ -356,7 +373,6 @@ impl State {
             }
         }
     }
-
 }
 
 impl GameState for State {
