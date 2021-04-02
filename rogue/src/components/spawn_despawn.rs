@@ -18,7 +18,8 @@ use rltk::RGB;
 pub enum EntitySpawnKind {
     Fire {spread_chance: i32, dissipate_chance: i32},
     Chill {spread_chance: i32, dissipate_chance: i32},
-    Grass {fg: RGB}
+    Grass {fg: RGB},
+    Water
 }
 
 // Tags entitys with a specific type. This is used to lookup the apropriate

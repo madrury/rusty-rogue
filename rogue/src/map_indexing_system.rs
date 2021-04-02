@@ -46,6 +46,10 @@ impl<'a> System<'a> for MapIndexingSystem {
             let is_chill = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Chill {..}));
             map.chill[idx] |= is_chill;
+            // Syncronize map.water.
+            let is_water = kind.get(entity)
+                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Water {..}));
+            map.water[idx] |= is_water;
             // Update tile content.
             map.tile_content[idx].push(entity);
         }
