@@ -72,7 +72,6 @@ const DEBUG_HIGHLIGHT_FIRE: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
 
-
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
     MainMenu {current: MainMenuSelection},
@@ -267,8 +266,8 @@ impl State {
             *worldmap_resource = builder.map();
             player_start = builder.starting_position();
         }
-        builder.spawn_entities(&mut self.ecs);
         builder.spawn_terrain(&mut self.ecs);
+        builder.spawn_entities(&mut self.ecs);
 
         // Place the player and update the player's associated ECS resources.
         let (player_x, player_y) = (player_start.x, player_start.y);
