@@ -24,7 +24,13 @@ const GOBLIN_VIEW_RANGE: i32 = 8;
 const GOBLIN_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
     avoid_blocked: true,
     avoid_fire: true,
-    avoid_chill: true
+    avoid_chill: true,
+    avoid_water: true,
+    avoid_steam: true,
+    avoid_smoke: true,
+    avoid_lava: true,
+    avoid_brimstone: true,
+    avoid_ice: false,
 };
 const GOBLIN_MOVEMENT_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -365,7 +371,13 @@ const ORC_VIEW_RANGE: i32 = 8;
 const ORC_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
     avoid_blocked: true,
     avoid_fire: true,
-    avoid_chill: true
+    avoid_chill: true,
+    avoid_water: true,
+    avoid_steam: true,
+    avoid_smoke: true,
+    avoid_lava: true,
+    avoid_brimstone: true,
+    avoid_ice: false,
 };
 const ORC_MOVEMENT_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,

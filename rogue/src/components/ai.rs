@@ -20,7 +20,13 @@ pub struct CanAct {}
 pub struct MovementRoutingOptions {
     pub avoid_blocked: bool,
     pub avoid_fire: bool,
-    pub avoid_chill: bool
+    pub avoid_chill: bool,
+    pub avoid_water: bool,
+    pub avoid_steam: bool,
+    pub avoid_smoke: bool,
+    pub avoid_lava: bool,
+    pub avoid_brimstone: bool,
+    pub avoid_ice: bool,
 }
 
 #[derive(Component, ConvertSaveload, Clone)]

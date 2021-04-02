@@ -327,7 +327,8 @@ impl RoutingMap {
                     map.tiles[idx] == TileType::Wall
                     || (options.avoid_blocked && map.blocked[idx])
                     || (options.avoid_fire && map.fire[idx])
-                    || (options.avoid_chill && map.chill[idx]);
+                    || (options.avoid_chill && map.chill[idx])
+                    || (options.avoid_water && map.water[idx]);
             }
         }
         route
