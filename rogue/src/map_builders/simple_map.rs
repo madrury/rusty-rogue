@@ -3,9 +3,9 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, TileType, Position, Rectangle, MAP_WIDTH, MAP_HEIGHT,
+    Map, TileType, Point, Rectangle, MAP_WIDTH, MAP_HEIGHT,
     DEBUG_VISUALIZE_MAPGEN, entity_spawners, terrain_spawners, apply_room,
-    apply_horizontal_tunnel, apply_vertical_tunnel
+    apply_horizontal_tunnel, apply_vertical_tunnel, get_stairs_position
 };
 
 //----------------------------------------------------------------------------
@@ -16,7 +16,6 @@ use super::{
 //----------------------------------------------------------------------------
 pub struct SimpleMapBuilder {
     map: Map,
-    starting_position: Position,
     depth: i32,
     rooms: Vec<Rectangle>,
     history: Vec<Map>
@@ -28,9 +27,6 @@ impl MapBuilder for SimpleMapBuilder {
         self.map.clone()
     }
 
-    fn starting_position(&self) -> Position {
-        self.starting_position.clone()
-    }
 
     fn build_map(&mut self) {
         self.rooms_and_corridors();
@@ -58,6 +54,22 @@ impl MapBuilder for SimpleMapBuilder {
         terrain_spawners::spawn_terrain(ecs, self.depth);
     }
 
+    fn starting_position(&self, ecs: &World) -> Point {
+        let start = entity_spawners::player::get_spawn_position(ecs);
+        match start {
+            Some(start) => start,
+            None => panic!("Failed to find a starting position.")
+        }
+    }
+
+    fn stairs_position(&self, ecs: &World) -> Point {
+        let start = get_stairs_position(ecs);
+        match start {
+            Some(start) => start,
+            None => panic!("Failed to find a stairs position.")
+        }
+    }
+
     fn take_snapshot(&mut self) {
         if DEBUG_VISUALIZE_MAPGEN {
             let mut snapshot = self.map.clone();
@@ -80,7 +92,6 @@ impl SimpleMapBuilder {
     pub fn new(depth: i32) -> SimpleMapBuilder {
         SimpleMapBuilder{
             map: Map::new(depth),
-            starting_position: Position{x: 0, y: 0},
             depth: depth,
             rooms: Vec::new(),
             history: Vec::new()
@@ -121,12 +132,5 @@ impl SimpleMapBuilder {
                 self.take_snapshot();
             }
         }
-        // Place downward stairs.
-        let stairs_position = self.rooms[self.rooms.len()-1].center();
-        let stairs_idx = self.map.xy_idx(stairs_position.0, stairs_position.1);
-        self.map.tiles[stairs_idx] = TileType::DownStairs;
-        // Compute the player's starting position in this map.
-        let start_position = self.rooms[0].center();
-        self.starting_position = Position{x: start_position.0, y: start_position.1}
     }
 }

@@ -277,34 +277,60 @@ impl State {
         particles.run_now(&self.ecs);
     }
 
+    // Build a new floor of the dungeon.
     fn generate_map(&mut self, depth: i32) {
+        // Build the floor layout, and update the dubug map build animation.
         self.mapgen.reset();
         let mut builder = map_builders::random_builder(depth);
         builder.build_map();
         self.mapgen.history = builder.snapshot_history();
 
-        let player_start;
+        // Place the built map into the ecs. From here on, we will work with the
+        // copy of the map stored in the ECS.
         {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
             *worldmap_resource = builder.map();
-            player_start = builder.starting_position();
         }
         builder.spawn_terrain(&mut self.ecs);
         builder.spawn_entities(&mut self.ecs);
 
+        // Add all our newly spawned enettities to the tile_content array. This
+        // is used below when attempting to place the player and the stairs.
+        {
+            let mut map = self.ecs.write_resource::<Map>();
+            let entities = self.ecs.entities();
+            let positions = self.ecs.read_storage::<Position>();
+            for (e, pos) in (&entities, &positions).join() {
+                let idx = map.xy_idx(pos.x, pos.y);
+                map.tile_content[idx].push(e)
+            }
+        }
+
+        // Compute a position to place the player and the stairs. This is
+        // stateless, we don't actually update any ECS state here.
+        let player_start_position = builder.starting_position(&self.ecs);
+        let stairs_position = builder.stairs_position(&self.ecs);
+
         // Place the player and update the player's associated ECS resources.
-        let (player_x, player_y) = (player_start.x, player_start.y);
         let mut player_position = self.ecs.write_resource::<Point>();
-        *player_position = Point::new(player_x, player_y);
+        *player_position = player_start_position.clone();
         let mut position_components = self.ecs.write_storage::<Position>();
         let player_entity = self.ecs.fetch::<Entity>();
         let player_pos_comp = position_components.get_mut(*player_entity);
         if let Some(player_pos_comp) = player_pos_comp {
-            player_pos_comp.x = player_x;
-            player_pos_comp.y = player_y;
+            player_pos_comp.x = player_start_position.x;
+            player_pos_comp.y = player_start_position.y;
         }
 
-        // Mark the player's visibility as dirty
+        // Place the stairs and update the associated ECS resources.
+        {
+            let mut map = self.ecs.write_resource::<Map>();
+            let idx = map.xy_idx(stairs_position.x, stairs_position.y);
+            map.tiles[idx] = TileType::DownStairs;
+        }
+
+        // Mark the player's visibility as dirty so we re-compute their viewshed
+        // on the first turn.
         let mut viewshed_components = self.ecs.write_storage::<Viewshed>();
         let vs = viewshed_components.get_mut(*player_entity);
         if let Some(vs) = vs {
@@ -779,7 +805,10 @@ fn main() -> rltk::BError {
     gs.ecs.insert(ParticleRequestBuffer::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
 
-    let player = entity_spawners::spawn_player(&mut gs.ecs, 0, 0);
+    // Create teh player entity. Note that we're not computing the correct
+    // position to place the player here, since that needs to happen after we've
+    // generated terrain and monsters.
+    let player = entity_spawners::player::spawn_player(&mut gs.ecs, 0, 0);
     gs.ecs.insert(player);
     gs.ecs.insert(RunState::MapGeneration {});
 

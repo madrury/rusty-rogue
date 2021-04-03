@@ -79,6 +79,7 @@ fn spawn_bodies_of_water(
             let mut map = ecs.write_resource::<Map>();
             let idx = map.xy_idx(data.x, data.y);
             map.tiles[idx] = TileType::Floor;
+            map.ok_to_spawn[idx] = true;
         }
     }
     for data in deep_water_spawn_buffer {

@@ -1,7 +1,31 @@
 use std::cmp::{max, min};
+use specs::prelude::*;
 use serde::{Serialize, Deserialize};
-// use rltk::{RandomNumberGenerator};
-use super::{Map, TileType, MAP_SIZE};
+use rltk::{RandomNumberGenerator};
+use super::{Map, Point, TileType, MAP_SIZE};
+
+
+pub fn get_stairs_position(ecs: &World) -> Option<Point> {
+    let mut rng = RandomNumberGenerator::new();
+    let map = ecs.fetch::<Map>();
+    let mut start: Option<Point> = None;
+    while start.is_none() {
+        let maybe = map.random_unblocked_point(250, &mut rng);
+        start = match maybe {
+            None => {None}
+            Some(maybe) => {
+                let idx = map.xy_idx(maybe.0, maybe.1);
+                let ok_to_spawn = map.ok_to_spawn[idx] && map.tile_content[idx].is_empty();
+                if ok_to_spawn {
+                    Some(Point {x: maybe.0, y: maybe.1})
+                } else {
+                    None
+                }
+            }
+        }
+    }
+    start
+}
 
 
 pub fn apply_room(map: &mut Map, room: &Rectangle) {
@@ -50,12 +74,4 @@ impl Rectangle {
     pub fn center(&self) -> (i32, i32) {
         ((self.x1 + self.x2)/2, (self.y1 + self.y2)/2)
     }
-    // pub fn random_point(&self) -> (i32, i32) {
-    //     let mut rng = RandomNumberGenerator::new();
-    //     let room_width = i32::abs(self.x1 - self.x2);
-    //     let room_height = i32::abs(self.y1 - self.y2);
-    //     let x = self.x1 + rng.roll_dice(1, room_width);
-    //     let y = self.y1 + rng.roll_dice(1, room_height);
-    //     (x, y)
-    // }
 }

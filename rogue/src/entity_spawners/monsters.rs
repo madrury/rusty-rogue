@@ -56,7 +56,7 @@ pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Monster {})
         .with(Renderable {
             glyph: rltk::to_cp437('g'),
-            fg: RGB::named(rltk::SADDLEBROWN),
+            fg: RGB::named(rltk::CHOCOLATE),
             bg: RGB::named(rltk::BLACK),
             order: 1,
             visible_out_of_fov: false

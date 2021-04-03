@@ -4,7 +4,7 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, TileType, Position, entity_spawners, terrain_spawners,
+    Map, Point, TileType, Position, entity_spawners, terrain_spawners,
     DEBUG_VISUALIZE_MAPGEN
 };
 
@@ -19,7 +19,6 @@ const N_ITERATIONS: i32 = 4;
 //----------------------------------------------------------------------------
 pub struct CellularAutomataBuilder {
     map: Map,
-    starting_position: Position,
     depth: i32,
     history: Vec<Map>,
     noise_areas: HashMap<i32, Vec<usize>>
@@ -29,10 +28,6 @@ impl MapBuilder for CellularAutomataBuilder {
 
     fn map(&self) -> Map {
         self.map.clone()
-    }
-
-    fn starting_position(&self) -> Position {
-        self.starting_position.clone()
     }
 
     fn take_snapshot(&mut self) {
@@ -62,8 +57,6 @@ impl MapBuilder for CellularAutomataBuilder {
         // populated correctly, as we rely on this for the is_exit_valid method
         // on Map.
         self.map.intitialize_blocked();
-        self.compute_starting_position();
-        self.place_stairs();
         self.populate_noise_areas();
         self.map.intitialize_opaque();
         self.map.intitialize_ok_to_spawn();
@@ -79,6 +72,23 @@ impl MapBuilder for CellularAutomataBuilder {
         }
     }
 
+    fn starting_position(&self, ecs: &World) -> Point {
+        let start = entity_spawners::player::get_spawn_position(ecs);
+        match start {
+            Some(start) => start,
+            None => panic!("Failed to find a starting position.")
+        }
+    }
+
+    fn stairs_position(&self, ecs: &World) -> Point {
+        // TODO: We don't want to re-use this permenantly.
+        let start = entity_spawners::player::get_spawn_position(ecs);
+        match start {
+            Some(start) => start,
+            None => panic!("Failed to find a starting position.")
+        }
+    }
+
 }
 
 impl CellularAutomataBuilder {
@@ -86,7 +96,6 @@ impl CellularAutomataBuilder {
     pub fn new(depth: i32) -> CellularAutomataBuilder {
         CellularAutomataBuilder{
             map: Map::new(depth),
-            starting_position: Position{x: 0, y: 0},
             depth: depth,
             history: Vec::new(),
             noise_areas: HashMap::new()
@@ -144,41 +153,29 @@ impl CellularAutomataBuilder {
         }
     }
 
-    // Get a starting position by sampling a single unblocked point from the
-    // map.
-    fn compute_starting_position(&mut self) {
-        let mut rng = RandomNumberGenerator::new();
-        let pt = self.map.random_unblocked_point(250, &mut rng);
-        // TODO: If we get None, we'll spawn at (0, 0), which will softlock
-        // the game. We probably want to deal with this at some point.
-        if let Some(pt) = pt {
-            self.starting_position = Position {x: pt.0, y: pt.1};
-        }
-    }
-
     // Place the stairs as far away from the player as possible.
-    fn place_stairs(&mut self) {
-        let start_idx = self.map.xy_idx(self.starting_position.x, self.starting_position.y);
-        let map_starts : Vec<usize> = vec![start_idx];
-        let dijkstra_map = rltk::DijkstraMap::new(
-            self.map.width, self.map.height, &map_starts , &self.map, 200.0
-        );
-        let mut exit_tile = (0, 0.0f32);
-        for (idx, tile) in self.map.tiles.iter_mut().enumerate() {
-            if *tile == TileType::Floor {
-                let distance_to_start = dijkstra_map.map[idx];
-                if distance_to_start == std::f32::MAX {
-                    *tile = TileType::Wall;
-                } else {
-                    if distance_to_start > exit_tile.1 {
-                        exit_tile.0 = idx;
-                        exit_tile.1 = distance_to_start;
-                    }
-                }
-            }
-        }
-        self.map.tiles[exit_tile.0] = TileType::DownStairs;
-    }
+    // fn place_stairs(&mut self) {
+    //     let start_idx = self.map.xy_idx(self.starting_position.x, self.starting_position.y);
+    //     let map_starts : Vec<usize> = vec![start_idx];
+    //     let dijkstra_map = rltk::DijkstraMap::new(
+    //         self.map.width, self.map.height, &map_starts , &self.map, 200.0
+    //     );
+    //     let mut exit_tile = (0, 0.0f32);
+    //     for (idx, tile) in self.map.tiles.iter_mut().enumerate() {
+    //         if *tile == TileType::Floor {
+    //             let distance_to_start = dijkstra_map.map[idx];
+    //             if distance_to_start == std::f32::MAX {
+    //                 *tile = TileType::Wall;
+    //             } else {
+    //                 if distance_to_start > exit_tile.1 {
+    //                     exit_tile.0 = idx;
+    //                     exit_tile.1 = distance_to_start;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     self.map.tiles[exit_tile.0] = TileType::DownStairs;
+    // }
 
     // Use cellular noise to create some random contiguous reigons of the map
     // that can be used as pseudo-rooms to spawn entities in.

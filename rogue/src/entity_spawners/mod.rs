@@ -1,5 +1,5 @@
 use super::{
-    Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, SwimStamina,
+    Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, SwimStamina,
     HungerClock, HungerState, Monster, Hazard, IsEntityKind,
     MonsterMovementRoutingOptions, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
@@ -28,57 +28,7 @@ mod spells;
 mod monsters;
 mod food;
 pub mod hazards;
-
-const PLAYER_VIEW_RANGE: i32 = 8;
-const PLAYER_MAX_HP: i32 = 50;
-const PLAYER_DEFENSE: i32 = 2;
-const PLAYER_ATTACK_POWER: i32 = 5;
-const PLAYER_HUNGER_STATE_DURATION: i32 = 300;
-const PLAYER_HUNGER_TICK_DAMAGE: i32 = 300;
-const PLAYER_SWIM_STAMINA: i32 = 3;
-const PLAYER_DROWNING_TICK_DAMAGE: i32 = 5;
-
-
-// Create the player entity in a specified position. Called only once a game.
-pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
-    ecs.create_entity()
-        .with(Position {x: px, y: py})
-        .with(Renderable {
-            glyph: rltk::to_cp437('@'),
-            fg: RGB::named(rltk::YELLOW),
-            bg: RGB::named(rltk::BLACK),
-            order: 0,
-            visible_out_of_fov: true
-        })
-        .with(Player {})
-        .with(Viewshed {
-            visible_tiles: Vec::new(),
-            range: PLAYER_VIEW_RANGE,
-            dirty: true,
-        })
-        .with(Name {
-            name: "Player".to_string(),
-        })
-        .with(CombatStats {
-            max_hp: PLAYER_MAX_HP,
-            hp: PLAYER_MAX_HP,
-            defense: PLAYER_DEFENSE,
-            power: PLAYER_ATTACK_POWER,
-        })
-        .with(HungerClock {
-            state: HungerState::WellFed,
-            state_duration: PLAYER_HUNGER_STATE_DURATION,
-            time: PLAYER_HUNGER_STATE_DURATION,
-            tick_damage: PLAYER_HUNGER_TICK_DAMAGE
-        })
-        .with(SwimStamina {
-            max_stamina: PLAYER_SWIM_STAMINA,
-            stamina: PLAYER_SWIM_STAMINA,
-            drowning_damage: PLAYER_DROWNING_TICK_DAMAGE
-        })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build()
-}
+pub mod player;
 
 
 const MAX_MONSTERS_IN_ROOM: i32 = 4;

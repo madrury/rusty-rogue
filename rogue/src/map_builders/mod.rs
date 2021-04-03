@@ -1,8 +1,9 @@
 use super::{
-    World, Map, TileType, Position, entity_spawners, terrain_spawners,
+    World, Map, TileType, Point, Position, entity_spawners, terrain_spawners,
     DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
 mod simple_map;
+use rltk::RandomNumberGenerator;
 use simple_map::{SimpleMapBuilder};
 mod cellular_automata_map;
 use cellular_automata_map::{CellularAutomataBuilder};
@@ -23,7 +24,12 @@ pub trait MapBuilder {
     fn spawn_terrain(&mut self, ecs: &mut World);
     fn spawn_entities(&mut self, ecs: &mut World);
     fn map(&self) -> Map;
-    fn starting_position(&self) -> Position;
+    // Compute a position to place the player.
+    fn starting_position(&self, ecs: &World) -> Point;
+    // fn starting_position(&self) -> Position;
+    // Compute a position to place the stairs.
+    fn stairs_position(&self, ecs: &World) -> Point;
+    // fn stairs_position(&self) -> Point;
 
     fn take_snapshot(&mut self);
     fn snapshot_history(&self) -> Vec<Map>;
