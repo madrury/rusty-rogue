@@ -6,6 +6,7 @@ mod components;
 use components::*;
 use components::animation::*;
 use components::hunger::*;
+use components::swimming::*;
 use components::magic::*;
 use components::equipment::*;
 use components::ai::*;
@@ -683,6 +684,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<HungerClock>();
+    gs.ecs.register::<SwimStamina>();
     gs.ecs.register::<Useable>();
     gs.ecs.register::<Throwable>();
     gs.ecs.register::<PickUpable>();

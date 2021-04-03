@@ -126,9 +126,6 @@ impl<'a> System<'a> for PositionMovementSystem {
             let is_blocking = is_blockings.get(entity).is_some();
             let routing = routing_options.get(entity);
 
-            // !(!force => ok_to_move_to_positions)
-            // !(ok || force)
-            // !ok && ! force
             if !(wants_to_move.force || ok_to_move_to_position(&map, routing, new_idx)) {
                 continue
             }

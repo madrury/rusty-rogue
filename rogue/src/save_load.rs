@@ -10,6 +10,7 @@ use std::path::Path;
 use super::components::*;
 use super::components::animation::*;
 use super::components::hunger::*;
+use super::components::swimming::*;
 use super::components::magic::*;
 use super::components::equipment::*;
 use super::components::ai::*;
@@ -72,6 +73,7 @@ pub fn save_game(ecs: &mut World) {
             Renderable,
             CombatStats,
             HungerClock,
+            SwimStamina,
             WantsToTakeDamage,
             Useable,
             Throwable,
@@ -197,6 +199,7 @@ pub fn load_game(ecs: &mut World) {
             Renderable,
             CombatStats,
             HungerClock,
+            SwimStamina,
             WantsToTakeDamage,
             Useable,
             Throwable,

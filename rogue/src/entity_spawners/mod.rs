@@ -1,6 +1,6 @@
 use super::{
-    Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
-    HungerState, Monster, Hazard, IsEntityKind,
+    Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, SwimStamina,
+    HungerClock, HungerState, Monster, Hazard, IsEntityKind,
     MonsterMovementRoutingOptions, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
     SupportSpellcasterKind, MovementRoutingOptions, Name, Player, Position,
@@ -29,8 +29,15 @@ mod monsters;
 mod food;
 pub mod hazards;
 
-const MAX_MONSTERS_IN_ROOM: i32 = 4;
-const MAX_ITEMS_IN_ROOM: i32 = 2;
+const PLAYER_VIEW_RANGE: i32 = 8;
+const PLAYER_MAX_HP: i32 = 50;
+const PLAYER_DEFENSE: i32 = 2;
+const PLAYER_ATTACK_POWER: i32 = 5;
+const PLAYER_HUNGER_STATE_DURATION: i32 = 300;
+const PLAYER_HUNGER_TICK_DAMAGE: i32 = 300;
+const PLAYER_SWIM_STAMINA: i32 = 3;
+const PLAYER_DROWNING_TICK_DAMAGE: i32 = 5;
+
 
 // Create the player entity in a specified position. Called only once a game.
 pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
@@ -46,27 +53,36 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
         .with(Player {})
         .with(Viewshed {
             visible_tiles: Vec::new(),
-            range: 8,
+            range: PLAYER_VIEW_RANGE,
             dirty: true,
         })
         .with(Name {
             name: "Player".to_string(),
         })
         .with(CombatStats {
-            max_hp: 50,
-            hp: 50,
-            defense: 2,
-            power: 5,
+            max_hp: PLAYER_MAX_HP,
+            hp: PLAYER_MAX_HP,
+            defense: PLAYER_DEFENSE,
+            power: PLAYER_ATTACK_POWER,
         })
         .with(HungerClock {
             state: HungerState::WellFed,
-            state_duration: 300,
-            time: 300,
-            tick_damage: 1
+            state_duration: PLAYER_HUNGER_STATE_DURATION,
+            time: PLAYER_HUNGER_STATE_DURATION,
+            tick_damage: PLAYER_HUNGER_TICK_DAMAGE
+        })
+        .with(SwimStamina {
+            max_stamina: PLAYER_SWIM_STAMINA,
+            stamina: PLAYER_SWIM_STAMINA,
+            drowning_damage: PLAYER_DROWNING_TICK_DAMAGE
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }
+
+
+const MAX_MONSTERS_IN_ROOM: i32 = 4;
+const MAX_ITEMS_IN_ROOM: i32 = 2;
 
 // Populate a reigon (defined by a container of map indexes) with monsters and
 // items.

@@ -8,6 +8,7 @@ use super::{GameLog};
 
 pub mod animation;
 pub mod hunger;
+pub mod swimming;
 pub mod magic;
 pub mod equipment;
 pub mod ai;
