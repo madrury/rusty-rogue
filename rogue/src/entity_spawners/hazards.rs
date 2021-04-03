@@ -14,13 +14,22 @@ use specs::prelude::*;
 // A fire entity. Represents a burning tile that can spread and dissipate. All
 // spawning or despawning of fire MUST use thiese functions, since it handles
 // syncronizing the map.fire array.
+const FIRE_ENCROACHMENT_DAMAGE: i32 = 2;
+const FIRE_ADJACENT_BURNING_CHANCE: i32 = 50;
+const FIRE_BURNING_TURNS: i32 = 4;
+const FIRE_BURNING_TICK_DAMAGE: i32 = 2;
+const FIRE_SPAWN_DISSIPATE_CHANCE_CHANGE: i32 = 20;
+const FIRE_SPAWN_SPREAD_CHANCE_CHANGE: i32 = 20;
+
 pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
     let can_spawn: bool;
     let idx: usize;
     {
         let map = ecs.fetch::<Map>();
         idx = map.xy_idx(x, y);
-        can_spawn = !map.fire[idx] && map.tiles[idx] != TileType::Wall;
+        can_spawn = !map.fire[idx]
+            && !map.water[idx]
+            && map.tiles[idx] != TileType::Wall;
     }
     let entity;
     if can_spawn {
@@ -44,22 +53,25 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
             .with(ChanceToSpawnAdjacentEntity {
                 chance: spread_chance,
                 kind: EntitySpawnKind::Fire {
-                    spread_chance: i32::max(0, spread_chance - 20),
-                    dissipate_chance: i32::max(0, dissipate_chance + 20),
+                    spread_chance: i32::max(
+                        0, spread_chance - FIRE_SPAWN_SPREAD_CHANCE_CHANGE),
+                    dissipate_chance: i32::max(
+                        0, dissipate_chance + FIRE_SPAWN_DISSIPATE_CHANCE_CHANGE),
                 }
             })
             .with(ChanceToInflictBurningOnAdjacentEntities {
-                chance: 50
+                chance: FIRE_ADJACENT_BURNING_CHANCE
             })
             .with(ChanceToDissipate {
                 chance: dissipate_chance
             })
             .with(InflictsDamageWhenEncroachedUpon {
-                damage: 2,
+                damage: FIRE_ENCROACHMENT_DAMAGE,
                 kind: ElementalDamageKind::Fire
             })
             .with(InflictsBurningWhenEncroachedUpon {
-                turns: 4, tick_damage: 2
+                turns: FIRE_BURNING_TURNS,
+                tick_damage: FIRE_BURNING_TICK_DAMAGE
             })
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -70,6 +82,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
         None
     }
 }
+
 pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
     let idx;
     { // Contain first borrow of ECS.
@@ -99,6 +112,11 @@ pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
 // A chill entity. Represents freezing air that can spread and dissipate. All
 // spawning of chill MUST use this function, since it handles syncronizing the
 // map.chill array.
+const CHILL_ENCROACHMENT_DAMAGE: i32 = 2;
+const CHILL_FROZEN_TURNS: i32 = 4;
+const CHILL_SPAWN_DISSIPATE_CHANCE_CHANGE: i32 = 20;
+const CHILL_SPAWN_SPREAD_CHANCE_CHANGE: i32 = 20;
+
 pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
     let can_spawn: bool;
     let idx: usize;
@@ -129,19 +147,21 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
             .with(ChanceToSpawnAdjacentEntity {
                 chance: spread_chance,
                 kind: EntitySpawnKind::Chill {
-                    spread_chance: i32::max(0, spread_chance - 10),
-                    dissipate_chance: i32::max(0, dissipate_chance + 40),
+                    spread_chance: i32::max(
+                        0, spread_chance - CHILL_SPAWN_SPREAD_CHANCE_CHANGE),
+                    dissipate_chance: i32::max(
+                        0, dissipate_chance + CHILL_SPAWN_DISSIPATE_CHANCE_CHANGE),
                 }
             })
             .with(ChanceToDissipate {
                 chance: dissipate_chance
             })
             .with(InflictsDamageWhenEncroachedUpon {
-                damage: 2,
+                damage: CHILL_ENCROACHMENT_DAMAGE,
                 kind: ElementalDamageKind::Chill
             })
             .with(InflictsFreezingWhenEncroachedUpon {
-                turns: 2
+                turns: CHILL_FROZEN_TURNS
             })
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -179,11 +199,11 @@ pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
 }
 
 
-const STEAM_ENCROACHMENT_DAMAGE: i32 = 2;
-
 // A steam entity. Represents hot water vapor that damages any entity
 // encroaching, and also spreads and dissipates. All spawning of steam MUST use
 // this function, since it handles syncronizing the map.chill array.
+const STEAM_ENCROACHMENT_DAMAGE: i32 = 2;
+
 pub fn steam(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
     let can_spawn: bool;
     let idx: usize;
