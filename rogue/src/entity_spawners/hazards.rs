@@ -223,7 +223,7 @@ pub fn steam(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
                 order: 2,
                 visible_out_of_fov: false
             })
-            .with(SetsBgColor {order: 1})
+            .with(SetsBgColor {order: 0})
             .with(Name {name: "Steam".to_string()})
             .with(Hazard {})
             .with(IsEntityKind {

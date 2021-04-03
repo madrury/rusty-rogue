@@ -8,32 +8,60 @@ use rltk::{RGB};
 use specs::prelude::*;
 
 
-const SHALLOW_WATER_THRESHOLD: f32 = 0.4;
-const DEEP_WATER_THRESHOLD: f32 = 0.6;
+const LARGE_LAKES_SHALLOW_WATER_THRESHOLD: f32 = 0.4;
+const LARGE_LAKES_DEEP_WATER_THRESHOLD: f32 = 0.6;
+const LARGE_LAKES_NOISE_FREQUENCY: f32 = 0.1;
+const SMALL_LAKES_SHALLOW_WATER_THRESHOLD: f32 = 0.6;
+const SMALL_LAKES_DEEP_WATER_THRESHOLD: f32 = 0.7;
+const SMALL_LAKES_NOISE_FREQUENCY: f32 = 0.25;
 
 struct WaterSpawnData {
     x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
 }
 
-pub fn spawn_lakes(ecs: &mut World) {
+pub fn spawn_large_lakes(ecs: &mut World) {
+    spawn_bodies_of_water(
+        ecs,
+        LARGE_LAKES_DEEP_WATER_THRESHOLD,
+        LARGE_LAKES_SHALLOW_WATER_THRESHOLD,
+        LARGE_LAKES_NOISE_FREQUENCY
+    )
+}
+
+pub fn spawn_small_lakes(ecs: &mut World) {
+    spawn_bodies_of_water(
+        ecs,
+        SMALL_LAKES_DEEP_WATER_THRESHOLD,
+        SMALL_LAKES_SHALLOW_WATER_THRESHOLD,
+        SMALL_LAKES_NOISE_FREQUENCY
+    )
+}
+
+// Generic function for spawning lake like bodies of water.
+fn spawn_bodies_of_water(
+    ecs: &mut World,
+    deep_water_threshold: f32,
+    shallow_water_threshold: f32,
+    frequency: f32
+) {
     let mut shallow_water_spawn_buffer = Vec::<WaterSpawnData>::new();
     let mut deep_water_spawn_buffer = Vec::<WaterSpawnData>::new();
     { // Contain the borrow of the ECS.
         let map = ecs.read_resource::<Map>();
-        let water_noise = noise::water_noisemap(&map, 0.1);
+        let water_noise = noise::water_noisemap(&map, frequency);
         for x in 0..map.width {
             for y in 0..map.height {
                 if is_edge_tile(&map, x, y) {continue;}
                 let idx = map.xy_idx(x, y);
                 let (vnoise, wnoise) = water_noise[idx];
-                if vnoise > DEEP_WATER_THRESHOLD {
+                if vnoise > deep_water_threshold {
                     let colorseeds = (vnoise + 0.6, 0.7 * vnoise + 0.2 * wnoise + 0.4);
                     let fgcolor = color::water_fg_from_noise(colorseeds.0);
                     let bgcolor = color::water_bg_from_noise(colorseeds.1);
                     deep_water_spawn_buffer.push(WaterSpawnData {
                         x: x, y: y, fgcolor: fgcolor, bgcolor: bgcolor
                     })
-                } else if vnoise > SHALLOW_WATER_THRESHOLD {
+                } else if vnoise > shallow_water_threshold {
                     let colorseeds = (vnoise + 0.4, 0.5 * vnoise + 0.1 * wnoise + 0.4);
                     let fgcolor = color::water_fg_from_noise(colorseeds.0);
                     let bgcolor = color::shallow_water_bg_from_noise(colorseeds.1);
@@ -44,7 +72,7 @@ pub fn spawn_lakes(ecs: &mut World) {
             }
         }
     }
-    // Clear the buffers.
+    // Actually spawn.
     for data in shallow_water_spawn_buffer {
         shallow_water(ecs, data.x, data.y, data.fgcolor, data.bgcolor);
         {
