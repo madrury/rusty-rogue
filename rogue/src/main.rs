@@ -132,15 +132,29 @@ impl State {
     fn render_all(&self, ctx: &mut Rltk) {
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
+        let sets_bg = self.ecs.read_storage::<SetsBgColor>();
         let map = self.ecs.fetch::<Map>();
-        let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
-        data.sort_by(|&a, &b| b.1.order.cmp(&a.1.order));
-        for (pos, render) in data {
+        // First loop through the entities in render order and draw them all.
+        let mut render_data = (&positions, &renderables).join().collect::<Vec<_>>();
+        render_data.sort_by(|&a, &b| b.1.order.cmp(&a.1.order));
+        for (pos, render) in render_data {
             let idx = map.xy_idx(pos.x, pos.y);
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
             } else if map.revealed_tiles[idx] && render.visible_out_of_fov {
-                ctx.set(pos.x, pos.y, render.fg.to_greyscale(), render.bg, render.glyph);
+                ctx.set(pos.x, pos.y, render.fg.to_greyscale(), render.bg.to_greyscale(), render.glyph);
+            }
+        }
+        // Then loop through the enetities that override bg colors, and fill in
+        // the backgrounds of their tiles.
+        let mut bg_data = (&positions, &renderables, &sets_bg).join().collect::<Vec<_>>();
+        bg_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
+        for (pos, render, _bg) in bg_data {
+            let idx = map.xy_idx(pos.x, pos.y);
+            if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
+                ctx.set_bg(pos.x, pos.y, render.bg);
+            } else if map.revealed_tiles[idx] && render.visible_out_of_fov {
+                ctx.set_bg(pos.x, pos.y, render.bg.to_greyscale());
             }
         }
         if DEBUG_HIGHLIGHT_FIRE {
@@ -686,6 +700,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<Renderable>();
+    gs.ecs.register::<SetsBgColor>();
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<HungerClock>();
     gs.ecs.register::<SwimStamina>();

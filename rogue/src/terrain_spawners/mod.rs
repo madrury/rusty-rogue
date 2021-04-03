@@ -1,6 +1,6 @@
 
 use super::{
-    Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
+    Map, Position, Renderable, SetsBgColor, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, DissipateWhenEnchroachedUpon,
     SpawnEntityWhenEncroachedUpon, ChanceToSpawnEntityWhenBurning,
     EntitySpawnKind, Hazard, Opaque, TileType, color, noise

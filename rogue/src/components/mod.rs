@@ -81,6 +81,7 @@ pub struct Consumable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Opaque {}
 
+
 //------------------------------------------------------------------
 // Core Data Components:
 // These components have some data associated with them core to gameplay.
@@ -120,6 +121,12 @@ pub struct Renderable {
     pub glyph: rltk::FontCharType,
     pub order: i32,
     pub visible_out_of_fov: bool,
+}
+// An entity with this component sets the bg-color for their tile. It has no
+// gameplay application, it's only a visual effect.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SetsBgColor {
+    pub order: i32
 }
 
 // Component for a held item. Points to the entity that owns it.

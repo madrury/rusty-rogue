@@ -1,7 +1,7 @@
 
 use super::{
     Map, TileType, EntitySpawnKind, Hazard, IsEntityKind, Name, Position,
-    Renderable, InflictsDamageWhenEncroachedUpon,
+    Renderable, SetsBgColor, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     ChanceToSpawnAdjacentEntity, ChanceToDissipate,
     ChanceToInflictBurningOnAdjacentEntities, SimpleMarker, SerializeMe,
@@ -33,6 +33,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
                 order: 2,
                 visible_out_of_fov: false
             })
+            .with(SetsBgColor {order: 1})
             .with(Name {name: "Fire".to_string()})
             .with(Hazard {})
             .with(IsEntityKind {
@@ -117,6 +118,7 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
                 order: 2,
                 visible_out_of_fov: false
             })
+            .with(SetsBgColor {order: 1})
             .with(Name {name: "Chill".to_string()})
             .with(Hazard {})
             .with(IsEntityKind {

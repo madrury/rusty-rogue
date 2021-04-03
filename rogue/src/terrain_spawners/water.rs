@@ -1,6 +1,6 @@
 
 use super::{
-    Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
+    Map, Position, Renderable, SetsBgColor, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, Hazard, TileType, color, noise
 };
 use rltk::{RGB};
@@ -58,6 +58,7 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
             order: 3,
             visible_out_of_fov: true
         })
+        .with(SetsBgColor {order: 0})
         .with(Name {name: "Shallow Water".to_string()})
         .with(Hazard {})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -75,6 +76,7 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
             order: 3,
             visible_out_of_fov: true
         })
+        .with(SetsBgColor {order: 0})
         .with(Name {name: "Deep Water".to_string()})
         .with(Hazard {})
         .marked::<SimpleMarker<SerializeMe>>()
