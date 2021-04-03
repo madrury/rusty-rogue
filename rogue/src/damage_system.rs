@@ -57,11 +57,14 @@ impl DamageSystem {
             .collect();
         spells_owned_by_entity
     }
-
 }
 
-
+//----------------------------------------------------------------------------
 // Process queued damage.
+//
+// Actually commit any damage an enetity has sustained this turn. We
+// additionally apply any defense buffs, resitances, or invulnrabilities here.
+//----------------------------------------------------------------------------
 impl<'a> System<'a> for DamageSystem {
     type SystemData = (
         Entities<'a>,
@@ -104,6 +107,9 @@ impl<'a> System<'a> for DamageSystem {
                         stats.take_damage(i32::max(0, (dmg - melee_defense_bonus) / defense_buff_factor));
                     }
                     ElementalDamageKind::Hunger => {
+                        stats.take_damage(*dmg);
+                    }
+                    ElementalDamageKind::Drowning => {
                         stats.take_damage(*dmg);
                     }
                     ElementalDamageKind::Fire => {

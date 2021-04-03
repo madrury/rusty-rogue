@@ -57,7 +57,7 @@ pub struct WantsToMoveToRandomPosition {}
 // Signals that the entity has damage queued, but not applied.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum ElementalDamageKind {
-    Physical, Fire, Chill, Hunger
+    Physical, Fire, Chill, Hunger, Drowning
 }
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToTakeDamage {
