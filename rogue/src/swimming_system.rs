@@ -20,6 +20,9 @@ pub struct SwimmingSystemData<'a> {
     swim_staminas: WriteStorage<'a, SwimStamina>,
 }
 
+//----------------------------------------------------------------------------
+// Tick the player's swim stamina, and apply drowning damage if needed.
+//----------------------------------------------------------------------------
 impl<'a> System<'a> for SwimmingSystem {
 
     type SystemData = SwimmingSystemData<'a>;

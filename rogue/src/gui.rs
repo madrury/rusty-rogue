@@ -2,7 +2,7 @@ use super::{
     get_status_indicators, CombatStats, GameLog, InBackpack, InSpellBook,
     Castable, TargetingKind, SpellCharges, Map, Name, Player, Position,
     Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped,
-    HungerClock, HungerState
+    HungerClock, SwimStamina, HungerState
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -160,14 +160,20 @@ const HEADS_UP_HEIGHT: i32 = 6;
 
 const HEALTH_TEXT_XPOSITION: i32 = 12;
 const HEALTH_TEXT_YPOSITION: i32 = 43;
-const HEALTH_BAR_XPOSITION: i32 = 28;
+const HEALTH_BAR_XPOSITION: i32 = 29;
 const HEALTH_BAR_YPOSITION: i32 = 43;
 const HEALTH_BAR_WIDTH: i32 = 51;
+
+const SWIM_TEXT_XPOSITION: i32 = 12;
+const SWIM_TEXT_YPOSITION: i32 = 44;
+const SWIM_BAR_XPOSITION: i32 = 29;
+const SWIM_BAR_YPOSITION: i32 = 44;
+const SWIM_BAR_WIDTH: i32 = 51;
 
 const HUNGER_STATUS_XPOSITION: i32 = 71;
 const HUNGER_STATUS_YPOSITION: i32 = 42;
 
-const N_LOG_LINES: i32 = 5;
+const N_LOG_LINES: i32 = 4;
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Draw the outline for the gui: A rectangle at the bottom of the console.
@@ -195,7 +201,8 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let combat_stats = ecs.read_storage::<CombatStats>();
     let players = ecs.read_storage::<Player>();
     let hunger = ecs.read_storage::<HungerClock>();
-    for (_player, stats, clock) in (&players, &combat_stats, &hunger).join() {
+    let swim_stamina = ecs.read_storage::<SwimStamina>();
+    for (_player, stats, clock, stamina) in (&players, &combat_stats, &hunger, &swim_stamina).join() {
         // Hunger Status.
         match clock.state {
             HungerState::WellFed => ctx.print_color(
@@ -239,13 +246,31 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
             RGB::named(rltk::RED),
             RGB::named(rltk::BLACK),
         );
+        // Swim stamina.
+        let stamina_txt = format!(" Swim Stamina: {} / {} ", stamina.stamina, stamina.max_stamina);
+        ctx.print_color(
+            SWIM_TEXT_XPOSITION,
+            SWIM_TEXT_YPOSITION,
+            RGB::named(rltk::YELLOW),
+            RGB::named(rltk::BLACK),
+            &stamina_txt,
+        );
+        ctx.draw_bar_horizontal(
+            SWIM_BAR_XPOSITION,
+            SWIM_BAR_YPOSITION,
+            SWIM_BAR_WIDTH,
+            stamina.stamina,
+            stamina.max_stamina,
+            RGB::named(rltk::BLUE),
+            RGB::named(rltk::BLACK),
+        );
     }
 
     // Draw the gamelog inside the gui.
     let log = ecs.fetch::<GameLog>();
     for (i, s) in log.entries.iter().rev().enumerate() {
         if i < N_LOG_LINES as usize {
-            ctx.print(2, HEADS_UP_YPOSITION as usize + i + 1, s)
+            ctx.print(2, HEADS_UP_YPOSITION as usize + i + 2, s)
         }
     }
 
