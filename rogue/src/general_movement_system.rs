@@ -1,7 +1,7 @@
 use super::{
     Map, Point, Position, Viewshed, Renderable, BlocksTile,
-    WantsToMoveToRandomPosition, WantsToMoveToPosition, AnimationRequestBuffer,
-    AnimationRequest
+    MonsterMovementRoutingOptions, WantsToMoveToRandomPosition,
+    WantsToMoveToPosition, AnimationRequestBuffer, AnimationRequest
 };
 use specs::prelude::*;
 use rltk::RandomNumberGenerator;
@@ -44,7 +44,10 @@ impl<'a> System<'a> for TeleportationSystem {
 
             let new_pos = map.random_unblocked_point(10, &mut *rng);
             if let Some(new_pos) = new_pos {
-                wants_to_move.insert(entity, WantsToMoveToPosition {pt: Point {x: new_pos.0, y: new_pos.1}})
+                wants_to_move.insert(entity, WantsToMoveToPosition {
+                    pt: Point {x: new_pos.0, y: new_pos.1},
+                    force: true
+                })
                     .expect("Could not insert WantsToMoveToPosition.");
                 let render = renderables.get(entity);
                 if let Some(render) = render {
@@ -87,6 +90,7 @@ pub struct PositionMovementSystemData<'a> {
     map: WriteExpect<'a, Map>,
     player: ReadExpect<'a, Entity>,
     player_pos: WriteExpect<'a, Point>,
+    routing_options: ReadStorage<'a, MonsterMovementRoutingOptions>,
     positions: WriteStorage<'a, Position>,
     viewsheds: WriteStorage<'a, Viewshed>,
     is_blockings: WriteStorage<'a, BlocksTile>,
@@ -105,6 +109,7 @@ impl<'a> System<'a> for PositionMovementSystem {
             player,
             mut player_pos,
             mut positions,
+            routing_options,
             mut viewsheds,
             is_blockings,
             mut wants_to_move,
@@ -119,8 +124,12 @@ impl<'a> System<'a> for PositionMovementSystem {
 
             let is_player = entity == *player;
             let is_blocking = is_blockings.get(entity).is_some();
+            let routing = routing_options.get(entity);
 
-            if map.blocked[new_idx] {
+            // !(!force => ok_to_move_to_positions)
+            // !(ok || force)
+            // !ok && ! force
+            if !(wants_to_move.force || ok_to_move_to_position(&map, routing, new_idx)) {
                 continue
             }
 
@@ -140,5 +149,17 @@ impl<'a> System<'a> for PositionMovementSystem {
             }
         }
         wants_to_move.clear();
+    }
+}
+
+fn ok_to_move_to_position(map: &Map, routing: Option<&MonsterMovementRoutingOptions>, idx: usize) -> bool {
+    match routing {
+        None => !map.blocked[idx],
+        Some(routing) => {
+            !map.blocked[idx]
+                && !(routing.options.avoid_fire && map.fire[idx])
+                && !(routing.options.avoid_chill && map.chill[idx])
+                && !(routing.options.avoid_water && map.water[idx])
+        }
     }
 }

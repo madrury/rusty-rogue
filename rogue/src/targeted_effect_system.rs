@@ -288,7 +288,11 @@ impl<'a> System<'a> for TargetedSystem {
             // Component: MoveToPositionWhenTargeted
             let moves_to_point = moves_to_position.get(want_target.thing);
             if let Some(_) = moves_to_point {
-                wants_to_move.insert(user, WantsToMoveToPosition {pt: target_point.clone()})
+                wants_to_move.insert(user, WantsToMoveToPosition {
+                    pt: target_point.clone(),
+                    // Not sure about this one.
+                    force: true
+                })
                     .expect("Could not insert WantsToMoveToPosition.");
             }
 

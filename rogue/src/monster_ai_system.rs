@@ -130,7 +130,8 @@ impl<'a> System<'a> for MonsterBasicAISystem {
                         pt: Point {
                             x: path.steps[1] as i32 % map.width,
                             y: path.steps[1] as i32 / map.width
-                        }
+                        },
+                        force: false
                     }).expect("Could not instert WantsToMoveToPosition.");
                 }
                 // Update our monster's propensity to keep following the player
@@ -148,7 +149,8 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             } else if !in_viewshed && ai.no_visibility_wander {
                 let new_pos = random_adjacent_position(&map, pos);
                 wants_to_move.insert(entity, WantsToMoveToPosition {
-                    pt: Point {x: new_pos.0, y: new_pos.1}
+                    pt: Point {x: new_pos.0, y: new_pos.1},
+                    force: false
                 }).expect("Could not instert WantsToMoveToPosition.");
             }
             // We're done acting, so we've used up our action for the turn.
@@ -273,7 +275,8 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
                 if let Some(target_idx) = target_idx {
                     let target_pos = map.idx_xy(target_idx);
                     wants_to_move.insert(entity, WantsToMoveToPosition{
-                        pt: Point{x: target_pos.0, y: target_pos.1}
+                        pt: Point{x: target_pos.0, y: target_pos.1},
+                        force: false
                     }).expect("Could not insert WantsToMoveToPosition.");
                 }
             }
@@ -485,7 +488,8 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             let viewshed = viewsheds.get_mut(monster);
             if let(Some(_pos), Some(_viewshed)) = (pos, viewshed) {
                 wants_to_move.insert(monster, WantsToMoveToPosition {
-                    pt: Point {x: x, y: y}
+                    pt: Point {x: x, y: y},
+                    force: false
                 }).expect("Could not insert WantsToMoveToPosition.");
             }
         }

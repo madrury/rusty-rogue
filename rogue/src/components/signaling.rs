@@ -43,7 +43,11 @@ pub struct WantsToUseTargeted {
 // The entiity has requested to move to a specific map position.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct WantsToMoveToPosition {
-    pub pt: Point
+    pub pt: Point,
+    // Overide any movement options check - force the monster into the position.
+    // Useful for stuff like teleportation, that we want to be somwhat
+    // dangerous.
+    pub force: bool
 }
 
 // The entiity has requested to teleport to a random map position.
