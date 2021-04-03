@@ -70,7 +70,7 @@ impl MapBuilder for CellularAutomataBuilder {
     }
 
     fn spawn_terrain(&mut self, ecs: &mut World) {
-        terrain_spawners::spawn_terrain(ecs, &self.map, self.depth);
+        terrain_spawners::spawn_terrain(ecs, self.depth);
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {

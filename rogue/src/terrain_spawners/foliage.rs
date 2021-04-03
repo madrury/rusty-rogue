@@ -18,67 +18,99 @@ const GROVE_TALL_GRASS_NOISE_THRESHOLD: f32 = 0.4;
 // options to support different gameply feels.
 //----------------------------------------------------------------------------
 
+struct GrassSpawnData {
+    x: i32, y: i32, color: RGB
+}
+
 // Spawn a filed of short grass on the map.
-pub fn spawn_short_grass(ecs: &mut World, map: &Map) {
-    let grass_noise = noise::grass_noisemap(map);
-    for x in 0..map.width {
-        for y in 0..map.height {
-            let idx = map.xy_idx(x, y);
-            let (vnoise, wnoise) = grass_noise[idx];
-            if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
-                // Trial and error.
-                let colorseed = vnoise + 0.3 * wnoise + 0.6;
-                let gcolor = color::grass_green_from_noise(colorseed);
-                grass(ecs, x, y, gcolor);
+pub fn spawn_short_grass(ecs: &mut World) {
+    let mut grass_spawn_buffer = Vec::<GrassSpawnData>::new();
+    { // Contain the borrow of the ECS.
+        let map = ecs.read_resource::<Map>();
+        let grass_noise = noise::grass_noisemap(&map);
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                let (vnoise, wnoise) = grass_noise[idx];
+                if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
+                    // Trial and error.
+                    let colorseed = vnoise + 0.3 * wnoise + 0.6;
+                    let gcolor = color::grass_green_from_noise(colorseed);
+                    grass_spawn_buffer.push(GrassSpawnData {x: x, y: y, color: gcolor})
+                }
             }
         }
+    }
+    for data in grass_spawn_buffer {
+        grass(ecs, data.x, data.y, data.color);
     }
 }
 
 // Spawn a filed of short grass with spradically placed tall grass.
-pub fn spawn_sporadic_grass(ecs: &mut World, map: &Map) {
-    let grass_noise = noise::grass_noisemap(map);
-    for x in 0..map.width {
-        for y in 0..map.height {
-            let idx = map.xy_idx(x, y);
-            let (vnoise, wnoise) = grass_noise[idx];
-            if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
-                if wnoise > SPORADIC_TALL_GRASS_NOISE_THRESHOLD {
-                    let colorseed = vnoise + 0.3 * wnoise;
-                    let gcolor = color::grass_green_from_noise(colorseed);
-                    tall_grass(ecs, x, y, gcolor);
-                } else {
-                    let colorseed = vnoise + 0.3 * wnoise + 0.6;
-                    let gcolor = color::grass_green_from_noise(colorseed);
-                    grass(ecs, x, y, gcolor);
+pub fn spawn_sporadic_grass(ecs: &mut World) {
+    let mut short_grass_spawn_buffer = Vec::<GrassSpawnData>::new();
+    let mut tall_grass_spawn_buffer = Vec::<GrassSpawnData>::new();
+    { // Contain the borrow of the ECS.
+        let map = ecs.read_resource::<Map>();
+        let grass_noise = noise::grass_noisemap(&map);
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                let (vnoise, wnoise) = grass_noise[idx];
+                if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
+                    if wnoise > SPORADIC_TALL_GRASS_NOISE_THRESHOLD {
+                        let colorseed = vnoise + 0.3 * wnoise;
+                        let gcolor = color::grass_green_from_noise(colorseed);
+                        tall_grass_spawn_buffer.push(GrassSpawnData {x: x, y: y, color: gcolor})
+                    } else {
+                        let colorseed = vnoise + 0.3 * wnoise + 0.6;
+                        let gcolor = color::grass_green_from_noise(colorseed);
+                        short_grass_spawn_buffer.push(GrassSpawnData {x: x, y: y, color: gcolor})
+                    }
                 }
             }
         }
+    }
+    for data in short_grass_spawn_buffer {
+        grass(ecs, data.x, data.y, data.color);
+    }
+    for data in tall_grass_spawn_buffer {
+        tall_grass(ecs, data.x, data.y, data.color);
     }
 }
 
 // Spawn a filed of short grass with tall grass placed in the densest areas.
-pub fn spawn_grove_grass(ecs: &mut World, map: &Map) {
-    let grass_noise = noise::grass_noisemap(map);
-    for x in 0..map.width {
-        for y in 0..map.height {
-            let idx = map.xy_idx(x, y);
-            let (vnoise, wnoise) = grass_noise[idx];
-            if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
-                if vnoise > GROVE_TALL_GRASS_NOISE_THRESHOLD {
-                    let colorseed = vnoise + 0.3 * wnoise;
-                    let gcolor = color::grass_green_from_noise(colorseed);
-                    tall_grass(ecs, x, y, gcolor);
-                } else {
-                    let colorseed = vnoise + 0.3 * wnoise + 0.6;
-                    let gcolor = color::grass_green_from_noise(colorseed);
-                    grass(ecs, x, y, gcolor);
+pub fn spawn_grove_grass(ecs: &mut World) {
+    let mut short_grass_spawn_buffer = Vec::<GrassSpawnData>::new();
+    let mut tall_grass_spawn_buffer = Vec::<GrassSpawnData>::new();
+    { // Contain the borrow of the ECS.
+        let map = ecs.read_resource::<Map>();
+        let grass_noise = noise::grass_noisemap(&map);
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                let (vnoise, wnoise) = grass_noise[idx];
+                if vnoise > GRASS_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
+                    if vnoise > GROVE_TALL_GRASS_NOISE_THRESHOLD {
+                        let colorseed = vnoise + 0.3 * wnoise;
+                        let gcolor = color::grass_green_from_noise(colorseed);
+                        tall_grass_spawn_buffer.push(GrassSpawnData {x: x, y: y, color: gcolor})
+                    } else {
+                        let colorseed = vnoise + 0.3 * wnoise + 0.6;
+                        let gcolor = color::grass_green_from_noise(colorseed);
+                        short_grass_spawn_buffer.push(GrassSpawnData {x: x, y: y, color: gcolor})
+                    }
                 }
             }
         }
     }
+    for data in short_grass_spawn_buffer {
+        grass(ecs, data.x, data.y, data.color);
+    }
+    for data in tall_grass_spawn_buffer {
+        tall_grass(ecs, data.x, data.y, data.color);
+    }
 }
-
 
 // Grass growing serenely in a tile. Does not do much but offer kindling for
 // other effects.

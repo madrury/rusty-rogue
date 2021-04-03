@@ -12,7 +12,7 @@ pub mod foliage;
 pub mod water;
 
 
-pub fn spawn_terrain(ecs: &mut World, map: &Map, _depth: i32) {
+pub fn spawn_terrain(ecs: &mut World, _depth: i32) {
     // let roll;
     // {
     //     let mut rng = ecs.write_resource::<RandomNumberGenerator>();
@@ -24,5 +24,6 @@ pub fn spawn_terrain(ecs: &mut World, map: &Map, _depth: i32) {
     //     3 => foliage::spawn_grove_grass(ecs, map),
     //     _ => panic!("Rolled to high on terrain spawning.")
     // }
-    water::spawn_lakes(ecs, map);
+    water::spawn_lakes(ecs);
+    foliage::spawn_short_grass(ecs);
 }

@@ -10,35 +10,54 @@ use specs::prelude::*;
 const SHALLOW_WATER_THRESHOLD: f32 = 0.4;
 const DEEP_WATER_THRESHOLD: f32 = 0.6;
 
+struct WaterSpawnData {
+    x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
+}
 
-pub fn spawn_lakes(ecs: &mut World, map: &Map) {
-    let water_noise = noise::water_noisemap(map, 0.1);
-    for x in 0..map.width {
-        for y in 0..map.height {
-            if is_edge_tile(map, x, y) {continue;}
-            let idx = map.xy_idx(x, y);
-            let (vnoise, wnoise) = water_noise[idx];
-            if vnoise > DEEP_WATER_THRESHOLD {
-                {
-                    let mut map = ecs.write_resource::<Map>();
-                    let idx = map.xy_idx(x, y);
-                    map.tiles[idx] = TileType::Floor;
+pub fn spawn_lakes(ecs: &mut World) {
+    let mut shallow_water_spawn_buffer = Vec::<WaterSpawnData>::new();
+    let mut deep_water_spawn_buffer = Vec::<WaterSpawnData>::new();
+    { // Contain the borrow of the ECS.
+        let map = ecs.read_resource::<Map>();
+        let water_noise = noise::water_noisemap(&map, 0.1);
+        for x in 0..map.width {
+            for y in 0..map.height {
+                if is_edge_tile(&map, x, y) {continue;}
+                let idx = map.xy_idx(x, y);
+                let (vnoise, wnoise) = water_noise[idx];
+                if vnoise > DEEP_WATER_THRESHOLD {
+                    let colorseeds = (vnoise + 0.6, 0.7 * vnoise + 0.2 * wnoise + 0.4);
+                    let fgcolor = color::water_fg_from_noise(colorseeds.0);
+                    let bgcolor = color::water_bg_from_noise(colorseeds.1);
+                    deep_water_spawn_buffer.push(WaterSpawnData {
+                        x: x, y: y, fgcolor: fgcolor, bgcolor: bgcolor
+                    })
+                } else if vnoise > SHALLOW_WATER_THRESHOLD {
+                    let colorseeds = (vnoise + 0.4, 0.5 * vnoise + 0.1 * wnoise + 0.4);
+                    let fgcolor = color::water_fg_from_noise(colorseeds.0);
+                    let bgcolor = color::shallow_water_bg_from_noise(colorseeds.1);
+                    shallow_water_spawn_buffer.push(WaterSpawnData {
+                        x: x, y: y, fgcolor: fgcolor, bgcolor: bgcolor
+                    })
                 }
-                let colorseeds = (vnoise + 0.6, 0.7 * vnoise + 0.2 * wnoise + 0.4);
-                let fgcolor = color::water_fg_from_noise(colorseeds.0);
-                let bgcolor = color::water_bg_from_noise(colorseeds.1);
-                deep_water(ecs, x, y, fgcolor, bgcolor);
-            } else if vnoise > SHALLOW_WATER_THRESHOLD {
-                {
-                    let mut map = ecs.write_resource::<Map>();
-                    let idx = map.xy_idx(x, y);
-                    map.tiles[idx] = TileType::Floor;
-                }
-                let colorseeds = (vnoise + 0.4, 0.5 * vnoise + 0.1 * wnoise + 0.4);
-                let fgcolor = color::water_fg_from_noise(colorseeds.0);
-                let bgcolor = color::shallow_water_bg_from_noise(colorseeds.1);
-                shallow_water(ecs, x, y, fgcolor, bgcolor);
             }
+        }
+    }
+    // Clear the buffers.
+    for data in shallow_water_spawn_buffer {
+        shallow_water(ecs, data.x, data.y, data.fgcolor, data.bgcolor);
+        {
+            let mut map = ecs.write_resource::<Map>();
+            let idx = map.xy_idx(data.x, data.y);
+            map.tiles[idx] = TileType::Floor;
+        }
+    }
+    for data in deep_water_spawn_buffer {
+        deep_water(ecs, data.x, data.y, data.fgcolor, data.bgcolor);
+        {
+            let mut map = ecs.write_resource::<Map>();
+            let idx = map.xy_idx(data.x, data.y);
+            map.tiles[idx] = TileType::Floor;
         }
     }
 }
