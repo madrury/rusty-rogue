@@ -18,6 +18,7 @@ use rltk::RGB;
 pub enum EntitySpawnKind {
     Fire {spread_chance: i32, dissipate_chance: i32},
     Chill {spread_chance: i32, dissipate_chance: i32},
+    Steam {spread_chance: i32, dissipate_chance: i32},
     Grass {fg: RGB},
     Water
 }

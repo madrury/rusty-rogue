@@ -82,6 +82,8 @@ pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
                 entity_spawners::hazards::fire(ecs, request.x, request.y, spread_chance, dissipate_chance),
             EntitySpawnKind::Chill {spread_chance, dissipate_chance} =>
                 entity_spawners::hazards::chill(ecs, request.x, request.y, spread_chance, dissipate_chance),
+            EntitySpawnKind::Steam {spread_chance, dissipate_chance} =>
+                entity_spawners::hazards::steam(ecs, request.x, request.y, spread_chance, dissipate_chance),
             EntitySpawnKind::Grass {fg} =>
                 terrain_spawners::foliage::grass(ecs, request.x, request.y, fg),
             // TODO: We'll eventually have ways to spawn water.

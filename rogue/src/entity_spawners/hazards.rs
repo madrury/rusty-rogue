@@ -177,3 +177,86 @@ pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
     }
     ecs.delete_entity(*entity).expect("Unable to remove chill entity.");
 }
+
+
+const STEAM_ENCROACHMENT_DAMAGE: i32 = 2;
+
+// A steam entity. Represents hot water vapor that damages any entity
+// encroaching, and also spreads and dissipates. All spawning of steam MUST use
+// this function, since it handles syncronizing the map.chill array.
+pub fn steam(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
+    let can_spawn: bool;
+    let idx: usize;
+    {
+        let map = ecs.fetch::<Map>();
+        idx = map.xy_idx(x, y);
+        can_spawn = !map.steam[idx] && map.tiles[idx] != TileType::Wall;
+    }
+    let entity;
+    if can_spawn {
+        entity = ecs.create_entity()
+            .with(Position {x, y})
+            .with(Renderable {
+                fg: RGB::named(rltk::WHITE),
+                bg: RGB::named(rltk::GRAY),
+                glyph: rltk::to_cp437('░'),
+                order: 2,
+                visible_out_of_fov: false
+            })
+            .with(SetsBgColor {order: 1})
+            .with(Name {name: "Steam".to_string()})
+            .with(Hazard {})
+            .with(IsEntityKind {
+                kind: EntitySpawnKind::Steam {
+                    spread_chance, dissipate_chance
+                }
+            })
+            .with(ChanceToSpawnAdjacentEntity {
+                chance: spread_chance,
+                kind: EntitySpawnKind::Steam {
+                    spread_chance: i32::max(0, spread_chance - 40),
+                    dissipate_chance: i32::max(0, dissipate_chance + 10),
+                }
+            })
+            .with(ChanceToDissipate {
+                chance: dissipate_chance
+            })
+            .with(InflictsDamageWhenEncroachedUpon {
+                damage: STEAM_ENCROACHMENT_DAMAGE,
+                kind: ElementalDamageKind::Physical
+            })
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+        let mut map = ecs.fetch_mut::<Map>();
+        map.steam[idx] = true;
+        Some(entity)
+    } else {
+        None
+    }
+}
+
+pub fn destroy_steam(ecs: &mut World, entity: &Entity) {
+    let idx;
+    { // Contain first borrow of ECS.
+        let positions = ecs.read_storage::<Position>();
+        let map = ecs.fetch::<Map>();
+        let pos = positions.get(*entity);
+        match pos {
+            Some(pos) => {
+                idx = map.xy_idx(pos.x, pos.y);
+                if !map.steam[idx] {
+                    panic!(format!(
+                        "Attempted to delete steam but no steam in position {} {}.",
+                        pos.x, pos.y
+                    ))
+                }
+            }
+            None => panic!("Attempted to delete steam, but steam has no position.")
+        }
+    }
+    { // Contain second borrow of ECS.
+        let mut map = ecs.fetch_mut::<Map>();
+        map.steam[idx] = false;
+    }
+    ecs.delete_entity(*entity).expect("Unable to remove steam entity.");
+}

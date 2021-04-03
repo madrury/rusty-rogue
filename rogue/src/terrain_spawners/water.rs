@@ -1,7 +1,8 @@
 
 use super::{
     Map, Position, Renderable, SetsBgColor, Name, SimpleMarker, SerializeMe,
-    MarkedBuilder, Hazard, TileType, color, noise
+    MarkedBuilder, Hazard, ChanceToSpawnEntityWhenBurning, EntitySpawnKind,
+    TileType, color, noise
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -80,6 +81,14 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
         .with(SetsBgColor {order: 0})
         .with(Name {name: "Shallow Water".to_string()})
         .with(Hazard {})
+        .with(ChanceToSpawnEntityWhenBurning {
+            kind: EntitySpawnKind::Steam {
+                spread_chance: 75,
+                dissipate_chance: 20
+            },
+            chance: 100
+        })
+        // TODO: Component: ImmediatleyClearsBurning
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)

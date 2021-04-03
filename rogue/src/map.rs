@@ -44,6 +44,8 @@ pub struct Map {
     // Is the tile currently occuped by chill? We only want to spawn one chill
     // entity in each tile, so we need a source of truth for this.
     pub chill: Vec<bool>,
+    // Is the tile currently occupied by steam?
+    pub steam: Vec<bool>,
     // Is the tile currently occuped by water?
     pub water: Vec<bool>,
 
@@ -74,6 +76,7 @@ impl Map {
             opaque : vec![false; MAP_SIZE],
             fire: vec![false; MAP_SIZE],
             chill: vec![false; MAP_SIZE],
+            steam: vec![false; MAP_SIZE],
             water: vec![false; MAP_SIZE],
             tile_content : vec![Vec::new(); MAP_SIZE],
             ok_to_spawn: vec![true; MAP_SIZE],
