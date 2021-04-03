@@ -1,8 +1,8 @@
 use specs::prelude::*;
 use super::{
-    Viewshed, Monster, CombatStats, CanAct, MonsterBasicAI,
-    MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI, Position, Map,
-    RoutingMap, WantsToMeleeAttack, WantsToUseTargeted,
+    Viewshed, Monster, CombatStats, CanAct, MonsterMovementRoutingOptions,
+    MonsterBasicAI, MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
+    Position, Map, RoutingMap, WantsToMeleeAttack, WantsToUseTargeted,
     WantsToMoveToPosition, StatusIsFrozen, InSpellBook, Castable,
     SpellCharges, MovementRoutingOptions, SupportSpellcasterKind,
     StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed
@@ -59,6 +59,7 @@ pub struct MonsterBasicAISystemData<'a> {
     monsters: ReadStorage<'a, Monster>,
     viewsheds: WriteStorage<'a, Viewshed>,
     basic_ais: WriteStorage<'a, MonsterBasicAI>,
+    routings: ReadStorage<'a, MonsterMovementRoutingOptions>,
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_melee_attack: WriteStorage<'a, WantsToMeleeAttack>,
@@ -78,6 +79,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             monsters,
             mut viewsheds,
             mut basic_ais,
+            routings,
             mut can_acts,
             mut positions,
             mut wants_melee_attack,
@@ -89,9 +91,10 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             &monsters,
             &mut viewsheds,
             &mut basic_ais,
+            &routings,
             &mut positions).join();
 
-        for (entity, _m, viewshed, ai, pos) in iter {
+        for (entity, _m, viewshed, ai, routing, pos) in iter {
 
             // If the entity cannot act, bail out.
             if can_acts.get(entity).is_none() {
@@ -120,7 +123,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
                 let path = rltk::a_star_search(
                     map.xy_idx(pos.x, pos.y) as i32,
                     map.xy_idx(ppos.x, ppos.y) as i32,
-                    &RoutingMap::from_map(&*map, &ai.routing_options)
+                    &RoutingMap::from_map(&*map, &routing.options)
                 );
                 if path.success && path.steps.len() > 1 {
                     wants_to_move.insert(entity, WantsToMoveToPosition {
@@ -172,6 +175,7 @@ pub struct MonsterAttackSpellcasterAISystemData<'a> {
     monsters: ReadStorage<'a, Monster>,
     viewsheds: WriteStorage<'a, Viewshed>,
     attack_spellcaster_ais: WriteStorage<'a, MonsterAttackSpellcasterAI>,
+    routings: ReadStorage<'a, MonsterMovementRoutingOptions>,
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
@@ -195,6 +199,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             monsters,
             mut viewsheds,
             mut attack_spellcaster_ais,
+            routings,
             mut can_acts,
             mut positions,
             mut wants_to_target,
@@ -210,9 +215,10 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             &monsters,
             &mut viewsheds,
             &mut attack_spellcaster_ais,
+            &routings,
             &mut positions).join();
 
-        for (entity, _m, viewshed, ai, pos) in iter {
+        for (entity, _m, viewshed, ai, routing, pos) in iter {
 
             // If the entity cannot act, bail out.
             if can_acts.get(entity).is_none() {
@@ -261,7 +267,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
                     &*map,
                     &*ppos,
                     pos,
-                    &ai.routing_options,
+                    &routing.options,
                     ai.distance_to_keep_away
                 );
                 if let Some(target_idx) = target_idx {
@@ -304,6 +310,7 @@ pub struct MonsterSupportSpellcasterAISystemData<'a> {
     stats: ReadStorage<'a, CombatStats>,
     viewsheds: WriteStorage<'a, Viewshed>,
     support_ais: WriteStorage<'a, MonsterSupportSpellcasterAI>,
+    routings: ReadStorage<'a, MonsterMovementRoutingOptions>,
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
@@ -330,6 +337,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             stats,
             mut viewsheds,
             mut support_ais,
+            routings,
             mut can_acts,
             mut positions,
             mut wants_to_target,
@@ -353,9 +361,10 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             &monsters,
             &mut viewsheds,
             &mut support_ais,
+            &routings,
             &positions).join();
 
-        for (entity, _m, viewshed, ai, pos) in iter {
+        for (entity, _m, viewshed, ai, routing, pos) in iter {
 
             // If the entity cannot act, bail out.
             if can_acts.get(entity).is_none() {
@@ -441,7 +450,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
                     &monsters,
                     &positions,
                     viewshed,
-                    &ai.routing_options,
+                    &routing.options,
                     ai.distance_to_keep_away_from_monsters
                 );
                 if let Some(target_idx) = target_idx {
@@ -457,7 +466,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
                     &*map,
                     &*ppos,
                     pos,
-                    &ai.routing_options,
+                    &routing.options,
                     ai.distance_to_keep_away_from_player
                 );
                 if let Some(target_idx) = target_idx {

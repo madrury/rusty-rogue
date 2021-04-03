@@ -28,6 +28,10 @@ pub struct MovementRoutingOptions {
     pub avoid_brimstone: bool,
     pub avoid_ice: bool,
 }
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct MonsterMovementRoutingOptions {
+    pub options: MovementRoutingOptions
+}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MonsterBasicAI {
@@ -35,7 +39,6 @@ pub struct MonsterBasicAI {
     pub no_visibility_wander: bool,
     pub lost_visibility_keep_following_turns_max: i32,
     pub lost_visibility_keep_following_turns_remaining: i32,
-    pub routing_options: MovementRoutingOptions
 }
 impl MonsterBasicAI {
     pub fn reset_keep_following(&mut self) {
@@ -52,7 +55,6 @@ impl MonsterBasicAI {
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MonsterAttackSpellcasterAI {
     pub distance_to_keep_away: i32,
-    pub routing_options: MovementRoutingOptions
 }
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
@@ -66,5 +68,4 @@ pub struct MonsterSupportSpellcasterAI {
     pub support_kind: SupportSpellcasterKind,
     pub distance_to_keep_away_from_player: i32,
     pub distance_to_keep_away_from_monsters: i32,
-    pub routing_options: MovementRoutingOptions
 }

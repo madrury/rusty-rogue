@@ -1,6 +1,7 @@
 use super::{
     Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, HungerClock,
-    HungerState, Monster, Hazard, IsEntityKind, MonsterBasicAI,
+    HungerState, Monster, Hazard, IsEntityKind,
+    MonsterMovementRoutingOptions, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
     SupportSpellcasterKind, MovementRoutingOptions, Name, Player, Position,
     Renderable, Viewshed, PickUpable, Useable, Castable, SpellCharges,
@@ -17,8 +18,7 @@ use super::{
     ChanceToInflictBurningOnAdjacentEntities, GrantsMeleeAttackBonus,
     GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
     ProvidesChillImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, InSpellBook,
-    MAP_WIDTH, random_table
+    ElementalDamageKind, InSpellBook, MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;

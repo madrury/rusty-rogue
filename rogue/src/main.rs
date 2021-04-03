@@ -652,7 +652,7 @@ impl GameState for State {
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::new()
-        .with_fps_cap(40.0)
+        // .with_fps_cap(40.0)
         .with_resource_path("resources".to_string())
         .with_font("terminal8x8.png".to_string(), 8, 8)
         .with_simple8x8()
@@ -699,6 +699,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Hazard>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
+    gs.ecs.register::<MonsterMovementRoutingOptions>();
     gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
     gs.ecs.register::<MonsterSupportSpellcasterAI>();
