@@ -68,8 +68,8 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_DRAW_ALL_MAP: bool = true;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
@@ -369,14 +369,9 @@ impl State {
         let mut to_delete: Vec<Entity> = Vec::new();
         for entity in entities.join() {
             let delete_me = player.get(entity).is_none()
-                && (
-                    backpack.get(entity).is_none()
-                    || backpack.get(entity).map_or(true, |b| b.owner != *player_entity)
-                    || spellbook.get(entity).is_none()
-                    || spellbook.get(entity).map_or(true, |b| b.owner != *player_entity)
-                    || equipped.get(entity).is_none()
-                    || equipped.get(entity).map_or(true, |e| e.owner != *player_entity)
-            );
+                && backpack.get(entity).map_or(true, |b| b.owner != *player_entity)
+                && spellbook.get(entity).map_or(true, |b| b.owner != *player_entity)
+                && equipped.get(entity).map_or(true, |e| e.owner != *player_entity);
             if delete_me {
                 to_delete.push(entity);
             }
