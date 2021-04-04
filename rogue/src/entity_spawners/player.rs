@@ -5,7 +5,7 @@ use super::{
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
 
-const PLAYER_VIEW_RANGE: i32 = 8;
+const PLAYER_VIEW_RANGE: i32 = 12;
 const PLAYER_MAX_HP: i32 = 50;
 const PLAYER_DEFENSE: i32 = 2;
 const PLAYER_ATTACK_POWER: i32 = 5;

@@ -68,8 +68,8 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = true;
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
@@ -697,7 +697,7 @@ impl GameState for State {
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::new()
-        // .with_fps_cap(40.0)
+        .with_fps_cap(40.0)
         .with_resource_path("resources".to_string())
         .with_font("terminal8x8.png".to_string(), 8, 8)
         .with_simple8x8()

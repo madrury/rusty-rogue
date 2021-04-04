@@ -107,7 +107,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(MonsterType::GoblinEnchanter, 5 + depth)
             .insert(MonsterType::GoblinFirecaster, depth - 1)
             .insert(MonsterType::GoblinChillcaster, depth - 1)
-            .insert(MonsterType::Orc, 3 + 3 * (depth-1))
+            .insert(MonsterType::Orc, depth - 1)
             .insert(MonsterType::None, 70 - depth)
             .roll(&mut rng);
     }
