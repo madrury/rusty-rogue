@@ -1,6 +1,6 @@
 # Rusty-Rogue
 
-![Gameplay Screenshot](./img/screnshot.png)
+![Gameplay Screenshot](./img/screenshot.png)
 
 This is a tradtional turn based Roguelike dungeon crawling game build in the Rust programming language. It started by following the excellent [Rust Roguelike Tutorial](https://bfnightly.bracketproductions.com/), but had diverged a large amount at this point.
 
