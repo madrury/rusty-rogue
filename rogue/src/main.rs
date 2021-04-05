@@ -357,15 +357,13 @@ impl State {
     }
 
     fn entities_to_delete_when_descending(&mut self) -> Vec<Entity> {
-        // This is our keeplist. Eveything but the player and what they are
-        // holding is going to be removed.
         let entities = self.ecs.entities();
         let player = self.ecs.read_storage::<Player>();
         let backpack = self.ecs.read_storage::<InBackpack>();
         let spellbook = self.ecs.read_storage::<InSpellBook>();
         let equipped = self.ecs.read_storage::<Equipped>();
         let player_entity = self.ecs.fetch::<Entity>();
-
+        
         let mut to_delete: Vec<Entity> = Vec::new();
         for entity in entities.join() {
             let delete_me = player.get(entity).is_none()
