@@ -113,7 +113,7 @@ const BAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
     chance_to_move_to_random_adjacent_tile: 50,
-    escape_when_at_low_health: true,
+    escape_when_at_low_health: false,
     lost_visibility_keep_following_turns_max: 2,
     lost_visibility_keep_following_turns_remaining: 2,
 };
