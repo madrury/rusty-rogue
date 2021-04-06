@@ -48,6 +48,14 @@ The same item may have different effects when used or thrown. For example, a fir
 
 Various monsters inhabit the dungeon, and will attempt to stop you from descending.
 
+### Vermin
+
+#### Rat `r`
+A dork of the upper dungeon. Will attack the player, but run if intimidated.
+
+#### Bat `v`
+Moves erratically, but unobstructed by ground based hazards.
+
 ### Goblins `g`
 
 #### Basic Goblin 🟤
