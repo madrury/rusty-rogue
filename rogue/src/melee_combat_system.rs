@@ -88,9 +88,9 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         damage,
                         ElementalDamageKind::Physical
                     );
-                    // Animate the damage with a flash, and render a bloodstain
-                    // where the damage was inflicted.
+                    // Animate the damage with a flash
                     // TODO: Same here. This should be created after damage is actually created.
+                    // to avoid triggering animations when all damage is nullified.
                     let pos = positions.get(melee.target);
                     let render = renderables.get(melee.target);
                     if let(Some(pos), Some(render)) = (pos, render) {
@@ -102,8 +102,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                                 glyph: render.glyph,
                             }
                         );
+                    }
+                    // Create a bloodstain where the damage was inflicted.
+                    if let Some(pos) = pos {
                         let idx = map.xy_idx(pos.x, pos.y);
-                        map.tiles[idx] = TileType::BloodStain
+                        if map.tiles[idx] != TileType::DownStairs {
+                            map.tiles[idx] = TileType::BloodStain
+                        }
                     }
                 }
             }

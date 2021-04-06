@@ -68,8 +68,8 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = true;
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
@@ -363,7 +363,7 @@ impl State {
         let spellbook = self.ecs.read_storage::<InSpellBook>();
         let equipped = self.ecs.read_storage::<Equipped>();
         let player_entity = self.ecs.fetch::<Entity>();
-        
+
         let mut to_delete: Vec<Entity> = Vec::new();
         for entity in entities.join() {
             let delete_me = player.get(entity).is_none()
