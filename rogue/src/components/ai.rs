@@ -36,7 +36,16 @@ pub struct MonsterMovementRoutingOptions {
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MonsterBasicAI {
     pub only_follow_within_viewshed: bool,
+    // Should the monster wander about when they cannot see the player.
     pub no_visibility_wander: bool,
+    // The chance for the entity to disregard any other action, and move to a
+    // random adjacent tile. Useful for entities like bats that take an erratic
+    // path towards their target.
+    pub chance_to_move_to_random_adjacent_tile: i32,
+    // Should the monster try to escape when at low health?
+    pub escape_when_at_low_health: bool,
+    // These attributes allow a monster to continue following the plyer even
+    // when the player moves out of the monsters viewrange.
     pub lost_visibility_keep_following_turns_max: i32,
     pub lost_visibility_keep_following_turns_remaining: i32,
 }

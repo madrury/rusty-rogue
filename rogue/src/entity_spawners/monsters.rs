@@ -10,6 +10,167 @@ use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
 
 
+//----------------------------------------------------------------------------
+// Rat.
+//
+// A dork of the very early dungeon. Low HP, and runs when damaged.
+//----------------------------------------------------------------------------
+const RAT_VIEW_RANGE: i32 = 4;
+const RAT_BASE_HP: i32 = 8;
+const RAT_BASE_DEFENSE: i32 = 0;
+const RAT_BASE_POWER: i32 = 2;
+
+const RAT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
+    avoid_blocked: true,
+    avoid_fire: true,
+    avoid_chill: true,
+    avoid_water: true,
+    avoid_steam: true,
+    avoid_smoke: true,
+    avoid_lava: true,
+    avoid_brimstone: true,
+    avoid_ice: false,
+};
+
+const RAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
+    only_follow_within_viewshed: true,
+    no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 0,
+    escape_when_at_low_health: true,
+    lost_visibility_keep_following_turns_max: 8,
+    lost_visibility_keep_following_turns_remaining: 8,
+};
+
+pub fn rat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let rat = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('r'),
+            fg: RGB::named(rltk::CHOCOLATE),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: RAT_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Rat".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..RAT_BASIC_AI
+        })
+        .with(MonsterMovementRoutingOptions {
+            options: RAT_ROUTING_OPTIONS
+        })
+        .with(CombatStats {
+            max_hp: RAT_BASE_HP,
+            hp: RAT_BASE_HP,
+            power: RAT_BASE_POWER,
+            defense: RAT_BASE_DEFENSE
+        })
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(rat)
+}
+
+
+//----------------------------------------------------------------------------
+// Bat.
+//
+// A slightly more dangerous dork. Moves erratically, and can fly over some
+// hazards.
+//----------------------------------------------------------------------------
+const BAT_VIEW_RANGE: i32 = 12;
+const BAT_BASE_HP: i32 = 12;
+const BAT_BASE_DEFENSE: i32 = 0;
+const BAT_BASE_POWER: i32 = 2;
+
+const BAT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
+    avoid_blocked: true,
+    avoid_fire: true,
+    avoid_chill: true,
+    avoid_water: false,
+    avoid_steam: true,
+    avoid_smoke: true,
+    avoid_lava: false,
+    avoid_brimstone: false,
+    avoid_ice: false,
+};
+
+const BAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
+    only_follow_within_viewshed: true,
+    no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 40,
+    escape_when_at_low_health: true,
+    lost_visibility_keep_following_turns_max: 2,
+    lost_visibility_keep_following_turns_remaining: 2,
+};
+
+pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let bat = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('v'),
+            fg: RGB::named(rltk::GRAY),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: BAT_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Rat".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..BAT_BASIC_AI
+        })
+        .with(MonsterMovementRoutingOptions {
+            options: BAT_ROUTING_OPTIONS
+        })
+        .with(CombatStats {
+            max_hp: BAT_BASE_HP,
+            hp: BAT_BASE_HP,
+            power: BAT_BASE_POWER,
+            defense: BAT_BASE_DEFENSE
+        })
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(bat)
+}
+
+
+//----------------------------------------------------------------------------
+// Goblins.
+//
+// The generaic antagonists of the lower dungeon. Once the player is seen, they
+// will stupidly attack untill killed, never fleeing. The basic goblin comes in
+// other flavors, with either enhanced attacks or the ability to assist their
+// friends.
+//----------------------------------------------------------------------------
 const GOBLIN_VIEW_RANGE: i32 = 8;
 const GOBLIN_BASE_HP: i32 = 15;
 const GOBLIN_SPELLCASTER_HP: i32 = 8;
@@ -34,18 +195,12 @@ const GOBLIN_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
 const GOBLIN_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 0,
+    escape_when_at_low_health: false,
     lost_visibility_keep_following_turns_max: 2,
     lost_visibility_keep_following_turns_remaining: 2,
 };
 
-//----------------------------------------------------------------------------
-// Goblins.
-//
-// The generaic antagonists of the lower dungeon. Once the player is seen, they
-// will stupidly attack untill killed, never fleeing. The basic goblin comes in
-// other flavors, with either enhanced attacks or the ability to assist their
-// friends.
-//----------------------------------------------------------------------------
 // Individual monster types: Basic Goblin.
 pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let goblin = ecs.create_entity()
@@ -174,7 +329,7 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 dirty: true,
             })
             .with(Name {
-                name: "Goblin Firecaster".to_string(),
+                name: "Goblin Chillcaster".to_string(),
             })
             .with(MonsterAttackSpellcasterAI {
                 distance_to_keep_away: GOLBIN_ATTTACK_SPELLCASTER_DISTANCE,
@@ -198,10 +353,10 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     {
         // Make a fireball spell and put it in the goblin's spellbook.
         let spell = spells::icespike(ecs, 0, 0, 2, 1)
-            .expect("Could not construct fireball spell to put in spellbook.");
+            .expect("Could not construct icespike spell to put in spellbook.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
         in_spellbooks.insert(spell, InSpellBook {owner: goblin})
-            .expect("Failed to insert fireball spell in goblin's spellbook.");
+            .expect("Failed to insert icespike spell in goblin's spellbook.");
         let mut positions = ecs.write_storage::<Position>();
         positions.remove(spell);
     }
@@ -366,9 +521,12 @@ const ORC_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
     avoid_brimstone: true,
     avoid_ice: false,
 };
+
 const ORC_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 0,
+    escape_when_at_low_health: false,
     lost_visibility_keep_following_turns_max: 5,
     lost_visibility_keep_following_turns_remaining: 5,
 };

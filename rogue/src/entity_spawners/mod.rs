@@ -89,6 +89,8 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
 #[derive(Clone, Copy)]
 enum MonsterType {
     None,
+    Rat,
+    Bat,
     GoblinBasic,
     GoblinCleric,
     GoblinEnchanter,
@@ -102,9 +104,11 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
-            .insert(MonsterType::GoblinBasic, 50)
-            .insert(MonsterType::GoblinCleric, 5 + depth)
-            .insert(MonsterType::GoblinEnchanter, 5 + depth)
+            .insert(MonsterType::Rat, 50)
+            .insert(MonsterType::Bat, 50)
+            .insert(MonsterType::GoblinBasic, 10)
+            .insert(MonsterType::GoblinCleric, 2 + depth)
+            .insert(MonsterType::GoblinEnchanter, 2 + depth)
             .insert(MonsterType::GoblinFirecaster, depth - 1)
             .insert(MonsterType::GoblinChillcaster, depth - 1)
             .insert(MonsterType::Orc, depth - 1)
@@ -112,6 +116,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .roll(&mut rng);
     }
     match monster {
+        Some(MonsterType::Rat) => monsters::rat(ecs, x, y),
+        Some(MonsterType::Bat) => monsters::bat(ecs, x, y),
         Some(MonsterType::GoblinBasic) => monsters::goblin_basic(ecs, x, y),
         Some(MonsterType::GoblinCleric) => monsters::goblin_cleric(ecs, x, y),
         Some(MonsterType::GoblinEnchanter) => monsters::goblin_enchanter(ecs, x, y),
