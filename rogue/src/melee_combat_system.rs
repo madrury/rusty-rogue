@@ -1,6 +1,6 @@
 use specs::prelude::*;
 use super::{
-    Map, TileType, CombatStats, WantsToMeleeAttack, Name, WantsToTakeDamage,
+    Map, Point, TileType, CombatStats, WantsToMeleeAttack, Name, WantsToTakeDamage,
     GameLog, Renderable, Position, AnimationRequestBuffer, AnimationRequest,
     Equipped, GrantsMeleeAttackBonus, StatusIsMeleeAttackBuffed,
     ElementalDamageKind, SpawnEntityWhenMeleeAttacked, EntitySpawnKind,
@@ -24,6 +24,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         WriteExpect<'a, Map>,
         WriteExpect<'a, GameLog>,
         WriteExpect<'a, AnimationRequestBuffer>,
+        ReadExpect<'a, Point>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, CombatStats>,
         WriteStorage<'a, Position>,
@@ -43,6 +44,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             mut map,
             mut log,
             mut animation_builder,
+            ppos,
             names,
             combat_stats,
             positions,
@@ -122,13 +124,16 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     match spawns.kind {
                         EntitySpawnKind::PinkJelly {..} => {
                             let spawn_position = map.random_adjacent_unblocked_point(pos.x, pos.y);
-                            // TODO: Guard against spawning in the player position.
                             if let Some(spawn_position) = spawn_position {
-                                entity_spawn_buffer.request(EntitySpawnRequest {
-                                    x: spawn_position.0,
-                                    y: spawn_position.1,
-                                    kind: EntitySpawnKind::PinkJelly {max_hp: 1, hp: 1}
-                                })
+                                let in_player_position =
+                                    (spawn_position.0 == ppos.x) && (spawn_position.1 == ppos.y);
+                                if !in_player_position {
+                                    entity_spawn_buffer.request(EntitySpawnRequest {
+                                        x: spawn_position.0,
+                                        y: spawn_position.1,
+                                        kind: EntitySpawnKind::PinkJelly {max_hp: 1, hp: 1}
+                                    })
+                                }
                             }
                         }
                         _ => {}
