@@ -533,6 +533,7 @@ const ORC_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
 
 pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
 
+
     let orc = ecs.create_entity()
         .with(Position {
             x: x,
@@ -574,4 +575,80 @@ pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let idx = map.xy_idx(x, y);
     map.blocked[idx] = true;
     Some(orc)
+}
+
+
+//----------------------------------------------------------------------------
+// Jellies.
+//
+// Gellatinous foes that spawn other monsters/hazards when melee attacked.
+//----------------------------------------------------------------------------
+const JELLY_VIEW_RANGE: i32 = 8;
+pub const JELLY_BASE_HP: i32 = 20;
+const JELLY_BASE_DEFENSE: i32 = 0;
+const JELLY_BASE_POWER: i32 = 2;
+
+const JELLY_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
+    avoid_blocked: true,
+    avoid_fire: true,
+    avoid_chill: true,
+    avoid_water: true,
+    avoid_steam: true,
+    avoid_smoke: true,
+    avoid_lava: true,
+    avoid_brimstone: true,
+    avoid_ice: false,
+};
+
+const JELLY_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
+    only_follow_within_viewshed: true,
+    no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 0,
+    escape_when_at_low_health: false,
+    lost_visibility_keep_following_turns_max: 4,
+    lost_visibility_keep_following_turns_remaining: 4,
+};
+
+pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Option<Entity> {
+    let jelly = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('J'),
+            fg: RGB::named(rltk::PINK),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: JELLY_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Rat".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..JELLY_BASIC_AI
+        })
+        .with(MonsterMovementRoutingOptions {
+            options: JELLY_ROUTING_OPTIONS
+        })
+        .with(CombatStats {
+            max_hp: max_hp,
+            hp: hp,
+            power: JELLY_BASE_POWER,
+            defense: JELLY_BASE_DEFENSE
+        })
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(jelly)
 }

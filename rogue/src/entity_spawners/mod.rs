@@ -96,7 +96,8 @@ enum MonsterType {
     GoblinEnchanter,
     GoblinFirecaster,
     GoblinChillcaster,
-    Orc
+    Orc,
+    PinkJelly
 }
 fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let monster: Option<MonsterType>;
@@ -112,6 +113,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(MonsterType::GoblinFirecaster, depth - 1)
             .insert(MonsterType::GoblinChillcaster, depth - 1)
             .insert(MonsterType::Orc, depth - 1)
+            .insert(MonsterType::PinkJelly, 100)
             .insert(MonsterType::None, 70 - depth)
             .roll(&mut rng);
     }
@@ -124,6 +126,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(MonsterType::GoblinFirecaster) => monsters::goblin_firecaster(ecs, x, y),
         Some(MonsterType::GoblinChillcaster) => monsters::goblin_chillcaster(ecs, x, y),
         Some(MonsterType::Orc) => monsters::orc_basic(ecs, x, y),
+        Some(MonsterType::PinkJelly) => monsters::pink_jelly(
+            ecs, x, y, monsters::JELLY_BASE_HP, monsters::JELLY_BASE_HP),
         _ => {None}
     };
 }
