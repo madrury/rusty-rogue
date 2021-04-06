@@ -54,9 +54,11 @@ pub struct MonsterBasicAISystem {}
 pub struct MonsterBasicAISystemData<'a> {
     entities: Entities<'a>,
     map: WriteExpect<'a, Map>,
+    rng: WriteExpect<'a, RandomNumberGenerator>,
     ppos: ReadExpect<'a, Point>,
     player: ReadExpect<'a, Entity>,
     monsters: ReadStorage<'a, Monster>,
+    stats: ReadStorage<'a, CombatStats>,
     viewsheds: WriteStorage<'a, Viewshed>,
     basic_ais: WriteStorage<'a, MonsterBasicAI>,
     routings: ReadStorage<'a, MonsterMovementRoutingOptions>,
@@ -74,9 +76,11 @@ impl<'a> System<'a> for MonsterBasicAISystem {
         let MonsterBasicAISystemData {
             entities,
             map,
+            mut rng,
             ppos,
             player,
             monsters,
+            stats,
             mut viewsheds,
             mut basic_ais,
             routings,
@@ -108,10 +112,43 @@ impl<'a> System<'a> for MonsterBasicAISystem {
                 Point::new(pos.x, pos.y),
                 *ppos
             ) < 1.5;
+            let is_low_health = stats.get(entity)
+                .map_or(false, |s| s.hp <= s.max_hp / 4);
+            // Does chance_to_move_to_adjacent_tile trigger?
+            let move_to_random_position =
+                rng.roll_dice(1, 100) <= ai.chance_to_move_to_random_adjacent_tile;
 
+            if ai.escape_when_at_low_health && is_low_health {
+                let zero_indicies: Vec<usize> = vec![map.xy_idx(ppos.x, ppos.y)];
+                let routing_map = &RoutingMap::from_map(&*map, &routing.options);
+                let dmap = rltk::DijkstraMap::new(
+                    map.width,
+                    map.height,
+                    &zero_indicies,
+                    routing_map,
+                    100.0
+                );
+                let new_idx = rltk::DijkstraMap::find_highest_exit(
+                    &dmap, map.xy_idx(pos.x, pos.y), routing_map
+                );
+                if let Some(new_idx) = new_idx {
+                    let new_pos = map.idx_xy(new_idx);
+                    wants_to_move.insert(entity, WantsToMoveToPosition {
+                        pt: Point {x: new_pos.0, y: new_pos.1},
+                        force: false
+                    }).expect("Could not instert WantsToMoveToPosition.");
+                }
+            // Force a move to a random adjacent positon.
+            } else if move_to_random_position {
+                // TODO: This is repeated in our last block.
+                let new_pos = random_adjacent_position(&map, pos, &ppos);
+                wants_to_move.insert(entity, WantsToMoveToPosition {
+                    pt: Point {x: new_pos.0, y: new_pos.1},
+                    force: false
+                }).expect("Could not instert WantsToMoveToPosition.");
             // Monster next to player branch:
             //   If we're already next to player, we enter into melee combat.
-            if next_to_player {
+            } else if next_to_player {
                 wants_melee_attack
                     .insert(entity, WantsToMeleeAttack {target: *player})
                     .expect("Failed to insert player as melee target.");
@@ -147,7 +184,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             //   player, and are flagged to wander when the player is out of
             //   visible range.
             } else if !in_viewshed && ai.no_visibility_wander {
-                let new_pos = random_adjacent_position(&map, pos);
+                let new_pos = random_adjacent_position(&map, pos, &ppos);
                 wants_to_move.insert(entity, WantsToMoveToPosition {
                     pt: Point {x: new_pos.0, y: new_pos.1},
                     force: false
@@ -627,14 +664,17 @@ fn get_position_at_range_from_other_monsters(
 
 // Return a random adjcaent position to pos that is not currently blocked.
 // TODO: This should use the general functions we introduced in Map.
-fn random_adjacent_position(map: &Map, pos: &Position) -> (i32, i32) {
+fn random_adjacent_position(map: &Map, pos: &Position, ppos: &Point) -> (i32, i32) {
     // TODO: This should use the game's internal RNG and probably belongs in
     // Map, not here.
     let mut rng = RandomNumberGenerator::new();
     let dx = rng.range(-1, 2);
     let dy = rng.range(-1, 2);
     let idx = map.xy_idx(pos.x + dx, pos.y + dy);
-    if !map.blocked[idx] {
+    let is_player_pos = (pos.x + dx == ppos.x) && (pos.y + dy == ppos.y);
+    // We need to check for the player position seperately here because the
+    // player is NOT a blocking entity.
+    if !map.blocked[idx] && !is_player_pos {
         return (pos.x + dx, pos.y + dy)
     } else {
         return (pos.x, pos.y)

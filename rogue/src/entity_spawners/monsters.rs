@@ -16,7 +16,7 @@ use specs::prelude::*;
 // A dork of the very early dungeon. Low HP, and runs when damaged.
 //----------------------------------------------------------------------------
 const RAT_VIEW_RANGE: i32 = 4;
-const RAT_BASE_HP: i32 = 8;
+const RAT_BASE_HP: i32 = 6;
 const RAT_BASE_DEFENSE: i32 = 0;
 const RAT_BASE_POWER: i32 = 2;
 
@@ -112,7 +112,7 @@ const BAT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
 const BAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
-    chance_to_move_to_random_adjacent_tile: 40,
+    chance_to_move_to_random_adjacent_tile: 50,
     escape_when_at_low_health: true,
     lost_visibility_keep_following_turns_max: 2,
     lost_visibility_keep_following_turns_remaining: 2,
