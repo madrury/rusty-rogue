@@ -2,7 +2,8 @@
 use super::{
     Map, BlocksTile, CombatStats, Monster, MonsterMovementRoutingOptions,
     MonsterBasicAI, MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
-    SupportSpellcasterKind, MovementRoutingOptions, Name, Position,
+    SupportSpellcasterKind, MovementRoutingOptions,
+    SpawnEntityWhenMeleeAttacked, EntitySpawnKind, Name, Position,
     Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
     InSpellBook, spells
 };
@@ -642,6 +643,14 @@ pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Optio
             hp: hp,
             power: JELLY_BASE_POWER,
             defense: JELLY_BASE_DEFENSE
+        })
+        .with(SpawnEntityWhenMeleeAttacked {
+            kind: EntitySpawnKind::PinkJelly {
+                // These are just placeholder values. We will overwrite them
+                // with the appropriate hp values when the actual spawn request
+                // is generated in melee_combat_system.
+                max_hp: 0, hp: 0
+            }
         })
         .with(BlocksTile {})
         .marked::<SimpleMarker<SerializeMe>>()

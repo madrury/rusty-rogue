@@ -773,6 +773,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsFreezingWhenEncroachedUpon>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<SpawnEntityWhenEncroachedUpon>();
+    gs.ecs.register::<SpawnEntityWhenMeleeAttacked>();
     gs.ecs.register::<ChanceToSpawnAdjacentEntity>();
     gs.ecs.register::<ChanceToSpawnEntityWhenBurning>();
     gs.ecs.register::<ChanceToInflictBurningOnAdjacentEntities>();

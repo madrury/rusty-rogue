@@ -1,6 +1,6 @@
 use super::{
-    Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, SwimStamina,
-    HungerClock, HungerState, Monster, Hazard, IsEntityKind,
+    Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
+    SwimStamina, HungerClock, HungerState, Monster, Hazard, IsEntityKind,
     MonsterMovementRoutingOptions, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
     SupportSpellcasterKind, MovementRoutingOptions, Name, Player, Position,
@@ -13,19 +13,20 @@ use super::{
     BuffsPhysicalDefenseWhenTargeted, InflictsBurningWhenEncroachedUpon,
     InflictsFreezingWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
     AlongRayAnimationWhenTargeted, MovesToRandomPosition,
-    MoveToPositionWhenTargeted, SpawnsEntityInAreaWhenTargeted,
-    ChanceToSpawnAdjacentEntity, ChanceToDissipate,
-    ChanceToInflictBurningOnAdjacentEntities, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
-    ProvidesChillImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, InSpellBook, MAP_WIDTH, random_table
+    MoveToPositionWhenTargeted, SpawnEntityWhenMeleeAttacked,
+    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
+    ChanceToDissipate, ChanceToInflictBurningOnAdjacentEntities,
+    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
+    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
+    SimpleMarker, SerializeMe, MarkedBuilder, ElementalDamageKind,
+    InSpellBook, MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
 mod potions;
 mod equipment;
 mod spells;
-mod monsters;
+pub mod monsters;
 mod food;
 pub mod hazards;
 pub mod player;

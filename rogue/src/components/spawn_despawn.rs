@@ -16,6 +16,7 @@ use rltk::RGB;
 // request to lookup the appropriate function used to spawn the entity.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum EntitySpawnKind {
+    PinkJelly {max_hp: i32, hp: i32},
     Fire {spread_chance: i32, dissipate_chance: i32},
     Chill {spread_chance: i32, dissipate_chance: i32},
     Steam {spread_chance: i32, dissipate_chance: i32},
@@ -41,6 +42,13 @@ pub struct SpawnsEntityInAreaWhenTargeted {
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct SpawnEntityWhenEncroachedUpon {
     pub chance: i32,
+    pub kind: EntitySpawnKind
+}
+// Component indicates that the entity will spawn another entity when melee
+// attacked. Used on Jellys, which split off either copies of themselves, or
+// hazards, when attacked.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnEntityWhenMeleeAttacked {
     pub kind: EntitySpawnKind
 }
 

@@ -86,6 +86,8 @@ pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
                 entity_spawners::hazards::steam(ecs, request.x, request.y, spread_chance, dissipate_chance),
             EntitySpawnKind::Grass {fg} =>
                 terrain_spawners::foliage::grass(ecs, request.x, request.y, fg),
+            EntitySpawnKind::PinkJelly {max_hp, hp} =>
+                entity_spawners::monsters::pink_jelly(ecs, request.x, request.y, max_hp, hp),
             // TODO: We'll eventually have ways to spawn water.
             _ => {None}
         };
