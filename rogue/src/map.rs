@@ -166,30 +166,34 @@ impl Map {
     pub fn random_adjacent_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
-        let dx = rng.range(-1, 2);
-        let dy = rng.range(-1, 2);
-        if dx == 0 && dy == 0 {
-            return None
+        let adjacent_tiles = self.get_adjacent_tiles(x, y);
+        let n_adjacent_tiles = adjacent_tiles.len() as i32;
+        match n_adjacent_tiles {
+            0 => None,
+            _ => {
+                let ridx = (rng.roll_dice(1, n_adjacent_tiles) - 1) as usize;
+                Some(adjacent_tiles[ridx])
+            }
         }
-        if !self.within_bounds(x + dx, y + dy) {
-            return None
-        }
-        return Some((x + dx, y + dy))
     }
 
     pub fn random_adjacent_unblocked_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
-        let dx = rng.range(-1, 2);
-        let dy = rng.range(-1, 2);
-        if dx == 0 && dy == 0 {
-            return None
+        let adjacent_unblocked_tiles: Vec<(i32, i32)> = self.get_adjacent_tiles(x, y)
+            .into_iter()
+            .map(|(x, y)| self.xy_idx(x, y))
+            .filter(|idx| !self.blocked[*idx])
+            .map(|idx| self.idx_xy(idx))
+            .collect();
+        let n_adjacent_unblocked_tiles = adjacent_unblocked_tiles.len() as i32;
+        match n_adjacent_unblocked_tiles {
+            0 => None,
+            _ => {
+                let ridx = (rng.roll_dice(1, n_adjacent_unblocked_tiles) - 1) as usize;
+                Some(adjacent_unblocked_tiles[ridx])
+            }
         }
-        let idx = self.xy_idx(x + dx, y + dy);
-        if self.within_bounds(x + dx, y + dy) && !self.blocked[idx] {
-            return Some((x + dx, y + dy))
-        }
-        return None
     }
 
     pub fn get_aoe_tiles(&self, pt: Point, radius: f32) -> Vec<Point> {
