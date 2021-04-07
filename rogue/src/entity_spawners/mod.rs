@@ -19,7 +19,8 @@ use super::{
     GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
     ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed, CanNotAct,
     SimpleMarker, SerializeMe, MarkedBuilder, ElementalDamageKind,
-    InSpellBook, MAP_WIDTH, random_table
+    InSpellBook, StatusIsImmuneToFire, StatusIsImmuneToChill,
+    MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -98,7 +99,9 @@ enum MonsterType {
     GoblinFirecaster,
     GoblinChillcaster,
     Orc,
-    PinkJelly
+    PinkJelly,
+    OrangeJelly,
+    BlueJelly
 }
 fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let monster: Option<MonsterType>;
@@ -114,7 +117,9 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(MonsterType::GoblinFirecaster, depth - 1)
             .insert(MonsterType::GoblinChillcaster, depth - 1)
             .insert(MonsterType::Orc, depth - 1)
-            .insert(MonsterType::PinkJelly, 100)
+            .insert(MonsterType::PinkJelly, 1)
+            .insert(MonsterType::OrangeJelly, 100)
+            .insert(MonsterType::BlueJelly, 100)
             .insert(MonsterType::None, 70 - depth)
             .roll(&mut rng);
     }
@@ -129,6 +134,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(MonsterType::Orc) => monsters::orc_basic(ecs, x, y),
         Some(MonsterType::PinkJelly) => monsters::pink_jelly(
             ecs, x, y, monsters::JELLY_BASE_HP, monsters::JELLY_BASE_HP),
+        Some(MonsterType::OrangeJelly) => monsters::orange_jelly(ecs, x, y),
+        Some(MonsterType::BlueJelly) => monsters::blue_jelly(ecs, x, y),
         _ => {None}
     };
 }

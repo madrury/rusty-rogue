@@ -129,6 +129,7 @@ pub struct StatusEffectSystemData<'a> {
     monsters: ReadStorage<'a, Monster>,
     hazards: ReadStorage<'a, Hazard>,
     positions: ReadStorage<'a, Position>,
+    names: ReadStorage<'a, Name>,
     status_burning: WriteStorage<'a, StatusIsBurning>,
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
     dissipate_when_burning: ReadStorage<'a, DissipateWhenBurning>,
@@ -155,6 +156,7 @@ impl<'a> System<'a> for StatusEffectSystem {
             monsters,
             hazards,
             positions,
+            names,
             mut status_burning,
             status_immune_fire,
             chance_to_spawn_when_burning,
@@ -228,7 +230,7 @@ impl<'a> System<'a> for StatusEffectSystem {
                 let adjacent = get_adjacent_entities(&*map, pos);
                 for entity in adjacent {
                     let roll = rng.roll_dice(1, 100);
-                    if roll <= spread_chance.chance {
+                    if roll <= 100 {//spread_chance.chance {
                         new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                             &mut status_burning,
                             &status_immune_fire,

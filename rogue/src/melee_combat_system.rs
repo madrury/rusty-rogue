@@ -123,25 +123,39 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 // to spawn a new entity. We're probably smacking a jelly here.
                 let spawns = spawn_when_melee.get(target);
                 if let (Some(spawns), Some(pos)) = (spawns, pos) {
-                    match spawns.kind {
-                        EntitySpawnKind::PinkJelly {..} => {
-                            let spawn_position = map.random_adjacent_unblocked_point(pos.x, pos.y);
-                            if let Some(spawn_position) = spawn_position {
-                                let in_player_position =
-                                    (spawn_position.0 == ppos.x) && (spawn_position.1 == ppos.y);
-                                if !in_player_position {
-                                    entity_spawn_buffer.request(EntitySpawnRequest {
-                                        x: spawn_position.0,
-                                        y: spawn_position.1,
-                                        kind: EntitySpawnKind::PinkJelly {
-                                            max_hp: target_stats.hp / 2,
-                                            hp: target_stats.hp / 2
-                                        }
+                    let spawn_position = map.random_adjacent_unblocked_point(pos.x, pos.y);
+                    let in_player_position = spawn_position.map_or(false, |pos| {
+                        (pos.0 == ppos.x) && (pos.1 == ppos.y)
+                    });
+                    if !in_player_position {
+                        if let Some(spawn_position) = spawn_position {
+                            let spawn_request_kind = match spawns.kind {
+                                EntitySpawnKind::PinkJelly {..} => {
+                                    Some(EntitySpawnKind::PinkJelly {
+                                        max_hp: target_stats.hp / 2,
+                                        hp: target_stats.hp / 2
                                     })
-                                }
+                                },
+                                EntitySpawnKind::Fire {spread_chance, dissipate_chance} => {
+                                    Some(EntitySpawnKind::Fire {
+                                        spread_chance, dissipate_chance
+                                    })
+                                },
+                                EntitySpawnKind::Chill {spread_chance, dissipate_chance} => {
+                                    Some(EntitySpawnKind::Chill {
+                                        spread_chance, dissipate_chance
+                                    })
+                                },
+                                _ => None,
+                            };
+                            if let Some(spawn_request_kind) = spawn_request_kind {
+                                entity_spawn_buffer.request(EntitySpawnRequest {
+                                    x: spawn_position.0,
+                                    y: spawn_position.1,
+                                    kind: spawn_request_kind
+                                })
                             }
                         }
-                        _ => {}
                     }
                 }
 

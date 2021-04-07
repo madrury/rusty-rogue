@@ -491,6 +491,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
+                    self.run_map_indexing_system();
                     let next_state = self.next_state
                         .expect("Returning from animation, but no next_state to return to.");
                     newrunstate = next_state;
@@ -498,34 +499,34 @@ impl GameState for State {
             }
             RunState::PlayerTurn => {
                 self.run_player_turn_systems();
-                self.run_map_indexing_system();
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(RunState::HazardTurn);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
+                    self.run_map_indexing_system();
                     newrunstate = RunState::HazardTurn;
                 }
             }
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
-                self.run_map_indexing_system();
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(RunState::MonsterTurn);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
+                self.run_map_indexing_system();
                     newrunstate = RunState::MonsterTurn;
                 }
             }
             RunState::MonsterTurn => {
                 self.run_monster_turn_systems();
-                self.run_map_indexing_system();
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(RunState::UpkeepTrun);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
+                    self.run_map_indexing_system();
                     newrunstate = RunState::UpkeepTrun
                 }
             }

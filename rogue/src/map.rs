@@ -157,8 +157,8 @@ impl Map {
         let dxs = vec![-1, 0, 1];
         let dys = vec![-1, 0, 1];
         dxs.into_iter().zip(dys)
+            .filter(|(dx, dy)| *dx != 0 || *dy != 0)
             .map(|(dx, dy)| (x + dx, y + dy))
-            .filter(|(x, y)| *x != 0 || *y != 0)
             .filter(|(x, y)| self.within_bounds(*x, *y))
             .collect()
     }
