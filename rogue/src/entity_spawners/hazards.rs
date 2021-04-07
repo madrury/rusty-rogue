@@ -172,6 +172,7 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
         None
     }
 }
+
 pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
     let idx;
     { // Contain first borrow of ECS.

@@ -2,7 +2,7 @@
 use super::{
     Map, Position, Renderable, SetsBgColor, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, Hazard, ChanceToSpawnEntityWhenBurning, EntitySpawnKind,
-    TileType, color, noise
+    IsEntityKind, TileType, color, noise
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -136,6 +136,7 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .with(SetsBgColor {order: 2})
         .with(Name {name: "Deep Water".to_string()})
         .with(Hazard {})
+        .with(IsEntityKind {kind: EntitySpawnKind::Water})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     let mut map = ecs.write_resource::<Map>();

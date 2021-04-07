@@ -193,7 +193,6 @@ impl Map {
             .filter(|idx| !self.blocked[*idx])
             .map(|idx| self.idx_xy(idx))
             .collect();
-        println!("Adjacent Unblocked: {:?}", adjacent_unblocked_tiles);
         let n_adjacent_unblocked_tiles = adjacent_unblocked_tiles.len() as i32;
         match n_adjacent_unblocked_tiles {
             0 => None,
