@@ -1,4 +1,4 @@
-use rltk::{RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point, Bresenham};
+use rltk::{Algorithm2D, BaseMap, Bresenham, Point, RGB, RandomNumberGenerator, Rltk, Tile};
 use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::iter::Iterator;
@@ -173,7 +173,12 @@ impl Map {
     pub fn random_adjacent_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
-        let adjacent_tiles = self.get_adjacent_tiles(x, y);
+        let adjacent_tiles: Vec<(i32, i32)> = self.get_adjacent_tiles(x, y)
+            .into_iter()
+            .map(|(x, y)| self.xy_idx(x, y))
+            .filter(|idx| self.tiles[*idx] != TileType::Wall)
+            .map(|idx| self.idx_xy(idx))
+            .collect();
         let n_adjacent_tiles = adjacent_tiles.len() as i32;
         match n_adjacent_tiles {
             0 => None,
@@ -238,7 +243,6 @@ impl Map {
         }
         circle.into_iter().filter(|pt| self.within_bounds(pt.x, pt.y)).collect()
     }
-
 }
 
 impl BaseMap for Map {
