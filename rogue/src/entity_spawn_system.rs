@@ -82,7 +82,6 @@ impl<'a> System<'a> for EntitySpawnSystem {
 
             let do_spawn = rng.roll_dice(1, 100) <= spawn_chance.chance;
             if do_spawn {
-                // spawn_position = map.random_adjacent_point()
                 let spawn_position = map.random_adjacent_point(pos.x, pos.y);
                 if let Some(spawn_position) = spawn_position {
                     request_buffer.request(EntitySpawnRequest{
