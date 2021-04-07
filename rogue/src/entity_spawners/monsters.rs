@@ -675,7 +675,7 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Monster {})
         .with(Renderable {
             glyph: rltk::to_cp437('J'),
-            fg: RGB::named(rltk::ORANGE),
+            fg: RGB::named(rltk::ORANGERED),
             bg: RGB::named(rltk::BLACK),
             order: 1,
             visible_out_of_fov: false
@@ -702,7 +702,7 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(SpawnEntityWhenMeleeAttacked {
             kind: EntitySpawnKind::Fire {
-                spread_chance: 0,
+                spread_chance: 25,
                 dissipate_chance: 50,
             }
         })
@@ -726,7 +726,7 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Monster {})
         .with(Renderable {
             glyph: rltk::to_cp437('J'),
-            fg: RGB::named(rltk::LIGHTBLUE),
+            fg: RGB::named(rltk::BLUE),
             bg: RGB::named(rltk::BLACK),
             order: 1,
             visible_out_of_fov: false
@@ -753,7 +753,7 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(SpawnEntityWhenMeleeAttacked {
             kind: EntitySpawnKind::Chill {
-                spread_chance: 0,
+                spread_chance: 25,
                 dissipate_chance: 50,
             }
         })

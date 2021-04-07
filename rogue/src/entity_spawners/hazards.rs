@@ -15,7 +15,7 @@ use specs::prelude::*;
 // spawning or despawning of fire MUST use thiese functions, since it handles
 // syncronizing the map.fire array.
 const FIRE_ENCROACHMENT_DAMAGE: i32 = 2;
-const FIRE_ADJACENT_BURNING_CHANCE: i32 = 50;
+const FIRE_ADJACENT_BURNING_CHANCE: i32 = 25;
 const FIRE_BURNING_TURNS: i32 = 4;
 const FIRE_BURNING_TICK_DAMAGE: i32 = 2;
 const FIRE_SPAWN_DISSIPATE_CHANCE_CHANGE: i32 = 20;

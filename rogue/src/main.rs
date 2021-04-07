@@ -209,11 +209,11 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut teleport = TeleportationSystem{};
         teleport.run_now(&self.ecs);
+        process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
-        // DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -253,7 +253,6 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut teleport = TeleportationSystem{};
         teleport.run_now(&self.ecs);
-        // TODO: Should this be here?
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);
@@ -261,7 +260,6 @@ impl State {
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
-        // DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 

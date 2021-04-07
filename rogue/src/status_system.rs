@@ -235,7 +235,7 @@ impl<'a> System<'a> for StatusEffectSystem {
                             &mut status_burning,
                             &status_immune_fire,
                             *entity,
-                            5
+                            5 // TODO: Magic Number! Boo!
                         );
                     }
                 }
