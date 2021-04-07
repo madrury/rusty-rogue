@@ -1,4 +1,7 @@
-use super::{World, Map, EntitySpawnKind, Position, ChanceToSpawnAdjacentEntity, entity_spawners, terrain_spawners};
+use super::{
+    World, RunState, Map, Monster, Hazard, EntitySpawnKind, Position,
+    ChanceToSpawnAdjacentEntity, entity_spawners, terrain_spawners
+};
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
 
@@ -34,7 +37,12 @@ pub struct EntitySpawnSystem {}
 impl<'a> System<'a> for EntitySpawnSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
+        Entities<'a>,
         ReadExpect<'a, Map>,
+        ReadExpect<'a, RunState>,
+        ReadExpect<'a, Entity>,
+        ReadStorage<'a, Monster>,
+        ReadStorage<'a, Hazard>,
         WriteExpect<'a, RandomNumberGenerator>,
         WriteExpect<'a, EntitySpawnRequestBuffer>,
         ReadStorage<'a, ChanceToSpawnAdjacentEntity>,
@@ -43,10 +51,35 @@ impl<'a> System<'a> for EntitySpawnSystem {
 
     fn run(&mut self, data: Self::SystemData) {
 
-        let (map, mut rng, mut request_buffer, chance_to_spawn, positions) = data;
+        let (
+            entities,
+            map,
+            runstate,
+            player,
+            monsters,
+            hazards,
+            mut rng,
+            mut request_buffer,
+            chance_to_spawn,
+            positions
+        ) = data;
+
 
         // Component: ChanceToSpawnAdjacentEntity
-        for (spawn_chance, pos) in (&chance_to_spawn, &positions).join() {
+        for (entity, spawn_chance, pos) in (&entities, &chance_to_spawn, &positions).join() {
+
+            // Turn guard.
+            let is_player = entity == *player;
+            let is_monster = monsters.get(entity).is_some();
+            let is_hazard = hazards.get(entity).is_some();
+            let proceed =
+                (*runstate == RunState::PlayerTurn && is_player)
+                || (*runstate == RunState::MonsterTurn && is_monster)
+                || (*runstate == RunState::HazardTurn && is_hazard);
+            if !proceed {
+                continue
+            }
+
             let do_spawn = rng.roll_dice(1, 100) <= spawn_chance.chance;
             if do_spawn {
                 // spawn_position = map.random_adjacent_point()
@@ -62,6 +95,7 @@ impl<'a> System<'a> for EntitySpawnSystem {
         }
     }
 }
+
 
 // Loop through the EntitySpawnRequestBuffer and switch on the kind of entity
 // being requested. Delegate the requests to the appropriate functions and then

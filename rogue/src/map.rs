@@ -187,8 +187,6 @@ impl Map {
     pub fn random_adjacent_unblocked_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
-        let adjacent = self.get_adjacent_tiles(x, y);
-        println!("Adjacent: {:?}", adjacent);
         let adjacent_unblocked_tiles: Vec<(i32, i32)> = self.get_adjacent_tiles(x, y)
             .into_iter()
             .map(|(x, y)| self.xy_idx(x, y))
