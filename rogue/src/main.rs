@@ -72,7 +72,7 @@ const DEBUG_DRAW_ALL_MAP: bool = false;
 const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
-const DEBUG_HIGHLIGHT_FIRE: bool = false;
+const DEBUG_HIGHLIGHT_FIRE: bool = true;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
 
@@ -253,6 +253,7 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut teleport = TeleportationSystem{};
         teleport.run_now(&self.ecs);
+        // TODO: Should this be here?
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);

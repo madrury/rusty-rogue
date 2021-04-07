@@ -154,10 +154,17 @@ impl Map {
     }
 
     pub fn get_adjacent_tiles(&self, x: i32, y: i32) -> Vec<(i32, i32)> {
-        let dxs = vec![-1, 0, 1];
-        let dys = vec![-1, 0, 1];
-        dxs.into_iter().zip(dys)
-            .filter(|(dx, dy)| *dx != 0 || *dy != 0)
+        let ds = vec![
+            (-1, -1),
+            (-1,  0),
+            (-1,  1),
+            (0,  -1),
+            (0,   1),
+            (1,  -1),
+            (1,   0),
+            (1,   1),
+        ];
+        ds.into_iter()
             .map(|(dx, dy)| (x + dx, y + dy))
             .filter(|(x, y)| self.within_bounds(*x, *y))
             .collect()
@@ -180,12 +187,15 @@ impl Map {
     pub fn random_adjacent_unblocked_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
+        let adjacent = self.get_adjacent_tiles(x, y);
+        println!("Adjacent: {:?}", adjacent);
         let adjacent_unblocked_tiles: Vec<(i32, i32)> = self.get_adjacent_tiles(x, y)
             .into_iter()
             .map(|(x, y)| self.xy_idx(x, y))
             .filter(|idx| !self.blocked[*idx])
             .map(|idx| self.idx_xy(idx))
             .collect();
+        println!("Adjacent Unblocked: {:?}", adjacent_unblocked_tiles);
         let n_adjacent_unblocked_tiles = adjacent_unblocked_tiles.len() as i32;
         match n_adjacent_unblocked_tiles {
             0 => None,

@@ -230,7 +230,7 @@ impl<'a> System<'a> for StatusEffectSystem {
                 let adjacent = get_adjacent_entities(&*map, pos);
                 for entity in adjacent {
                     let roll = rng.roll_dice(1, 100);
-                    if roll <= 100 {//spread_chance.chance {
+                    if roll <= spread_chance.chance {
                         new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                             &mut status_burning,
                             &status_immune_fire,
