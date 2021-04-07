@@ -17,7 +17,7 @@ use super::{
     SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
     ChanceToDissipate, ChanceToInflictBurningOnAdjacentEntities,
     GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
-    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
+    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed, CanNotAct,
     SimpleMarker, SerializeMe, MarkedBuilder, ElementalDamageKind,
     InSpellBook, MAP_WIDTH, random_table
 };

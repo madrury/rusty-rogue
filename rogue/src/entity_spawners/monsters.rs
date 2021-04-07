@@ -5,7 +5,7 @@ use super::{
     SupportSpellcasterKind, MovementRoutingOptions,
     SpawnEntityWhenMeleeAttacked, EntitySpawnKind, Name, Position,
     Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
-    InSpellBook, spells
+    InSpellBook, CanNotAct, spells
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
@@ -652,6 +652,10 @@ pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Optio
                 max_hp: 0, hp: 0
             }
         })
+        // We prevent pink jelly's from acting on their first turn. If they move
+        // immediately, it's hard to tell what actually happened, this improves
+        // their gameplay behaviour.
+        .with(CanNotAct {})
         .with(BlocksTile {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();

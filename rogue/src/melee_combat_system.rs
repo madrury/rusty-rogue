@@ -89,11 +89,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     continue;
                 }
 
-                // TODO: This is not right. This message needs to happen AFTER defense buffs are applied.
+                // TODO: This is not right. This message needs to happen AFTER
+                // defense buffs are applied.
                 log.entries.push(
                     format!("{} hits {} for {} hp.", &name.name, &target_name.name, damage)
                 );
 
+                // Actually push the damage :D
                 WantsToTakeDamage::new_damage(
                     &mut damagees,
                     melee.target,
@@ -131,7 +133,10 @@ impl<'a> System<'a> for MeleeCombatSystem {
                                     entity_spawn_buffer.request(EntitySpawnRequest {
                                         x: spawn_position.0,
                                         y: spawn_position.1,
-                                        kind: EntitySpawnKind::PinkJelly {max_hp: 1, hp: 1}
+                                        kind: EntitySpawnKind::PinkJelly {
+                                            max_hp: target_stats.hp / 2,
+                                            hp: target_stats.hp / 2
+                                        }
                                     })
                                 }
                             }

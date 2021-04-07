@@ -1,8 +1,9 @@
 use specs::prelude::*;
 use super::{
-    Viewshed, Monster, CombatStats, CanAct, MonsterMovementRoutingOptions,
-    MonsterBasicAI, MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
-    Position, Map, RoutingMap, WantsToMeleeAttack, WantsToUseTargeted,
+    Viewshed, Monster, CombatStats, CanAct, CanNotAct,
+    MonsterMovementRoutingOptions, MonsterBasicAI,
+    MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI, Position, Map,
+    RoutingMap, WantsToMeleeAttack, WantsToUseTargeted,
     WantsToMoveToPosition, StatusIsFrozen, InSpellBook, Castable,
     SpellCharges, MovementRoutingOptions, SupportSpellcasterKind,
     StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed
@@ -19,7 +20,8 @@ pub struct MonsterCanActSystemData<'a> {
     entities: Entities<'a>,
     monsters: ReadStorage<'a, Monster>,
     status_is_frozen: ReadStorage<'a, StatusIsFrozen>,
-    can_acts: WriteStorage<'a, CanAct>
+    can_acts: WriteStorage<'a, CanAct>,
+    cannot_acts: WriteStorage<'a, CanNotAct>
 }
 
 impl<'a> System<'a> for MonsterCanActSystem {
@@ -27,17 +29,20 @@ impl<'a> System<'a> for MonsterCanActSystem {
 
     fn run(&mut self, data: Self::SystemData) {
 
-        let MonsterCanActSystemData {entities, monsters, status_is_frozen, mut can_acts} = data;
+        let MonsterCanActSystemData {entities, monsters, status_is_frozen, mut can_acts, mut cannot_acts} = data;
 
         for (entity, _monster) in (&entities, &monsters).join() {
 
             // Guard for frozen monsters: they cannot act.
-            if let Some(_) = status_is_frozen.get(entity) {
+            let is_frozen = status_is_frozen.get(entity).is_some();
+            let cant_act = cannot_acts.get(entity).is_some();
+            if is_frozen || cant_act {
                 continue;
             }
             can_acts.insert(entity, CanAct {})
                 .expect("Failed to insert CanAct component.");
         }
+        cannot_acts.clear();
     }
 }
 

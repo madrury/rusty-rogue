@@ -15,6 +15,9 @@ use serde::{Serialize, Deserialize};
 // tags monsters if they can act in a given turn.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct CanAct {}
+// tags monsters if they can not act in a given turn.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct CanNotAct {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MovementRoutingOptions {

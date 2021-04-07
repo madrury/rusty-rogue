@@ -739,6 +739,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Hazard>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
+    gs.ecs.register::<CanNotAct>();
     gs.ecs.register::<MonsterMovementRoutingOptions>();
     gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
