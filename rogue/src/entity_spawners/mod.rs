@@ -109,18 +109,18 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
-            .insert(MonsterType::Rat, 50)
-            .insert(MonsterType::Bat, 50)
+            .insert(MonsterType::Rat, 25)
+            .insert(MonsterType::Bat, 25)
             .insert(MonsterType::GoblinBasic, 10)
             .insert(MonsterType::GoblinCleric, 2 + depth)
             .insert(MonsterType::GoblinEnchanter, 2 + depth)
             .insert(MonsterType::GoblinFirecaster, depth - 1)
             .insert(MonsterType::GoblinChillcaster, depth - 1)
-            .insert(MonsterType::Orc, depth - 1)
-            .insert(MonsterType::PinkJelly, 1)
-            .insert(MonsterType::OrangeJelly, 100)
-            .insert(MonsterType::BlueJelly, 100)
-            .insert(MonsterType::None, 70 - depth)
+            .insert(MonsterType::Orc, depth - 2)
+            .insert(MonsterType::PinkJelly, depth)
+            .insert(MonsterType::OrangeJelly, depth - 1)
+            .insert(MonsterType::BlueJelly, depth - 1)
+            .insert(MonsterType::None, 70)
             .roll(&mut rng);
     }
     match monster {

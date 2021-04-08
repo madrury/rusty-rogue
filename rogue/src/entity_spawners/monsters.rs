@@ -261,7 +261,7 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Monster {})
             .with(Renderable {
                 glyph: rltk::to_cp437('g'),
-                fg: RGB::named(rltk::ORANGE),
+                fg: RGB::named(rltk::ORANGERED),
                 bg: RGB::named(rltk::BLACK),
                 order: 1,
                 visible_out_of_fov: false
@@ -319,7 +319,7 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Monster {})
             .with(Renderable {
                 glyph: rltk::to_cp437('g'),
-                fg: RGB::named(rltk::LIGHT_BLUE),
+                fg: RGB::named(rltk::DODGERBLUE),
                 bg: RGB::named(rltk::BLACK),
                 order: 1,
                 visible_out_of_fov: false
@@ -438,7 +438,7 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Renderable {
                 glyph: rltk::to_cp437('g'),
                 fg: RGB::named(rltk::GREY),
-                bg: RGB::named(rltk::BLACK),
+                bg: RGB::named(rltk::SLATEBLUE),
                 order: 1,
                 visible_out_of_fov: false
             })
@@ -726,7 +726,7 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Monster {})
         .with(Renderable {
             glyph: rltk::to_cp437('J'),
-            fg: RGB::named(rltk::BLUE),
+            fg: RGB::named(rltk::DODGERBLUE),
             bg: RGB::named(rltk::BLACK),
             order: 1,
             visible_out_of_fov: false
