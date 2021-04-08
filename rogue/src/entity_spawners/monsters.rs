@@ -2,9 +2,10 @@
 use super::{
     Map, BlocksTile, CombatStats, Monster, MonsterMovementRoutingOptions,
     MonsterBasicAI, MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
-    SupportSpellcasterKind, MovementRoutingOptions, Name, Position,
+    SupportSpellcasterKind, MovementRoutingOptions,
+    SpawnEntityWhenMeleeAttacked,  EntitySpawnKind, Name, Position,
     Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
-    InSpellBook, spells
+    StatusIsImmuneToFire, StatusIsImmuneToChill, InSpellBook, CanNotAct, spells
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
@@ -138,7 +139,7 @@ pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             dirty: true,
         })
         .with(Name {
-            name: "Rat".to_string(),
+            name: "Bat".to_string(),
         })
         .with(MonsterBasicAI {
             ..BAT_BASIC_AI
@@ -260,7 +261,7 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Monster {})
             .with(Renderable {
                 glyph: rltk::to_cp437('g'),
-                fg: RGB::named(rltk::ORANGE),
+                fg: RGB::named(rltk::ORANGERED),
                 bg: RGB::named(rltk::BLACK),
                 order: 1,
                 visible_out_of_fov: false
@@ -318,7 +319,7 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Monster {})
             .with(Renderable {
                 glyph: rltk::to_cp437('g'),
-                fg: RGB::named(rltk::LIGHT_BLUE),
+                fg: RGB::named(rltk::DODGERBLUE),
                 bg: RGB::named(rltk::BLACK),
                 order: 1,
                 visible_out_of_fov: false
@@ -437,7 +438,7 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Renderable {
                 glyph: rltk::to_cp437('g'),
                 fg: RGB::named(rltk::GREY),
-                bg: RGB::named(rltk::BLACK),
+                bg: RGB::named(rltk::SLATEBLUE),
                 order: 1,
                 visible_out_of_fov: false
             })
@@ -533,6 +534,7 @@ const ORC_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
 
 pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
 
+
     let orc = ecs.create_entity()
         .with(Position {
             x: x,
@@ -574,4 +576,194 @@ pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let idx = map.xy_idx(x, y);
     map.blocked[idx] = true;
     Some(orc)
+}
+
+
+//----------------------------------------------------------------------------
+// Jellies.
+//
+// Gellatinous foes that spawn other monsters/hazards when melee attacked.
+//----------------------------------------------------------------------------
+const JELLY_VIEW_RANGE: i32 = 8;
+pub const JELLY_BASE_HP: i32 = 20;
+const JELLY_BASE_DEFENSE: i32 = 0;
+const JELLY_BASE_POWER: i32 = 2;
+
+const JELLY_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
+    avoid_blocked: true,
+    avoid_fire: true,
+    avoid_chill: true,
+    avoid_water: true,
+    avoid_steam: true,
+    avoid_smoke: true,
+    avoid_lava: true,
+    avoid_brimstone: true,
+    avoid_ice: false,
+};
+
+const JELLY_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
+    only_follow_within_viewshed: true,
+    no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 0,
+    escape_when_at_low_health: false,
+    lost_visibility_keep_following_turns_max: 4,
+    lost_visibility_keep_following_turns_remaining: 4,
+};
+
+pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Option<Entity> {
+    let jelly = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('J'),
+            fg: RGB::named(rltk::PINK),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: JELLY_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Pink Jelly".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..JELLY_BASIC_AI
+        })
+        .with(MonsterMovementRoutingOptions {
+            options: JELLY_ROUTING_OPTIONS
+        })
+        .with(CombatStats {
+            max_hp: max_hp,
+            hp: hp,
+            power: JELLY_BASE_POWER,
+            defense: JELLY_BASE_DEFENSE
+        })
+        .with(SpawnEntityWhenMeleeAttacked {
+            kind: EntitySpawnKind::PinkJelly {
+                // These are just placeholder values. We will overwrite them
+                // with the appropriate hp values when the actual spawn request
+                // is generated in melee_combat_system.
+                max_hp: 0, hp: 0
+            }
+        })
+        // We prevent pink jelly's from acting on their first turn. If they move
+        // immediately, it's hard to tell what actually happened, this improves
+        // their gameplay behaviour.
+        .with(CanNotAct {})
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(jelly)
+}
+
+pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let jelly = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('J'),
+            fg: RGB::named(rltk::ORANGERED),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: JELLY_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Orange Jelly".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..JELLY_BASIC_AI
+        })
+        .with(MonsterMovementRoutingOptions {
+            options: JELLY_ROUTING_OPTIONS
+        })
+        .with(CombatStats {
+            max_hp: JELLY_BASE_HP,
+            hp: JELLY_BASE_HP,
+            power: JELLY_BASE_POWER,
+            defense: JELLY_BASE_DEFENSE
+        })
+        .with(SpawnEntityWhenMeleeAttacked {
+            kind: EntitySpawnKind::Fire {
+                spread_chance: 25,
+                dissipate_chance: 50,
+            }
+        })
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX})
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(jelly)
+}
+
+pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let jelly = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('J'),
+            fg: RGB::named(rltk::DODGERBLUE),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: JELLY_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Blue Jelly".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..JELLY_BASIC_AI
+        })
+        .with(MonsterMovementRoutingOptions {
+            options: JELLY_ROUTING_OPTIONS
+        })
+        .with(CombatStats {
+            max_hp: JELLY_BASE_HP,
+            hp: JELLY_BASE_HP,
+            power: JELLY_BASE_POWER,
+            defense: JELLY_BASE_DEFENSE
+        })
+        .with(SpawnEntityWhenMeleeAttacked {
+            kind: EntitySpawnKind::Chill {
+                spread_chance: 25,
+                dissipate_chance: 50,
+            }
+        })
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX})
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(jelly)
 }

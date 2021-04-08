@@ -1,4 +1,4 @@
-use rltk::{RGB, Rltk, RandomNumberGenerator, Algorithm2D, BaseMap, Point, Bresenham};
+use rltk::{Algorithm2D, BaseMap, Bresenham, Point, RGB, RandomNumberGenerator, Rltk, Tile};
 use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::iter::Iterator;
@@ -154,11 +154,18 @@ impl Map {
     }
 
     pub fn get_adjacent_tiles(&self, x: i32, y: i32) -> Vec<(i32, i32)> {
-        let dxs = vec![-1, 0, 1];
-        let dys = vec![-1, 0, 1];
-        dxs.into_iter().zip(dys)
+        let ds = vec![
+            (-1, -1),
+            (-1,  0),
+            (-1,  1),
+            (0,  -1),
+            (0,   1),
+            (1,  -1),
+            (1,   0),
+            (1,   1),
+        ];
+        ds.into_iter()
             .map(|(dx, dy)| (x + dx, y + dy))
-            .filter(|(x, y)| *x != 0 || *y != 0)
             .filter(|(x, y)| self.within_bounds(*x, *y))
             .collect()
     }
@@ -166,30 +173,39 @@ impl Map {
     pub fn random_adjacent_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
-        let dx = rng.range(-1, 2);
-        let dy = rng.range(-1, 2);
-        if dx == 0 && dy == 0 {
-            return None
+        let adjacent_tiles: Vec<(i32, i32)> = self.get_adjacent_tiles(x, y)
+            .into_iter()
+            .map(|(x, y)| self.xy_idx(x, y))
+            .filter(|idx| self.tiles[*idx] != TileType::Wall)
+            .map(|idx| self.idx_xy(idx))
+            .collect();
+        let n_adjacent_tiles = adjacent_tiles.len() as i32;
+        match n_adjacent_tiles {
+            0 => None,
+            _ => {
+                let ridx = (rng.roll_dice(1, n_adjacent_tiles) - 1) as usize;
+                Some(adjacent_tiles[ridx])
+            }
         }
-        if !self.within_bounds(x + dx, y + dy) {
-            return None
-        }
-        return Some((x + dx, y + dy))
     }
 
     pub fn random_adjacent_unblocked_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
-        let dx = rng.range(-1, 2);
-        let dy = rng.range(-1, 2);
-        if dx == 0 && dy == 0 {
-            return None
+        let adjacent_unblocked_tiles: Vec<(i32, i32)> = self.get_adjacent_tiles(x, y)
+            .into_iter()
+            .map(|(x, y)| self.xy_idx(x, y))
+            .filter(|idx| !self.blocked[*idx])
+            .map(|idx| self.idx_xy(idx))
+            .collect();
+        let n_adjacent_unblocked_tiles = adjacent_unblocked_tiles.len() as i32;
+        match n_adjacent_unblocked_tiles {
+            0 => None,
+            _ => {
+                let ridx = (rng.roll_dice(1, n_adjacent_unblocked_tiles) - 1) as usize;
+                Some(adjacent_unblocked_tiles[ridx])
+            }
         }
-        let idx = self.xy_idx(x + dx, y + dy);
-        if self.within_bounds(x + dx, y + dy) && !self.blocked[idx] {
-            return Some((x + dx, y + dy))
-        }
-        return None
     }
 
     pub fn get_aoe_tiles(&self, pt: Point, radius: f32) -> Vec<Point> {
@@ -227,7 +243,6 @@ impl Map {
         }
         circle.into_iter().filter(|pt| self.within_bounds(pt.x, pt.y)).collect()
     }
-
 }
 
 impl BaseMap for Map {

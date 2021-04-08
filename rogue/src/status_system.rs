@@ -129,6 +129,7 @@ pub struct StatusEffectSystemData<'a> {
     monsters: ReadStorage<'a, Monster>,
     hazards: ReadStorage<'a, Hazard>,
     positions: ReadStorage<'a, Position>,
+    names: ReadStorage<'a, Name>,
     status_burning: WriteStorage<'a, StatusIsBurning>,
     status_immune_fire: WriteStorage<'a, StatusIsImmuneToFire>,
     dissipate_when_burning: ReadStorage<'a, DissipateWhenBurning>,
@@ -155,6 +156,7 @@ impl<'a> System<'a> for StatusEffectSystem {
             monsters,
             hazards,
             positions,
+            names,
             mut status_burning,
             status_immune_fire,
             chance_to_spawn_when_burning,
@@ -233,7 +235,7 @@ impl<'a> System<'a> for StatusEffectSystem {
                             &mut status_burning,
                             &status_immune_fire,
                             *entity,
-                            5
+                            5 // TODO: Magic Number! Boo!
                         );
                     }
                 }

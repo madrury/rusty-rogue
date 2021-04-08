@@ -30,6 +30,8 @@ impl<'a> System<'a> for MapIndexingSystem {
         map.intitialize_blocked();
         map.intitialize_opaque();
         for e in map.fire.iter_mut() {*e = false}
+        for e in map.chill.iter_mut() {*e = false}
+        for e in map.water.iter_mut() {*e = false}
         map.clear_tile_content();
 
         for (pos, entity) in (&positions, &entities).join() {

@@ -209,11 +209,11 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut teleport = TeleportationSystem{};
         teleport.run_now(&self.ecs);
+        process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
-        // DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -260,7 +260,6 @@ impl State {
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
-        // DamageSystem::clean_up_the_dead(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -491,6 +490,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
+                    self.run_map_indexing_system();
                     let next_state = self.next_state
                         .expect("Returning from animation, but no next_state to return to.");
                     newrunstate = next_state;
@@ -498,34 +498,34 @@ impl GameState for State {
             }
             RunState::PlayerTurn => {
                 self.run_player_turn_systems();
-                self.run_map_indexing_system();
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(RunState::HazardTurn);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
+                    self.run_map_indexing_system();
                     newrunstate = RunState::HazardTurn;
                 }
             }
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
-                self.run_map_indexing_system();
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(RunState::MonsterTurn);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
+                self.run_map_indexing_system();
                     newrunstate = RunState::MonsterTurn;
                 }
             }
             RunState::MonsterTurn => {
                 self.run_monster_turn_systems();
-                self.run_map_indexing_system();
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(RunState::UpkeepTrun);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
+                    self.run_map_indexing_system();
                     newrunstate = RunState::UpkeepTrun
                 }
             }
@@ -739,6 +739,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Hazard>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
+    gs.ecs.register::<CanNotAct>();
     gs.ecs.register::<MonsterMovementRoutingOptions>();
     gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
@@ -773,6 +774,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsFreezingWhenEncroachedUpon>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<SpawnEntityWhenEncroachedUpon>();
+    gs.ecs.register::<SpawnEntityWhenMeleeAttacked>();
     gs.ecs.register::<ChanceToSpawnAdjacentEntity>();
     gs.ecs.register::<ChanceToSpawnEntityWhenBurning>();
     gs.ecs.register::<ChanceToInflictBurningOnAdjacentEntities>();

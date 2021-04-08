@@ -15,7 +15,7 @@ use specs::prelude::*;
 // spawning or despawning of fire MUST use thiese functions, since it handles
 // syncronizing the map.fire array.
 const FIRE_ENCROACHMENT_DAMAGE: i32 = 2;
-const FIRE_ADJACENT_BURNING_CHANCE: i32 = 50;
+const FIRE_ADJACENT_BURNING_CHANCE: i32 = 25;
 const FIRE_BURNING_TURNS: i32 = 4;
 const FIRE_BURNING_TICK_DAMAGE: i32 = 2;
 const FIRE_SPAWN_DISSIPATE_CHANCE_CHANGE: i32 = 20;
@@ -136,7 +136,7 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
                 order: 2,
                 visible_out_of_fov: false
             })
-            .with(SetsBgColor {order: 1})
+            .with(SetsBgColor {order: 0})
             .with(Name {name: "Chill".to_string()})
             .with(Hazard {})
             .with(IsEntityKind {
@@ -172,6 +172,7 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
         None
     }
 }
+
 pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
     let idx;
     { // Contain first borrow of ECS.

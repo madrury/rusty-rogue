@@ -52,7 +52,7 @@ pub fn new_status_with_immunity<Status, StatusImmune>(
             let status = Status::new(turns);
             store
                 .insert(e, status)
-                .expect("Unable to insert StatusIsImmuneToFire component.");
+                .expect("Unable to insert Status component.");
             return true
         }
     }

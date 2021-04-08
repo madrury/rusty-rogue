@@ -1,6 +1,6 @@
 use super::{
-    Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, SwimStamina,
-    HungerClock, HungerState, Monster, Hazard, IsEntityKind,
+    Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
+    SwimStamina, HungerClock, HungerState, Monster, Hazard, IsEntityKind,
     MonsterMovementRoutingOptions, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
     SupportSpellcasterKind, MovementRoutingOptions, Name, Player, Position,
@@ -13,19 +13,21 @@ use super::{
     BuffsPhysicalDefenseWhenTargeted, InflictsBurningWhenEncroachedUpon,
     InflictsFreezingWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
     AlongRayAnimationWhenTargeted, MovesToRandomPosition,
-    MoveToPositionWhenTargeted, SpawnsEntityInAreaWhenTargeted,
-    ChanceToSpawnAdjacentEntity, ChanceToDissipate,
-    ChanceToInflictBurningOnAdjacentEntities, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
-    ProvidesChillImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, InSpellBook, MAP_WIDTH, random_table
+    MoveToPositionWhenTargeted, SpawnEntityWhenMeleeAttacked,
+    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
+    ChanceToDissipate, ChanceToInflictBurningOnAdjacentEntities,
+    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
+    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed, CanNotAct,
+    SimpleMarker, SerializeMe, MarkedBuilder, ElementalDamageKind,
+    InSpellBook, StatusIsImmuneToFire, StatusIsImmuneToChill,
+    MAP_WIDTH, random_table
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
 mod potions;
 mod equipment;
 mod spells;
-mod monsters;
+pub mod monsters;
 mod food;
 pub mod hazards;
 pub mod player;
@@ -96,7 +98,10 @@ enum MonsterType {
     GoblinEnchanter,
     GoblinFirecaster,
     GoblinChillcaster,
-    Orc
+    Orc,
+    PinkJelly,
+    OrangeJelly,
+    BlueJelly
 }
 fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
     let monster: Option<MonsterType>;
@@ -104,15 +109,18 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         monster = random_table::RandomTable::new()
-            .insert(MonsterType::Rat, 50)
-            .insert(MonsterType::Bat, 50)
+            .insert(MonsterType::Rat, 25)
+            .insert(MonsterType::Bat, 25)
             .insert(MonsterType::GoblinBasic, 10)
             .insert(MonsterType::GoblinCleric, 2 + depth)
             .insert(MonsterType::GoblinEnchanter, 2 + depth)
             .insert(MonsterType::GoblinFirecaster, depth - 1)
             .insert(MonsterType::GoblinChillcaster, depth - 1)
-            .insert(MonsterType::Orc, depth - 1)
-            .insert(MonsterType::None, 70 - depth)
+            .insert(MonsterType::Orc, depth - 2)
+            .insert(MonsterType::PinkJelly, depth)
+            .insert(MonsterType::OrangeJelly, depth - 1)
+            .insert(MonsterType::BlueJelly, depth - 1)
+            .insert(MonsterType::None, 70)
             .roll(&mut rng);
     }
     match monster {
@@ -124,6 +132,10 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(MonsterType::GoblinFirecaster) => monsters::goblin_firecaster(ecs, x, y),
         Some(MonsterType::GoblinChillcaster) => monsters::goblin_chillcaster(ecs, x, y),
         Some(MonsterType::Orc) => monsters::orc_basic(ecs, x, y),
+        Some(MonsterType::PinkJelly) => monsters::pink_jelly(
+            ecs, x, y, monsters::JELLY_BASE_HP, monsters::JELLY_BASE_HP),
+        Some(MonsterType::OrangeJelly) => monsters::orange_jelly(ecs, x, y),
+        Some(MonsterType::BlueJelly) => monsters::blue_jelly(ecs, x, y),
         _ => {None}
     };
 }
