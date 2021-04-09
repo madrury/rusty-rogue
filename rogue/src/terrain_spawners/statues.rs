@@ -1,13 +1,14 @@
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
-    MarkedBuilder, BlocksTile, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
-    EntitySpawnKind, Hazard, Opaque, color, noise
+    MarkedBuilder, BlocksTile, TileType, DissipateWhenBurning,
+    ChanceToSpawnEntityWhenBurning, DissipateWhenEnchroachedUpon,
+    SpawnEntityWhenEncroachedUpon, EntitySpawnKind, Hazard, Opaque, color,
+    noise
 };
 use rltk::{RGB};
 use specs::prelude::*;
 
-const STATUE_NOISE_THRESHOLD: f32 = 0.95;
+const STATUE_NOISE_THRESHOLD: f32 = 0.98;
 
 //----------------------------------------------------------------------------
 // Foliage.
@@ -45,6 +46,20 @@ pub fn spawn_statues(ecs: &mut World) {
 
 // An inanimate statue. Sees nothing, does nothing.
 pub fn statue(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
+    // Statues are immobile and block tiles, so we want to carve out some room
+    // around a spawning statue to make sure entities can navigate around them.
+    {
+        let mut map = ecs.write_resource::<Map>();
+        let adjacent_tiles = map.get_adjacent_tiles(x, y);
+        for (xadj, yadj) in adjacent_tiles {
+            let idx = map.xy_idx(xadj, yadj);
+            if map.tiles[idx] == TileType::Wall {
+                map.tiles[idx] = TileType::Floor;
+                map.ok_to_spawn[idx] = true;
+            }
+        }
+    }
+
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
