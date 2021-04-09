@@ -18,7 +18,7 @@ const STATUE_NOISE_THRESHOLD: f32 = 0.98;
 //----------------------------------------------------------------------------
 
 struct StatueSpawnData {
-    x: i32, y: i32, color: RGB
+    x: i32, y: i32
 }
 
 // Spawn statues randomly throughout the map.
@@ -32,20 +32,18 @@ pub fn spawn_statues(ecs: &mut World) {
                 let idx = map.xy_idx(x, y);
                 let wnoise = statue_noise[idx];
                 if wnoise > STATUE_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
-                    let col = (wnoise - STATUE_NOISE_THRESHOLD) / (1.0 - STATUE_NOISE_THRESHOLD);
-                    let color = color::statue_grey_from_noise(col);
-                    statue_spawn_buffer.push(StatueSpawnData {x: x, y: y, color: color})
+                    statue_spawn_buffer.push(StatueSpawnData {x: x, y: y})
                 }
             }
         }
     }
     for data in statue_spawn_buffer {
-        statue(ecs, data.x, data.y, data.color);
+        statue(ecs, data.x, data.y);
     }
 }
 
 // An inanimate statue. Sees nothing, does nothing.
-pub fn statue(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
+pub fn statue(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     // Statues are immobile and block tiles, so we want to carve out some room
     // around a spawning statue to make sure entities can navigate around them.
     {
@@ -64,7 +62,7 @@ pub fn statue(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('&'),
-            fg: fgcolor,
+            fg: RGB::named(rltk::GOLD),
             bg: RGB::named(rltk::BLACK),
             order: 1,
             visible_out_of_fov: true

@@ -33,11 +33,3 @@ pub fn shallow_water_bg_from_noise(f: f32) -> RGB {
         (f * (BLUE.2 as f32)) as u8 + ((1.0 - f) * (SANDY_BROWN.2 as f32)) as u8
     )
 }
-
-pub fn statue_grey_from_noise(f: f32) -> RGB {
-    RGB::from_u8(
-        ((1.0 - f) * (DARKGRAY.0 as f32)) as u8 + (f * (LIGHTGRAY.0 as f32)) as u8,
-        ((1.0 - f) * (DARKGRAY.1 as f32)) as u8 + (f * (LIGHTGRAY.1 as f32)) as u8,
-        ((1.0 - f) * (DARKGRAY.2 as f32)) as u8 + (f * (LIGHTGRAY.2 as f32)) as u8
-    )
-}
