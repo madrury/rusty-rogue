@@ -1,16 +1,17 @@
 
 use super::{
-    Map, Position, Renderable, SetsBgColor, Name, SimpleMarker, SerializeMe,
-    MarkedBuilder, DissipateWhenBurning, DissipateWhenEnchroachedUpon,
-    SpawnEntityWhenEncroachedUpon, ChanceToSpawnEntityWhenBurning,
-    EntitySpawnKind, IsEntityKind, Hazard, Opaque, TileType, color, noise
+    Map, Position, Renderable, BlocksTile, SetsBgColor, Name, SimpleMarker,
+    SerializeMe, MarkedBuilder, DissipateWhenBurning,
+    DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
+    ChanceToSpawnEntityWhenBurning, EntitySpawnKind, IsEntityKind, Hazard,
+    Opaque, TileType, color, noise
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
-use water::spawn_large_lakes;
 
 pub mod foliage;
 pub mod water;
+pub mod statues;
 
 
 pub fn spawn_terrain(ecs: &mut World, _depth: i32) {
@@ -28,6 +29,7 @@ pub fn spawn_terrain(ecs: &mut World, _depth: i32) {
         _ => panic!("Rolled to high on water spawning.")
 
     }
+    statues::spawn_statues(ecs);
     match grass_roll {
         1 => foliage::spawn_short_grass(ecs),
         2 => foliage::spawn_sporadic_grass(ecs),

@@ -1,5 +1,5 @@
 
-use rltk::{RGB, GREEN, DARKGREEN, BLUE, WHITE, MEDIUMBLUE, SANDY_BROWN};
+use rltk::{RGB, GREEN, DARKGREEN, BLUE, WHITE, MEDIUMBLUE, SANDY_BROWN, DARKGRAY, LIGHTGRAY};
 
 
 pub fn grass_green_from_noise(f: f32) -> RGB {
@@ -31,5 +31,13 @@ pub fn shallow_water_bg_from_noise(f: f32) -> RGB {
         (f * (BLUE.0 as f32)) as u8 + ((1.0 - f) * (SANDY_BROWN.0 as f32)) as u8,
         (f * (BLUE.1 as f32)) as u8 + ((1.0 - f) * (SANDY_BROWN.1 as f32)) as u8,
         (f * (BLUE.2 as f32)) as u8 + ((1.0 - f) * (SANDY_BROWN.2 as f32)) as u8
+    )
+}
+
+pub fn statue_grey_from_noise(f: f32) -> RGB {
+    RGB::from_u8(
+        ((1.0 - f) * (DARKGRAY.0 as f32)) as u8 + (f * (LIGHTGRAY.0 as f32)) as u8,
+        ((1.0 - f) * (DARKGRAY.1 as f32)) as u8 + (f * (LIGHTGRAY.1 as f32)) as u8,
+        ((1.0 - f) * (DARKGRAY.2 as f32)) as u8 + (f * (LIGHTGRAY.2 as f32)) as u8
     )
 }

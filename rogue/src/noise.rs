@@ -45,3 +45,20 @@ pub fn water_noisemap(map: &Map, vfreq: f32) -> Vec<(f32, f32)> {
     }
     noisemap
 }
+
+pub fn statue_noisemap(map: &Map) -> Vec<f32> {
+    let mut rng = RandomNumberGenerator::new();
+
+    let mut whitenoise = FastNoise::seeded(rng.next_u64());
+    whitenoise.set_noise_type(NoiseType::WhiteNoise);
+    whitenoise.set_frequency(0.5);
+
+    let mut noisemap: Vec<f32> = Vec::new();
+    for y in 0..map.height {
+        for x in 0..map.width {
+            let wn = whitenoise.get_noise(x as f32, y as f32);
+            noisemap.push(wn);
+        }
+    }
+    noisemap
+}

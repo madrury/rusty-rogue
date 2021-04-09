@@ -56,11 +56,19 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
         .build()
 }
 
+//----------------------------------------------------------------------------
 // Find a postition to spawn the player.
 //
 // It is assumed this function is called after the map has been generated,
 // terrain has been spawned, and monsters have been spawned. We search for a
 // position that is far away from any monsters.
+//
+// The strategy here is crude, but seems to work alright. We attempt to spawn at
+// a random point and check how far away we are from the closest monster. If
+// we're too close, we tray again for some number of times, and if we fail
+// repeatedly, we lower the acceptable threshold and try again until. We
+// continue like this until we succeed.
+//----------------------------------------------------------------------------
 const INITIAL_DISTANCE_BOUND: i32 = 15;
 const N_TIMES_TO_TRY_EACH_DISTANCE: i32 = 5;
 
