@@ -1,6 +1,6 @@
 use super::{
     Point, Map, CombatStats, SwimStamina, HungerClock, HungerState, Name, Player,
-    Position, Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
+    Monster, Position, Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -56,24 +56,48 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
         .build()
 }
 
+// Find a postition to spawn the player.
+//
+// It is assumed this function is called after the map has been generated,
+// terrain has been spawned, and monsters have been spawned. We search for a
+// position that is far away from any monsters.
+const INITIAL_DISTANCE_BOUND: i32 = 15;
+const N_TIMES_TO_TRY_EACH_DISTANCE: i32 = 5;
+
 pub fn get_spawn_position(ecs: &World) -> Option<Point> {
     let mut rng = RandomNumberGenerator::new();
     let map = ecs.fetch::<Map>();
     let mut start: Option<Point> = None;
+    let mut n_tries: i32 = 0;
     while start.is_none() {
         let maybe = map.random_unblocked_point(250, &mut rng);
         start = match maybe {
-            None => {None}
+            None => {
+                n_tries += 1;
+                None
+            }
             Some(maybe) => {
-                let idx = map.xy_idx(maybe.0, maybe.1);
-                let ok_to_spawn = map.ok_to_spawn[idx];
-                if ok_to_spawn {
+                let acceptable_distance =
+                    INITIAL_DISTANCE_BOUND -  n_tries / N_TIMES_TO_TRY_EACH_DISTANCE;
+                let distance_is_acceptable =
+                    distance_to_closest_monster(ecs, maybe) >= acceptable_distance as f32;
+                if distance_is_acceptable {
                     Some(Point {x: maybe.0, y: maybe.1})
                 } else {
+                    n_tries += 1;
                     None
                 }
             }
         }
     }
     start
+}
+
+fn distance_to_closest_monster(ecs: &World, maybe: (i32, i32)) -> f32 {
+    let maybe_point = Point {x: maybe.0, y: maybe.1};
+    let monsters = ecs.read_storage::<Monster>();
+    let positions = ecs.read_storage::<Position>();
+    (&monsters, &positions).join()
+        .map(|(_m, pos)| rltk::DistanceAlg::Pythagoras.distance2d(pos.to_point(), maybe_point))
+        .fold(f32::INFINITY, |a, b| a.min(b))
 }
