@@ -127,6 +127,10 @@ impl Map {
         x >= 1 && x <= self.width - 1 && y >= 1 && y <= self.height - 1
     }
 
+    pub fn is_edge_tile(&self, x: i32, y: i32) -> bool {
+        x == 1 || x == self.width - 1 || y == 1 || y == self.height - 1
+    }
+
     pub fn random_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
         for _ in 0..n_tries {
             let x = rng.roll_dice(1, self.width) - 1;

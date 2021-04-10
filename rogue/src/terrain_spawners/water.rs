@@ -51,7 +51,7 @@ fn spawn_bodies_of_water(
         let water_noise = noise::water_noisemap(&map, frequency);
         for x in 0..map.width {
             for y in 0..map.height {
-                if is_edge_tile(&map, x, y) {continue;}
+                if map.is_edge_tile(x, y) {continue;}
                 let idx = map.xy_idx(x, y);
                 let (vnoise, wnoise) = water_noise[idx];
                 if vnoise > deep_water_threshold {
@@ -91,11 +91,6 @@ fn spawn_bodies_of_water(
         }
     }
 }
-
-fn is_edge_tile(map: &Map, x: i32, y: i32) -> bool {
-    x == 0 || x == map.width - 1 || y == 0 || y == map.height - 1
-}
-
 
 pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -> Option<Entity> {
     let entity = ecs.create_entity()

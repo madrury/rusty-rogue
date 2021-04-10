@@ -276,7 +276,6 @@ impl State {
         particles.run_now(&self.ecs);
     }
 
-    // Build a new floor of the dungeon.
     fn generate_map(&mut self, depth: i32) {
         // Build the floor layout, and update the dubug map build animation.
         self.mapgen.reset();

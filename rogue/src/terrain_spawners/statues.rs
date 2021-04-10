@@ -1,9 +1,6 @@
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
-    MarkedBuilder, BlocksTile, TileType, DissipateWhenBurning,
-    ChanceToSpawnEntityWhenBurning, DissipateWhenEnchroachedUpon,
-    SpawnEntityWhenEncroachedUpon, EntitySpawnKind, Hazard, Opaque, color,
-    noise
+    MarkedBuilder, BlocksTile, TileType, noise
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -11,12 +8,8 @@ use specs::prelude::*;
 const STATUE_NOISE_THRESHOLD: f32 = 0.98;
 
 //----------------------------------------------------------------------------
-// Foliage.
-//
-// Functions for spawning grass and other foliage. These provide multiple
-// options to support different gameply feels.
+// Statues.
 //----------------------------------------------------------------------------
-
 struct StatueSpawnData {
     x: i32, y: i32
 }
@@ -51,11 +44,15 @@ pub fn statue(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         let adjacent_tiles = map.get_adjacent_tiles(x, y);
         for (xadj, yadj) in adjacent_tiles {
             let idx = map.xy_idx(xadj, yadj);
+            if map.is_edge_tile(x, y) {continue;}
             if map.tiles[idx] == TileType::Wall {
                 map.tiles[idx] = TileType::Floor;
                 map.ok_to_spawn[idx] = true;
             }
         }
+        let idx = map.xy_idx(x, y);
+        map.ok_to_spawn[idx] = false;
+        map.blocked[idx] = true;
     }
 
     let entity = ecs.create_entity()
@@ -72,5 +69,6 @@ pub fn statue(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         // Hard to justify? Well, it needs to take a turn ok?
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+
     Some(entity)
 }
