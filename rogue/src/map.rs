@@ -124,11 +124,11 @@ impl Map {
     }
 
     pub fn within_bounds(&self, x: i32, y: i32) -> bool {
-        x >= 1 && x <= self.width - 1 && y >= 1 && y <= self.height - 1
+        x >= 0 && x <= self.width - 1 && y >= 0 && y <= self.height - 1
     }
 
     pub fn is_edge_tile(&self, x: i32, y: i32) -> bool {
-        x == 1 || x == self.width - 1 || y == 1 || y == self.height - 1
+        x == 0 || x == self.width - 1 || y == 0 || y == self.height - 1
     }
 
     pub fn random_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
