@@ -148,6 +148,7 @@ enum ItemType {
     Turnip,
     Pomegranate,
     HealthPotion,
+    RechargingPotion,
     TeleportationPotion,
     FirePotion,
     FreezingPotion,
@@ -169,6 +170,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Turnip, 4 + depth)
             .insert(ItemType::Pomegranate, depth)
             .insert(ItemType::HealthPotion, 4 + depth)
+            .insert(ItemType::RechargingPotion, 100)
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, depth)
             .insert(ItemType::FreezingPotion, depth)
@@ -187,6 +189,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::Turnip) => food::turnip(ecs, x, y),
         Some(ItemType::Pomegranate) => food::pomegranate(ecs, x, y),
         Some(ItemType::HealthPotion) => potions::health(ecs, x, y),
+        Some(ItemType::RechargingPotion) => potions::recharging(ecs, x, y),
         Some(ItemType::TeleportationPotion) => potions::teleportation(ecs, x, y),
         Some(ItemType::FirePotion) => potions::fire(ecs, x, y),
         Some(ItemType::FreezingPotion) => potions::freezing(ecs, x, y),
