@@ -10,14 +10,6 @@ use cellular_automata_map::{CellularAutomataBuilder};
 mod common;
 use common::*;
 
-/*
-Various apgorithms for map building.
-
-  Simple Map Builder: PLaces some rectangular rooms and then connects them
-    with L shaped corridors.
-  Cellular Automota Builder: Fills the rap with binary random noise, then
-    smoothes it out with a cellular automata.
-*/
 
 pub trait MapBuilder {
     fn build_map(&mut self);
@@ -26,16 +18,19 @@ pub trait MapBuilder {
     fn map(&self) -> Map;
     // Compute a position to place the player.
     fn starting_position(&self, ecs: &World) -> Point;
-    // fn starting_position(&self) -> Position;
     // Compute a position to place the stairs.
     fn stairs_position(&self, ecs: &World) -> Point;
-    // fn stairs_position(&self) -> Point;
 
     fn take_snapshot(&mut self);
     fn snapshot_history(&self) -> Vec<Map>;
 }
 
 pub fn random_builder(depth: i32) -> Box<dyn MapBuilder> {
-    Box::new(SimpleMapBuilder::new(depth))
-    // Box::new(CellularAutomataBuilder::new(depth))
+    let mut rng = rltk::RandomNumberGenerator::new();
+    let roll = rng.roll_dice(1, 2);
+    match roll {
+        1 => Box::new(SimpleMapBuilder::new(depth)),
+        2 => Box::new(CellularAutomataBuilder::new(depth)),
+        _ => panic!("Rolled too high when choosing a map builder.")
+    }
 }
