@@ -209,6 +209,22 @@ impl<'a> System<'a> for UntargetedSystem {
                 }
             }
 
+            // Component: DecreasesSpellRechargeWhenUsed
+            let thing_decreases_recharge = decreases_spell_charge.get(want_use.thing);
+            if let Some(thing_decreases_recharge) = thing_decreases_recharge {
+                let iterspells = (&entities, &castables, &in_spellbooks, &mut spell_charges).join();
+                let spell_charges_for_user: Vec<&mut SpellCharges> = iterspells
+                    .filter(|(_e, _c, spellbook, _sc)| spellbook.owner == entity)
+                    .map(|(_e, _c, _sb, charges)| charges)
+                    .collect();
+                for sc in spell_charges_for_user {
+                    println!("{}", sc.regen_time);
+                    sc.regen_time = sc.regen_time * (100 - thing_decreases_recharge.percentage) / 100;
+                    println!("{}", sc.regen_time);
+                    sc.time = i32::min(sc.time, sc.regen_time);
+                }
+            }
+
             // If the thing was single use, clean it up.
             let consumable = consumables.get(want_use.thing);
             if let Some(_) = consumable {
