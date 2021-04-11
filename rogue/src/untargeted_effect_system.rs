@@ -1,11 +1,14 @@
 
 use super::{
-    CombatStats, HungerClock, GameLog, AnimationRequestBuffer, AnimationRequest,
-    Name, Position, Renderable, WantsToUseUntargeted, Consumable, Untargeted,
-    ProvidesFullHealing, ProvidesFullFood, MovesToRandomPosition,
-    WantsToMoveToRandomPosition, IncreasesMaxHpWhenUsed,
-    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
-    StatusIsImmuneToFire, StatusIsImmuneToChill, new_status
+    CombatStats, HungerClock, GameLog, AnimationRequestBuffer,
+    AnimationRequest, Name, Position, Renderable, WantsToUseUntargeted,
+    Consumable, Untargeted, Castable, InSpellBook, SpellCharges,
+    ProvidesFullHealing, ProvidesFullFood, ProvidesFullSpellRecharge,
+    MovesToRandomPosition, WantsToMoveToRandomPosition,
+    IncreasesMaxHpWhenUsed, ProvidesFireImmunityWhenUsed,
+    ProvidesChillImmunityWhenUsed, DecreasesSpellRechargeWhenUsed,
+    StatusIsImmuneToFire,
+    StatusIsImmuneToChill, new_status
 };
 use specs::prelude::*;
 
@@ -24,11 +27,16 @@ pub struct UntargetedSystemData<'a> {
     renderables: ReadStorage<'a, Renderable>,
     consumables: ReadStorage<'a, Consumable>,
     untargeteds: ReadStorage<'a, Untargeted>,
+    castables: ReadStorage<'a, Castable>,
+    in_spellbooks: ReadStorage<'a, InSpellBook>,
+    spell_charges: WriteStorage<'a, SpellCharges>,
     wants_use: WriteStorage<'a, WantsToUseUntargeted>,
-    increases_hp: ReadStorage<'a, IncreasesMaxHpWhenUsed>,
     provides_fire_immunity: ReadStorage<'a, ProvidesFireImmunityWhenUsed>,
     provides_chill_immunity: ReadStorage<'a, ProvidesChillImmunityWhenUsed>,
     healing: ReadStorage<'a, ProvidesFullHealing>,
+    increases_hp: ReadStorage<'a, IncreasesMaxHpWhenUsed>,
+    recharge: ReadStorage<'a, ProvidesFullSpellRecharge>,
+    decreases_spell_charge: ReadStorage<'a, DecreasesSpellRechargeWhenUsed>,
     foods: ReadStorage<'a, ProvidesFullFood>,
     teleports: ReadStorage<'a, MovesToRandomPosition>,
     wants_to_teleport: WriteStorage<'a, WantsToMoveToRandomPosition>,
@@ -53,11 +61,16 @@ impl<'a> System<'a> for UntargetedSystem {
             renderables,
             consumables,
             untargeteds,
+            castables,
+            in_spellbooks,
+            mut spell_charges,
             mut wants_use,
-            increases_hp,
             provides_fire_immunity,
             provides_chill_immunity,
             healing,
+            increases_hp,
+            recharge,
+            decreases_spell_charge,
             foods,
             teleports,
             mut wants_to_teleport,
@@ -147,7 +160,7 @@ impl<'a> System<'a> for UntargetedSystem {
                 // }
             }
 
-            // Component: ProvidesFireImmunityWhenUsed
+            // Component: ProvidesChillImmunityWhenUsed
             let thing_provides_chill_immunity = provides_chill_immunity.get(want_use.thing);
             if let Some(provides_immunity) = thing_provides_chill_immunity {
                 new_status::<StatusIsImmuneToChill>(
@@ -179,6 +192,20 @@ impl<'a> System<'a> for UntargetedSystem {
                         thing_name.name,
                         user_name.name
                     ));
+                }
+            }
+
+            // Compontnet: ProvidesFullSpellRecharge
+            let thing_recharges = recharge.get(want_use.thing);
+            if let Some(_) = thing_recharges {
+                let iterspells = (&entities, &castables, &in_spellbooks, &mut spell_charges).join();
+                let spell_charges_for_user: Vec<&mut SpellCharges> = iterspells
+                    .filter(|(_e, _c, spellbook, _sc)| spellbook.owner == entity)
+                    .map(|(_e, _c, _sb, charges)| charges)
+                    .collect();
+                for sc in spell_charges_for_user {
+                    sc.charges = sc.max_charges;
+                    sc.time = sc.regen_time;
                 }
             }
 

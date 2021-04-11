@@ -179,7 +179,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::MagicMissileScroll, 1 + depth)
             .insert(ItemType::BlinkScroll, 1 + depth)
             .insert(ItemType::FireblastScroll, 1 + depth)
-            .insert(ItemType::FireballScroll, depth)
+            .insert(ItemType::FireballScroll, 100)
             .insert(ItemType::IceblastScroll, depth)
             .insert(ItemType::IcespikeScroll, depth)
             .insert(ItemType::None, 75)
