@@ -85,11 +85,12 @@ pub fn get_spawn_position(ecs: &World) -> Option<Point> {
                 None
             }
             Some(maybe) => {
+                let idx = map.xy_idx(maybe.0, maybe.1);
                 let acceptable_distance =
                     INITIAL_DISTANCE_BOUND -  n_tries / N_TIMES_TO_TRY_EACH_DISTANCE;
                 let distance_is_acceptable =
                     distance_to_closest_monster(ecs, maybe) >= acceptable_distance as f32;
-                if distance_is_acceptable {
+                if distance_is_acceptable && map.ok_to_spawn[idx] {
                     Some(Point {x: maybe.0, y: maybe.1})
                 } else {
                     n_tries += 1;
