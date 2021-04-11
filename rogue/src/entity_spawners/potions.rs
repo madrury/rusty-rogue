@@ -5,7 +5,8 @@ use super::{
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
     SpawnsEntityInAreaWhenTargeted, ProvidesFireImmunityWhenUsed,
-    ProvidesChillImmunityWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
+    ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
+    DecreasesSpellRechargeWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
     ElementalDamageKind
 };
 use rltk::{RGB};
@@ -36,6 +37,28 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         // animation.
         .with(ProvidesFullHealing {})
         .with(IncreasesMaxHpWhenUsed {amount: 5})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+        Some(entity)
+}
+
+pub fn recharging(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('¿'),
+            fg: RGB::named(rltk::GREEN),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+            visible_out_of_fov: false
+        })
+        .with(Name {name: "Potion of Recharging".to_string()})
+        .with(PickUpable {})
+        .with(Useable {})
+        .with(Untargeted {verb: "drinks".to_string()})
+        .with(Consumable {})
+        .with(ProvidesFullSpellRecharge {})
+        .with(DecreasesSpellRechargeWhenUsed {percentage: 25})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)

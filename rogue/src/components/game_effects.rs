@@ -28,6 +28,11 @@ use super::signaling::{ElementalDamageKind};
 pub struct IncreasesMaxHpWhenUsed {
     pub amount: i32
 }
+// Component for effects that cause the user's spell to charge more quickly.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct DecreasesSpellRechargeWhenUsed {
+    pub percentage: i32
+}
 
 // Component for effects that inflict damage when thrown or cast.
 #[derive(Component, ConvertSaveload, Clone)]
@@ -108,6 +113,11 @@ pub struct GrantsMeleeDefenseBonus {
 // An entity with this component, when used, restores all of the users hp.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct ProvidesFullHealing {}
+
+// An entity with this component, when used, restores a single charge to all the
+// user's spells.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ProvidesFullSpellRecharge {}
 
 // An entity with this component, when used, restores the user to well fed.
 #[derive(Component, Serialize, Deserialize, Clone)]

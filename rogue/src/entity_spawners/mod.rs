@@ -17,7 +17,8 @@ use super::{
     SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
     ChanceToDissipate, ChanceToInflictBurningOnAdjacentEntities,
     GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
-    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed, CanNotAct,
+    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
+    ProvidesFullSpellRecharge, DecreasesSpellRechargeWhenUsed, CanNotAct,
     SimpleMarker, SerializeMe, MarkedBuilder, ElementalDamageKind,
     InSpellBook, StatusIsImmuneToFire, StatusIsImmuneToChill,
     MAP_WIDTH, random_table

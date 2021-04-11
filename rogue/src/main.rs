@@ -758,7 +758,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<DissipateWhenEnchroachedUpon>();
     gs.ecs.register::<ProvidesFullHealing>();
     gs.ecs.register::<ProvidesFullFood>();
+    gs.ecs.register::<ProvidesFullSpellRecharge>();
     gs.ecs.register::<IncreasesMaxHpWhenUsed>();
+    gs.ecs.register::<DecreasesSpellRechargeWhenUsed>();
     gs.ecs.register::<ProvidesFireImmunityWhenUsed>();
     gs.ecs.register::<ProvidesChillImmunityWhenUsed>();
     gs.ecs.register::<MovesToRandomPosition>();
