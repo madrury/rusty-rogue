@@ -437,7 +437,7 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Monster {})
             .with(Renderable {
                 glyph: rltk::to_cp437('g'),
-                fg: RGB::named(rltk::DARKVIOLET),
+                fg: RGB::named(rltk::MEDIUM_PURPLE),
                 bg: RGB::named(rltk::BLACK),
                 order: 1,
                 visible_out_of_fov: false
