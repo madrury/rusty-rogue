@@ -1,5 +1,5 @@
 
-use rltk::{RGB, GREEN, DARKGREEN, BLUE, WHITE, MEDIUMBLUE, SANDY_BROWN, DARKGRAY, LIGHTGRAY};
+use rltk::{RGB, GREEN, DARKGREEN, BLUE, WHITE, MEDIUMBLUE, SANDY_BROWN};
 
 
 pub fn grass_green_from_noise(f: f32) -> RGB {

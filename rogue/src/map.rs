@@ -1,4 +1,4 @@
-use rltk::{Algorithm2D, BaseMap, Bresenham, Point, RGB, RandomNumberGenerator, Rltk, Tile};
+use rltk::{Algorithm2D, BaseMap, Bresenham, Point, RGB, RandomNumberGenerator, Rltk};
 use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::iter::Iterator;

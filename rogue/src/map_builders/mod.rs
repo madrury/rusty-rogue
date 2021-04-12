@@ -1,9 +1,8 @@
 use super::{
-    World, Map, TileType, Point, Position, entity_spawners, terrain_spawners,
+    World, Map, TileType, Point, entity_spawners, terrain_spawners,
     DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
 mod simple_map;
-use rltk::RandomNumberGenerator;
 use simple_map::{SimpleMapBuilder};
 mod cellular_automata_map;
 use cellular_automata_map::{CellularAutomataBuilder};

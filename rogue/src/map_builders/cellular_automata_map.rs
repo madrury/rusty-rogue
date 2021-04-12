@@ -4,7 +4,7 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, Point, TileType, Position, entity_spawners, terrain_spawners,
+    Map, Point, TileType, entity_spawners, terrain_spawners,
     DEBUG_VISUALIZE_MAPGEN
 };
 
