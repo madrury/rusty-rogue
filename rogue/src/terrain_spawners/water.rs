@@ -51,8 +51,11 @@ fn spawn_bodies_of_water(
         let water_noise = noise::water_noisemap(&map, frequency);
         for x in 0..map.width {
             for y in 0..map.height {
-                if map.is_edge_tile(x, y) {continue;}
                 let idx = map.xy_idx(x, y);
+                // Guard against spawning water on the edge of the map, or over the DownStairs.
+                // Note that we neglect to check the ok_to_spawn array here,
+                // since we want water to be able to carve out walls
+                if map.is_edge_tile(x, y) {continue;}
                 if map.tiles[idx] == TileType::DownStairs {continue;}
                 let (vnoise, wnoise) = water_noise[idx];
                 if vnoise > deep_water_threshold {
