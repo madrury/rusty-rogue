@@ -397,7 +397,7 @@ impl State {
             for y in 0..map.height {
                 let idx = map.xy_idx(x, y);
                 if map.tiles[idx] == TileType::DownStairs {
-                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
+                    ctx.set_bg(x, y, RGB::named(rltk::PINK));
                 }
             }
         }

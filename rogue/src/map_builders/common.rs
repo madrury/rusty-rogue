@@ -29,52 +29,52 @@ fn try_get_stairs_position(ecs: &World) -> Option<Point> {
         // Scan in a row, right to left.
         1 => {
             println!("1");
-            let row: i32 = rng.roll_dice(1, map.height) - 1;
-            for col in 2..map.width {
-                start = map.blocked[map.xy_idx(row, col - 2)];
-                next = map.blocked[map.xy_idx(row, col - 1)];
-                last = map.blocked[map.xy_idx(row, col)];
+            let y: i32 = rng.roll_dice(1, map.height) - 1;
+            for x in 2..map.width {
+                start = map.blocked[map.xy_idx(x, y)];
+                next = map.blocked[map.xy_idx(x - 1, y)];
+                last = map.blocked[map.xy_idx(x - 2, y)];
                 if (start, next, last) == (false, true, true) {
-                    return Some(Point {x: row, y: col - 1})
+                    return Some(Point {x: x - 1, y: y})
                 }
             }
         },
         // Scan in a row, left to right.
         2 => {
             println!("2");
-            let row: i32 = rng.roll_dice(1, map.height) - 1;
-            for col in (2..map.width).rev() {
-                start = map.blocked[map.xy_idx(row, col)];
-                next = map.blocked[map.xy_idx(row, col - 1)];
-                last = map.blocked[map.xy_idx(row, col - 2)];
+            let y: i32 = rng.roll_dice(1, map.height) - 1;
+            for x in (2..map.width).rev() {
+                start = map.blocked[map.xy_idx(x, y)];
+                next = map.blocked[map.xy_idx(x - 1, y)];
+                last = map.blocked[map.xy_idx(x - 2, y)];
                 if (start, next, last) == (false, true, true) {
-                    return Some(Point {x: row, y: col - 1})
+                    return Some(Point {x: x - 1, y: y})
                 }
             }
         },
         // Scan in a column, top to bottom.
         3 => {
             println!("3");
-            let col: i32 = rng.roll_dice(1, map.width) - 1;
-            for row in 2..map.height {
-                start = map.blocked[map.xy_idx(row, col)];
-                next = map.blocked[map.xy_idx(row - 1, col)];
-                last = map.blocked[map.xy_idx(row - 2, col)];
+            let x: i32 = rng.roll_dice(1, map.width) - 1;
+            for y in 2..map.height {
+                start = map.blocked[map.xy_idx(x, y)];
+                next = map.blocked[map.xy_idx(x, y - 1)];
+                last = map.blocked[map.xy_idx(x, y - 2)];
                 if (start, next, last) == (false, true, true) {
-                    return Some(Point {x: row - 1, y: col})
+                    return Some(Point {x: x, y: y - 1})
                 }
             }
         },
         // Scan in a row, left to right.
         4 => {
             println!("4");
-            let col: i32 = rng.roll_dice(1, map.width) - 1;
-            for row in (2..map.height).rev() {
-                start = map.blocked[map.xy_idx(row, col)];
-                next = map.blocked[map.xy_idx(row - 1, col)];
-                last = map.blocked[map.xy_idx(row - 2, col)];
+            let x: i32 = rng.roll_dice(1, map.width) - 1;
+            for y in (2..map.height).rev() {
+                start = map.blocked[map.xy_idx(x, y)];
+                next = map.blocked[map.xy_idx(x, y - 1)];
+                last = map.blocked[map.xy_idx(x, y - 2)];
                 if (start, next, last) == (false, true, true) {
-                    return Some(Point {x: row - 1, y: col})
+                    return Some(Point {x: x, y: y - 1})
                 }
             }
         },
