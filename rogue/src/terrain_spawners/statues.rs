@@ -44,7 +44,7 @@ pub fn statue(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         let adjacent_tiles = map.get_adjacent_tiles(x, y);
         for (xadj, yadj) in adjacent_tiles {
             let idx = map.xy_idx(xadj, yadj);
-            if map.is_edge_tile(x, y) {continue;}
+            if map.is_edge_tile(xadj, yadj) {continue;}
             if map.tiles[idx] == TileType::Wall {
                 map.tiles[idx] = TileType::Floor;
                 map.ok_to_spawn[idx] = true;

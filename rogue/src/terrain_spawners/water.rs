@@ -53,6 +53,7 @@ fn spawn_bodies_of_water(
             for y in 0..map.height {
                 if map.is_edge_tile(x, y) {continue;}
                 let idx = map.xy_idx(x, y);
+                if map.tiles[idx] == TileType::DownStairs {continue;}
                 let (vnoise, wnoise) = water_noise[idx];
                 if vnoise > deep_water_threshold {
                     let colorseeds = (vnoise + 0.6, 0.7 * vnoise + 0.2 * wnoise + 0.4);
