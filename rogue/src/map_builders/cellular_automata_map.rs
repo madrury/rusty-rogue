@@ -4,11 +4,10 @@ use specs::prelude::*;
 
 use super::MapBuilder;
 use super::{
-    Map, Point, TileType, entity_spawners, terrain_spawners,
+    Map, Point, TileType, entity_spawners, terrain_spawners, get_stairs_position,
     DEBUG_VISUALIZE_MAPGEN
 };
 
-//const MIN_ROOM_SIZE : i32 = 8;
 const N_ITERATIONS: i32 = 4;
 
 //----------------------------------------------------------------------------
@@ -52,10 +51,6 @@ impl MapBuilder for CellularAutomataBuilder {
             self.update();
             self.take_snapshot();
         }
-        // We use a Dijkstra map to figure out the furthest point from the
-        // player's spawn position. To do so, we need the blocked array
-        // populated correctly, as we rely on this for the is_exit_valid method
-        // on Map.
         self.map.intitialize_blocked();
         self.populate_noise_areas();
         self.map.intitialize_opaque();
@@ -81,11 +76,10 @@ impl MapBuilder for CellularAutomataBuilder {
     }
 
     fn stairs_position(&self, ecs: &World) -> Point {
-        // TODO: We don't want to re-use this permenantly.
-        let start = entity_spawners::player::get_spawn_position(ecs);
+        let start = get_stairs_position(ecs);
         match start {
             Some(start) => start,
-            None => panic!("Failed to find a starting position.")
+            None => panic!("Failed to find a stairs position.")
         }
     }
 

@@ -4,27 +4,83 @@ use serde::{Serialize, Deserialize};
 use rltk::{RandomNumberGenerator};
 use super::{Map, Point, TileType, MAP_SIZE};
 
+const PLACE_STAIRS_N_TRYS: i32 = 50;
 
 pub fn get_stairs_position(ecs: &World) -> Option<Point> {
-    let mut rng = RandomNumberGenerator::new();
-    let map = ecs.fetch::<Map>();
-    let mut start: Option<Point> = None;
-    while start.is_none() {
-        let maybe = map.random_unblocked_point(250, &mut rng);
-        start = match maybe {
-            None => {None}
-            Some(maybe) => {
-                let idx = map.xy_idx(maybe.0, maybe.1);
-                let ok_to_spawn = map.ok_to_spawn[idx] && map.tile_content[idx].is_empty();
-                if ok_to_spawn {
-                    Some(Point {x: maybe.0, y: maybe.1})
-                } else {
-                    None
-                }
-            }
+    for _ in 0..PLACE_STAIRS_N_TRYS {
+        if let Some(pt) = try_get_stairs_position(ecs) {
+            return Some(pt)
         }
     }
-    start
+    return None
+}
+// Search for a position to place stairs in the map. Our strategy is to either
+// do horizontal or vertical scans of the map in a single row or column of
+// tiles. A valid place will consist of a sequence of open-tile, wall-tile,
+// wall-tile. Once one is found, we spawn the stairs in the middle wall tile.
+fn try_get_stairs_position(ecs: &World) -> Option<Point> {
+    let mut rng = RandomNumberGenerator::new();
+    let map = ecs.fetch::<Map>();
+    let mut start: bool;
+    let mut next: bool;
+    let mut last: bool;
+    let scan_type = rng.roll_dice(1, 4);
+    match scan_type {
+        // Scan in a row, right to left.
+        1 => {
+            let row: i32 = rng.roll_dice(1, map.height) - 1;
+            for col in 2..map.width {
+                start = map.blocked[map.xy_idx(row, col - 2)];
+                next = map.blocked[map.xy_idx(row, col - 1)];
+                last = map.blocked[map.xy_idx(row, col)];
+                println!("{:?}", (start, next, last));
+                if (start, next, last) == (false, true, true) {
+                    return Some(Point {x: row, y: col - 1})
+                }
+            }
+        },
+        // Scan in a row, left to right.
+        2 => {
+            let row: i32 = rng.roll_dice(1, map.height) - 1;
+            for col in (2..map.width).rev() {
+                start = map.blocked[map.xy_idx(row, col)];
+                next = map.blocked[map.xy_idx(row, col - 1)];
+                last = map.blocked[map.xy_idx(row, col - 2)];
+                println!("{:?}", (start, next, last));
+                if (start, next, last) == (false, true, true) {
+                    return Some(Point {x: row, y: col - 1})
+                }
+            }
+        },
+        // Scan in a column, top to bottom.
+        3 => {
+            let col: i32 = rng.roll_dice(1, map.width) - 1;
+            for row in 2..map.height {
+                start = map.blocked[map.xy_idx(row, col)];
+                next = map.blocked[map.xy_idx(row - 1, col)];
+                last = map.blocked[map.xy_idx(row - 2, col)];
+                println!("{:?}", (start, next, last));
+                if (start, next, last) == (false, true, true) {
+                    return Some(Point {x: row - 1, y: col})
+                }
+            }
+        },
+        // Scan in a row, left to right.
+        4 => {
+            let col: i32 = rng.roll_dice(1, map.width) - 1;
+            for row in (2..map.height).rev() {
+                start = map.blocked[map.xy_idx(row, col)];
+                next = map.blocked[map.xy_idx(row - 1, col)];
+                last = map.blocked[map.xy_idx(row - 2, col)];
+                println!("{:?}", (start, next, last));
+                if (start, next, last) == (false, true, true) {
+                    return Some(Point {x: row - 1, y: col})
+                }
+            }
+        },
+        _ => {}
+    }
+    return None
 }
 
 

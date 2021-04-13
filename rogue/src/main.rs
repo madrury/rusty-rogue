@@ -71,6 +71,7 @@ use gamelog::{GameLog};
 const DEBUG_DRAW_ALL_MAP: bool = true;
 const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
+const DEBUG_HIGHLIGHT_STAIRS: bool = true;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 
@@ -156,6 +157,9 @@ impl State {
             } else if map.revealed_tiles[idx] && render.visible_out_of_fov {
                 ctx.set_bg(pos.x, pos.y, render.bg.to_greyscale());
             }
+        }
+        if DEBUG_HIGHLIGHT_STAIRS {
+            self.debug_highlight_stairs(ctx);
         }
         if DEBUG_HIGHLIGHT_FIRE {
             self.debug_highlight_fire(ctx);
@@ -381,6 +385,19 @@ impl State {
         let names = self.ecs.write_storage::<Name>();
         for (pos, name) in (&positions, &names).join() {
             println!("{} is in position {:?}", name.name, *pos)
+        }
+    }
+
+    #[allow(dead_code)]
+    fn debug_highlight_stairs(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.tiles[idx] == TileType::DownStairs {
+                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
+                }
+            }
         }
     }
 
