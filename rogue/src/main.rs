@@ -293,6 +293,16 @@ impl State {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
             *worldmap_resource = builder.map();
         }
+
+        // Place the stairs and update the associated ECS resources.
+        let stairs_position = builder.stairs_position(&self.ecs);
+        {
+            let mut map = self.ecs.write_resource::<Map>();
+            let idx = map.xy_idx(stairs_position.x, stairs_position.y);
+            map.tiles[idx] = TileType::DownStairs;
+            map.ok_to_spawn[idx] = false;
+        }
+
         builder.spawn_terrain(&mut self.ecs);
         builder.spawn_entities(&mut self.ecs);
 
@@ -308,10 +318,9 @@ impl State {
             }
         }
 
-        // Compute a position to place the player and the stairs. This is
+        // Compute a position to place the player. This is
         // stateless, we don't actually update any ECS state here.
         let player_start_position = builder.starting_position(&self.ecs);
-        let stairs_position = builder.stairs_position(&self.ecs);
 
         // Place the player and update the player's associated ECS resources.
         let mut player_position = self.ecs.write_resource::<Point>();
@@ -322,13 +331,6 @@ impl State {
         if let Some(player_pos_comp) = player_pos_comp {
             player_pos_comp.x = player_start_position.x;
             player_pos_comp.y = player_start_position.y;
-        }
-
-        // Place the stairs and update the associated ECS resources.
-        {
-            let mut map = self.ecs.write_resource::<Map>();
-            let idx = map.xy_idx(stairs_position.x, stairs_position.y);
-            map.tiles[idx] = TileType::DownStairs;
         }
 
         // Mark the player's visibility as dirty so we re-compute their viewshed
