@@ -28,7 +28,6 @@ fn try_get_stairs_position(ecs: &World) -> Option<Point> {
     match scan_type {
         // Scan in a row, right to left.
         1 => {
-            println!("1");
             let y: i32 = rng.roll_dice(1, map.height) - 1;
             for x in 2..map.width {
                 start = map.blocked[map.xy_idx(x, y)];
@@ -41,7 +40,6 @@ fn try_get_stairs_position(ecs: &World) -> Option<Point> {
         },
         // Scan in a row, left to right.
         2 => {
-            println!("2");
             let y: i32 = rng.roll_dice(1, map.height) - 1;
             for x in (2..map.width).rev() {
                 start = map.blocked[map.xy_idx(x, y)];
@@ -54,7 +52,6 @@ fn try_get_stairs_position(ecs: &World) -> Option<Point> {
         },
         // Scan in a column, top to bottom.
         3 => {
-            println!("3");
             let x: i32 = rng.roll_dice(1, map.width) - 1;
             for y in 2..map.height {
                 start = map.blocked[map.xy_idx(x, y)];
@@ -67,7 +64,6 @@ fn try_get_stairs_position(ecs: &World) -> Option<Point> {
         },
         // Scan in a row, left to right.
         4 => {
-            println!("4");
             let x: i32 = rng.roll_dice(1, map.width) - 1;
             for y in (2..map.height).rev() {
                 start = map.blocked[map.xy_idx(x, y)];

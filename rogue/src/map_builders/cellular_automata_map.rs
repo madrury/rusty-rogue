@@ -51,6 +51,18 @@ impl MapBuilder for CellularAutomataBuilder {
             self.update();
             self.take_snapshot();
         }
+        // The use of the map.blocked array here is confusing. We need to call initialize_blocked *twice*.
+        //   - The *first* call to initialize_blocked is to support out use of the
+        //     rltk::Dijkstra map when finding the connected components of our map.
+        //     This uses the blocked array to determine the open neighbours of a
+        //     tile.
+        //  - The *second* call to initialize_blocked is after we have filled in
+        //    the smaller connected components with TileType::Wall. We need to
+        //    re-compute the blocked array so that it can be used when spawning
+        //    entities.
+        self.map.intitialize_blocked();
+        let components = self.enumerate_connected_components();
+        self.fill_all_but_largest_component(components);
         self.map.intitialize_blocked();
         self.populate_noise_areas();
         self.map.intitialize_opaque();
@@ -147,6 +159,76 @@ impl CellularAutomataBuilder {
         }
     }
 
+    fn enumerate_connected_components(&self) -> HashMap<usize, Vec<usize>> {
+        let mut components: HashMap<usize, Vec<usize>> = HashMap::new();
+        let mut floor: Vec<bool> = self.map.tiles
+            .iter()
+            .map(|tt| *tt == TileType::Floor)
+            .collect();
+        loop {
+            let nextidx = self.get_next_idx(&floor);
+            match nextidx {
+                None => {break;}
+                Some(idx) => {
+                    let component = self.get_connected_component(idx);
+                    for cidx in component.iter() {
+                        floor[*cidx] = false;
+                    }
+                    components.insert(idx, component);
+                }
+            }
+        }
+        components
+    }
+
+    fn get_next_idx(&self, floor: &Vec<bool>) -> Option<usize> {
+        for idx in 0..(self.map.width * self.map.height) {
+            if floor[idx as usize] {return Some(idx as usize)}
+        }
+        None
+    }
+
+    fn get_connected_component(&self, start_idx: usize) -> Vec<usize> {
+        let map_starts : Vec<usize> = vec![start_idx];
+        let dijkstra_map = rltk::DijkstraMap::new(
+            self.map.width, self.map.height, &map_starts , &self.map, 200.0
+        );
+        let mut component: Vec<usize> = Vec::new();
+        for (idx, _) in self.map.tiles.iter().enumerate() {
+            if dijkstra_map.map[idx] != std::f32::MAX {
+                component.push(idx)
+            }
+        }
+        component
+    }
+
+    fn fill_all_but_largest_component(&mut self, components: HashMap<usize, Vec<usize>>) {
+        let component_sizes: HashMap<usize, usize> = components.iter()
+            .map(|(k, v)| (*k, v.len()))
+            .collect();
+        let largest_component_size = component_sizes.iter()
+            .map(|(k, v)| v)
+            .max()
+            .expect("Found no connected components when building cellular automota map.");
+        let largest_components_idxs: Vec<usize> = component_sizes.iter()
+            .filter(|(k, v)| *v == largest_component_size)
+            .map(|(k, v)| *k)
+            .collect();
+        let non_largest_components_idxs: Vec<usize> = component_sizes.iter()
+            .filter(|(k, v)| *v != largest_component_size)
+            .map(|(k, v)| *k)
+            .collect();
+        println!("{:?}", component_sizes);
+        println!("{:?}", largest_components_idxs);
+        println!("{:?}", non_largest_components_idxs);
+        // Fill all the components that are not one of the largest, and all but
+        // one if there are more than one components tied for the largest.
+        for idx in non_largest_components_idxs {
+            for cidx in components[&idx].iter() {
+                self.map.tiles[*cidx] = TileType::Wall;
+            }
+        }
+    }
     // Place the stairs as far away from the player as possible.
     // fn place_stairs(&mut self) {
     //     let start_idx = self.map.xy_idx(self.starting_position.x, self.starting_position.y);
