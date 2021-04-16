@@ -300,6 +300,7 @@ impl State {
             let mut map = self.ecs.write_resource::<Map>();
             let idx = map.xy_idx(stairs_position.x, stairs_position.y);
             map.tiles[idx] = TileType::DownStairs;
+            map.blocked[idx] = false;
             map.ok_to_spawn[idx] = false;
         }
 
@@ -307,7 +308,7 @@ impl State {
         builder.spawn_entities(&mut self.ecs);
 
         // Add all our newly spawned enettities to the tile_content array. This
-        // is used below when attempting to place the player and the stairs.
+        // is used below when attempting to place the player.
         {
             let mut map = self.ecs.write_resource::<Map>();
             let entities = self.ecs.entities();
@@ -318,9 +319,17 @@ impl State {
             }
         }
 
-        // Compute a position to place the player. This is
-        // stateless, we don't actually update any ECS state here.
-        let player_start_position = builder.starting_position(&self.ecs);
+        // Compute a position to place the player. We're only computing the
+        // position here, so this is stateless, we don't actually update any ECS
+        // state yet.
+        let mut player_start_position = Point {x: 0, y: 0};
+        loop {
+            let map = self.ecs.read_resource::<Map>();
+            player_start_position = builder.starting_position(&self.ecs);
+            if map.is_reachable(player_start_position, stairs_position) {
+                break;
+            }
+        }
 
         // Place the player and update the player's associated ECS resources.
         let mut player_position = self.ecs.write_resource::<Point>();

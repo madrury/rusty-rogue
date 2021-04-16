@@ -108,7 +108,8 @@ impl CellularAutomataBuilder {
         }
     }
 
-    // Populate the map with independent random Wall tiles.
+    // Populate the map with independent Wall tiles samples as random,
+    // independent coin flips.
     fn ititialize(&mut self, rng: &mut RandomNumberGenerator) {
         for x in 1..self.map.width - 1 {
             for y in 1..self.map.height - 1 {
@@ -207,20 +208,18 @@ impl CellularAutomataBuilder {
             .map(|(k, v)| (*k, v.len()))
             .collect();
         let largest_component_size = component_sizes.iter()
-            .map(|(k, v)| v)
+            .map(|(_k, v)| v)
             .max()
             .expect("Found no connected components when building cellular automota map.");
-        let largest_components_idxs: Vec<usize> = component_sizes.iter()
-            .filter(|(k, v)| *v == largest_component_size)
-            .map(|(k, v)| *k)
-            .collect();
+        // TODO: Fill in duplicate largest components.
+        // let largest_components_idxs: Vec<usize> = component_sizes.iter()
+        //     .filter(|(_k, v)| *v == largest_component_size)
+        //     .map(|(k, _v)| *k)
+        //     .collect();
         let non_largest_components_idxs: Vec<usize> = component_sizes.iter()
-            .filter(|(k, v)| *v != largest_component_size)
-            .map(|(k, v)| *k)
+            .filter(|(_k, v)| *v != largest_component_size)
+            .map(|(k, _v)| *k)
             .collect();
-        println!("{:?}", component_sizes);
-        println!("{:?}", largest_components_idxs);
-        println!("{:?}", non_largest_components_idxs);
         // Fill all the components that are not one of the largest, and all but
         // one if there are more than one components tied for the largest.
         for idx in non_largest_components_idxs {
@@ -229,29 +228,6 @@ impl CellularAutomataBuilder {
             }
         }
     }
-    // Place the stairs as far away from the player as possible.
-    // fn place_stairs(&mut self) {
-    //     let start_idx = self.map.xy_idx(self.starting_position.x, self.starting_position.y);
-    //     let map_starts : Vec<usize> = vec![start_idx];
-    //     let dijkstra_map = rltk::DijkstraMap::new(
-    //         self.map.width, self.map.height, &map_starts , &self.map, 200.0
-    //     );
-    //     let mut exit_tile = (0, 0.0f32);
-    //     for (idx, tile) in self.map.tiles.iter_mut().enumerate() {
-    //         if *tile == TileType::Floor {
-    //             let distance_to_start = dijkstra_map.map[idx];
-    //             if distance_to_start == std::f32::MAX {
-    //                 *tile = TileType::Wall;
-    //             } else {
-    //                 if distance_to_start > exit_tile.1 {
-    //                     exit_tile.0 = idx;
-    //                     exit_tile.1 = distance_to_start;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     self.map.tiles[exit_tile.0] = TileType::DownStairs;
-    // }
 
     // Use cellular noise to create some random contiguous reigons of the map
     // that can be used as pseudo-rooms to spawn entities in.
