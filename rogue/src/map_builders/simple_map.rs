@@ -36,6 +36,7 @@ impl MapBuilder for SimpleMapBuilder {
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {
+        entity_spawners::spawn_monsters(ecs, self.depth);
         for room in self.rooms.iter().skip(1) {
             let mut region: Vec<usize> = Vec::new();
             for y in room.y1 + 1 .. room.y2 {
@@ -46,7 +47,7 @@ impl MapBuilder for SimpleMapBuilder {
                     }
                 }
             }
-            entity_spawners::spawn_region(ecs, &region, self.depth);
+            entity_spawners::spawn_items_in_region(ecs, &region, self.depth);
         }
     }
 

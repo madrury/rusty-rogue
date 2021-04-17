@@ -74,8 +74,9 @@ impl MapBuilder for CellularAutomataBuilder {
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {
+        entity_spawners::spawn_monsters(ecs, self.depth);
         for area in self.noise_areas.iter() {
-            entity_spawners::spawn_region(ecs, area.1, self.depth);
+            entity_spawners::spawn_items_in_region(ecs, area.1, self.depth);
         }
     }
 

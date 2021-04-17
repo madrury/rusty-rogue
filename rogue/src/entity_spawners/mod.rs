@@ -39,11 +39,45 @@ pub mod player;
 const MAX_MONSTERS_IN_ROOM: i32 = 4;
 const MAX_ITEMS_IN_ROOM: i32 = 2;
 
+
+
+pub fn spawn_monsters(ecs: &mut World, depth: i32) {
+    // TODO: Explain monster spawning.
+    let monster_difficulty_quota: i32 = 5 + (2 * depth) / 5;
+    let monster_spawn_table = get_monster_spawn_table();
+    let mut monster_seen_difficulty: i32 = 0;
+    loop {
+        // let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
+        let mut x = 0;
+        let mut y = 0;
+        { // Holy scopes!
+            let mut map = ecs.write_resource::<Map>();
+            let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+            // I'm sorry, I couldn't really figure out a better way to express
+            // this.
+            let (xx, yy) = map.random_unblocked_point(100, &mut rng)
+                .expect("Could not find point for monster spawning.");
+            x = xx; y = yy;
+            let idx = map.xy_idx(x, y);
+            if !map.ok_to_spawn[idx] {continue;}
+            map.ok_to_spawn[idx] = false;
+        }
+        let monster_type = spawn_random_monster(ecs, x, y, depth);
+        if let Some(monster_type) = monster_type {
+            let monster_difficulty = monster_spawn_table[&monster_type].difficulty;
+            monster_seen_difficulty += monster_difficulty;
+        }
+        if monster_seen_difficulty > monster_difficulty_quota {
+            break;
+        }
+    }
+}
+
 // Populate a reigon (defined by a container of map indexes) with monsters and
 // items.
 // TODO: This should jsut get the map so we don't need to import the MAP_WIDTH
 // and MAP_HEIGHT constants.
-pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
+pub fn spawn_items_in_region(ecs: &mut World, region: &[usize], depth: i32) {
     let mut areas : Vec<usize> = Vec::from(region);
     if areas.is_empty() {return;}
 
@@ -67,27 +101,6 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
                 item_spawn_points.push(map_idx)
             }
             areas.remove(array_index);
-        }
-    }
-
-    // TODO: Explain monster spawning.
-    let monster_difficulty_quota: i32 = 5 + (2 * depth) / 5;
-    let monster_spawn_table = get_monster_spawn_table();
-    let mut monster_seen_difficulty: i32 = 0;
-    for idx in monster_spawn_points.iter() {
-        let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
-        { // Holy scopes!
-            let mut map = ecs.write_resource::<Map>();
-            if !map.ok_to_spawn[*idx] {continue;}
-            map.ok_to_spawn[*idx] = false;
-        }
-        let monster_type = spawn_random_monster(ecs, x, y, depth);
-        if let Some(monster_type) = monster_type {
-            let monster_difficulty = monster_spawn_table[&monster_type].difficulty;
-            monster_seen_difficulty += monster_difficulty;
-        }
-        if monster_seen_difficulty > monster_difficulty_quota {
-            break;
         }
     }
 
