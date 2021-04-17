@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use super::{
     Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
     SwimStamina, HungerClock, HungerState, Monster, Hazard, IsEntityKind,
@@ -25,6 +26,7 @@ use super::{
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
+
 mod potions;
 mod equipment;
 mod spells;
@@ -68,6 +70,10 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
         }
     }
 
+    // TODO: Explain monster spawning.
+    let monster_difficulty_quota: i32 = 5 + (2 * depth) / 5;
+    let monster_spawn_table = get_monster_spawn_table();
+    let mut monster_seen_difficulty: i32 = 0;
     for idx in monster_spawn_points.iter() {
         let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
         { // Holy scopes!
@@ -75,8 +81,16 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
             if !map.ok_to_spawn[*idx] {continue;}
             map.ok_to_spawn[*idx] = false;
         }
-        spawn_random_monster(ecs, x, y, depth);
+        let monster_type = spawn_random_monster(ecs, x, y, depth);
+        if let Some(monster_type) = monster_type {
+            let monster_difficulty = monster_spawn_table[&monster_type].difficulty;
+            monster_seen_difficulty += monster_difficulty;
+        }
+        if monster_seen_difficulty > monster_difficulty_quota {
+            break;
+        }
     }
+
     for idx in item_spawn_points.iter() {
         let (x, y) = (*idx as i32 % MAP_WIDTH, *idx as i32 / MAP_WIDTH);
         {
@@ -89,7 +103,7 @@ pub fn spawn_region(ecs: &mut World, region: &[usize], depth: i32) {
 }
 
 // Spawns a randomly chosen monster at a specified location.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum MonsterType {
     None,
     Rat,
@@ -104,25 +118,49 @@ enum MonsterType {
     OrangeJelly,
     BlueJelly
 }
-fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
+
+struct MonsterSpawnParameters {
+    difficulty: i32,
+    min_depth: i32,
+    max_depth: i32,
+    chance: i32
+}
+impl MonsterSpawnParameters {
+    fn new(difficulty: i32, min_depth: i32, max_depth: i32, chance: i32) -> MonsterSpawnParameters {
+        MonsterSpawnParameters {
+            difficulty, min_depth, max_depth, chance
+        }
+    }
+}
+
+fn get_monster_spawn_table() -> HashMap<MonsterType, MonsterSpawnParameters> {
+    let mut spawn_table: HashMap<MonsterType, MonsterSpawnParameters> = HashMap::new();
+    spawn_table.insert(MonsterType::Rat,               MonsterSpawnParameters::new(1, 1, 4, 25));
+    spawn_table.insert(MonsterType::Bat,               MonsterSpawnParameters::new(1, 1, 4, 25));
+    spawn_table.insert(MonsterType::GoblinBasic,       MonsterSpawnParameters::new(2, 1, 6, 25));
+    spawn_table.insert(MonsterType::GoblinCleric,      MonsterSpawnParameters::new(2, 2, 8, 20));
+    spawn_table.insert(MonsterType::GoblinEnchanter,   MonsterSpawnParameters::new(2, 2, 8, 20));
+    spawn_table.insert(MonsterType::GoblinFirecaster,  MonsterSpawnParameters::new(4, 3, 8, 15));
+    spawn_table.insert(MonsterType::GoblinChillcaster, MonsterSpawnParameters::new(4, 3, 8, 15));
+    spawn_table.insert(MonsterType::PinkJelly,         MonsterSpawnParameters::new(3, 4, 10, 15));
+    spawn_table.insert(MonsterType::OrangeJelly,       MonsterSpawnParameters::new(4, 4, 12, 10));
+    spawn_table.insert(MonsterType::BlueJelly,         MonsterSpawnParameters::new(4, 4, 12, 10));
+    spawn_table.insert(MonsterType::Orc,               MonsterSpawnParameters::new(4, 5, 12, 25));
+    spawn_table
+}
+
+fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) -> Option<MonsterType> {
     let monster: Option<MonsterType>;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        // TODO: Make this table in a less stupid place.
-        monster = random_table::RandomTable::new()
-            .insert(MonsterType::Rat, 30 - 5 * depth)
-            .insert(MonsterType::Bat, 30 - 5 * depth)
-            .insert(MonsterType::GoblinBasic, 10)
-            .insert(MonsterType::GoblinCleric, 2 + depth)
-            .insert(MonsterType::GoblinEnchanter, 2 + depth)
-            .insert(MonsterType::GoblinFirecaster, depth - 1)
-            .insert(MonsterType::GoblinChillcaster, depth - 1)
-            .insert(MonsterType::Orc, depth - 2)
-            .insert(MonsterType::PinkJelly, depth)
-            .insert(MonsterType::OrangeJelly, depth - 2)
-            .insert(MonsterType::BlueJelly, depth - 2)
-            .insert(MonsterType::None, 70)
-            .roll(&mut rng);
+        let spawn_table = get_monster_spawn_table();
+        let mut rtable: random_table::RandomTable<MonsterType> = random_table::RandomTable::new();
+        for (monster_type, spawn_parameters) in spawn_table.into_iter() {
+            if spawn_parameters.min_depth <= depth && depth <= spawn_parameters.max_depth {
+                rtable = rtable.insert(monster_type, spawn_parameters.chance);
+            }
+        }
+        monster = rtable.roll(&mut rng);
     }
     match monster {
         Some(MonsterType::Rat) => monsters::rat(ecs, x, y),
@@ -139,6 +177,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(MonsterType::BlueJelly) => monsters::blue_jelly(ecs, x, y),
         _ => {None}
     };
+    monster
 }
 
 // Spawns a randomly chosen item at a specified location.
