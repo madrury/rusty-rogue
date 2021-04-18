@@ -143,6 +143,29 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
 
 //----------------------------------------------------------------------------
 // Monster Spawning.
+//
+// Spawn the monster antagonists in a dungeon floor. There a few concepts used
+// in this spawning algorithm:
+//
+// Determining spawn positions:
+// We build a vector of (x, y) coordinates, and spawn monsters in the order of
+// points in this vector. The vector of spawn positions is created by summing
+// smooth and white random nose, then sorting all the map coordinates according
+// to the value of this nose. The large values of noise thus created tend to
+// cluster due to the smooth component, so we end up generating monsters in lose
+// clusters.
+//
+// Determining which monster to spawn:
+// To each monster type we associate some data: a diffuiculty score, a minimum
+// and maximum floor depth, and a chance to spawn. When spawning a monster, we
+// filter this table to only those monsters that can spawn on the current floor,
+// then choose a monster at random using the change data.
+//
+// Determining how many monsters to spawn.
+// As noted above, each monster type has a difficuly associated with it. For
+// each floor of the dungeon, we associate a total difficulty quota. Then, when
+// spawning monsters, we continue until the total difficulty of all monster
+// spawned first exceeds the floor's quota.
 //----------------------------------------------------------------------------
 pub fn spawn_monsters(ecs: &mut World, depth: i32) {
     let monster_difficulty_quota: i32 = 10 + (5 * depth) / 2;
@@ -175,7 +198,6 @@ pub fn spawn_monsters(ecs: &mut World, depth: i32) {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum MonsterType {
-    None,
     Rat,
     Bat,
     GoblinBasic,
