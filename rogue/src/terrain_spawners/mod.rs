@@ -17,10 +17,12 @@ pub mod statues;
 pub fn spawn_terrain(ecs: &mut World, _depth: i32) {
     let grass_roll;
     let water_roll;
+    let statue_roll;
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         grass_roll = rng.roll_dice(1, 3);
         water_roll = rng.roll_dice(1, 3);
+        statue_roll = rng.roll_dice(1, 3)
     }
     match water_roll {
         1 => {},
@@ -29,7 +31,11 @@ pub fn spawn_terrain(ecs: &mut World, _depth: i32) {
         _ => panic!("Rolled to high on water spawning.")
 
     }
-    statues::spawn_statues(ecs);
+    match statue_roll {
+        1 => statues::spawn_statues(ecs),
+        _ => {}
+    }
+
     match grass_roll {
         1 => foliage::spawn_short_grass(ecs),
         2 => foliage::spawn_sporadic_grass(ecs),
