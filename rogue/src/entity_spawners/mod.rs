@@ -22,7 +22,7 @@ use super::{
     ProvidesFullSpellRecharge, DecreasesSpellRechargeWhenUsed, CanNotAct,
     SimpleMarker, SerializeMe, MarkedBuilder, ElementalDamageKind,
     InSpellBook, StatusIsImmuneToFire, StatusIsImmuneToChill,
-    MAP_WIDTH, random_table
+    MAP_WIDTH, random_table, noise
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
@@ -52,8 +52,7 @@ pub fn spawn_items_in_region(ecs: &mut World, region: &[usize], depth: i32) {
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         let do_spawn_item = rng.roll_dice(1, 100) <= CHANCE_SPAWN_ITEM;
-        if do_spawn_item {
-            if areas.is_empty() {break;}
+        if do_spawn_item && !areas.is_empty() {
             let array_index = if areas.len() == 1 {
                 0usize
             } else {
@@ -149,22 +148,21 @@ pub fn spawn_monsters(ecs: &mut World, depth: i32) {
     let monster_difficulty_quota: i32 = 10 + (5 * depth) / 2;
     let monster_spawn_table = get_monster_spawn_table();
     let mut monster_seen_difficulty: i32 = 0;
+    let mut monster_spawn_locations: Vec<(i32, i32)>;
+    {
+        let map = ecs.fetch::<Map>();
+        monster_spawn_locations = noise::monster_spawn_locations(&map);
+    }
     loop {
-        let x;
-        let y;
+        let point = monster_spawn_locations.pop()
+            .expect("Ran out of Monster spawn locations.");
         { // Holy scopes!
             let mut map = ecs.write_resource::<Map>();
-            let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-            // I'm sorry, I couldn't really figure out a better way to express
-            // this.
-            let (xx, yy) = map.random_unblocked_point(100, &mut rng)
-                .expect("Could not find point for monster spawning.");
-            x = xx; y = yy;
-            let idx = map.xy_idx(x, y);
+            let idx = map.xy_idx(point.0, point.1);
             if !map.ok_to_spawn[idx] {continue;}
             map.ok_to_spawn[idx] = false;
         }
-        let monster_type = spawn_random_monster(ecs, x, y, depth);
+        let monster_type = spawn_random_monster(ecs, point.0, point.1, depth);
         if let Some(monster_type) = monster_type {
             let monster_difficulty = monster_spawn_table[&monster_type].difficulty;
             monster_seen_difficulty += monster_difficulty;
