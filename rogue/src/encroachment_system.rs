@@ -4,9 +4,10 @@ use super::{
     EntitySpawnRequestBuffer, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
+    RemoveBurningWhenEncroachedUpon, DissipateFireWhenEncroachedUpon,
     WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, WantsToDissipate,
-    new_status_with_immunity
+    StatusIsImmuneToChill, WantsToDissipate, IsEntityKind, EntitySpawnKind,
+    new_status_with_immunity, remove_status
 };
 
 
@@ -25,12 +26,15 @@ pub struct EncroachmentSystemData<'a> {
     freezing_when_encroached: ReadStorage<'a, InflictsFreezingWhenEncroachedUpon>,
     dissipate_when_encroached: ReadStorage<'a, DissipateWhenEnchroachedUpon>,
     spawn_when_encroached: ReadStorage<'a, SpawnEntityWhenEncroachedUpon>,
+    remove_burning_when_encroached: ReadStorage<'a, RemoveBurningWhenEncroachedUpon>,
+    dissipate_fire_when_encroached: ReadStorage<'a, DissipateFireWhenEncroachedUpon>,
     is_fire_immune: WriteStorage<'a, StatusIsImmuneToFire>,
     is_chill_immune: WriteStorage<'a, StatusIsImmuneToChill>,
     wants_damage: WriteStorage<'a, WantsToTakeDamage>,
     wants_dissipate: WriteStorage<'a, WantsToDissipate>,
     is_burning: WriteStorage<'a, StatusIsBurning>,
     is_frozen: WriteStorage<'a, StatusIsFrozen>,
+    entity_kind: ReadStorage<'a, IsEntityKind>,
 }
 
 impl<'a> System<'a> for EncroachmentSystem {
@@ -49,12 +53,15 @@ impl<'a> System<'a> for EncroachmentSystem {
             freezing_when_encroached,
             dissipate_when_encroached,
             spawn_when_encroached,
+            remove_burning_when_encroached,
+            dissipate_fire_when_encroached,
             is_fire_immune,
             is_chill_immune,
             mut wants_damage,
             mut wants_dissipate,
             mut is_burning,
-            mut is_frozen
+            mut is_frozen,
+            entity_kind
         } = data;
 
         for (entity, pos) in (&entities, &positions).join() {
@@ -132,8 +139,25 @@ impl<'a> System<'a> for EncroachmentSystem {
                         kind: spawn.kind
                     })
                 }
-            }
 
+                // RemoveBurningWhenEncroachedUpon.
+                let removes_burning = remove_burning_when_encroached.get(entity);
+                if let Some(_) = removes_burning {
+                    remove_status::<StatusIsBurning>(
+                        &mut is_burning,
+                        *encroaching
+                    )
+                }
+
+                // DissipateFireWhenEncroachedUpon.
+                let dissipates_fire = dissipate_fire_when_encroached.get(entity).is_some();
+                let is_fire = entity_kind.get(*encroaching)
+                    .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Fire {..}));
+                if is_fire && dissipates_fire {
+                    wants_dissipate.insert(*encroaching, WantsToDissipate {})
+                        .expect("Could not insert wants to dissipate on fire entity.");
+                }
+            }
         }
     }
 }
