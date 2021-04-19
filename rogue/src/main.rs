@@ -68,8 +68,8 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_DRAW_ALL_MAP: bool = true;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = true;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
@@ -224,7 +224,7 @@ impl State {
     fn run_hazard_turn_systems(&mut self) {
         let mut encroachment = EncroachmentSystem{};
         encroachment.run_now(&self.ecs);
-        let mut status_effects = StatusEffectSystem {};
+        let mut status_effects = StatusEffectSystem{};
         status_effects.run_now(&self.ecs);
         let mut dmg = DamageSystem{};
         dmg.run_now(&self.ecs);
@@ -794,6 +794,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MovesToRandomPosition>();
     gs.ecs.register::<InflictsDamageWhenTargeted>();
     gs.ecs.register::<InflictsDamageWhenEncroachedUpon>();
+    gs.ecs.register::<RemoveBurningWhenEncroachedUpon>();
+    gs.ecs.register::<DissipateFireWhenEncroachedUpon>();
+    gs.ecs.register::<RemoveBurningOnUpkeep>();
     gs.ecs.register::<InflictsFreezingWhenTargeted>();
     gs.ecs.register::<InflictsBurningWhenTargeted>();
     gs.ecs.register::<MoveToPositionWhenTargeted>();

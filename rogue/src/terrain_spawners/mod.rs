@@ -3,8 +3,9 @@ use super::{
     Map, Position, Renderable, BlocksTile, SetsBgColor, Name, SimpleMarker,
     SerializeMe, MarkedBuilder, DissipateWhenBurning,
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
-    ChanceToSpawnEntityWhenBurning, EntitySpawnKind, IsEntityKind, Hazard,
-    Opaque, TileType, color, noise
+    ChanceToSpawnEntityWhenBurning, RemoveBurningWhenEncroachedUpon,
+    DissipateFireWhenEncroachedUpon, RemoveBurningOnUpkeep, EntitySpawnKind,
+    IsEntityKind, Hazard, Opaque, TileType, color, noise
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;

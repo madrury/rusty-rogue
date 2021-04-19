@@ -42,7 +42,7 @@ pub mod player;
 // Item spawning requires chopping a map up into reigons, and then flipping a
 // weighted coin to see if an item spawns in a given reigon.
 //----------------------------------------------------------------------------
-const CHANCE_SPAWN_ITEM: i32 = 25;
+const CHANCE_SPAWN_ITEM: i32 = 100;
 
 pub fn spawn_items_in_region(ecs: &mut World, region: &[usize], depth: i32) {
     let mut areas : Vec<usize> = Vec::from(region);
@@ -106,13 +106,13 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::HealthPotion, 4 + depth)
             .insert(ItemType::RechargingPotion, depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, depth)
+            .insert(ItemType::FirePotion, 200)
             .insert(ItemType::FreezingPotion, depth)
             .insert(ItemType::Dagger, depth)
             .insert(ItemType::LeatherArmor, depth)
             .insert(ItemType::MagicMissileScroll, 1 + depth)
             .insert(ItemType::BlinkScroll, depth)
-            .insert(ItemType::FireblastScroll, depth)
+            .insert(ItemType::FireblastScroll, 200)
             .insert(ItemType::FireballScroll, depth)
             .insert(ItemType::IceblastScroll, depth)
             .insert(ItemType::IcespikeScroll, depth)

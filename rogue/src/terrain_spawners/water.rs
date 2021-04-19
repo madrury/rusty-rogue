@@ -1,7 +1,9 @@
 
 use super::{
     Map, Position, Renderable, SetsBgColor, Name, SimpleMarker, SerializeMe,
-    MarkedBuilder, Hazard, ChanceToSpawnEntityWhenBurning, EntitySpawnKind,
+    MarkedBuilder, Hazard, ChanceToSpawnEntityWhenBurning,
+    RemoveBurningWhenEncroachedUpon, RemoveBurningOnUpkeep,
+    DissipateFireWhenEncroachedUpon, EntitySpawnKind,
     IsEntityKind, TileType, color, noise
 };
 use rltk::{RGB};
@@ -116,7 +118,9 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
             },
             chance: 100
         })
-        // TODO: Component: ImmediatleyClearsBurning
+        .with(RemoveBurningWhenEncroachedUpon {})
+        .with(RemoveBurningOnUpkeep {})
+        .with(DissipateFireWhenEncroachedUpon {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -136,6 +140,9 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .with(Name {name: "Deep Water".to_string()})
         .with(Hazard {})
         .with(IsEntityKind {kind: EntitySpawnKind::Water})
+        .with(RemoveBurningWhenEncroachedUpon {})
+        .with(RemoveBurningOnUpkeep {})
+        .with(DissipateFireWhenEncroachedUpon {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     let mut map = ecs.write_resource::<Map>();

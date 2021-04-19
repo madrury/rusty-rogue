@@ -82,7 +82,22 @@ pub struct BuffsPhysicalDefenseWhenTargeted {
 pub struct InflictsBurningWhenEncroachedUpon {
     pub turns: i32,
     pub tick_damage: i32
+
 }
+// Component signals that any entity encroaching on the owner will have burning
+// removed. Used on water.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct RemoveBurningWhenEncroachedUpon {}
+
+// Component signals that any fire encroaching on the owner will be immediately
+// dissapated.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct DissipateFireWhenEncroachedUpon {}
+
+// Component signals that the burning status should be removed from the owner
+// every upkeep turn.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct RemoveBurningOnUpkeep {}
 
 // Component for entities that inflict (maybe) inflict burning on adjacent
 // entities.

@@ -7,9 +7,9 @@ use super::{
     StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed,
     WantsToTakeDamage, WantsToDissipate, ElementalDamageKind,
     DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    ChanceToInflictBurningOnAdjacentEntities, EntitySpawnRequestBuffer,
-    EntitySpawnRequest, tick_status, tick_status_with_immunity,
-    new_status_with_immunity, BURNING_TICK_DAMAGE
+    ChanceToInflictBurningOnAdjacentEntities, RemoveBurningOnUpkeep,
+    EntitySpawnRequestBuffer, EntitySpawnRequest, tick_status, remove_status,
+    tick_status_with_immunity, new_status_with_immunity, BURNING_TICK_DAMAGE
 };
 
 //----------------------------------------------------------------------------
@@ -28,6 +28,7 @@ pub struct StatusTickSystemData<'a> {
     status_immune_chill: WriteStorage<'a, StatusIsImmuneToChill>,
     status_attack_buffed: WriteStorage<'a, StatusIsMeleeAttackBuffed>,
     status_defense_buffed: WriteStorage<'a, StatusIsPhysicalDefenseBuffed>,
+    remove_burning_on_upkeep: ReadStorage<'a, RemoveBurningOnUpkeep>
 }
 
 impl<'a> System<'a> for StatusTickSystem {
@@ -44,7 +45,8 @@ impl<'a> System<'a> for StatusTickSystem {
             mut status_immune_fire,
             mut status_immune_chill,
             mut status_attack_buffed,
-            mut status_defense_buffed
+            mut status_defense_buffed,
+            remove_burning_on_upkeep
         } = data;
 
         for entity in entities.join() {
@@ -93,7 +95,7 @@ impl<'a> System<'a> for StatusTickSystem {
             // StatusIsMeleeAttackBuffed
             let msg = names.get(entity)
                 .map(|nm| format!("{} is no longer feeling invogroated.", nm.name));
-                tick_status::<StatusIsMeleeAttackBuffed>(
+            tick_status::<StatusIsMeleeAttackBuffed>(
                 &mut status_attack_buffed,
                 &mut log,
                 entity,
@@ -102,12 +104,25 @@ impl<'a> System<'a> for StatusTickSystem {
             // StatusIsPhysicalDefenseBuffed
             let msg = names.get(entity)
                 .map(|nm| format!("{} is no longer feeling protected.", nm.name));
-                tick_status::<StatusIsPhysicalDefenseBuffed>(
+            tick_status::<StatusIsPhysicalDefenseBuffed>(
                 &mut status_defense_buffed,
                 &mut log,
                 entity,
                 msg
             );
+
+            // RemoveBurningOnUpkeep
+            // Some entities, like water, use the burning status to signal some
+            // behaviour (generating steam in this case), but then remove it
+            // immediately.
+            let is_burning = status_burning.get(entity).is_some();
+            let remove_burning = remove_burning_on_upkeep.get(entity).is_some();
+            if is_burning && remove_burning {
+                remove_status::<StatusIsBurning>(
+                    &mut status_burning,
+                    entity,
+                )
+            }
         }
     }
 }

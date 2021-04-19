@@ -78,6 +78,16 @@ pub fn tick_status<Status: Component + StatusEffect>(
     }
 }
 
+pub fn remove_status<Status: Component + StatusEffect>(
+    store: &mut WriteStorage<Status>,
+    entity: Entity,
+) {
+    let status = store.get_mut(entity);
+    if let Some(_) = status {
+        store.remove(entity);
+    }
+}
+
 pub fn tick_status_with_immunity<Status, StatusImmune>(
     store: &mut WriteStorage<Status>,
     immune: &WriteStorage<StatusImmune>,
