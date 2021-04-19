@@ -811,6 +811,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ChanceToSpawnEntityWhenBurning>();
     gs.ecs.register::<ChanceToInflictBurningOnAdjacentEntities>();
     gs.ecs.register::<ChanceToDissipate>();
+    gs.ecs.register::<SkipRandomDissipationForOneTurn>();
     gs.ecs.register::<GrantsMeleeAttackBonus>();
     gs.ecs.register::<GrantsMeleeDefenseBonus>();
     gs.ecs.register::<StatusIsFrozen>();

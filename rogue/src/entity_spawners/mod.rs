@@ -16,12 +16,13 @@ use super::{
     AlongRayAnimationWhenTargeted, MovesToRandomPosition,
     MoveToPositionWhenTargeted, SpawnEntityWhenMeleeAttacked,
     SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
-    ChanceToDissipate, ChanceToInflictBurningOnAdjacentEntities,
-    GrantsMeleeAttackBonus, GrantsMeleeDefenseBonus,
-    ProvidesFireImmunityWhenUsed, ProvidesChillImmunityWhenUsed,
-    ProvidesFullSpellRecharge, DecreasesSpellRechargeWhenUsed, CanNotAct,
-    SimpleMarker, SerializeMe, MarkedBuilder, ElementalDamageKind,
-    InSpellBook, StatusIsImmuneToFire, StatusIsImmuneToChill,
+    ChanceToDissipate, SkipRandomDissipationForOneTurn,
+    ChanceToInflictBurningOnAdjacentEntities, GrantsMeleeAttackBonus,
+    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
+    ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
+    DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
+    MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
+    StatusIsImmuneToChill,
     MAP_WIDTH, random_table, noise
 };
 use rltk::{RandomNumberGenerator};

@@ -4,7 +4,8 @@ use super::{
     Renderable, SetsBgColor, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     ChanceToSpawnAdjacentEntity, ChanceToDissipate,
-    ChanceToInflictBurningOnAdjacentEntities, SimpleMarker, SerializeMe,
+    ChanceToInflictBurningOnAdjacentEntities,
+    SkipRandomDissipationForOneTurn, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind
 };
 use rltk::{RGB};
@@ -65,6 +66,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
             .with(ChanceToDissipate {
                 chance: dissipate_chance
             })
+            .with(SkipRandomDissipationForOneTurn {})
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: FIRE_ENCROACHMENT_DAMAGE,
                 kind: ElementalDamageKind::Fire
@@ -156,6 +158,7 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
             .with(ChanceToDissipate {
                 chance: dissipate_chance
             })
+            .with(SkipRandomDissipationForOneTurn {})
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: CHILL_ENCROACHMENT_DAMAGE,
                 kind: ElementalDamageKind::Chill
@@ -242,6 +245,7 @@ pub fn steam(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
             .with(ChanceToDissipate {
                 chance: dissipate_chance
             })
+            .with(SkipRandomDissipationForOneTurn {})
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: STEAM_ENCROACHMENT_DAMAGE,
                 kind: ElementalDamageKind::Physical

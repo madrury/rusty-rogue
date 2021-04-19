@@ -72,8 +72,13 @@ pub struct ChanceToSpawnEntityWhenBurning {
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct ChanceToDissipate {
     pub chance: i32,
-
 }
+
+// Component indicates that any random dissipation event should be skipped for
+// one turn. Instead, this component is removed.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct SkipRandomDissipationForOneTurn {}
+
 // Component indicates that an entity dissipates (i.e. is destroyed) when it is
 // burning. I.e., grass is destroyed when burned.
 #[derive(Component, Serialize, Deserialize, Clone)]

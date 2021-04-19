@@ -3,7 +3,7 @@ use rltk::{RandomNumberGenerator};
 
 use super::{
     ChanceToDissipate, WantsToDissipate, EntitySpawnKind, IsEntityKind,
-    entity_spawners, terrain_spawners
+    SkipRandomDissipationForOneTurn, entity_spawners, terrain_spawners
 };
 
 
@@ -15,17 +15,26 @@ impl<'a> System<'a> for DissipationSystem {
         Entities<'a>,
         WriteExpect<'a, RandomNumberGenerator>,
         ReadStorage<'a, ChanceToDissipate>,
+        WriteStorage<'a, SkipRandomDissipationForOneTurn>,
         WriteStorage<'a, WantsToDissipate>
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (entities, mut rng, chance_to_dissipate, mut wants_to_dissipate)  = data;
+        let (entities, mut rng, chance_to_dissipate, mut skip_dissipation, mut wants_to_dissipate)  = data;
         for (entity, chance) in (&entities, &chance_to_dissipate).join() {
-            let does_dissipate = rng.roll_dice(1, 100) <= chance.chance;
-            if does_dissipate {
-                wants_to_dissipate
-                    .insert(entity, WantsToDissipate {})
-                    .expect("Unable to queue dissipation for entitiy.");
+            let do_skip = skip_dissipation.get(entity);
+            match do_skip {
+                Some(_) => {
+                    skip_dissipation.remove(entity);
+                }
+                None => {
+                    let does_dissipate = rng.roll_dice(1, 100) <= chance.chance;
+                    if does_dissipate {
+                        wants_to_dissipate
+                            .insert(entity, WantsToDissipate {})
+                            .expect("Unable to queue dissipation for entitiy.");
+                    }
+                }
             }
         }
     }
