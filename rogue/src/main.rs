@@ -185,6 +185,7 @@ impl State {
         pos.run_now(&self.ecs);
         DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
+        process_entity_spawn_request_buffer(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -762,8 +763,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<InSpellBook>();
     gs.ecs.register::<Equipped>();
+    gs.ecs.register::<MagicOrbBag>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Hazard>();
+    gs.ecs.register::<MagicOrb>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<CanNotAct>();
@@ -807,6 +810,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<SpawnEntityWhenEncroachedUpon>();
     gs.ecs.register::<SpawnEntityWhenMeleeAttacked>();
+    gs.ecs.register::<SpawnEntityWhenKilled>();
     gs.ecs.register::<ChanceToSpawnAdjacentEntity>();
     gs.ecs.register::<ChanceToSpawnEntityWhenBurning>();
     gs.ecs.register::<ChanceToInflictBurningOnAdjacentEntities>();

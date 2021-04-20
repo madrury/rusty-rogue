@@ -14,6 +14,17 @@ use serde::{Serialize, Deserialize};
 // ticking each game turn.
 //------------------------------------------------------------------
 
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct MagicOrb {}
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct MagicOrbBag {
+    pub count: i32
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Castable {}
+
 // Tags a spell component as in the spellbook of some other entity. I.e., the
 // referenced entity can cast the spell.
 #[derive(Component, ConvertSaveload, Clone)]

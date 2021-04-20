@@ -22,7 +22,7 @@ use super::{
     ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
     DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
-    StatusIsImmuneToChill,
+    StatusIsImmuneToChill, MagicOrbBag, MagicOrb, SpawnEntityWhenKilled,
     MAP_WIDTH, random_table, noise
 };
 use rltk::{RandomNumberGenerator};
@@ -35,6 +35,7 @@ pub mod monsters;
 mod food;
 pub mod hazards;
 pub mod player;
+pub mod magic;
 
 
 //----------------------------------------------------------------------------
@@ -254,6 +255,8 @@ fn get_monster_spawn_table() -> HashMap<MonsterType, MonsterSpawnParameters> {
 
 // Spawn a single random monster at a given depth, according to the static spawn
 // table given above.
+const CHANCE_DROP_ORB: i32 = 100;
+
 fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) -> Option<MonsterType> {
     let monster: Option<MonsterType>;
     {
@@ -267,7 +270,7 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) -> Option<M
         }
         monster = rtable.roll(&mut rng);
     }
-    match monster {
+    let entity = match monster {
         Some(MonsterType::Rat) => monsters::rat(ecs, x, y),
         Some(MonsterType::Bat) => monsters::bat(ecs, x, y),
         Some(MonsterType::GoblinBasic) => monsters::goblin_basic(ecs, x, y),
@@ -282,5 +285,14 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) -> Option<M
         Some(MonsterType::BlueJelly) => monsters::blue_jelly(ecs, x, y),
         _ => {None}
     };
+    if let Some(entity) = entity {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        if rng.roll_dice(1, 100) <= CHANCE_DROP_ORB {
+            let mut drops = ecs.write_storage::<SpawnEntityWhenKilled>();
+            drops
+                .insert(entity, SpawnEntityWhenKilled {kind: EntitySpawnKind::MagicOrb})
+                .expect("Could not add orb drop to monster.");
+        }
+    }
     monster
 }
