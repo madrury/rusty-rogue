@@ -304,12 +304,11 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         format!(" x {}", orb_bag.count)
     );
 
-
     // Draw the gamelog inside the gui.
     let log = ecs.fetch::<GameLog>();
     for (i, s) in log.entries.iter().rev().enumerate() {
         if i < N_LOG_LINES as usize {
-            ctx.print(2, HEADS_UP_YPOSITION as usize + i + 3, s)
+            ctx.print(2, HEADS_UP_YPOSITION as usize + i + 2, s)
         }
     }
 

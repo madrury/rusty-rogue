@@ -1,6 +1,6 @@
 use super::{
     GameLog, InBackpack, InSpellBook, Name, Position, WantsToPickupItem, WantsToEquipItem,
-    WantsToRemoveItem, Equipped, Castable
+    WantsToRemoveItem, Equipped, Castable, MagicOrb, MagicOrbBag
 };
 use specs::prelude::*;
 
@@ -19,18 +19,26 @@ impl<'a> System<'a> for ItemCollectionSystem {
         ReadStorage<'a, Castable>,
         WriteStorage<'a, InBackpack>,
         WriteStorage<'a, InSpellBook>,
+        ReadStorage<'a, MagicOrb>,
+        WriteStorage<'a, MagicOrbBag>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player, mut log, mut pickups, mut positions, names, castables, mut backpacks, mut spellbooks) = data;
+        let (player, mut log, mut pickups, mut positions, names, castables, mut backpacks, mut spellbooks, orbs, mut orb_bags) = data;
         for pickup in pickups.join() {
             positions.remove(pickup.item);
-            // Spells go in the spellbook, everything else goes in a backpack.
+            // Spells go in the spellbook, orbs bump the orb count, everything
+            // else goes in a backpack.
             let is_castable = castables.get(pickup.item).is_some();
+            let is_orb = orbs.get(pickup.item).is_some();
             if is_castable {
                 spellbooks
                     .insert(pickup.item, InSpellBook {owner: pickup.by})
                     .expect("Unable to insert spell into spellbook.");
+            } else if is_orb {
+                let orb_bag = orb_bags.get_mut(pickup.by)
+                    .expect("Attempting to add to orb count but no orb bag found.");
+                orb_bag.count += 1;
             } else {
                 backpacks
                     .insert(pickup.item, InBackpack {owner: pickup.by})
