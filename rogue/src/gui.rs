@@ -2,7 +2,7 @@ use super::{
     get_status_indicators, CombatStats, GameLog, InBackpack, InSpellBook,
     Castable, TargetingKind, SpellCharges, Map, Name, Player, Position,
     Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped,
-    HungerClock, SwimStamina, HungerState
+    HungerClock, SwimStamina, HungerState, MagicOrbBag
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -173,6 +173,12 @@ const SWIM_BAR_WIDTH: i32 = 51;
 const HUNGER_STATUS_XPOSITION: i32 = 71;
 const HUNGER_STATUS_YPOSITION: i32 = 42;
 
+const STATUS_INDICATORS_X_POSITON: i32 = 2;
+const STATUS_INDICATORS_Y_POSITON: i32 = 42;
+
+const ORB_COUNT_XPOSITION: i32 = 2;
+const ORB_COUNT_YPOSITION: i32 = 44;
+
 const N_LOG_LINES: i32 = 4;
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
@@ -266,11 +272,44 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         );
     }
 
+    // Draw glyphs for the player's current status effects.
+    let player = ecs.fetch::<Entity>();
+    let glyphs = get_status_indicators(ecs, &*player);
+    for (i, glyph) in glyphs.iter().enumerate() {
+        ctx.set(
+            STATUS_INDICATORS_X_POSITON + i as i32,
+            STATUS_INDICATORS_Y_POSITON,
+            glyph.color,
+            RGB::named(rltk::BLACK),
+            glyph.glyph,
+        );
+    }
+
+    // Draw the current orb count.
+    let orb_bags = ecs.read_storage::<MagicOrbBag>();
+    let orb_bag = orb_bags.get(*player)
+        .expect("Could not find player's orb bag.");
+    ctx.set(
+        ORB_COUNT_XPOSITION,
+        ORB_COUNT_YPOSITION,
+        RGB::named(rltk::AQUAMARINE),
+        RGB::named(rltk::BLACK),
+        rltk::to_cp437('•')
+    );
+    ctx.print_color(
+        ORB_COUNT_XPOSITION + 1,
+        ORB_COUNT_YPOSITION,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        format!(" x {}", orb_bag.count)
+    );
+
+
     // Draw the gamelog inside the gui.
     let log = ecs.fetch::<GameLog>();
     for (i, s) in log.entries.iter().rev().enumerate() {
         if i < N_LOG_LINES as usize {
-            ctx.print(2, HEADS_UP_YPOSITION as usize + i + 2, s)
+            ctx.print(2, HEADS_UP_YPOSITION as usize + i + 3, s)
         }
     }
 
