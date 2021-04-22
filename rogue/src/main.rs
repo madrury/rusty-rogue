@@ -88,6 +88,7 @@ pub enum RunState {
     HazardTurn,
     MonsterTurn,
     UpkeepTrun,
+    ShowMagicSelectionMenu,
     ShowUseInventory,
     ShowThrowInventory,
     ShowEquipInventory,
@@ -537,6 +538,10 @@ impl GameState for State {
             }
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
+                // let nextstate = match is_player_encroaching_magic_tile(&self.ecs) {
+                //     true => RunState::ShowMagicSelectionMenu,
+                //     false => RunState::MonsterTurn,
+                // }
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(RunState::MonsterTurn);
                     newrunstate = RunState::PlayingAnimation;
@@ -561,6 +566,9 @@ impl GameState for State {
                 self.run_upkeep_turn_systems();
                 self.run_map_indexing_system();
                 newrunstate = RunState::AwaitingInput;
+            }
+            RunState::ShowMagicSelectionMenu => {
+                //
             }
             RunState::ShowUseInventory => {
                 let result = gui::show_inventory::<Useable>(&mut self.ecs, ctx, "Useable");
@@ -767,6 +775,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Hazard>();
     gs.ecs.register::<MagicOrb>();
+    gs.ecs.register::<MagicSelectionTile>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<CanNotAct>();
@@ -837,7 +846,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(ParticleRequestBuffer::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
 
-    // Create teh player entity. Note that we're not computing the correct
+    // Create the player entity. Note that we're not computing the correct
     // position to place the player here, since that needs to happen after we've
     // generated terrain and monsters.
     let player = entity_spawners::player::spawn_player(&mut gs.ecs, 0, 0);

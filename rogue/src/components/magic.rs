@@ -23,6 +23,9 @@ pub struct MagicOrbBag {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
+pub struct MagicSelectionTile {}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Castable {}
 
 // Tags a spell component as in the spellbook of some other entity. I.e., the
