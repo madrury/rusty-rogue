@@ -538,17 +538,17 @@ impl GameState for State {
             }
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
-                // let nextstate = match is_player_encroaching_magic_tile(&self.ecs) {
-                //     true => RunState::ShowMagicSelectionMenu,
-                //     false => RunState::MonsterTurn,
-                // }
+                let nextstate = match is_player_encroaching_blessing_tile(&self.ecs) {
+                    true => RunState::ShowMagicSelectionMenu,
+                    false => RunState::MonsterTurn,
+                };
                 if is_any_animation_alive(&self.ecs) {
-                    self.next_state = Some(RunState::MonsterTurn);
+                    self.next_state = Some(nextstate);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
                 self.run_map_indexing_system();
-                    newrunstate = RunState::MonsterTurn;
+                    newrunstate = nextstate;
                 }
             }
             RunState::MonsterTurn => {
@@ -568,7 +568,8 @@ impl GameState for State {
                 newrunstate = RunState::AwaitingInput;
             }
             RunState::ShowMagicSelectionMenu => {
-                //
+                println!("Player recieves a blessing!");
+                newrunstate = RunState::MonsterTurn;
             }
             RunState::ShowUseInventory => {
                 let result = gui::show_inventory::<Useable>(&mut self.ecs, ctx, "Useable");

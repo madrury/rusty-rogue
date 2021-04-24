@@ -1,13 +1,13 @@
 use specs::prelude::*;
 use super::{
-    Map, Name, GameLog, Position, EntitySpawnRequest,
+    Map, Name, GameLog, Position, Point, EntitySpawnRequest,
     EntitySpawnRequestBuffer, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     RemoveBurningWhenEncroachedUpon, DissipateFireWhenEncroachedUpon,
     WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire,
     StatusIsImmuneToChill, WantsToDissipate, IsEntityKind, EntitySpawnKind,
-    new_status_with_immunity, remove_status
+    BlessingSelectionTile, new_status_with_immunity, remove_status
 };
 
 
@@ -38,6 +38,7 @@ pub struct EncroachmentSystemData<'a> {
 }
 
 impl<'a> System<'a> for EncroachmentSystem {
+
     type SystemData = EncroachmentSystemData<'a>;
 
     fn run(&mut self, data: Self::SystemData) {
@@ -160,4 +161,16 @@ impl<'a> System<'a> for EncroachmentSystem {
             }
         }
     }
+}
+
+
+pub fn is_player_encroaching_blessing_tile(ecs: &World) -> bool {
+    let entities = ecs.entities();
+    let blessing_tiles = ecs.read_storage::<BlessingSelectionTile>();
+    let positions = ecs.read_storage::<Position>();
+    let blessing_locations: Vec<Point> = (&entities, &blessing_tiles, &positions).join()
+        .map(|(_t, _tiles, pos)| Point {x: pos.x, y: pos.y})
+        .collect();
+    let player_point = ecs.fetch::<Point>();
+    blessing_locations.contains(&player_point)
 }
