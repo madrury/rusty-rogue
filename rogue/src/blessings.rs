@@ -2,7 +2,7 @@
 use specs::prelude::*;
 use rltk::{RGB, RandomNumberGenerator};
 use super::{
-    Map, GameLog, Name, OfferedBlessing, entity_spawners
+    Map, GameLog, Name, OfferedBlessing, WantsToDissipate, entity_spawners
 };
 
 pub fn create_offered_blessings(ecs: &mut World) {
@@ -40,7 +40,12 @@ pub fn create_offered_blessings(ecs: &mut World) {
     ecs.maintain();
 }
 
-pub fn get_offered_blessings(ecs: &mut World) -> Vec<Entity> {
-    let mut offers: Vec<Entity> = Vec::new();
-    offers
+pub fn clean_up_offered_blessings(ecs: &mut World) {
+    let entities = ecs.entities();
+    let offereds = ecs.read_storage::<OfferedBlessing>();
+    let mut wants_dissipate = ecs.write_storage::<WantsToDissipate>();
+    for (entity, _offer) in (&entities, &offereds).join() {
+        wants_dissipate.insert(entity, WantsToDissipate {})
+            .expect("Could not insert WantsToDissipate when cleaning up offered blessings.");
+    }
 }

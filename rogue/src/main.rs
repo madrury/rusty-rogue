@@ -573,12 +573,26 @@ impl GameState for State {
                 newrunstate = RunState::AwaitingInput;
             }
             RunState::ShowBlessingSelectionMenu => {
-                println!("Player recieves a blessing!");
                 let result = gui::show_blessings(&mut self.ecs, ctx);
                 match result {
-                    MenuResult::Cancel => newrunstate = RunState::MonsterTurn,
+                    MenuResult::Cancel => {
+                        clean_up_offered_blessings(&mut self.ecs);
+                        newrunstate = RunState::MonsterTurn
+                    },
                     MenuResult::NoResponse => {},
                     MenuResult::Selected {thing} => {
+                        {
+                            let player = self.ecs.fetch_mut::<Entity>();
+                            let mut spellbooks = self.ecs.write_storage::<InSpellBook>();
+                            spellbooks.insert(thing, InSpellBook {
+                                owner: *player
+                            }).expect("Could not insert spell into player's spellbook.");
+                        }
+                        {
+                            let mut offereds = self.ecs.write_storage::<OfferedBlessing>();
+                            offereds.remove(thing);
+                        }
+                        clean_up_offered_blessings(&mut self.ecs);
                         newrunstate = RunState::MonsterTurn;
                     }
                 }
