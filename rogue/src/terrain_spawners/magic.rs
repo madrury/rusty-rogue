@@ -1,6 +1,6 @@
 use super::{
     Map, Position, Renderable, Name, BlessingSelectionTile, SimpleMarker,
-    SerializeMe, MarkedBuilder, statues, water
+    SerializeMe, MarkedBuilder, TileType, water, noise, color
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
@@ -19,39 +19,49 @@ pub fn spawn_blessing_tile_aparatus(ecs: &mut World) -> Option<Entity> {
     }
 }
 
+const BLESSING_LAKE_NOISE_FREQUENCY: f32 = 0.25;
 
 fn spawn_blessing_tile_aparatus_at_position(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
-    statues::statue(ecs, x, y);
+    // First - spawn the actual blessing tile in the center of the aparatus.
+    let mtile = blessing_tile(ecs, x, y);
+    {
+        let mut map = ecs.write_resource::<Map>();
+        let idx = map.xy_idx(x, y);
+        map.ok_to_spawn[idx] = false;
+    }
+    // Compute the coordinates and indexes of all the surrounding tiles.
     let adjacent_tiles: Vec<(i32, i32)>;
     let adjacent_tile_idxs: Vec<usize>;
-    let magic_tile_vec_idx;
+    let water_noise: Vec<(f32, f32)>;
     {
         let map = ecs.read_resource::<Map>();
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         adjacent_tiles = map.get_adjacent_tiles(x, y);
         adjacent_tile_idxs = map.get_adjacent_tiles(x, y).iter()
             .map(|(xx, yy)| map.xy_idx(*xx, *yy))
             .collect();
-        let n_adjacent_tiles = adjacent_tile_idxs.len();
-        // Which tile in the adjacent_tile_idx's vector should be the magic
-        // tile.
-        magic_tile_vec_idx = rng.roll_dice(1, n_adjacent_tiles as i32) - 1;
+        water_noise = noise::water_noisemap(&map, BLESSING_LAKE_NOISE_FREQUENCY);
     }
-    let mut mtile = None;
-    for (i, (tile, tile_idx)) in adjacent_tiles.into_iter().zip(adjacent_tile_idxs).enumerate() {
+    // Carve out any walls surrounding the tile spawn position.
+    for tile_idx in adjacent_tile_idxs.iter() {
+        let mut map = ecs.write_resource::<Map>();
+        if map.tiles[*tile_idx] == TileType::Wall {
+            map.tiles[*tile_idx] = TileType::Floor;
+            map.ok_to_spawn[*tile_idx] = true;
+        }
+    }
+    // Spawn a ring of water around the blessing tile.
+    for (tile, tile_idx) in adjacent_tiles.into_iter().zip(adjacent_tile_idxs) {
         let ok_to_spawn;
         {
             let map = ecs.read_resource::<Map>();
             ok_to_spawn = map.ok_to_spawn[tile_idx];
         }
-        if i == magic_tile_vec_idx as usize && ok_to_spawn{
-            mtile = blessing_tile(ecs, tile.0, tile.1);
-            {
-                let mut map = ecs.write_resource::<Map>();
-                map.ok_to_spawn[tile_idx] = false;
-            }
-        } else if ok_to_spawn {
-            water::shallow_water(ecs, tile.0, tile.1, RGB::named(rltk::ROYALBLUE), RGB::named(rltk::BLUE));
+        if ok_to_spawn {
+            let (vnoise, wnoise) = water_noise[tile_idx];
+            let colorseeds = (vnoise + 1.0, 0.7 * vnoise + 0.2 * wnoise + 0.4);
+            let fgcolor = color::water_fg_from_noise(colorseeds.0);
+            let bgcolor = color::water_bg_from_noise(colorseeds.1);
+            water::deep_water(ecs, tile.0, tile.1, fgcolor, bgcolor);
             {
                 let mut map = ecs.write_resource::<Map>();
                 map.ok_to_spawn[tile_idx] = false;
