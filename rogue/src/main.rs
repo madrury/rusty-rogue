@@ -771,11 +771,11 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<InSpellBook>();
     gs.ecs.register::<Equipped>();
-    gs.ecs.register::<MagicOrbBag>();
+    gs.ecs.register::<BlessingOrbBag>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Hazard>();
-    gs.ecs.register::<MagicOrb>();
-    gs.ecs.register::<MagicSelectionTile>();
+    gs.ecs.register::<BlessingOrb>();
+    gs.ecs.register::<BlessingSelectionTile>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<CanNotAct>();

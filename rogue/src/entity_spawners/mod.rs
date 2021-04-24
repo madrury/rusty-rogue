@@ -22,7 +22,7 @@ use super::{
     ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
     DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, MagicOrbBag, MagicOrb, SpawnEntityWhenKilled,
+    StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, SpawnEntityWhenKilled,
     MAP_WIDTH, random_table, noise
 };
 use rltk::{RandomNumberGenerator};

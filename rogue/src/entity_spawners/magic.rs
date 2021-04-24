@@ -1,6 +1,6 @@
 use super::{
     Name, Position, Renderable, PickUpable, SimpleMarker, SerializeMe,
-    MarkedBuilder, MagicOrb
+    MarkedBuilder, BlessingOrb
 };
 
 use rltk::{RGB};
@@ -9,7 +9,7 @@ use specs::prelude::*;
 
 const ORB_RENDER_ORDER: i32 = 2;
 
-pub fn magic_orb(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+pub fn blessing_orb(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
@@ -21,7 +21,7 @@ pub fn magic_orb(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(Name {name: "Orb of Blessing".to_string()})
         .with(PickUpable {})
-        .with(MagicOrb {})
+        .with(BlessingOrb {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)

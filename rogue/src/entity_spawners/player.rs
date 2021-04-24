@@ -1,6 +1,6 @@
 use super::{
     Point, Map, CombatStats, SwimStamina, HungerClock, HungerState, Name, Player,
-    Monster, Position, Renderable, Viewshed, MagicOrbBag, SimpleMarker, SerializeMe, MarkedBuilder,
+    Monster, Position, Renderable, Viewshed, BlessingOrbBag, SimpleMarker, SerializeMe, MarkedBuilder,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -52,7 +52,7 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             stamina: PLAYER_SWIM_STAMINA,
             drowning_damage: PLAYER_DROWNING_TICK_DAMAGE
         })
-        .with(MagicOrbBag {count: 0})
+        .with(BlessingOrbBag {count: 0})
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }

@@ -1,12 +1,12 @@
 use super::{
-    Map, Position, Renderable, Name, MagicSelectionTile, SimpleMarker,
+    Map, Position, Renderable, Name, BlessingSelectionTile, SimpleMarker,
     SerializeMe, MarkedBuilder, statues, water
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
 
 
-pub fn spawn_magic_tile_aparatus(ecs: &mut World) -> Option<Entity> {
+pub fn spawn_blessing_tile_aparatus(ecs: &mut World) -> Option<Entity> {
     let tile;
     {
         let map = ecs.read_resource::<Map>();
@@ -14,13 +14,13 @@ pub fn spawn_magic_tile_aparatus(ecs: &mut World) -> Option<Entity> {
         tile = map.random_unblocked_point(100, &mut rng);
     }
     match tile {
-        Some(tile) => spawn_magic_tile_aparatus_at_position(ecs, tile.0, tile.1),
+        Some(tile) => spawn_blessing_tile_aparatus_at_position(ecs, tile.0, tile.1),
         None => None
     }
 }
 
 
-fn spawn_magic_tile_aparatus_at_position(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+fn spawn_blessing_tile_aparatus_at_position(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     statues::statue(ecs, x, y);
     let adjacent_tiles: Vec<(i32, i32)>;
     let adjacent_tile_idxs: Vec<usize>;
@@ -45,7 +45,7 @@ fn spawn_magic_tile_aparatus_at_position(ecs: &mut World, x: i32, y: i32) -> Opt
             ok_to_spawn = map.ok_to_spawn[tile_idx];
         }
         if i == magic_tile_vec_idx as usize && ok_to_spawn{
-            mtile = magic_tile(ecs, tile.0, tile.1);
+            mtile = blessing_tile(ecs, tile.0, tile.1);
             {
                 let mut map = ecs.write_resource::<Map>();
                 map.ok_to_spawn[tile_idx] = false;
@@ -62,7 +62,7 @@ fn spawn_magic_tile_aparatus_at_position(ecs: &mut World, x: i32, y: i32) -> Opt
 }
 
 
-pub fn magic_tile(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+pub fn blessing_tile(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
@@ -72,7 +72,7 @@ pub fn magic_tile(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             order: 1,
             visible_out_of_fov: true
         })
-        .with(MagicSelectionTile {})
+        .with(BlessingSelectionTile {})
         .with(Name {name: "Tile of Blessing".to_string()})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();

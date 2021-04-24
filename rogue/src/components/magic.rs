@@ -15,15 +15,15 @@ use serde::{Serialize, Deserialize};
 //------------------------------------------------------------------
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct MagicOrb {}
+pub struct BlessingOrb {}
 
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct MagicOrbBag {
+pub struct BlessingOrbBag {
     pub count: i32
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct MagicSelectionTile {}
+pub struct BlessingSelectionTile {}
 
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Castable {}

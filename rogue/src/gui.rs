@@ -2,7 +2,7 @@ use super::{
     get_status_indicators, CombatStats, GameLog, InBackpack, InSpellBook,
     Castable, TargetingKind, SpellCharges, Map, Name, Player, Position,
     Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped,
-    HungerClock, SwimStamina, HungerState, MagicOrbBag
+    HungerClock, SwimStamina, HungerState, BlessingOrbBag
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -286,7 +286,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     }
 
     // Draw the current orb count.
-    let orb_bags = ecs.read_storage::<MagicOrbBag>();
+    let orb_bags = ecs.read_storage::<BlessingOrbBag>();
     let orb_bag = orb_bags.get(*player)
         .expect("Could not find player's orb bag.");
     ctx.set(

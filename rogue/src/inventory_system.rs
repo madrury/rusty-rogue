@@ -1,6 +1,6 @@
 use super::{
     GameLog, InBackpack, InSpellBook, Name, Position, WantsToPickupItem, WantsToEquipItem,
-    WantsToRemoveItem, Equipped, Castable, MagicOrb, MagicOrbBag
+    WantsToRemoveItem, Equipped, Castable, BlessingOrb, BlessingOrbBag
 };
 use specs::prelude::*;
 
@@ -19,8 +19,8 @@ impl<'a> System<'a> for ItemCollectionSystem {
         ReadStorage<'a, Castable>,
         WriteStorage<'a, InBackpack>,
         WriteStorage<'a, InSpellBook>,
-        ReadStorage<'a, MagicOrb>,
-        WriteStorage<'a, MagicOrbBag>,
+        ReadStorage<'a, BlessingOrb>,
+        WriteStorage<'a, BlessingOrbBag>,
     );
 
     fn run(&mut self, data: Self::SystemData) {

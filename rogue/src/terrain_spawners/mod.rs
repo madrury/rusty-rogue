@@ -5,7 +5,7 @@ use super::{
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     ChanceToSpawnEntityWhenBurning, RemoveBurningWhenEncroachedUpon,
     DissipateFireWhenEncroachedUpon, RemoveBurningOnUpkeep, EntitySpawnKind,
-    IsEntityKind, Hazard, Opaque, MagicSelectionTile, TileType, color, noise
+    IsEntityKind, Hazard, Opaque, BlessingSelectionTile, TileType, color, noise
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
@@ -32,7 +32,7 @@ pub fn spawn_terrain(ecs: &mut World, _depth: i32) {
         3 => water::spawn_small_lakes(ecs),
         _ => panic!("Rolled to high on water spawning.")
     }
-    magic::spawn_magic_tile_aparatus(ecs);
+    magic::spawn_blessing_tile_aparatus(ecs);
     match statue_roll {
         1 => statues::spawn_statues(ecs),
         _ => {}
