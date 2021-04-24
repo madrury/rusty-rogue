@@ -2,7 +2,7 @@ use super::{
     get_status_indicators, CombatStats, GameLog, InBackpack, InSpellBook,
     Castable, TargetingKind, SpellCharges, Map, Name, Player, Position,
     Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped,
-    HungerClock, SwimStamina, HungerState, BlessingOrbBag
+    HungerClock, SwimStamina, HungerState, BlessingOrbBag, OfferedBlessing
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -768,6 +768,122 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
                     }
                     // The user selected an uncastable spell...
                     return MenuResult::NoResponse
+                }
+                MenuResult::NoResponse
+            }
+        },
+    }
+}
+
+
+pub fn show_blessings(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
+    let names = ecs.read_storage::<Name>();
+    let offereds = ecs.read_storage::<OfferedBlessing>();
+    let renderables = ecs.read_storage::<Renderable>();
+    let entities = ecs.entities();
+
+    let count = (&offereds, &names).join().count();
+
+    let mut y = ITEM_MENU_Y_POSTION - (count / 2) as i32;
+
+    // Draw the outline of the menu, and the helper text.
+    ctx.draw_box(
+        ITEM_MENU_X_POSITION,
+        y - 2,
+        ITEM_MENU_WIDTH,
+        (count + 3) as i32,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+    );
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y - 2,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Choose a Blessing.",
+    );
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y + count as i32 + 1,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Press ESC to cancel",
+    );
+
+    // Iterate through all items in the player's backpack with the Useable component and:
+    //   - Draw an inventory selection letter for that item: (a), (b), (c), etc...
+    //   - Add the item to a vector for later lookup upon selection.
+    let on_offer = (&entities, &names, &offereds)
+        .join()
+        .enumerate();
+    // Vector to keep track of the positions of items in the inventory. When the
+    // player selects an item, we need to retrieve that associated item entity.
+    let mut these_blessings: Vec<Entity> = Vec::new();
+    for (i, (blessing, name, _use)) in on_offer {
+        let render = renderables.get(blessing);
+        // Draw the selection information. (a), (b), (c) etc.
+        let selection_char = 97 + i as rltk::FontCharType;
+        ctx.set(
+            ITEM_MENU_X_POSITION + 1,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437('('),
+        );
+        ctx.set(
+            ITEM_MENU_X_POSITION + 2,
+            y,
+            RGB::named(rltk::YELLOW),
+            RGB::named(rltk::BLACK),
+            selection_char,
+        );
+        ctx.set(
+            ITEM_MENU_X_POSITION + 3,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            rltk::to_cp437(')'),
+        );
+        // Draw the item glyph if one exists.
+        match render {
+            Some(render) => ctx.set(
+                ITEM_MENU_X_POSITION + 4,
+                y,
+                render.fg,
+                RGB::named(rltk::BLACK),
+                render.glyph,
+            ),
+            None => ctx.set(
+                ITEM_MENU_X_POSITION + 4,
+                y,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437(' '),
+            ),
+        }
+        ctx.print_color(
+            ITEM_MENU_X_POSITION + 6,
+            y,
+            RGB::named(rltk::WHITE),
+            RGB::named(rltk::BLACK),
+            &name.name.to_string()
+        );
+
+        these_blessings.push(blessing);
+        y += 1;
+    }
+
+    // If we've got input, we can get to using the thing.
+    match ctx.key {
+        None => MenuResult::NoResponse,
+        Some(key) => match key {
+            VirtualKeyCode::Escape => MenuResult::Cancel,
+            _ => {
+                let selection = rltk::letter_to_option(key);
+                if selection > -1 && selection < count as i32 {
+                    return MenuResult::Selected {
+                        thing: these_blessings[selection as usize],
+                    };
                 }
                 MenuResult::NoResponse
             }

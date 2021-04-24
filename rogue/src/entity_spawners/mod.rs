@@ -30,7 +30,7 @@ use specs::prelude::*;
 
 mod potions;
 mod equipment;
-mod spells;
+pub mod spells;
 pub mod monsters;
 mod food;
 pub mod hazards;

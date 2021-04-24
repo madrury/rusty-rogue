@@ -28,6 +28,8 @@ mod player;
 use player::*;
 mod gui;
 use gui::*;
+mod blessings;
+use blessings::*;
 mod visibility_system;
 use visibility_system::*;
 mod monster_ai_system;
@@ -88,7 +90,7 @@ pub enum RunState {
     HazardTurn,
     MonsterTurn,
     UpkeepTrun,
-    ShowMagicSelectionMenu,
+    ShowBlessingSelectionMenu,
     ShowUseInventory,
     ShowThrowInventory,
     ShowEquipInventory,
@@ -539,7 +541,10 @@ impl GameState for State {
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
                 let nextstate = match is_player_encroaching_blessing_tile(&self.ecs) {
-                    true => RunState::ShowMagicSelectionMenu,
+                    true => {
+                        create_offered_blessings(&mut self.ecs);
+                        RunState::ShowBlessingSelectionMenu
+                    },
                     false => RunState::MonsterTurn,
                 };
                 if is_any_animation_alive(&self.ecs) {
@@ -547,7 +552,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                self.run_map_indexing_system();
+                    self.run_map_indexing_system();
                     newrunstate = nextstate;
                 }
             }
@@ -567,9 +572,16 @@ impl GameState for State {
                 self.run_map_indexing_system();
                 newrunstate = RunState::AwaitingInput;
             }
-            RunState::ShowMagicSelectionMenu => {
+            RunState::ShowBlessingSelectionMenu => {
                 println!("Player recieves a blessing!");
-                newrunstate = RunState::MonsterTurn;
+                let result = gui::show_blessings(&mut self.ecs, ctx);
+                match result {
+                    MenuResult::Cancel => newrunstate = RunState::MonsterTurn,
+                    MenuResult::NoResponse => {},
+                    MenuResult::Selected {thing} => {
+                        newrunstate = RunState::MonsterTurn;
+                    }
+                }
             }
             RunState::ShowUseInventory => {
                 let result = gui::show_inventory::<Useable>(&mut self.ecs, ctx, "Useable");
@@ -777,6 +789,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Hazard>();
     gs.ecs.register::<BlessingOrb>();
     gs.ecs.register::<BlessingSelectionTile>();
+    gs.ecs.register::<OfferedBlessing>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<CanNotAct>();
