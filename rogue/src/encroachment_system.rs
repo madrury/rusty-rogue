@@ -162,15 +162,3 @@ impl<'a> System<'a> for EncroachmentSystem {
         }
     }
 }
-
-
-pub fn is_player_encroaching_blessing_tile(ecs: &World) -> bool {
-    let entities = ecs.entities();
-    let blessing_tiles = ecs.read_storage::<BlessingSelectionTile>();
-    let positions = ecs.read_storage::<Position>();
-    let blessing_locations: Vec<Point> = (&entities, &blessing_tiles, &positions).join()
-        .map(|(_t, _tiles, pos)| Point {x: pos.x, y: pos.y})
-        .collect();
-    let player_point = ecs.fetch::<Point>();
-    blessing_locations.contains(&player_point)
-}

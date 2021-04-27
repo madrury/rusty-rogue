@@ -540,12 +540,13 @@ impl GameState for State {
             }
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
-                let nextstate = match is_player_encroaching_blessing_tile(&self.ecs) {
-                    true => {
-                        create_offered_blessings(&mut self.ecs);
-                        RunState::ShowBlessingSelectionMenu
-                    },
-                    false => RunState::MonsterTurn,
+                let get_blessing = is_player_encroaching_blessing_tile(&self.ecs)
+                    && does_player_have_sufficient_orbs_for_blessing(&self.ecs);
+                let nextstate = if get_blessing {
+                    create_offered_blessings(&mut self.ecs);
+                    RunState::ShowBlessingSelectionMenu
+                } else {
+                    RunState::MonsterTurn
                 };
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(nextstate);
@@ -588,6 +589,7 @@ impl GameState for State {
                                 owner: *player
                             }).expect("Could not insert spell into player's spellbook.");
                         }
+                        cash_in_orbs_for_blessing(&mut self.ecs);
                         {
                             let mut offereds = self.ecs.write_storage::<OfferedBlessing>();
                             offereds.remove(thing);

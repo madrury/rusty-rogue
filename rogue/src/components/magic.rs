@@ -17,9 +17,18 @@ use serde::{Serialize, Deserialize};
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct BlessingOrb {}
 
+const ORBS_NEEDED_FOR_BLESSING: i32 = 4;
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct BlessingOrbBag {
     pub count: i32
+}
+impl BlessingOrbBag {
+    pub fn enough_orbs_for_blessing(&self) -> bool {
+        self.count >= ORBS_NEEDED_FOR_BLESSING
+    }
+    pub fn cash_in_orbs_for_blessing(&mut self) {
+        self.count = i32::max(0, self.count - ORBS_NEEDED_FOR_BLESSING);
+    }
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
