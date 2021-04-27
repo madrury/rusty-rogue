@@ -3,8 +3,8 @@ use specs::prelude::*;
 use rltk::{RGB, RandomNumberGenerator};
 use super::{
     Map, GameLog, Name, BlessingOrbBag, OfferedBlessing,
-    BlessingSelectionTile, Position,
-    Point, WantsToDissipate, entity_spawners
+    BlessingSelectionTile, Position, Point, WantsToDissipate, InSpellBook,
+    entity_spawners
 };
 
 pub fn create_offered_blessings(ecs: &mut World) {
@@ -42,6 +42,17 @@ pub fn create_offered_blessings(ecs: &mut World) {
     ecs.maintain();
 }
 
+// Add a blessing to the player's spellbook.
+pub fn receive_blessing(ecs: &mut World, blessing: Entity) {
+    let player = ecs.fetch_mut::<Entity>();
+    let mut spellbooks = ecs.write_storage::<InSpellBook>();
+    let mut positions = ecs.write_storage::<Position>();
+    spellbooks.insert(blessing, InSpellBook {
+        owner: *player
+    }).expect("Could not insert blessing spell into player's spellbook.");
+    positions.remove(blessing).expect("Could not remove position component from blessing.");
+}
+
 // Tag any remaining offered blessings as wanting to dissipate, which will cause
 // them to be cleaned up the next time the dissipation system runs.
 pub fn clean_up_offered_blessings(ecs: &mut World) {
@@ -76,6 +87,6 @@ pub fn does_player_have_sufficient_orbs_for_blessing(ecs: &World) -> bool {
 pub fn cash_in_orbs_for_blessing(ecs: &World) {
     let player = ecs.fetch::<Entity>();
     let mut orb_bags = ecs.write_storage::<BlessingOrbBag>();
-    let mut player_orb_bag = orb_bags.get_mut(*player).expect("Player has no BlessingOrbBag.");
+    let player_orb_bag = orb_bags.get_mut(*player).expect("Player has no BlessingOrbBag.");
     player_orb_bag.cash_in_orbs_for_blessing();
 }

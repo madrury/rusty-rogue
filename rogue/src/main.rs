@@ -582,13 +582,7 @@ impl GameState for State {
                     },
                     MenuResult::NoResponse => {},
                     MenuResult::Selected {thing} => {
-                        {
-                            let player = self.ecs.fetch_mut::<Entity>();
-                            let mut spellbooks = self.ecs.write_storage::<InSpellBook>();
-                            spellbooks.insert(thing, InSpellBook {
-                                owner: *player
-                            }).expect("Could not insert spell into player's spellbook.");
-                        }
+                        receive_blessing(&mut self.ecs, thing);
                         cash_in_orbs_for_blessing(&mut self.ecs);
                         {
                             let mut offereds = self.ecs.write_storage::<OfferedBlessing>();
