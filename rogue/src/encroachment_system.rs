@@ -1,13 +1,13 @@
 use specs::prelude::*;
 use super::{
-    Map, Name, GameLog, Position, Point, EntitySpawnRequest,
+    Map, Name, GameLog, Position, EntitySpawnRequest,
     EntitySpawnRequestBuffer, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     RemoveBurningWhenEncroachedUpon, DissipateFireWhenEncroachedUpon,
     WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire,
     StatusIsImmuneToChill, WantsToDissipate, IsEntityKind, EntitySpawnKind,
-    BlessingSelectionTile, new_status_with_immunity, remove_status
+    new_status_with_immunity, remove_status
 };
 
 

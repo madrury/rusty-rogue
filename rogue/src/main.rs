@@ -326,7 +326,7 @@ impl State {
         // Compute a position to place the player. We're only computing the
         // position here, so this is stateless, we don't actually update any ECS
         // state yet.
-        let mut player_start_position = Point {x: 0, y: 0};
+        let mut player_start_position;
         loop {
             let map = self.ecs.read_resource::<Map>();
             player_start_position = builder.starting_position(&self.ecs);

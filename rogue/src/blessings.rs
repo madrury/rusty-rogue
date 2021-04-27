@@ -1,10 +1,8 @@
 
 use specs::prelude::*;
-use rltk::{RGB, RandomNumberGenerator};
 use super::{
-    Map, GameLog, Name, BlessingOrbBag, OfferedBlessing,
-    BlessingSelectionTile, Position, Point, WantsToDissipate, InSpellBook,
-    entity_spawners
+    BlessingOrbBag, OfferedBlessing, BlessingSelectionTile, Position, Point,
+    WantsToDissipate, InSpellBook, entity_spawners
 };
 
 pub fn create_offered_blessings(ecs: &mut World) {
