@@ -38,6 +38,7 @@ pub struct EncroachmentSystemData<'a> {
 }
 
 impl<'a> System<'a> for EncroachmentSystem {
+
     type SystemData = EncroachmentSystemData<'a>;
 
     fn run(&mut self, data: Self::SystemData) {

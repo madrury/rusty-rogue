@@ -21,7 +21,8 @@ pub enum EntitySpawnKind {
     Chill {spread_chance: i32, dissipate_chance: i32},
     Steam {spread_chance: i32, dissipate_chance: i32},
     Grass {fg: RGB},
-    Water
+    Water,
+    MagicOrb
 }
 
 // Tags entitys with a specific type. This is used to lookup the apropriate
@@ -37,6 +38,7 @@ pub struct SpawnsEntityInAreaWhenTargeted {
     pub radius: i32,
     pub kind: EntitySpawnKind
 }
+
 // Component indicates that the entity has a random chance to spawn entities in
 // an adjacent space.
 #[derive(Component, ConvertSaveload, Clone)]
@@ -44,11 +46,20 @@ pub struct SpawnEntityWhenEncroachedUpon {
     pub chance: i32,
     pub kind: EntitySpawnKind
 }
+
 // Component indicates that the entity will spawn another entity when melee
 // attacked. Used on Jellys, which split off either copies of themselves, or
 // hazards, when attacked.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct SpawnEntityWhenMeleeAttacked {
+    pub kind: EntitySpawnKind
+}
+
+// Component indicates that the entity will spawn another entity when killed.
+// This is essentially a drop component, we could have named it `DropItem`,
+// since that is it's major application.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnEntityWhenKilled {
     pub kind: EntitySpawnKind
 }
 

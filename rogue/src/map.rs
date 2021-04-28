@@ -381,16 +381,6 @@ impl RoutingMap {
         let idx = self.xy_idx(x, y);
         !self.avoid[idx]
     }
-
-    fn is_reachable(&self, start: Point, end: Point) -> bool {
-        let start_idx = self.xy_idx(start.x, start.y);
-        let end_idx = self.xy_idx(end.x, end.y);
-        let map_starts : Vec<usize> = vec![start_idx];
-        let dijkstra_map = rltk::DijkstraMap::new(
-            self.width, self.height, &map_starts , self, 200.0
-        );
-        dijkstra_map.map[end_idx] != std::f32::MAX
-    }
 }
 
 impl BaseMap for RoutingMap {

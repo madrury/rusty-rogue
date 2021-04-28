@@ -46,9 +46,6 @@ pub struct Useable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
 
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Castable {}
-
 // An entity with this component can be used as a targeted effect.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum TargetingKind {
