@@ -22,8 +22,8 @@ use super::{
     ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
     DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, SpawnEntityWhenKilled,
-    MAP_WIDTH, random_table, noise
+    StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
+    SpawnEntityWhenKilled, MAP_WIDTH, random_table, noise
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;

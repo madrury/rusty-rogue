@@ -2,7 +2,7 @@
 use specs::prelude::*;
 use super::{
     BlessingOrbBag, OfferedBlessing, BlessingSelectionTile, Position, Point,
-    WantsToDissipate, InSpellBook, entity_spawners
+    WantsToDissipate, InSpellBook, Castable, entity_spawners
 };
 
 pub fn create_offered_blessings(ecs: &mut World) {
@@ -45,8 +45,12 @@ pub fn receive_blessing(ecs: &mut World, blessing: Entity) {
     let player = ecs.fetch_mut::<Entity>();
     let mut spellbooks = ecs.write_storage::<InSpellBook>();
     let mut positions = ecs.write_storage::<Position>();
+    let mut castables = ecs.write_storage::<Castable>();
+    let spell = castables.get(blessing)
+        .expect("Spell has no Castable component.");
     spellbooks.insert(blessing, InSpellBook {
-        owner: *player
+        owner: *player,
+        slot: spell.slot
     }).expect("Could not insert blessing spell into player's spellbook.");
     positions.remove(blessing).expect("Could not remove position component from blessing.");
 }

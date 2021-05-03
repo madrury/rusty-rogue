@@ -37,14 +37,29 @@ pub struct BlessingSelectionTile {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct OfferedBlessing {}
 
+
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
+pub enum BlessingSlot {
+    Movement,
+    Assist,
+    NonElementalAttack,
+    FireAttackLevel1,
+    FireAttackLevel2,
+    ChillAttackLevel1,
+    ChillAttackLevel2
+}
+
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Castable {}
+pub struct Castable {
+   pub slot: BlessingSlot
+}
 
 // Tags a spell component as in the spellbook of some other entity. I.e., the
 // referenced entity can cast the spell.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InSpellBook {
-    pub owner: Entity
+    pub owner: Entity,
+    pub slot: BlessingSlot
 }
 
 // Tracks teh number of charges of a spell that are available, and how far we

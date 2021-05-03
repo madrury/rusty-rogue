@@ -5,7 +5,8 @@ use super::{
     SupportSpellcasterKind, MovementRoutingOptions,
     SpawnEntityWhenMeleeAttacked,  EntitySpawnKind, Name, Position,
     Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
-    StatusIsImmuneToFire, StatusIsImmuneToChill, InSpellBook, CanNotAct, spells
+    StatusIsImmuneToFire, StatusIsImmuneToChill, InSpellBook, CanNotAct,
+    BlessingSlot, spells
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
@@ -298,8 +299,9 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         let spell = spells::fireball(ecs, 0, 0, 2, 1)
             .expect("Could not construct fireball spell to put in spellbook.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
-        in_spellbooks.insert(spell, InSpellBook {owner: goblin})
-            .expect("Failed to insert fireball spell in goblin's spellbook.");
+        in_spellbooks.insert(spell, InSpellBook {
+            owner: goblin, slot: BlessingSlot::FireAttackLevel1
+        }).expect("Failed to insert spell in goblin's spellbook.");
         let mut positions = ecs.write_storage::<Position>();
         positions.remove(spell);
     }
@@ -356,8 +358,9 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         let spell = spells::icespike(ecs, 0, 0, 2, 1)
             .expect("Could not construct icespike spell to put in spellbook.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
-        in_spellbooks.insert(spell, InSpellBook {owner: goblin})
-            .expect("Failed to insert icespike spell in goblin's spellbook.");
+        in_spellbooks.insert(spell, InSpellBook {
+            owner: goblin, slot: BlessingSlot::ChillAttackLevel1
+        }).expect("Failed to insert spell in goblin's spellbook.");
         let mut positions = ecs.write_storage::<Position>();
         positions.remove(spell);
     }
@@ -416,8 +419,9 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         let spell = spells::health(ecs, 0, 0, 2, 1)
             .expect("Could not construct healing spell to put in spellbook.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
-        in_spellbooks.insert(spell, InSpellBook {owner: goblin})
-            .expect("Failed to insert healing spell in goblin's spellbook.");
+        in_spellbooks.insert(spell, InSpellBook {
+            owner: goblin, slot: BlessingSlot::Assist
+        }).expect("Failed to insert spell in goblin's spellbook.");
         let mut positions = ecs.write_storage::<Position>();
         positions.remove(spell);
     }
@@ -493,8 +497,9 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             distance_to_keep_away_from_player: GOBLIN_SUPPORT_SPELLCASTER_PLAYER_DISTANCE,
         }).expect("Could not insert MonsterSupportSpellcasterAI.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
-        in_spellbooks.insert(spell, InSpellBook {owner: goblin})
-            .expect("Failed to insert spell in goblin's spellbook.");
+        in_spellbooks.insert(spell, InSpellBook {
+            owner: goblin, slot: BlessingSlot::Assist
+        }).expect("Failed to insert spell in goblin's spellbook.");
         let mut positions = ecs.write_storage::<Position>();
         positions.remove(spell);
     }
