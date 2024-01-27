@@ -322,7 +322,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
 //----------------------------------------------------------------------------
 // Tooltips.
 // Gives information about an entity when the mouse cursor is over it. Displays
-// the eneity's name and any status effects they are currenly under.
+// the entity's name and any status effects they are currenly under.
 //----------------------------------------------------------------------------
 fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let bg_color = RGB::named(rltk::DIM_GREY);
@@ -587,6 +587,54 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
                         thing: useable[selection as usize],
                     };
                 }
+                MenuResult::NoResponse
+            }
+        },
+    }
+}
+
+// Help Menu
+pub fn show_help(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
+
+    let count = 10;
+    let mut y = ITEM_MENU_Y_POSTION - count as i32;
+    
+    ctx.draw_box(
+        ITEM_MENU_X_POSITION,
+        y - 2,
+        ITEM_MENU_WIDTH,
+        (2 * count + 3) as i32,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+    );
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y - 2,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        format!("Help"),
+    );
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y + 2 * count as i32 + 1,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Press ESC to cancel",
+    );
+
+    ctx.print_color(
+        ITEM_MENU_X_POSITION + 3,
+        y + 2 as i32 + 1,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+        "Some help stuff",
+    );
+
+    match ctx.key {
+        None => MenuResult::NoResponse,
+        Some(key) => match key {
+            VirtualKeyCode::Escape => MenuResult::Cancel,
+            _ => {
                 MenuResult::NoResponse
             }
         },

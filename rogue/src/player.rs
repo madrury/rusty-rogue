@@ -47,6 +47,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::T => return RunState::ShowThrowInventory,
             VirtualKeyCode::E => return RunState::ShowEquipInventory,
             VirtualKeyCode::S => return RunState::ShowSpellbook,
+            VirtualKeyCode::Slash => return RunState::ShowHelpMenu,
             VirtualKeyCode::Escape => return RunState::SaveGame,
             VirtualKeyCode::Period => {
                 if try_next_level(&mut gs.ecs) {
