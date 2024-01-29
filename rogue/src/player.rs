@@ -10,6 +10,7 @@ use std::cmp::{max, min};
 
 const WAIT_HEAL_AMOUNT: i32 = 1;
 
+
 const DESCRIPTION_MOVEMENT_SECTION: &'static str = "Movement";
 const DESCRIPTION_MOVE_LEFT: &'static str = "Move left";
 const DESCRIPTION_MOVE_RIGHT: &'static str = "Move right";
@@ -21,16 +22,16 @@ const DESCRIPTION_MOVE_LEFT_DOWN: &'static str = "Move left-down";
 const DESCRIPTION_MOVE_RIGHT_DOWN: &'static str = "Move right-down";
 const DESCRIPTION_MAP_INTERACTIONS_SECTION: &'static str = "Map Interactions";
 const DESCRIPTION_SKIP: &'static str = "Skip turn";
-const DESCRIPTION_PICKUP: &'static str = "Pickup item on tile";
+const DESCRIPTION_PICKUP: &'static str = "Pickup item";
 const DESCRIPTION_DESCEND: &'static str = "Descend";
 const DESCRIPTION_INVENTORIES_SECTION: &'static str = "Inventories";
-const DESCRIPTION_THROW: &'static str = "Throw an item";
-const DESCRIPTION_INVENTORY: &'static str = "Show inventory";
-const DESCRIPTION_EQUIP: &'static str = "Show equipment";
-const DESCRIPTION_SPELLBOOK: &'static str = "Cast a spell";
+const DESCRIPTION_THROW: &'static str = "Throw item";
+const DESCRIPTION_INVENTORY: &'static str = "Inventory";
+const DESCRIPTION_EQUIP: &'static str = "Equipment";
+const DESCRIPTION_SPELLBOOK: &'static str = "Spellbook";
 const DESCRIPTION_MENU_SECTION: &'static str = "Game Menus";
-const DESCRIPTION_HELP: &'static str = "Show help menu";
-const DESCRIPTION_MENU: &'static str = "Show game menu";
+const DESCRIPTION_HELP: &'static str = "Help menu";
+const DESCRIPTION_MENU: &'static str = "Game menu";
 
 const DETAILS_MOVE_LEFT: &'static str = "Move left";
 const DETAILS_MOVE_RIGHT: &'static str = "Move right";
@@ -40,26 +41,27 @@ const DETAILS_MOVE_LEFT_UP: &'static str = "Move left-up";
 const DETAILS_MOVE_RIGHT_UP: &'static str = "Move right-up";
 const DETAILS_MOVE_LEFT_DOWN: &'static str = "Move left-down";
 const DETAILS_MOVE_RIGHT_DOWN: &'static str = "Move right-down";
-const DETAILS_SKIP: &'static str = r#"Skip
+const DETAILS_SKIP: &'static str = r#"Skip turn
 Pass your turn without taking action. NPCs will take a turn as normal.
 If no monsters are nearby and you are not hungry then you will heal a small amount.
 If you're hungry, try finding and eating some food."#;
-const DETAILS_PICKUP: &'static str = r#"Pickup
+const DETAILS_PICKUP: &'static str = r#"Pickup Item
 Pickup items from the current tile.
 Available items can be viewed in your inventory."#;
-const DETAILS_DESCEND: &'static str = "Attempt to descend to the next level through the current tile";
-const DETAILS_THROW: &'static str = r#"Throw
+const DETAILS_DESCEND: &'static str = r#"Descend
+Attempt to descend to the next level through the current tile"#;
+const DETAILS_THROW: &'static str = r#"Throw item
 Throw potions to cause a targeted effect. Not all potions are throwable."#;
 const DETAILS_INVENTORY: &'static str = r#"Inventory
 Show combined inventory"#;
 const DETAILS_EQUIP: &'static str = r#"Equipment
 Manage equipment"#;
-const DETAILS_SPELLBOOK: &'static str = r#"Spellbook.
+const DETAILS_SPELLBOOK: &'static str = r#"Spellbook
 Cast a spells by using scrolls stored in your spellbook.
 Scrolls may store multiple charges and recharge naturally over time."#;
-const DETAILS_HELP: &'static str = r#"Help
+const DETAILS_HELP: &'static str = r#"Help menu
 Show this menu"#;
-const DETAILS_MENU: &'static str = r#"Main Menu
+const DETAILS_MENU: &'static str = r#"Main menu
 Save, load, and exit the game"#;
 
 
