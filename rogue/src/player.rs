@@ -40,18 +40,30 @@ const DETAILS_MOVE_LEFT_UP: &'static str = "Move left-up";
 const DETAILS_MOVE_RIGHT_UP: &'static str = "Move right-up";
 const DETAILS_MOVE_LEFT_DOWN: &'static str = "Move left-down";
 const DETAILS_MOVE_RIGHT_DOWN: &'static str = "Move right-down";
-const DETAILS_SKIP: &'static str = "Pass your turn, potentially regaining stamina and/or health";
-const DETAILS_PICKUP: &'static str = "Pick up items from the current tile";
+const DETAILS_SKIP: &'static str = r#"Skip
+Pass your turn without taking action. NPCs will take a turn as normal.
+If no monsters are nearby and you are not hungry then you will heal a small amount.
+If you're hungry, try finding and eating some food."#;
+const DETAILS_PICKUP: &'static str = r#"Pickup
+Pickup items from the current tile.
+Available items can be viewed in your inventory."#;
 const DETAILS_DESCEND: &'static str = "Attempt to descend to the next level through the current tile";
-const DETAILS_THROW: &'static str = "Throw potions at enemies";
-const DETAILS_INVENTORY: &'static str = "Show combined inventory";
-const DETAILS_EQUIP: &'static str = "Manage equipment";
-const DETAILS_SPELLBOOK: &'static str = "Cast a spells obtained from scrolls";
-const DETAILS_HELP: &'static str = "Show this menu";
-const DETAILS_MENU: &'static str = "Save, load, and exit the game";
+const DETAILS_THROW: &'static str = r#"Throw
+Throw potions to cause a targeted effect. Not all potions are throwable."#;
+const DETAILS_INVENTORY: &'static str = r#"Inventory
+Show combined inventory"#;
+const DETAILS_EQUIP: &'static str = r#"Equipment
+Manage equipment"#;
+const DETAILS_SPELLBOOK: &'static str = r#"Spellbook.
+Cast a spells by using scrolls stored in your spellbook.
+Scrolls may store multiple charges and recharge naturally over time."#;
+const DETAILS_HELP: &'static str = r#"Help
+Show this menu"#;
+const DETAILS_MENU: &'static str = r#"Main Menu
+Save, load, and exit the game"#;
 
 
-pub trait Command {
+pub trait KeyboundCommand {
     fn exec(&self, ecs: &mut World) -> RunState;
     fn key_codes(&self) -> &'static [VirtualKeyCode];
     fn description(&self) -> &'static str;
@@ -67,7 +79,7 @@ struct TryMovePlayerCommand {
 }
 
 
-impl Command for TryMovePlayerCommand {
+impl KeyboundCommand for TryMovePlayerCommand {
     fn exec(&self, ecs: &mut World) -> RunState {
         try_move_player(self.dx, self.dy, ecs)
     }
@@ -86,7 +98,7 @@ impl Command for TryMovePlayerCommand {
 }
 
 struct SkipTurnCommand {}
-impl Command for SkipTurnCommand {
+impl KeyboundCommand for SkipTurnCommand {
     fn exec(&self, ecs: &mut World) -> RunState {
         skip_turn(ecs)
     }
@@ -105,7 +117,7 @@ impl Command for SkipTurnCommand {
 }
 
 struct PickupItemCommand {}
-impl Command for PickupItemCommand {
+impl KeyboundCommand for PickupItemCommand {
     fn exec(&self, ecs: &mut World) -> RunState {
         pickup_item(ecs)
     }
@@ -125,7 +137,7 @@ impl Command for PickupItemCommand {
 
 
 struct DescendCommand {}
-impl Command for DescendCommand {
+impl KeyboundCommand for DescendCommand {
     fn exec(&self, ecs: &mut World) -> RunState {
         if try_next_level(ecs) {
             return RunState::NextLevel
@@ -153,7 +165,7 @@ struct GenericRunstateCommand {
     description: &'static str,
     details: &'static str,
 }
-impl Command for GenericRunstateCommand {
+impl KeyboundCommand for GenericRunstateCommand {
     fn exec(&self, _ecs: &mut World) -> RunState {
         self.run_state
     }
@@ -174,7 +186,7 @@ impl Command for GenericRunstateCommand {
 struct NoopCommand {
     description: &'static str,
 }
-impl Command for NoopCommand {
+impl KeyboundCommand for NoopCommand {
     fn exec(&self, ecs: &mut World) -> RunState {
         RunState::AwaitingInput
     }
@@ -192,7 +204,7 @@ impl Command for NoopCommand {
     }
 }
 
-pub const COMMANDS: [&'static dyn Command; 21] = [
+pub const COMMANDS: [&'static dyn KeyboundCommand; 21] = [
     
     &NoopCommand{description: DESCRIPTION_MOVEMENT_SECTION},
     &TryMovePlayerCommand{dx: -1, dy: 0, codes: &[VirtualKeyCode::Left, VirtualKeyCode::H], description: DESCRIPTION_MOVE_LEFT, details: DETAILS_MOVE_LEFT},
@@ -213,7 +225,7 @@ pub const COMMANDS: [&'static dyn Command; 21] = [
     &GenericRunstateCommand{ run_state: RunState::ShowEquipInventory, codes: &[VirtualKeyCode::E], description: DESCRIPTION_EQUIP, details: DETAILS_EQUIP },
     &GenericRunstateCommand{ run_state: RunState::ShowSpellbook, codes: &[VirtualKeyCode::S], description: DESCRIPTION_SPELLBOOK, details: DETAILS_SPELLBOOK },
     &NoopCommand{description: DESCRIPTION_MENU_SECTION},
-    &GenericRunstateCommand{ run_state: RunState::ShowHelpMenu, codes: &[VirtualKeyCode::Slash], description: DESCRIPTION_HELP, details: DETAILS_HELP },
+    &GenericRunstateCommand{ run_state: RunState::ShowHelpMenu{details: None}, codes: &[VirtualKeyCode::Slash], description: DESCRIPTION_HELP, details: DETAILS_HELP },
     &GenericRunstateCommand{ run_state: RunState::SaveGame, codes: &[VirtualKeyCode::Escape], description: DESCRIPTION_MENU, details: DETAILS_MENU },
 ];
 
@@ -253,7 +265,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::T => RunState::ShowThrowInventory,
             VirtualKeyCode::E => RunState::ShowEquipInventory,
             VirtualKeyCode::S => RunState::ShowSpellbook,
-            VirtualKeyCode::Slash => RunState::ShowHelpMenu,
+            VirtualKeyCode::Slash => RunState::ShowHelpMenu{details: None},
             VirtualKeyCode::Escape => RunState::SaveGame,
             VirtualKeyCode::Period => {
                 if try_next_level(&mut gs.ecs) {

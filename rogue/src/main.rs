@@ -90,7 +90,7 @@ pub enum RunState {
     HazardTurn,
     MonsterTurn,
     UpkeepTrun,
-    ShowHelpMenu,
+    ShowHelpMenu{details: Option<&'static str>},
     ShowBlessingSelectionMenu,
     ShowUseInventory,
     ShowThrowInventory,
@@ -765,12 +765,17 @@ impl GameState for State {
                     TargetingResult::NoResponse => {},
                 }
             }
-            RunState::ShowHelpMenu => {
-                let result = gui::show_help(&mut self.ecs, ctx);
+            RunState::ShowHelpMenu{details} => {
+                let result = gui::show_help(&mut self.ecs, ctx, details);
                 match result {
-                    MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
-                    MenuResult::NoResponse => {},
-                    MenuResult::Selected {thing: _} => {}
+                    HelpMenuResult::Cancel => match details {
+                        None => { newrunstate = RunState::AwaitingInput }
+                        Some(_) => { newrunstate = RunState::ShowHelpMenu{details: None} }
+                    } 
+                    HelpMenuResult::NoSelection {current: _} => {},
+                    HelpMenuResult::Selected {selected: s} => {
+                        newrunstate = RunState::ShowHelpMenu{details: Some(COMMANDS[s].details())}
+                    }
                 }
             }
             RunState::NextLevel => {
