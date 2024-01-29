@@ -2,7 +2,8 @@ use super::{
     get_status_indicators, CombatStats, GameLog, InBackpack, InSpellBook,
     Castable, TargetingKind, SpellCharges, Map, Name, Player, Position,
     Renderable, RunState, StatusIndicatorGlyph, Viewshed, Equipped,
-    HungerClock, SwimStamina, HungerState, BlessingOrbBag, OfferedBlessing
+    HungerClock, SwimStamina, HungerState, BlessingOrbBag, OfferedBlessing,
+    COMMANDS
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -452,7 +453,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
 //----------------------------------------------------------------------------
 const ITEM_MENU_X_POSITION: i32 = 15;
 const ITEM_MENU_Y_POSTION: i32 = 25;
-const ITEM_MENU_WIDTH: i32 = 31;
+const ITEM_MENU_WIDTH: i32 = 35;
 
 pub enum MenuResult {
     Cancel,
@@ -596,39 +597,68 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
 // Help Menu
 pub fn show_help(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
 
-    let count = 10;
-    let mut y = ITEM_MENU_Y_POSTION - count as i32;
+    let max_lines_to_show = COMMANDS.len();
+    let base_y = ITEM_MENU_Y_POSTION - max_lines_to_show as i32;
     
     ctx.draw_box(
         ITEM_MENU_X_POSITION,
-        y - 2,
+        base_y - 2,
         ITEM_MENU_WIDTH,
-        (2 * count + 3) as i32,
+        (2 * max_lines_to_show + 3) as i32,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
     );
     ctx.print_color(
         ITEM_MENU_X_POSITION + 3,
-        y - 2,
+        base_y - 2,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         format!("Help"),
     );
     ctx.print_color(
         ITEM_MENU_X_POSITION + 3,
-        y + 2 * count as i32 + 1,
+        base_y + 2 * max_lines_to_show as i32 + 1,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         "Press ESC to cancel",
     );
 
-    ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
-        y + 2 as i32 + 1,
-        RGB::named(rltk::WHITE),
-        RGB::named(rltk::BLACK),
-        "Some help stuff",
-    );
+    let mut line_number = 0;
+    for i in COMMANDS {
+        // Treat empty command entries as section headers
+        if i.key_codes().len() == 0 {            
+            line_number += 1;
+            ctx.print_color(
+                ITEM_MENU_X_POSITION + 3,
+                base_y + 2 as i32 + line_number,
+                RGB::named(rltk::PINK),
+                RGB::named(rltk::BLACK),
+                format!("{}", i.description()),
+            );
+
+        } else {
+            // Print key(s)
+            let key_text = i.key_codes().iter().map(|k| format!("{:?}", k) ).collect::<Vec<String>>().join(", ");
+            let formatted_key_text = format!("{: >9}: ", key_text);
+            ctx.print_color(
+                ITEM_MENU_X_POSITION + 3,
+                base_y + 2 as i32 + line_number,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                formatted_key_text,
+            );
+
+            // Print short description
+            ctx.print_color(
+                ITEM_MENU_X_POSITION + 3 + 11,
+                base_y + 2 as i32 + line_number,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                i.description(),
+            );
+        }
+        line_number += 1;
+    }
 
     match ctx.key {
         None => MenuResult::NoResponse,
