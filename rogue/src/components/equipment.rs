@@ -8,7 +8,6 @@ use serde::{Serialize, Deserialize};
 //------------------------------------------------------------------
 // Equipment System Components
 //------------------------------------------------------------------
-// An entity with this component can be equipped.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum EquipmentSlot {
     Melee, Armor

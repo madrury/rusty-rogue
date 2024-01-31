@@ -1,8 +1,10 @@
 use specs::prelude::*;
 use super::{
-    CombatStats, WantsToTakeDamage, Player, Name, GameLog, Equipped,
-    ElementalDamageKind, GrantsMeleeDefenseBonus, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, StatusIsPhysicalDefenseBuffed, InSpellBook
+    Position, CombatStats, WantsToTakeDamage, Player, Name, GameLog,
+    Equipped, ElementalDamageKind, GrantsMeleeDefenseBonus,
+    StatusIsImmuneToFire, StatusIsImmuneToChill,
+    StatusIsPhysicalDefenseBuffed, InSpellBook, SpawnEntityWhenKilled,
+    EntitySpawnRequest, EntitySpawnRequestBuffer
 };
 
 pub struct DamageSystem {}
@@ -16,6 +18,9 @@ impl DamageSystem {
             let combat_stats = ecs.read_storage::<CombatStats>();
             let players = ecs.read_storage::<Player>();
             let names = ecs.read_storage::<Name>();
+            let spawns_when_killed = ecs.read_storage::<SpawnEntityWhenKilled>();
+            let positions = ecs.read_storage::<Position>();
+            let mut spawn_buffer = ecs.write_resource::<EntitySpawnRequestBuffer>();
             let mut log = ecs.write_resource::<GameLog>();
             let entities = ecs.entities();
             for (entity, stats) in (&entities, &combat_stats).join() {
@@ -24,7 +29,7 @@ impl DamageSystem {
                     // player vs. some other entity.
                     let player = players.get(entity);
                     match player {
-                        Some(_) => {}//println!("You are dead."),
+                        Some(_) => {} // TODO: Actually do something here!
                         None => {
                             let victim = names.get(entity);
                             if let Some(victim) = victim {
@@ -34,6 +39,14 @@ impl DamageSystem {
                             let spells = DamageSystem::get_any_owned_entities(ecs, &entity);
                             for spell in spells {
                                 dead.push(spell);
+                            }
+                            // Check if we're supposed to drop anything.
+                            if let Some(spawns) = spawns_when_killed.get(entity) {
+                                let pos = positions.get(entity)
+                                    .expect("Attempting to drop item but entity has no position.");
+                                spawn_buffer.request(EntitySpawnRequest {
+                                    x: pos.x, y: pos.y, kind: spawns.kind
+                                })
                             }
                             dead.push(entity);
                         }

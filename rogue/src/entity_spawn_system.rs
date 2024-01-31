@@ -111,6 +111,8 @@ pub fn process_entity_spawn_request_buffer(ecs: &mut World) {
     for request in spawn_requests.iter() {
         // TODO: Check that the index is within bounds!
         match request.kind {
+            EntitySpawnKind::MagicOrb =>
+                entity_spawners::magic::blessing_orb(ecs, request.x, request.y),
             EntitySpawnKind::Fire {spread_chance, dissipate_chance} =>
                 entity_spawners::hazards::fire(ecs, request.x, request.y, spread_chance, dissipate_chance),
             EntitySpawnKind::Chill {spread_chance, dissipate_chance} =>

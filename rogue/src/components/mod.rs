@@ -38,16 +38,13 @@ pub struct Hazard {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct PickUpable {}
 
-// An entity with this component can be picked up.
+// An entity with this component can be used from the item menu.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Useable {}
 
 // An entity with this component can be thrown.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
-
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Castable {}
 
 // An entity with this component can be used as a targeted effect.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]

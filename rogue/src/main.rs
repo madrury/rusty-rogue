@@ -28,6 +28,8 @@ mod player;
 use player::*;
 mod gui;
 use gui::*;
+mod blessings;
+use blessings::*;
 mod visibility_system;
 use visibility_system::*;
 mod monster_ai_system;
@@ -68,10 +70,10 @@ mod gamelog;
 use gamelog::{GameLog};
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = true;
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
-const DEBUG_HIGHLIGHT_STAIRS: bool = true;
+const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 
@@ -88,6 +90,7 @@ pub enum RunState {
     HazardTurn,
     MonsterTurn,
     UpkeepTrun,
+    ShowBlessingSelectionMenu,
     ShowUseInventory,
     ShowThrowInventory,
     ShowEquipInventory,
@@ -185,6 +188,7 @@ impl State {
         pos.run_now(&self.ecs);
         DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
         DamageSystem::clean_up_the_dead(&mut self.ecs);
+        process_entity_spawn_request_buffer(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -322,7 +326,7 @@ impl State {
         // Compute a position to place the player. We're only computing the
         // position here, so this is stateless, we don't actually update any ECS
         // state yet.
-        let mut player_start_position = Point {x: 0, y: 0};
+        let mut player_start_position;
         loop {
             let map = self.ecs.read_resource::<Map>();
             player_start_position = builder.starting_position(&self.ecs);
@@ -536,13 +540,21 @@ impl GameState for State {
             }
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
+                let get_blessing = is_player_encroaching_blessing_tile(&self.ecs)
+                    && does_player_have_sufficient_orbs_for_blessing(&self.ecs);
+                let nextstate = if get_blessing {
+                    create_offered_blessings(&mut self.ecs);
+                    RunState::ShowBlessingSelectionMenu
+                } else {
+                    RunState::MonsterTurn
+                };
                 if is_any_animation_alive(&self.ecs) {
-                    self.next_state = Some(RunState::MonsterTurn);
+                    self.next_state = Some(nextstate);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                self.run_map_indexing_system();
-                    newrunstate = RunState::MonsterTurn;
+                    self.run_map_indexing_system();
+                    newrunstate = nextstate;
                 }
             }
             RunState::MonsterTurn => {
@@ -560,6 +572,26 @@ impl GameState for State {
                 self.run_upkeep_turn_systems();
                 self.run_map_indexing_system();
                 newrunstate = RunState::AwaitingInput;
+            }
+            RunState::ShowBlessingSelectionMenu => {
+                let result = gui::show_blessings(&mut self.ecs, ctx);
+                match result {
+                    MenuResult::Cancel => {
+                        clean_up_offered_blessings(&mut self.ecs);
+                        newrunstate = RunState::MonsterTurn
+                    },
+                    MenuResult::NoResponse => {},
+                    MenuResult::Selected {thing} => {
+                        receive_blessing(&mut self.ecs, thing);
+                        cash_in_orbs_for_blessing(&mut self.ecs);
+                        {
+                            let mut offereds = self.ecs.write_storage::<OfferedBlessing>();
+                            offereds.remove(thing);
+                        }
+                        clean_up_offered_blessings(&mut self.ecs);
+                        newrunstate = RunState::MonsterTurn;
+                    }
+                }
             }
             RunState::ShowUseInventory => {
                 let result = gui::show_inventory::<Useable>(&mut self.ecs, ctx, "Useable");
@@ -715,6 +747,7 @@ impl GameState for State {
 
 
 fn main() -> rltk::BError {
+
     use rltk::RltkBuilder;
     let context = RltkBuilder::new()
         .with_fps_cap(60.0)
@@ -762,8 +795,12 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<InSpellBook>();
     gs.ecs.register::<Equipped>();
+    gs.ecs.register::<BlessingOrbBag>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Hazard>();
+    gs.ecs.register::<BlessingOrb>();
+    gs.ecs.register::<BlessingSelectionTile>();
+    gs.ecs.register::<OfferedBlessing>();
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<CanNotAct>();
@@ -807,6 +844,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<SpawnEntityWhenEncroachedUpon>();
     gs.ecs.register::<SpawnEntityWhenMeleeAttacked>();
+    gs.ecs.register::<SpawnEntityWhenKilled>();
     gs.ecs.register::<ChanceToSpawnAdjacentEntity>();
     gs.ecs.register::<ChanceToSpawnEntityWhenBurning>();
     gs.ecs.register::<ChanceToInflictBurningOnAdjacentEntities>();
@@ -833,7 +871,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(ParticleRequestBuffer::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
 
-    // Create teh player entity. Note that we're not computing the correct
+    // Create the player entity. Note that we're not computing the correct
     // position to place the player here, since that needs to happen after we've
     // generated terrain and monsters.
     let player = entity_spawners::player::spawn_player(&mut gs.ecs, 0, 0);

@@ -7,7 +7,7 @@ use super::{
     AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
     ProvidesFullHealing, SpawnsEntityInAreaWhenTargeted,
     MoveToPositionWhenTargeted, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind,
+    ElementalDamageKind, BlessingSlot
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -15,6 +15,51 @@ use specs::prelude::*;
 //----------------------------------------------------------------------------
 // Fire elemental attack spells.
 //----------------------------------------------------------------------------
+pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('♪'),
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+            visible_out_of_fov: false
+        })
+        .with(Name {name: "Scroll of Fireball".to_string()})
+        .with(PickUpable {})
+        .with(Castable {
+            slot: BlessingSlot::FireAttackLevel1
+        })
+        .with(SpellCharges {
+            max_charges: max_charges,
+            charges: charges,
+            regen_time: 100,
+            time: 0
+        })
+        .with(Targeted {
+            verb: "casts".to_string(),
+            range: 6.5,
+            kind: TargetingKind::AlongRay {until_blocked: true}
+        })
+        .with(InflictsDamageWhenTargeted {
+            damage: 10,
+            kind: ElementalDamageKind::Fire
+        })
+        .with(InflictsBurningWhenTargeted {
+            turns: 4,
+            tick_damage: 4
+        })
+        .with(AlongRayAnimationWhenTargeted {
+            fg: RGB::named(rltk::ORANGE),
+            bg: RGB::named(rltk::RED),
+            glyph: rltk::to_cp437('^'),
+            until_blocked: true
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+    Some(entity)
+}
+
 pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
@@ -27,7 +72,9 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(Name {name: "Scroll of Fireblast".to_string()})
         .with(PickUpable {})
-        .with(Castable {})
+        .with(Castable {
+            slot: BlessingSlot::FireAttackLevel2
+        })
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
@@ -65,19 +112,24 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(entity)
 }
 
-pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
+//----------------------------------------------------------------------------
+// Chill elemental attack spells.
+//----------------------------------------------------------------------------
+pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('♪'),
-            fg: RGB::named(rltk::ORANGE),
+            fg: RGB::named(rltk::LIGHT_BLUE),
             bg: RGB::named(rltk::BLACK),
             order: 2,
             visible_out_of_fov: false
         })
-        .with(Name {name: "Scroll of Fireball".to_string()})
+        .with(Name {name: "Scroll of Icespike".to_string()})
         .with(PickUpable {})
-        .with(Castable {})
+        .with(Castable {
+            slot: BlessingSlot::ChillAttackLevel1
+        })
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
@@ -91,16 +143,15 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         })
         .with(InflictsDamageWhenTargeted {
             damage: 10,
-            kind: ElementalDamageKind::Fire
+            kind: ElementalDamageKind::Chill
         })
-        .with(InflictsBurningWhenTargeted {
-            turns: 4,
-            tick_damage: 4
+        .with(InflictsFreezingWhenTargeted {
+            turns: 6,
         })
         .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::ORANGE),
-            bg: RGB::named(rltk::RED),
-            glyph: rltk::to_cp437('^'),
+            fg: RGB::named(rltk::WHITE),
+            bg: RGB::named(rltk::LIGHT_BLUE),
+            glyph: rltk::to_cp437('*'),
             until_blocked: true
         })
         .marked::<SimpleMarker<SerializeMe>>()
@@ -108,9 +159,6 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
     Some(entity)
 }
 
-//----------------------------------------------------------------------------
-// Chill elemental attack spells.
-//----------------------------------------------------------------------------
 pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
@@ -123,7 +171,9 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(Name {name: "Scroll of Iceblast".to_string()})
         .with(PickUpable {})
-        .with(Castable {})
+        .with(Castable {
+            slot: BlessingSlot::ChillAttackLevel2
+        })
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
@@ -158,48 +208,6 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(entity)
 }
 
-pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -> Option<Entity> {
-    let entity = ecs.create_entity()
-        .with(Position {x, y})
-        .with(Renderable {
-            glyph: rltk::to_cp437('♪'),
-            fg: RGB::named(rltk::LIGHT_BLUE),
-            bg: RGB::named(rltk::BLACK),
-            order: 2,
-            visible_out_of_fov: false
-        })
-        .with(Name {name: "Scroll of Icespike".to_string()})
-        .with(PickUpable {})
-        .with(Castable {})
-        .with(SpellCharges {
-            max_charges: max_charges,
-            charges: charges,
-            regen_time: 100,
-            time: 0
-        })
-        .with(Targeted {
-            verb: "casts".to_string(),
-            range: 6.5,
-            kind: TargetingKind::AlongRay {until_blocked: true}
-        })
-        .with(InflictsDamageWhenTargeted {
-            damage: 10,
-            kind: ElementalDamageKind::Chill
-        })
-        .with(InflictsFreezingWhenTargeted {
-            turns: 6,
-        })
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::WHITE),
-            bg: RGB::named(rltk::LIGHT_BLUE),
-            glyph: rltk::to_cp437('*'),
-            until_blocked: true
-        })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-    Some(entity)
-}
-
 //----------------------------------------------------------------------------
 // Non-elemental attack spells.
 //----------------------------------------------------------------------------
@@ -215,7 +223,9 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
         })
         .with(Name {name: "Scroll of Magic Missile".to_string()})
         .with(PickUpable {})
-        .with(Castable {})
+        .with(Castable {
+            slot: BlessingSlot::NonElementalAttack
+        })
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
@@ -257,7 +267,9 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(Name {name: "Scroll of Blinking".to_string()})
         .with(PickUpable {})
-        .with(Castable {})
+        .with(Castable {
+            slot: BlessingSlot::Movement
+        })
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
@@ -293,7 +305,9 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
         })
         .with(Name {name: "Scroll of Healing".to_string()})
         .with(PickUpable {})
-        .with(Castable {})
+        .with(Castable {
+            slot: BlessingSlot::Assist
+        })
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
@@ -329,7 +343,9 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
         })
         .with(Name {name: "Scroll of Invigorate".to_string()})
         .with(PickUpable {})
-        .with(Castable {})
+        .with(Castable {
+            slot: BlessingSlot::Assist
+        })
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
@@ -365,7 +381,9 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
         })
         .with(Name {name: "Scroll of Protection".to_string()})
         .with(PickUpable {})
-        .with(Castable {})
+        .with(Castable {
+            slot: BlessingSlot::Assist
+        })
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,

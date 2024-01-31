@@ -47,7 +47,7 @@ pub struct MonsterBasicAI {
     pub chance_to_move_to_random_adjacent_tile: i32,
     // Should the monster try to escape when at low health?
     pub escape_when_at_low_health: bool,
-    // These attributes allow a monster to continue following the plyer even
+    // These attributes allow a monster to continue following the player even
     // when the player moves out of the monsters viewrange.
     pub lost_visibility_keep_following_turns_max: i32,
     pub lost_visibility_keep_following_turns_remaining: i32,
