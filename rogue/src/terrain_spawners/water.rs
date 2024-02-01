@@ -105,7 +105,7 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
             glyph: rltk::to_cp437('~'),
             fg: fgcolor,
             bg: bgcolor,
-            order: 3,
+            order: 4,
             visible_out_of_fov: true
         })
         .with(SetsBgColor {order: 2})
@@ -133,7 +133,7 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
             glyph: rltk::to_cp437('~'),
             fg: fgcolor,
             bg: bgcolor,
-            order: 3,
+            order: 4,
             visible_out_of_fov: true
         })
         .with(SetsBgColor {order: 2})
