@@ -29,12 +29,15 @@ impl<'a> System<'a> for ItemCollectionSystem {
             positions.remove(pickup.item);
             // Spells go in the spellbook, orbs bump the orb count, everything
             // else goes in a backpack.
-            let is_castable = castables.get(pickup.item).is_some();
+            let castable = castables.get(pickup.item);
+            let is_castable = castable.is_some();
             let is_orb = orbs.get(pickup.item).is_some();
             if is_castable {
                 spellbooks
-                    .insert(pickup.item, InSpellBook {owner: pickup.by})
-                    .expect("Unable to insert spell into spellbook.");
+                    .insert(pickup.item, InSpellBook {
+                        owner: pickup.by,
+                        slot: castable.unwrap().slot
+                    }).expect("Unable to insert spell into spellbook.");
             } else if is_orb {
                 let orb_bag = orb_bags.get_mut(pickup.by)
                     .expect("Attempting to add to orb count but no orb bag found.");

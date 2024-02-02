@@ -325,8 +325,9 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
 
 //----------------------------------------------------------------------------
 // Tooltips.
-// Gives information about an entity when the mouse cursor is over it. Displays
-// the entity's name and any status effects they are currenly under.
+// Gives short information about an entity when the mouse cursor is positioned
+// in its occupied tile. Displays the eneity's name and any status effects they
+// currently posess.
 //----------------------------------------------------------------------------
 fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let bg_color = RGB::named(rltk::DIM_GREY);
@@ -341,59 +342,59 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     }
 
     // Grab info about the entities at the mouse positions:
-    //   - Names
-    //   - Glyphs representing current status effects.
-    let mut tooltip: Vec<String> = Vec::new();
+    let mut tooltips: Vec<String> = Vec::new();
     let mut status_indicators: Vec<Vec<StatusIndicatorGlyph>> = Vec::new();
     for (entity, name, pos) in (&ecs.entities(), &names, &positions).join() {
         let idx = map.xy_idx(pos.x, pos.y);
         if pos.x == mpos.0 && pos.y == mpos.1 && map.visible_tiles[idx] {
-            tooltip.push(name.name.to_string());
+            tooltips.push(name.name.to_string());
             status_indicators.push(get_status_indicators(&ecs, &entity))
         }
     }
+    // Sort the tooltip, status pairs by increasing length of the tooltip. This
+    // looks best when rendered.
+    let mut both: Vec<(String, Vec<StatusIndicatorGlyph>)> = tooltips
+        .into_iter()
+        .zip(status_indicators.into_iter())
+        .collect();
+    both.sort_by(|a, b| a.0.len().cmp(&b.0.len()));
+    let (tooltips, status_indicators): (Vec<String>, Vec<Vec<StatusIndicatorGlyph>>) = both.into_iter().unzip();
 
     // Draw the tooltip.
-    if !tooltip.is_empty() {
+    if !tooltips.is_empty() {
         // Calculate the width needed to draw the tooltip. We need to fit the
-        // text (entity names), and status indicators.
+        // text (entity name) and status indicators.
         let mut width: i32 = 0;
-        for (s, inds) in tooltip.iter().zip(status_indicators.iter()) {
+        for (s, inds) in tooltips.iter().zip(status_indicators.iter()) {
             if width < s.len() as i32 + inds.len() as i32 {
                 width = s.len() as i32 + inds.len() as i32;
             }
         }
-        // Buffer room for spacing and an arrow charecter.
+        // Buffer room for spacing and an arrow charecter pointing at the tile.
         width += 2;
 
         // Cursor is on the right half of the screen, so render the tooltip to
-        // the left.
-        // (NAME OF ENTITY)(STATUS GLYPHS) →ENTITY
+        // its left.
         if mpos.0 > map.width / 2 {
             let arrow_pos = Point::new(mpos.0 - 1, mpos.1);
             let left_x = mpos.0 - width;
             let mut y = mpos.1;
-            for (s, inds) in tooltip.iter().zip(status_indicators.iter()) {
-                // Print the entities name.
+            // Draw the background rectangle of the tooltip.
+            for i in 0..width {
+                for j in 0..tooltips.len() {
+                    ctx.print_color(left_x + i, y + j as i32, RGB::named(rltk::WHITE), bg_color, " ");
+                }
+            }
+            // Render the tooltip line-by-line.
+            for (s, inds) in tooltips.iter().zip(status_indicators.iter()) {
                 ctx.print_color(left_x, y, RGB::named(rltk::WHITE), bg_color, s);
-                // Print indicators for the entities current status.
-                for (i, ind) in inds.iter().enumerate() {
+                for (i, statusind) in inds.iter().enumerate() {
                     ctx.set(
                         left_x + s.len() as i32 + i as i32,
                         y,
-                        ind.color,
+                        statusind.color,
                         bg_color,
-                        ind.glyph,
-                    );
-                }
-                let padding = width - s.len() as i32 - inds.len() as i32;
-                for i in 0..padding {
-                    ctx.print_color(
-                        arrow_pos.x - i,
-                        y,
-                        RGB::named(rltk::WHITE),
-                        bg_color,
-                        &" ".to_string(),
+                        statusind.glyph,
                     );
                 }
                 y += 1;
@@ -407,32 +408,26 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
             );
         // Tooltip is on the left half of the screen, so render the tooltip to
         // the right.
-        // (ENTITY)← (NAME OF ENTITY)(STATUS GLYPHS)
         } else {
             let arrow_pos = Point::new(mpos.0 + 1, mpos.1);
-            let left_x = mpos.0 + 3;
+            let left_x = mpos.0 + 1;
             let mut y = mpos.1;
-            for (s, inds) in tooltip.iter().zip(status_indicators.iter()) {
-                // Print the entities name.
-                ctx.print_color(left_x, y, RGB::named(rltk::WHITE), bg_color, s);
-                // Print indicators for the entities current status.
-                for (i, ind) in inds.iter().enumerate() {
-                    ctx.set(
-                        left_x + s.len() as i32 + i as i32,
-                        y,
-                        ind.color,
-                        bg_color,
-                        ind.glyph,
-                    );
+            // Draw the background rectangle of the tooltip.
+            for i in 0..width {
+                for j in 0..tooltips.len() {
+                    ctx.print_color(left_x + i, y + j as i32, RGB::named(rltk::WHITE), bg_color, " ");
                 }
-                let padding = width - s.len() as i32 - inds.len() as i32;
-                for i in 0..padding {
-                    ctx.print_color(
-                        arrow_pos.x + i,
+            }
+            // Render the tooltip line-by-line.
+            for (s, inds) in tooltips.iter().zip(status_indicators.iter()) {
+                ctx.print_color(left_x + 2, y, RGB::named(rltk::WHITE), bg_color, s);
+                for (i, statusind) in inds.iter().enumerate() {
+                    ctx.set(
+                        left_x + 2 + s.len() as i32 + i as i32,
                         y,
-                        RGB::named(rltk::WHITE),
+                        statusind.color,
                         bg_color,
-                        &" ".to_string(),
+                        statusind.glyph,
                     );
                 }
                 y += 1;

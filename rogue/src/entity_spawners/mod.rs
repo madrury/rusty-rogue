@@ -22,8 +22,8 @@ use super::{
     ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
     DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, SpawnEntityWhenKilled,
-    MAP_WIDTH, random_table, noise
+    StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
+    SpawnEntityWhenKilled, MAP_WIDTH, random_table, noise
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
@@ -76,6 +76,7 @@ pub fn spawn_items_in_region(ecs: &mut World, region: &[usize], depth: i32) {
         spawn_random_item(ecs, x, y, depth);
     }
 }
+
 // Spawns a randomly chosen item at a specified location.
 #[derive(Clone, Copy)]
 enum ItemType {
@@ -236,6 +237,8 @@ impl MonsterSpawnParameters {
 }
 
 // Construct the (static) monster spawn table.
+// TODO: It seems wasteful to reconstruct this every time we spawn a monster,
+// maybe we could insert it into the ECS?
 fn get_monster_spawn_table() -> HashMap<MonsterType, MonsterSpawnParameters> {
     let mut spawn_table: HashMap<MonsterType, MonsterSpawnParameters> = HashMap::new();
     //                                                 difficulty, min-depth, max-depth, chance.
@@ -253,10 +256,12 @@ fn get_monster_spawn_table() -> HashMap<MonsterType, MonsterSpawnParameters> {
     spawn_table
 }
 
+// TODO: When we get around to implementing a more general drop system, this
+// should become part of that. We leave it here for convenience at this point.
+const CHANCE_DROP_ORB: i32 = 20;
+
 // Spawn a single random monster at a given depth, according to the static spawn
 // table given above.
-const CHANCE_DROP_ORB: i32 = 100;
-
 fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) -> Option<MonsterType> {
     let monster: Option<MonsterType>;
     {
@@ -285,6 +290,8 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) -> Option<M
         Some(MonsterType::BlueJelly) => monsters::blue_jelly(ecs, x, y),
         _ => {None}
     };
+    // TODO: Same as above, this should really be part of a more general drop
+    // system.
     if let Some(entity) = entity {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         if rng.roll_dice(1, 100) <= CHANCE_DROP_ORB {

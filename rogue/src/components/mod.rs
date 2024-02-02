@@ -38,7 +38,7 @@ pub struct Hazard {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct PickUpable {}
 
-// An entity with this component can be picked up.
+// An entity with this component can be used from the item menu.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Useable {}
 
