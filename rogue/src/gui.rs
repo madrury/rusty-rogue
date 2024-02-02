@@ -454,9 +454,9 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
 // a component type. The menu will display the entities in the player's backpack
 // with that component.
 //----------------------------------------------------------------------------
-const ITEM_MENU_X_POSITION: i32 = 15;
-const ITEM_MENU_Y_POSTION: i32 = 25;
-const ITEM_MENU_WIDTH: i32 = 35;
+const MODAL_MENU_X_POSITION: i32 = 15;
+const MODAL_MENU_Y_POSITION: i32 = 25;
+const MODAL_MENU_WIDTH: i32 = 35;
 
 pub enum MenuResult {
     Cancel,
@@ -480,26 +480,26 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
         .filter(|(item, _use, _do)| item.owner == *player);
     let count = inventory.count();
 
-    let mut y = ITEM_MENU_Y_POSTION - (count / 2) as i32;
+    let mut y = MODAL_MENU_Y_POSITION - (count / 2) as i32;
 
     // Draw the outline of the menu, and the helper text.
     ctx.draw_box(
-        ITEM_MENU_X_POSITION,
+        MODAL_MENU_X_POSITION,
         y - 2,
-        ITEM_MENU_WIDTH,
+        MODAL_MENU_WIDTH,
         (count + 3) as i32,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
     );
     ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
+        MODAL_MENU_X_POSITION + 3,
         y - 2,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         format!("{} Items", typestr),
     );
     ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
+        MODAL_MENU_X_POSITION + 3,
         y + count as i32 + 1,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
@@ -521,21 +521,21 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
         ctx.set(
-            ITEM_MENU_X_POSITION + 1,
+            MODAL_MENU_X_POSITION + 1,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
             rltk::to_cp437('('),
         );
         ctx.set(
-            ITEM_MENU_X_POSITION + 2,
+            MODAL_MENU_X_POSITION + 2,
             y,
             RGB::named(rltk::YELLOW),
             RGB::named(rltk::BLACK),
             selection_char,
         );
         ctx.set(
-            ITEM_MENU_X_POSITION + 3,
+            MODAL_MENU_X_POSITION + 3,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
@@ -544,14 +544,14 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
         // Draw the item glyph if one exists.
         match render {
             Some(render) => ctx.set(
-                ITEM_MENU_X_POSITION + 4,
+                MODAL_MENU_X_POSITION + 4,
                 y,
                 render.fg,
                 RGB::named(rltk::BLACK),
                 render.glyph,
             ),
             None => ctx.set(
-                ITEM_MENU_X_POSITION + 4,
+                MODAL_MENU_X_POSITION + 4,
                 y,
                 RGB::named(rltk::WHITE),
                 RGB::named(rltk::BLACK),
@@ -568,7 +568,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
             RGB::named(rltk::WHITE)
         };
         ctx.print_color(
-            ITEM_MENU_X_POSITION + 6,
+            MODAL_MENU_X_POSITION + 6,
             y,
             text_fg,
             RGB::named(rltk::BLACK),
@@ -604,7 +604,6 @@ pub enum HelpMenuResult {
     Selected { selected: usize },
 }
 
-// TODO - Where should this live?
 pub fn wrap_line(text: &'static str, width: usize) -> Vec<String> {
     let mut results = vec![];
     let mut current_length = 0;
@@ -627,26 +626,26 @@ pub fn wrap_line(text: &'static str, width: usize) -> Vec<String> {
 // Help Menu
 pub fn show_help(ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>) -> HelpMenuResult {
     let max_lines_to_show = COMMANDS.len();
-    let base_y = ITEM_MENU_Y_POSTION - max_lines_to_show as i32;
+    let base_y = MODAL_MENU_Y_POSITION - max_lines_to_show as i32;
 
     ctx.draw_box(
-        ITEM_MENU_X_POSITION,
+        MODAL_MENU_X_POSITION,
         base_y - 2,
-        ITEM_MENU_WIDTH,
-        (2 * max_lines_to_show + 3) as i32,
+        MODAL_MENU_WIDTH,
+        (max_lines_to_show + 9) as i32,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
     );
     ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
+        MODAL_MENU_X_POSITION + 3,
         base_y - 2,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         format!("Help"),
     );
     ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
-        base_y + 2 * max_lines_to_show as i32 + 1,
+        MODAL_MENU_X_POSITION + 3,
+        base_y + max_lines_to_show as i32 + 7,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         "Press ESC to cancel",
@@ -661,13 +660,14 @@ pub fn show_help(ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>)
     match details {
         Some(d) => {
             let mut detail_print_color = rltk::PINK;
-            let lines = d.split('\n')
+            let lines = d
+                .split('\n')
                 .flat_map(|s| vec![s, "\n"])
-                .flat_map(|s| wrap_line(s, (ITEM_MENU_WIDTH - 4) as usize));
+                .flat_map(|s| wrap_line(s, (MODAL_MENU_WIDTH - 4) as usize));
             for (i, l) in lines.enumerate() {
                 ctx.print_color(
-                    ITEM_MENU_X_POSITION + 5,
-                    base_y + 2 + i as i32,
+                    MODAL_MENU_X_POSITION + 5,
+                    base_y + i as i32,
                     RGB::named(detail_print_color),
                     RGB::named(rltk::BLACK),
                     l,
@@ -682,8 +682,8 @@ pub fn show_help(ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>)
                 if c.key_codes().len() == 0 {
                     line_number += 1;
                     ctx.print_color(
-                        ITEM_MENU_X_POSITION + 5,
-                        base_y + 2 as i32 + line_number,
+                        MODAL_MENU_X_POSITION + 5,
+                        base_y as i32 + line_number,
                         RGB::named(rltk::PINK),
                         RGB::named(rltk::BLACK),
                         format!("{}", c.description()),
@@ -692,22 +692,22 @@ pub fn show_help(ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>)
                     // Draw the selection information. (a), (b), (c) etc.
                     let selection_char = 97 + i as rltk::FontCharType;
                     ctx.set(
-                        ITEM_MENU_X_POSITION + 1,
-                        base_y + 2 as i32 + line_number,
+                        MODAL_MENU_X_POSITION + 1,
+                        base_y as i32 + line_number,
                         RGB::named(rltk::WHITE),
                         RGB::named(rltk::BLACK),
                         rltk::to_cp437('('),
                     );
                     ctx.set(
-                        ITEM_MENU_X_POSITION + 2,
-                        base_y + 2 as i32 + line_number,
+                        MODAL_MENU_X_POSITION + 2,
+                        base_y as i32 + line_number,
                         RGB::named(rltk::YELLOW),
                         RGB::named(rltk::BLACK),
                         selection_char,
                     );
                     ctx.set(
-                        ITEM_MENU_X_POSITION + 3,
-                        base_y + 2 as i32 + line_number,
+                        MODAL_MENU_X_POSITION + 3,
+                        base_y as i32 + line_number,
                         RGB::named(rltk::WHITE),
                         RGB::named(rltk::BLACK),
                         rltk::to_cp437(')'),
@@ -721,8 +721,8 @@ pub fn show_help(ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>)
                         .join(", ");
                     let formatted_key_text = format!("{: >9}: ", key_text);
                     ctx.print_color(
-                        ITEM_MENU_X_POSITION + 5,
-                        base_y + 2 as i32 + line_number,
+                        MODAL_MENU_X_POSITION + 5,
+                        base_y as i32 + line_number,
                         RGB::named(rltk::WHITE),
                         RGB::named(rltk::BLACK),
                         formatted_key_text,
@@ -730,8 +730,8 @@ pub fn show_help(ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>)
 
                     // Print short description
                     ctx.print_color(
-                        ITEM_MENU_X_POSITION + 5 + 11,
-                        base_y + 2 as i32 + line_number,
+                        MODAL_MENU_X_POSITION + 5 + 11,
+                        base_y as i32 + line_number,
                         RGB::named(rltk::WHITE),
                         RGB::named(rltk::BLACK),
                         c.description(),
@@ -742,17 +742,18 @@ pub fn show_help(ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>)
         }
     }
 
-
     match ctx.key {
-        None => HelpMenuResult::NoSelection{ current: 0 },
+        None => HelpMenuResult::NoSelection { current: 0 },
         Some(key) => match key {
             VirtualKeyCode::Escape => HelpMenuResult::Cancel,
             _ => {
                 let selection = rltk::letter_to_option(key);
                 if selection > -1 && selection < COMMANDS.len() as i32 {
-                    return HelpMenuResult::Selected{ selected: (selection as usize)};
+                    return HelpMenuResult::Selected {
+                        selected: (selection as usize),
+                    };
                 }
-                HelpMenuResult::NoSelection{ current: 0}
+                HelpMenuResult::NoSelection { current: 0 }
             }
         },
     }
@@ -777,26 +778,26 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         .filter(|(spell, _use, _do)| spell.owner == *player);
     let count = spellbook.count();
 
-    let mut y = ITEM_MENU_Y_POSTION - count as i32;
+    let mut y = MODAL_MENU_Y_POSITION - count as i32;
 
     // Draw the outline of the menu, and the helper text.
     ctx.draw_box(
-        ITEM_MENU_X_POSITION,
+        MODAL_MENU_X_POSITION,
         y - 2,
-        ITEM_MENU_WIDTH,
+        MODAL_MENU_WIDTH,
         (2 * count + 3) as i32,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
     );
     ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
+        MODAL_MENU_X_POSITION + 3,
         y - 2,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         format!("Castable Spells"),
     );
     ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
+        MODAL_MENU_X_POSITION + 3,
         y + 2 * count as i32 + 1,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
@@ -818,21 +819,21 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
         ctx.set(
-            ITEM_MENU_X_POSITION + 1,
+            MODAL_MENU_X_POSITION + 1,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
             rltk::to_cp437('('),
         );
         ctx.set(
-            ITEM_MENU_X_POSITION + 2,
+            MODAL_MENU_X_POSITION + 2,
             y,
             RGB::named(rltk::YELLOW),
             RGB::named(rltk::BLACK),
             selection_char,
         );
         ctx.set(
-            ITEM_MENU_X_POSITION + 3,
+            MODAL_MENU_X_POSITION + 3,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
@@ -842,14 +843,14 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         let render = renderables.get(spell);
         match render {
             Some(render) => ctx.set(
-                ITEM_MENU_X_POSITION + 4,
+                MODAL_MENU_X_POSITION + 4,
                 y,
                 render.fg,
                 RGB::named(rltk::BLACK),
                 render.glyph,
             ),
             None => ctx.set(
-                ITEM_MENU_X_POSITION + 4,
+                MODAL_MENU_X_POSITION + 4,
                 y,
                 RGB::named(rltk::WHITE),
                 RGB::named(rltk::BLACK),
@@ -859,7 +860,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         // Display the spell charge information: n_charges/max_charges.
         let number_char = vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
         ctx.set(
-            ITEM_MENU_X_POSITION + 6,
+            MODAL_MENU_X_POSITION + 6,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
@@ -867,14 +868,14 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
             rltk::to_cp437(*number_char.get(charge.charges as usize).unwrap_or(&'9')),
         );
         ctx.set(
-            ITEM_MENU_X_POSITION + 7,
+            MODAL_MENU_X_POSITION + 7,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
             rltk::to_cp437('/'),
         );
         ctx.set(
-            ITEM_MENU_X_POSITION + 8,
+            MODAL_MENU_X_POSITION + 8,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
@@ -885,7 +886,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         let can_cast = charge.charges > 0;
         if can_cast {
             ctx.print_color(
-                ITEM_MENU_X_POSITION + 10,
+                MODAL_MENU_X_POSITION + 10,
                 y,
                 RGB::named(rltk::WHITE),
                 RGB::named(rltk::BLACK),
@@ -893,7 +894,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
             );
         } else {
             ctx.print_color(
-                ITEM_MENU_X_POSITION + 10,
+                MODAL_MENU_X_POSITION + 10,
                 y,
                 RGB::named(rltk::DARK_GRAY),
                 RGB::named(rltk::BLACK),
@@ -903,9 +904,9 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
 
         // Render the spell recharge bar.
         ctx.draw_bar_horizontal(
-            ITEM_MENU_X_POSITION + 10,
+            MODAL_MENU_X_POSITION + 10,
             y + 1,
-            ITEM_MENU_WIDTH - 11,
+            MODAL_MENU_WIDTH - 11,
             charge.time,
             charge.regen_time,
             RGB::named(rltk::GREEN),
@@ -948,26 +949,26 @@ pub fn show_blessings(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
 
     let count = (&offereds, &names).join().count();
 
-    let mut y = ITEM_MENU_Y_POSTION - (count / 2) as i32;
+    let mut y = MODAL_MENU_Y_POSITION - (count / 2) as i32;
 
     // Draw the outline of the menu, and the helper text.
     ctx.draw_box(
-        ITEM_MENU_X_POSITION,
+        MODAL_MENU_X_POSITION,
         y - 2,
-        ITEM_MENU_WIDTH,
+        MODAL_MENU_WIDTH,
         (count + 3) as i32,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
     );
     ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
+        MODAL_MENU_X_POSITION + 3,
         y - 2,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         "Choose a Blessing.",
     );
     ctx.print_color(
-        ITEM_MENU_X_POSITION + 3,
+        MODAL_MENU_X_POSITION + 3,
         y + count as i32 + 1,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
@@ -986,21 +987,21 @@ pub fn show_blessings(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
         ctx.set(
-            ITEM_MENU_X_POSITION + 1,
+            MODAL_MENU_X_POSITION + 1,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
             rltk::to_cp437('('),
         );
         ctx.set(
-            ITEM_MENU_X_POSITION + 2,
+            MODAL_MENU_X_POSITION + 2,
             y,
             RGB::named(rltk::YELLOW),
             RGB::named(rltk::BLACK),
             selection_char,
         );
         ctx.set(
-            ITEM_MENU_X_POSITION + 3,
+            MODAL_MENU_X_POSITION + 3,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),
@@ -1009,14 +1010,14 @@ pub fn show_blessings(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         // Draw the item glyph if one exists.
         match render {
             Some(render) => ctx.set(
-                ITEM_MENU_X_POSITION + 4,
+                MODAL_MENU_X_POSITION + 4,
                 y,
                 render.fg,
                 RGB::named(rltk::BLACK),
                 render.glyph,
             ),
             None => ctx.set(
-                ITEM_MENU_X_POSITION + 4,
+                MODAL_MENU_X_POSITION + 4,
                 y,
                 RGB::named(rltk::WHITE),
                 RGB::named(rltk::BLACK),
@@ -1024,7 +1025,7 @@ pub fn show_blessings(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
             ),
         }
         ctx.print_color(
-            ITEM_MENU_X_POSITION + 6,
+            MODAL_MENU_X_POSITION + 6,
             y,
             RGB::named(rltk::WHITE),
             RGB::named(rltk::BLACK),

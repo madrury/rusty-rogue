@@ -639,36 +639,6 @@ impl GameState for State {
                     }
                 }
             }
-            RunState::ShowEquipInventory => {
-                let result = gui::show_inventory::<Equippable>(&mut self.ecs, ctx, "Equippable");
-                match result {
-                    MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
-                    MenuResult::NoResponse => {},
-                    MenuResult::Selected {thing} => {
-                        let equippables = self.ecs.read_storage::<Equippable>();
-                        let equipped = self.ecs.read_storage::<Equipped>();
-                        let equipment = equippables.get(thing).unwrap(); // We can only get here if the item is equippable.
-                        let player_entity = self.ecs.read_resource::<Entity>();
-                        let is_equipped = equipped
-                            .get(thing)
-                            .map_or(false, |e| e.owner == *player_entity);
-                        if is_equipped {
-                            let mut intent = self.ecs.write_storage::<WantsToRemoveItem>();
-                            intent.insert(
-                                *self.ecs.fetch::<Entity>(), // Player.
-                                WantsToRemoveItem {item: thing, slot: equipment.slot}
-                            ).expect("Unable to insert intent to remove item.");
-                        } else {
-                            let mut intent = self.ecs.write_storage::<WantsToEquipItem>();
-                            intent.insert(
-                                *self.ecs.fetch::<Entity>(), // Player.
-                                WantsToEquipItem {item: thing, slot: equipment.slot}
-                            ).expect("Unable to insert intent to equip item.");
-                        }
-                        newrunstate = RunState::PlayerTurn;
-                    }
-                }
-            }
             RunState::ShowThrowInventory => {
                 let result = gui::show_inventory::<Throwable>(&mut self.ecs, ctx, "Throwable");
                 match result {
@@ -774,7 +744,10 @@ impl GameState for State {
                     } 
                     HelpMenuResult::NoSelection {current: _} => {},
                     HelpMenuResult::Selected {selected: s} => {
-                        newrunstate = RunState::ShowHelpMenu{details: Some(COMMANDS[s].details())}
+                        let command = COMMANDS[s];
+                        if !command.key_codes().is_empty() {
+                            newrunstate = RunState::ShowHelpMenu{details: Some(command.details())}
+                        }
                     }
                 }
             }
