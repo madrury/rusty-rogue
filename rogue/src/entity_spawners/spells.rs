@@ -244,7 +244,7 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
         .with(AlongRayAnimationWhenTargeted {
             fg: RGB::named(rltk::GOLD),
             bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('•'),
+            glyph: rltk::to_cp437('.'),
             until_blocked: true
         })
         .marked::<SimpleMarker<SerializeMe>>()
