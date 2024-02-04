@@ -2,7 +2,7 @@ use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
-    EntitySpawnKind, Hazard, Opaque, color, noise
+    EntitySpawnKind, StatusIsImmuneToChill, Hazard, Opaque, color, noise
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -125,7 +125,7 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
             visible_out_of_fov: true
         })
         .with(Name {name: "Grass".to_string()})
-        // Hard to justify? Well, it needs to take a turn ok?
+        // Hard to justify as a hazard? Well, it needs to take a turn ok?
         .with(Hazard {})
         .with(DissipateWhenBurning {})
         .with(ChanceToSpawnEntityWhenBurning {
@@ -135,6 +135,7 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
             },
             chance: 100
         })
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -170,6 +171,7 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entit
             },
             chance: 100
         })
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     let mut map = ecs.write_resource::<Map>();
@@ -179,7 +181,7 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entit
     Some(entity)
 }
 
-pub fn destroy_long_grass(ecs: &mut World, entity: &Entity) {
+pub fn destroy_tall_grass(ecs: &mut World, entity: &Entity) {
     let idx;
     { // Contain first borrow of ECS.
         let positions = ecs.read_storage::<Position>();

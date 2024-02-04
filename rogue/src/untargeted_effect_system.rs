@@ -147,7 +147,8 @@ impl<'a> System<'a> for UntargetedSystem {
                 new_status::<StatusIsImmuneToFire>(
                     &mut status_fire_immunity,
                     entity,
-                    provides_immunity.turns
+                    provides_immunity.turns,
+                    true
                 );
                 // let name = names.get(entity);
                 // if let (Some(name), Some(thing_name)) = (name, thing_name) {
@@ -166,7 +167,8 @@ impl<'a> System<'a> for UntargetedSystem {
                 new_status::<StatusIsImmuneToChill>(
                     &mut status_chill_immunity,
                     entity,
-                    provides_immunity.turns
+                    provides_immunity.turns,
+                    true
                 );
                 // let name = names.get(entity);
                 // if let (Some(name), Some(thing_name)) = (name, thing_name) {

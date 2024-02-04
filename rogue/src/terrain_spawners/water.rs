@@ -3,7 +3,7 @@ use super::{
     Map, Position, Renderable, SetsBgColor, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, Hazard, ChanceToSpawnEntityWhenBurning,
     RemoveBurningWhenEncroachedUpon, RemoveBurningOnUpkeep,
-    DissipateFireWhenEncroachedUpon, EntitySpawnKind,
+    DissipateFireWhenEncroachedUpon, EntitySpawnKind, StatusIsImmuneToChill,
     IsEntityKind, TileType, color, noise
 };
 use rltk::{RGB};
@@ -121,6 +121,8 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
         .with(RemoveBurningWhenEncroachedUpon {})
         .with(RemoveBurningOnUpkeep {})
         .with(DissipateFireWhenEncroachedUpon {})
+        // TODO: Clearly water should freeze when chilled.
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -143,6 +145,8 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .with(RemoveBurningWhenEncroachedUpon {})
         .with(RemoveBurningOnUpkeep {})
         .with(DissipateFireWhenEncroachedUpon {})
+        // TODO: Clearly water should freeze when chilled.
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     let mut map = ecs.write_resource::<Map>();

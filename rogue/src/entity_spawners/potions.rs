@@ -7,7 +7,7 @@ use super::{
     SpawnsEntityInAreaWhenTargeted, ProvidesFireImmunityWhenUsed,
     ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
     DecreasesSpellRechargeWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind
+    ElementalDamageKind, StatusIsImmuneToFire, StatusIsImmuneToChill
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -47,6 +47,8 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Consumable {})
         .with(ProvidesFullHealing {})
         .with(IncreasesMaxHpWhenUsed {amount: HEALTH_POTION_MAX_HP_INCREASE})
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)
@@ -55,7 +57,7 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
 //----------------------------------------------------------------------------
 // Recharging Potion
 //
-// Fully restores all spell charges to all the user's spells and decreases
+// Fully restores all spell charges to all the user's spells and increases
 // their spell's recharge rate a bit.
 //----------------------------------------------------------------------------
 const RECHARGING_POTION_SPELL_CHARGE_DECREASE_PERCENTAGE: i32 = 25;
@@ -80,6 +82,8 @@ pub fn recharging(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(DecreasesSpellRechargeWhenUsed {
             percentage: RECHARGING_POTION_SPELL_CHARGE_DECREASE_PERCENTAGE,
         })
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)
@@ -150,6 +154,8 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             bg: RGB::named(rltk::RED),
             glyph: rltk::to_cp437('^')
         })
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)
@@ -216,6 +222,8 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             bg: RGB::named(rltk::LIGHT_BLUE),
             glyph: rltk::to_cp437('*')
         })
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)
@@ -248,6 +256,8 @@ pub fn teleportation(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(Consumable {})
         .with(MovesToRandomPosition {})
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)
