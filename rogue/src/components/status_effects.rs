@@ -78,8 +78,8 @@ pub fn new_combat_stats_status<Status>(
     if let Some(status) = store.get_mut(e) {
         status.set_remaining_turns(i32::max(status.remaining_turns(), turns));
     } else {
-        let is_immune = stats.get(e).is_none();
-        if !is_immune {
+        let has_combat_stats = stats.get(e).is_some();
+        if has_combat_stats {
             let status = Status::new(turns, render_glyph);
             store
                 .insert(e, status)
