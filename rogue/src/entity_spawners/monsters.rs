@@ -287,6 +287,10 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 power: GOBLIN_BASE_POWER,
                 defense: GOBLIN_BASE_DEFENSE
             })
+            .with(StatusIsImmuneToFire {
+                remaining_turns: i32::MAX,
+                render_glyph: true
+            })
             .with(BlocksTile {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -346,6 +350,9 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 power: GOBLIN_BASE_POWER,
                 defense: GOBLIN_BASE_DEFENSE
             })
+            .with(StatusIsImmuneToChill {
+                remaining_turns: i32::MAX, render_glyph: true
+            })
             .with(BlocksTile {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
@@ -354,7 +361,7 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         map.blocked[idx] = true;
     }
     {
-        // Make a fireball spell and put it in the goblin's spellbook.
+        // Make an icespike spell and put it in the goblin's spellbook.
         let spell = spells::icespike(ecs, 0, 0, 2, 1)
             .expect("Could not construct icespike spell to put in spellbook.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
@@ -415,7 +422,7 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         map.blocked[idx] = true;
     }
     {
-        // Make a fireball spell and put it in the goblin's spellbook.
+        // Make a healing spell and put it in the goblin's spellbook.
         let spell = spells::health(ecs, 0, 0, 2, 1)
             .expect("Could not construct healing spell to put in spellbook.");
         let mut in_spellbooks = ecs.write_storage::<InSpellBook>();
@@ -711,7 +718,9 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 dissipate_chance: 50,
             }
         })
-        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX})
+        .with(StatusIsImmuneToFire {
+            remaining_turns: i32::MAX, render_glyph: true
+        })
         .with(BlocksTile {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -762,7 +771,10 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 dissipate_chance: 50,
             }
         })
-        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX})
+        .with(StatusIsImmuneToChill {
+            remaining_turns: i32::MAX,
+            render_glyph: true
+        })
         .with(BlocksTile {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();

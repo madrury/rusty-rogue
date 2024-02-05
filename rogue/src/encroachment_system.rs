@@ -88,6 +88,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                         &is_fire_immune,
                         *encroaching,
                         burning.turns,
+                        true
                     );
                     if play_message {
                         let burner_name = names.get(entity);
@@ -110,6 +111,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                         &is_chill_immune,
                         *encroaching,
                         freezing.turns,
+                        true
                     );
                     if play_message {
                         let freezer_name = names.get(entity);

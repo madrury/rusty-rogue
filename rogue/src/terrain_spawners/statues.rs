@@ -1,6 +1,7 @@
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
-    MarkedBuilder, BlocksTile, TileType, noise
+    MarkedBuilder, BlocksTile, TileType, StatusIsImmuneToChill,
+    StatusIsImmuneToFire, noise
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -66,7 +67,8 @@ pub fn statue(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(Name {name: "Statue".to_string()})
         .with(BlocksTile {})
-        // Hard to justify? Well, it needs to take a turn ok?
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 

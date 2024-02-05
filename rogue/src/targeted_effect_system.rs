@@ -10,7 +10,8 @@ use super::{
     WantsToTakeDamage, WantsToMoveToPosition, WantsToMoveToRandomPosition,
     StatusIsFrozen, StatusIsBurning, SpawnsEntityInAreaWhenTargeted,
     StatusIsImmuneToFire, StatusIsImmuneToChill, StatusIsMeleeAttackBuffed,
-    StatusIsPhysicalDefenseBuffed, new_status, new_status_with_immunity
+    StatusIsPhysicalDefenseBuffed, new_status_with_immunity,
+    new_combat_stats_status
 };
 use specs::prelude::*;
 
@@ -167,15 +168,17 @@ impl<'a> System<'a> for TargetedSystem {
                 if let (Some(_), Some(_)) = (thing_teleports, target_pos) {
                     wants_to_teleport.insert(*target, WantsToMoveToRandomPosition {})
                         .expect("Failed to insert WantsToMoveToRandomPostion.");
-                    let target_name = names.get(*target);
-                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                        log.entries.push(format!(
-                            "You {} the {}, and {} disappears.",
-                            verb,
-                            thing_name.name,
-                            target_name.name
-                        ));
-                    }
+                    // TODO: These logs should not refer to the player with the subject "YOU".
+
+                    // let target_name = names.get(*target);
+                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                    //     log.entries.push(format!(
+                    //         "You {} the {}, and {} disappears.",
+                    //         verb,
+                    //         thing_name.name,
+                    //         target_name.name
+                    //     ));
+                    // }
                 }
 
                 // Component: InflictsDamageWhenTargeted
@@ -188,17 +191,17 @@ impl<'a> System<'a> for TargetedSystem {
                         thing_damages.damage,
                         thing_damages.kind
                     );
-                    let thing_name = names.get(want_target.thing);
-                    let target_name = names.get(*target);
-                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                        log.entries.push(format!(
-                            "You {} the {}, dealing {} {} damage.",
-                            verb,
-                            thing_name.name,
-                            target_name.name,
-                            thing_damages.damage
-                        ))
-                    }
+                    // let thing_name = names.get(want_target.thing);
+                    // let target_name = names.get(*target);
+                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                    //     log.entries.push(format!(
+                    //         "You {} the {}, dealing {} {} damage.",
+                    //         verb,
+                    //         thing_name.name,
+                    //         target_name.name,
+                    //         thing_damages.damage
+                    //     ))
+                    // }
                 }
 
                 // Component: InflictsFreezingWhenTargeted
@@ -208,7 +211,8 @@ impl<'a> System<'a> for TargetedSystem {
                         &mut is_frozen,
                         &is_chill_immune,
                         *target,
-                        thing_freezes.turns
+                        thing_freezes.turns,
+                        true
                     );
                     // let thing_name = names.get(want_target.thing);
                     // let target_name = names.get(*target);
@@ -233,8 +237,8 @@ impl<'a> System<'a> for TargetedSystem {
                         &is_fire_immune,
                         *target,
                         thing_burns.turns,
+                        true,
                     );
-                    // TODO: This should not refer to the player.
                     // let thing_name = names.get(want_target.thing);
                     // let target_name = names.get(*target);
                     // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
@@ -252,10 +256,12 @@ impl<'a> System<'a> for TargetedSystem {
                 // Component: BuffsMeleeAttackWhenTargeted
                 let thing_buffs_attack = does_buff_attack.get(want_target.thing);
                 if let Some(thing_buffs_attack) = thing_buffs_attack {
-                    let _play_message = new_status::<StatusIsMeleeAttackBuffed>(
+                    let _play_message = new_combat_stats_status::<StatusIsMeleeAttackBuffed>(
                         &mut has_buffed_attack,
+                        &mut combat_stats,
                         *target,
                         thing_buffs_attack.turns,
+                        true
                     );
                     // TODO: Add a game message here.
                 }
@@ -263,10 +269,12 @@ impl<'a> System<'a> for TargetedSystem {
                 // Component: BuffsPhysicalDefenseWhenTargeted
                 let thing_buffs_defense = does_buff_defense.get(want_target.thing);
                 if let Some(thing_buffs_defense) = thing_buffs_defense {
-                    let _play_message = new_status::<StatusIsPhysicalDefenseBuffed>(
+                    let _play_message = new_combat_stats_status::<StatusIsPhysicalDefenseBuffed>(
                         &mut has_buffed_defense,
+                        &mut combat_stats,
                         *target,
                         thing_buffs_defense.turns,
+                        true
                     );
                     // TODO: Add a game message here.
                 }

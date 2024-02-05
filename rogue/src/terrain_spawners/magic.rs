@@ -1,6 +1,7 @@
 use super::{
     Map, Position, Renderable, Name, BlessingSelectionTile, SimpleMarker,
-    SerializeMe, MarkedBuilder, TileType, water, noise, color
+    SerializeMe, MarkedBuilder, TileType, StatusIsImmuneToChill,
+    StatusIsImmuneToFire, water, noise, color
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
@@ -84,6 +85,9 @@ pub fn blessing_tile(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(BlessingSelectionTile {})
         .with(Name {name: "Tile of Blessing".to_string()})
+
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)

@@ -8,7 +8,9 @@ use super::{
     WantsToTakeDamage, WantsToDissipate, ElementalDamageKind,
     DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
     ChanceToInflictBurningOnAdjacentEntities, RemoveBurningOnUpkeep,
-    EntitySpawnRequestBuffer, EntitySpawnRequest, tick_status, remove_status,
+    EntitySpawnRequestBuffer, EntitySpawnRequest,
+    StatusEffect,
+    tick_status, remove_status,
     tick_status_with_immunity, new_status_with_immunity, BURNING_TICK_DAMAGE
 };
 
@@ -193,9 +195,8 @@ impl<'a> System<'a> for StatusEffectSystem {
                 continue
             }
 
-            // StatusIsBurning: Tick burning entities, apply the tick damage,
-            // and remove the status if expired or if the entity has aquired
-            // fire immunity.
+            // StatusIsBurning:
+            // Tick burning entities, and apply the tick damage.
             let burning = status_burning.get_mut(entity);
             let pos = positions.get(entity);
             let chance_to_spawn = chance_to_spawn_when_burning.get(entity);
@@ -248,7 +249,8 @@ impl<'a> System<'a> for StatusEffectSystem {
                             &mut status_burning,
                             &status_immune_fire,
                             *entity,
-                            5 // TODO: Magic Number! Boo!
+                            5, // TODO: Magic Number! Boo!
+                            true
                         );
                     }
                 }
@@ -275,40 +277,52 @@ pub fn get_status_indicators(ecs: &World, entity: &Entity) -> Vec<StatusIndicato
     let mut indicators = Vec::new();
 
     let frozens = ecs.read_storage::<StatusIsFrozen>();
-    if let Some(_) = frozens.get(*entity) {
-        indicators.push(
-            StatusIndicatorGlyph {glyph: rltk::to_cp437('♦'), color: RGB::named(rltk::LIGHT_BLUE)}
-        )
+    if let Some(s) = frozens.get(*entity) {
+        if s.do_render() {
+            indicators.push(
+                StatusIndicatorGlyph {glyph: rltk::to_cp437('♦'), color: RGB::named(rltk::LIGHT_BLUE)}
+            )
+        }
     }
     let burnings = ecs.read_storage::<StatusIsBurning>();
-    if let Some(_) = burnings.get(*entity) {
-        indicators.push(
-            StatusIndicatorGlyph {glyph: rltk::to_cp437('♠'), color: RGB::named(rltk::ORANGE)}
-        )
+    if let Some(s) = burnings.get(*entity) {
+        if s.do_render() {
+            indicators.push(
+                StatusIndicatorGlyph {glyph: rltk::to_cp437('♠'), color: RGB::named(rltk::ORANGE)}
+            )
+        }
     }
     let chill_immunities = ecs.read_storage::<StatusIsImmuneToChill>();
-    if let Some(_) = chill_immunities.get(*entity) {
-        indicators.push(
-            StatusIndicatorGlyph {glyph: rltk::to_cp437('♦'), color: RGB::named(rltk::WHITE)}
-        )
+    if let Some(s) = chill_immunities.get(*entity) {
+        if s.do_render() {
+            indicators.push(
+                StatusIndicatorGlyph {glyph: rltk::to_cp437('♦'), color: RGB::named(rltk::WHITE)}
+            )
+        }
     }
     let fire_immunities = ecs.read_storage::<StatusIsImmuneToFire>();
-    if let Some(_) = fire_immunities.get(*entity) {
-        indicators.push(
-            StatusIndicatorGlyph {glyph: rltk::to_cp437('♠'), color: RGB::named(rltk::WHITE)}
-        )
+    if let Some(s) = fire_immunities.get(*entity) {
+        if s.do_render() {
+            indicators.push(
+                StatusIndicatorGlyph {glyph: rltk::to_cp437('♠'), color: RGB::named(rltk::WHITE)}
+            )
+        }
     }
     let attack_buffed = ecs.read_storage::<StatusIsMeleeAttackBuffed>();
-    if let Some(_) = attack_buffed.get(*entity) {
-        indicators.push(
-            StatusIndicatorGlyph {glyph: rltk::to_cp437('▲'), color: RGB::named(rltk::RED)}
-        )
+    if let Some(s) = attack_buffed.get(*entity) {
+        if s.do_render() {
+            indicators.push(
+                StatusIndicatorGlyph {glyph: rltk::to_cp437('▲'), color: RGB::named(rltk::RED)}
+            )
+        }
     }
     let defense_buffed = ecs.read_storage::<StatusIsPhysicalDefenseBuffed>();
-    if let Some(_) = defense_buffed.get(*entity) {
-        indicators.push(
-            StatusIndicatorGlyph {glyph: rltk::to_cp437('▲'), color: RGB::named(rltk::BLUE)}
-        )
+    if let Some(s) = defense_buffed.get(*entity) {
+        if s.do_render() {
+            indicators.push(
+                StatusIndicatorGlyph {glyph: rltk::to_cp437('▲'), color: RGB::named(rltk::BLUE)}
+            )
+        }
     }
     indicators
 }

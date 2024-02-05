@@ -2,7 +2,7 @@
 use super::{
     Name, Position, Renderable, PickUpable, Useable, Untargeted, Consumable,
     ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
-    SimpleMarker, SerializeMe, MarkedBuilder,
+    SimpleMarker, SerializeMe, MarkedBuilder, DissipateWhenBurning, StatusIsImmuneToChill
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -25,6 +25,8 @@ pub fn turnip(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Untargeted {verb: "eats".to_string()})
         // TODO: We probably want a component for triggering the healing animation.
         .with(ProvidesFullFood {})
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)
@@ -50,6 +52,8 @@ pub fn pomegranate(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(ProvidesFullFood {})
         .with(ProvidesFullHealing {})
         .with(IncreasesMaxHpWhenUsed {amount: 5})
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)

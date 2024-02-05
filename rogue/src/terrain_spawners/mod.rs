@@ -5,7 +5,9 @@ use super::{
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     ChanceToSpawnEntityWhenBurning, RemoveBurningWhenEncroachedUpon,
     DissipateFireWhenEncroachedUpon, RemoveBurningOnUpkeep, EntitySpawnKind,
-    IsEntityKind, Hazard, Opaque, BlessingSelectionTile, TileType, color, noise
+    StatusIsImmuneToChill, StatusIsImmuneToFire, IsEntityKind, Hazard, Opaque,
+    BlessingSelectionTile,
+    TileType, color, noise
 };
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;

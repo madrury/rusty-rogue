@@ -3,7 +3,7 @@ use super::{
     Throwable, Targeted, TargetingKind, Consumable,
     InflictsDamageWhenTargeted, GrantsMeleeAttackBonus,
     GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, AlongRayAnimationWhenTargeted
+    ElementalDamageKind, AlongRayAnimationWhenTargeted, StatusIsImmuneToChill, StatusIsImmuneToFire
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -39,6 +39,8 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             glyph: rltk::to_cp437('•'),
             until_blocked: true
         })
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
         Some(entity)
@@ -58,6 +60,8 @@ pub fn leather_armor(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(PickUpable {})
         .with(Equippable {slot: EquipmentSlot::Armor})
         .with(GrantsMeleeDefenseBonus {bonus: 2})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)

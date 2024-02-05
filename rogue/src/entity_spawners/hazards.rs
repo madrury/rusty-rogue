@@ -1,4 +1,6 @@
 
+use crate::{StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
+
 use super::{
     Map, TileType, EntitySpawnKind, Hazard, IsEntityKind, Name, Position,
     Renderable, SetsBgColor, InflictsDamageWhenEncroachedUpon,
@@ -67,6 +69,8 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
                 chance: dissipate_chance
             })
             .with(SkipRandomDissipationForOneTurn {})
+            .with(StatusIsBurning {remaining_turns: i32::MAX, render_glyph: true})
+            .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: FIRE_ENCROACHMENT_DAMAGE,
                 kind: ElementalDamageKind::Fire
@@ -159,6 +163,8 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
                 chance: dissipate_chance
             })
             .with(SkipRandomDissipationForOneTurn {})
+            .with(StatusIsFrozen {remaining_turns: i32::MAX, render_glyph: true})
+            .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: CHILL_ENCROACHMENT_DAMAGE,
                 kind: ElementalDamageKind::Chill
@@ -246,6 +252,8 @@ pub fn steam(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
                 chance: dissipate_chance
             })
             .with(SkipRandomDissipationForOneTurn {})
+            .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+            .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: STEAM_ENCROACHMENT_DAMAGE,
                 kind: ElementalDamageKind::Physical

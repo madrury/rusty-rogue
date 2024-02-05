@@ -1,4 +1,6 @@
 
+use crate::DissipateWhenBurning;
+
 use super::{
     EntitySpawnKind, Name, Position, Renderable, PickUpable, Castable,
     SpellCharges, Targeted, TargetingKind, InflictsDamageWhenTargeted,
@@ -7,7 +9,7 @@ use super::{
     AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
     ProvidesFullHealing, SpawnsEntityInAreaWhenTargeted,
     MoveToPositionWhenTargeted, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, BlessingSlot
+    ElementalDamageKind, BlessingSlot, StatusIsImmuneToChill
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -55,6 +57,8 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             glyph: rltk::to_cp437('^'),
             until_blocked: true
         })
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -107,6 +111,8 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             bg: RGB::named(rltk::RED),
             glyph: rltk::to_cp437('^')
         })
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -154,6 +160,8 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             glyph: rltk::to_cp437('*'),
             until_blocked: true
         })
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -247,6 +255,8 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
             glyph: rltk::to_cp437('.'),
             until_blocked: true
         })
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -288,6 +298,8 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             glyph: rltk::to_cp437('@'),
             until_blocked: false
         })
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -326,6 +338,8 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
             glyph: rltk::to_cp437('♥'),
             until_blocked: true
         })
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -364,6 +378,8 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
             glyph: rltk::to_cp437('▲'),
             until_blocked: true
         })
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -402,6 +418,8 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
             glyph: rltk::to_cp437('▲'),
             until_blocked: true
         })
+        .with(DissipateWhenBurning {})
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
