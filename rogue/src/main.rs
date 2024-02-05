@@ -15,13 +15,16 @@ use components::spawn_despawn::*;
 use components::status_effects::*;
 use components::signaling::*;
 
-pub mod map_builders;
 pub mod entity_spawners;
 pub mod terrain_spawners;
 pub mod noise;
 pub mod color;
 mod save_load;
 mod random_table;
+
+pub mod map_builders;
+use map_builders::{enumerate_connected_components, fill_all_but_largest_component};
+
 mod map;
 pub use map::*;
 mod player;
@@ -67,11 +70,11 @@ use encroachment_system::*;
 mod general_movement_system;
 use general_movement_system::*;
 mod gamelog;
-use gamelog::{GameLog};
+use gamelog::GameLog;
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_DRAW_ALL_MAP: bool = true;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
@@ -289,7 +292,7 @@ impl State {
         // Build the floor layout, and update the dubug map build animation.
         self.mapgen.reset();
         let mut builder = map_builders::random_builder(depth);
-        builder.build_map();
+        let water_spawn_table = builder.build_map();
         self.mapgen.history = builder.snapshot_history();
 
         // Place the built map into the ecs. From here on, we will work with the
@@ -298,6 +301,9 @@ impl State {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
             *worldmap_resource = builder.map();
         }
+        builder.spawn_water(&mut self.ecs, &water_spawn_table);
+        builder.spawn_terrain(&mut self.ecs);
+        builder.spawn_entities(&mut self.ecs);
 
         // Place the stairs and update the associated ECS resources.
         let stairs_position = builder.stairs_position(&self.ecs);
@@ -308,9 +314,6 @@ impl State {
             map.blocked[idx] = false;
             map.ok_to_spawn[idx] = false;
         }
-
-        builder.spawn_terrain(&mut self.ecs);
-        builder.spawn_entities(&mut self.ecs);
 
         // Add all our newly spawned enettities to the tile_content array. This
         // is used below when attempting to place the player.
@@ -741,7 +744,7 @@ impl GameState for State {
                     HelpMenuResult::Cancel => match details {
                         None => { newrunstate = RunState::AwaitingInput }
                         Some(_) => { newrunstate = RunState::ShowHelpMenu{details: None} }
-                    } 
+                    }
                     HelpMenuResult::NoSelection {current: _} => {},
                     HelpMenuResult::Selected {selected: s} => {
                         let command = COMMANDS[s];

@@ -1,3 +1,5 @@
+use crate::terrain_spawners::water::WaterSpawnTable;
+
 use super::{
     World, Map, TileType, Point, entity_spawners, terrain_spawners,
     DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
@@ -8,10 +10,13 @@ mod cellular_automata_map;
 use cellular_automata_map::{CellularAutomataBuilder};
 mod common;
 use common::*;
+mod components;
+pub use components::*;
 
 
 pub trait MapBuilder {
-    fn build_map(&mut self);
+    fn build_map(&mut self) -> terrain_spawners::water::WaterSpawnTable;
+    fn spawn_water(&mut self, ecs: &mut World, water_spawn_table: &WaterSpawnTable);
     fn spawn_terrain(&mut self, ecs: &mut World);
     fn spawn_entities(&mut self, ecs: &mut World);
     fn map(&self) -> Map;

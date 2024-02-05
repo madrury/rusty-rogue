@@ -1,11 +1,13 @@
 use rltk::{RandomNumberGenerator};
 use specs::prelude::*;
 
+use crate::terrain_spawners::water::WaterSpawnTable;
 use super::MapBuilder;
 use super::{
     Map, TileType, Point, Rectangle, MAP_WIDTH, MAP_HEIGHT,
     DEBUG_VISUALIZE_MAPGEN, entity_spawners, terrain_spawners, apply_room,
-    apply_horizontal_tunnel, apply_vertical_tunnel, get_stairs_position
+    apply_horizontal_tunnel, apply_vertical_tunnel, get_stairs_position,
+    enumerate_connected_components, fill_all_but_largest_component
 };
 
 //----------------------------------------------------------------------------
@@ -28,11 +30,31 @@ impl MapBuilder for SimpleMapBuilder {
     }
 
 
-    fn build_map(&mut self) {
+    fn build_map(&mut self) -> terrain_spawners::water::WaterSpawnTable {
         self.rooms_and_corridors();
+
+        let mut rng = RandomNumberGenerator::new();
+        // Now we carve out space to spawn water.
+        let water_spawn_table = terrain_spawners::random_water_spawn_table(&mut rng, &self.map);
+        for elem in &water_spawn_table.shallow {
+            let idx = self.map.xy_idx(elem.x, elem.y);
+            self.map.tiles[idx] = TileType::Floor
+        }
+        for elem in &water_spawn_table.deep {
+            let idx = self.map.xy_idx(elem.x, elem.y);
+            self.map.tiles[idx] = TileType::Floor
+        }
+        // Carving out water maybe creates new connected components, so reduce
+        // back to a single connected component.
         self.map.intitialize_blocked();
+        let components = enumerate_connected_components(&self.map);
+        fill_all_but_largest_component(&mut self.map, components);
+        self.map.intitialize_blocked();
+
         self.map.intitialize_opaque();
         self.map.intitialize_ok_to_spawn();
+
+        water_spawn_table
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {
@@ -48,6 +70,31 @@ impl MapBuilder for SimpleMapBuilder {
                 }
             }
             entity_spawners::spawn_items_in_region(ecs, &region, self.depth);
+        }
+    }
+
+    fn spawn_water(&mut self, ecs: &mut World, water_spawn_table: &WaterSpawnTable) {
+        for e in &water_spawn_table.shallow {
+            {
+                let mut map = ecs.write_resource::<Map>();
+                let idx = map.xy_idx(e.x, e.y);
+                if map.blocked[idx] {
+                    continue;
+                }
+                map.ok_to_spawn[idx] = true;
+            }
+            terrain_spawners::water::shallow_water(ecs, e.x, e.y, e.fgcolor, e.bgcolor);
+        }
+        for e in &water_spawn_table.deep {
+            {
+                let mut map = ecs.write_resource::<Map>();
+                let idx = map.xy_idx(e.x, e.y);
+                if map.blocked[idx] {
+                    continue;
+                }
+                map.ok_to_spawn[idx] = true;
+            }
+            terrain_spawners::water::deep_water(ecs, e.x, e.y, e.fgcolor, e.bgcolor);
         }
     }
 

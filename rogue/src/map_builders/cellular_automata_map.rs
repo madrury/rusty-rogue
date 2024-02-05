@@ -1,8 +1,9 @@
 use std::collections::HashMap;
-use rltk::{RandomNumberGenerator};
+use rltk::RandomNumberGenerator;
 use specs::prelude::*;
 
-use super::MapBuilder;
+use crate::terrain_spawners::water::WaterSpawnTable;
+use super::{MapBuilder, enumerate_connected_components, fill_all_but_largest_component};
 use super::{
     Map, Point, TileType, entity_spawners, terrain_spawners, get_stairs_position,
     DEBUG_VISUALIZE_MAPGEN
@@ -43,7 +44,7 @@ impl MapBuilder for CellularAutomataBuilder {
         self.history.clone()
     }
 
-    fn build_map(&mut self) {
+    fn build_map(&mut self) -> terrain_spawners::water::WaterSpawnTable {
         let mut rng = RandomNumberGenerator::new();
         self.ititialize(&mut rng);
         self.take_snapshot();
@@ -51,22 +52,69 @@ impl MapBuilder for CellularAutomataBuilder {
             self.update();
             self.take_snapshot();
         }
-        // The use of the map.blocked array here is confusing. We need to call initialize_blocked *twice*.
-        //   - The *first* call to initialize_blocked is to support out use of the
-        //     rltk::Dijkstra map when finding the connected components of our map.
-        //     This uses the blocked array to determine the open neighbours of a
-        //     tile.
-        //  - The *second* call to initialize_blocked is after we have filled in
-        //    the smaller connected components with TileType::Wall. We need to
-        //    re-compute the blocked array so that it can be used when spawning
-        //    entities.
+        // The use of the map.blocked array here is confusing. We need to call
+        // initialize_blocked *twice*.
+        //
+        //   - The *initial calls* to initialize_blocked are to support our use
+        //   of the rltk::Dijkstra map when finding the connected components of
+        //   our map. This API uses the blocked array to determine the open
+        //   neighbours of a tile.
+        //  - The *final* call to initialize_blocked is after we have filled in
+        //  the smaller connected components with TileType::Wall, meaning our
+        //  map has a single connected compoenent. We need to re-compute the
+        //  blocked array so that it can be used to determine free squares when
+        //  spawning entities.
         self.map.intitialize_blocked();
-        let components = self.enumerate_connected_components();
-        self.fill_all_but_largest_component(components);
+        let components = enumerate_connected_components(&self.map);
+        fill_all_but_largest_component(&mut self.map, components);
         self.map.intitialize_blocked();
+
+        // Now we carve out space to spawn water.
+        let water_spawn_table = terrain_spawners::random_water_spawn_table(&mut rng, &self.map);
+        for elem in &water_spawn_table.shallow {
+            let idx = self.map.xy_idx(elem.x, elem.y);
+            self.map.tiles[idx] = TileType::Floor
+        }
+        for elem in &water_spawn_table.deep {
+            let idx = self.map.xy_idx(elem.x, elem.y);
+            self.map.tiles[idx] = TileType::Floor
+        }
+        // Carving out water maybe creates new connected components, so reduce
+        // back to a single connected component.
+        self.map.intitialize_blocked();
+        let components = enumerate_connected_components(&self.map);
+        fill_all_but_largest_component(&mut self.map, components);
+        self.map.intitialize_blocked();
+
         self.populate_noise_areas();
         self.map.intitialize_opaque();
         self.map.intitialize_ok_to_spawn();
+
+        water_spawn_table
+    }
+
+    fn spawn_water(&mut self, ecs: &mut World, water_spawn_table: &WaterSpawnTable) {
+        for e in &water_spawn_table.shallow {
+            {
+                let mut map = ecs.write_resource::<Map>();
+                let idx = map.xy_idx(e.x, e.y);
+                if map.blocked[idx] {
+                    continue;
+                }
+                map.ok_to_spawn[idx] = true;
+            }
+            terrain_spawners::water::shallow_water(ecs, e.x, e.y, e.fgcolor, e.bgcolor);
+        }
+        for e in &water_spawn_table.deep {
+            {
+                let map = ecs.read_resource::<Map>();
+                let idx = map.xy_idx(e.x, e.y);
+                if map.blocked[idx] {
+                    continue;
+                }
+            }
+            terrain_spawners::water::deep_water(ecs, e.x, e.y, e.fgcolor, e.bgcolor);
+        }
     }
 
     fn spawn_terrain(&mut self, ecs: &mut World) {
@@ -161,74 +209,74 @@ impl CellularAutomataBuilder {
         }
     }
 
-    fn enumerate_connected_components(&self) -> HashMap<usize, Vec<usize>> {
-        let mut components: HashMap<usize, Vec<usize>> = HashMap::new();
-        let mut floor: Vec<bool> = self.map.tiles
-            .iter()
-            .map(|tt| *tt == TileType::Floor)
-            .collect();
-        loop {
-            let nextidx = self.get_next_idx(&floor);
-            match nextidx {
-                None => {break;}
-                Some(idx) => {
-                    let component = self.get_connected_component(idx);
-                    for cidx in component.iter() {
-                        floor[*cidx] = false;
-                    }
-                    components.insert(idx, component);
-                }
-            }
-        }
-        components
-    }
+    // fn enumerate_connected_components(&self) -> HashMap<usize, Vec<usize>> {
+    //     let mut components: HashMap<usize, Vec<usize>> = HashMap::new();
+    //     let mut floor: Vec<bool> = self.map.tiles
+    //         .iter()
+    //         .map(|tt| *tt == TileType::Floor)
+    //         .collect();
+    //     loop {
+    //         let nextidx = self.get_next_idx(&floor);
+    //         match nextidx {
+    //             None => {break;}
+    //             Some(idx) => {
+    //                 let component = self.get_connected_component(idx);
+    //                 for cidx in component.iter() {
+    //                     floor[*cidx] = false;
+    //                 }
+    //                 components.insert(idx, component);
+    //             }
+    //         }
+    //     }
+    //     components
+    // }
 
-    fn get_next_idx(&self, floor: &Vec<bool>) -> Option<usize> {
-        for idx in 0..(self.map.width * self.map.height) {
-            if floor[idx as usize] {return Some(idx as usize)}
-        }
-        None
-    }
+    // fn get_next_idx(&self, floor: &Vec<bool>) -> Option<usize> {
+    //     for idx in 0..(self.map.width * self.map.height) {
+    //         if floor[idx as usize] {return Some(idx as usize)}
+    //     }
+    //     None
+    // }
 
-    fn get_connected_component(&self, start_idx: usize) -> Vec<usize> {
-        let map_starts : Vec<usize> = vec![start_idx];
-        let dijkstra_map = rltk::DijkstraMap::new(
-            self.map.width, self.map.height, &map_starts , &self.map, 200.0
-        );
-        let mut component: Vec<usize> = Vec::new();
-        for (idx, _) in self.map.tiles.iter().enumerate() {
-            if dijkstra_map.map[idx] != std::f32::MAX {
-                component.push(idx)
-            }
-        }
-        component
-    }
+    // fn get_connected_component(&self, start_idx: usize) -> Vec<usize> {
+    //     let map_starts : Vec<usize> = vec![start_idx];
+    //     let dijkstra_map = rltk::DijkstraMap::new(
+    //         self.map.width, self.map.height, &map_starts , &self.map, 200.0
+    //     );
+    //     let mut component: Vec<usize> = Vec::new();
+    //     for (idx, _) in self.map.tiles.iter().enumerate() {
+    //         if dijkstra_map.map[idx] != std::f32::MAX {
+    //             component.push(idx)
+    //         }
+    //     }
+    //     component
+    // }
 
-    fn fill_all_but_largest_component(&mut self, components: HashMap<usize, Vec<usize>>) {
-        let component_sizes: HashMap<usize, usize> = components.iter()
-            .map(|(k, v)| (*k, v.len()))
-            .collect();
-        let largest_component_size = component_sizes.iter()
-            .map(|(_k, v)| v)
-            .max()
-            .expect("Found no connected components when building cellular automota map.");
-        // TODO: Fill in duplicate largest components.
-        // let largest_components_idxs: Vec<usize> = component_sizes.iter()
-        //     .filter(|(_k, v)| *v == largest_component_size)
-        //     .map(|(k, _v)| *k)
-        //     .collect();
-        let non_largest_components_idxs: Vec<usize> = component_sizes.iter()
-            .filter(|(_k, v)| *v != largest_component_size)
-            .map(|(k, _v)| *k)
-            .collect();
-        // Fill all the components that are not one of the largest, and all but
-        // one if there are more than one components tied for the largest.
-        for idx in non_largest_components_idxs {
-            for cidx in components[&idx].iter() {
-                self.map.tiles[*cidx] = TileType::Wall;
-            }
-        }
-    }
+    // fn fill_all_but_largest_component(&mut self, components: HashMap<usize, Vec<usize>>) {
+    //     let component_sizes: HashMap<usize, usize> = components.iter()
+    //         .map(|(k, v)| (*k, v.len()))
+    //         .collect();
+    //     let largest_component_size = component_sizes.iter()
+    //         .map(|(_k, v)| v)
+    //         .max()
+    //         .expect("Found no connected components when building cellular automota map.");
+    //     // TODO: Fill in duplicate largest components.
+    //     // let largest_components_idxs: Vec<usize> = component_sizes.iter()
+    //     //     .filter(|(_k, v)| *v == largest_component_size)
+    //     //     .map(|(k, _v)| *k)
+    //     //     .collect();
+    //     let non_largest_components_idxs: Vec<usize> = component_sizes.iter()
+    //         .filter(|(_k, v)| *v != largest_component_size)
+    //         .map(|(k, _v)| *k)
+    //         .collect();
+    //     // Fill all the components that are not one of the largest, and all but
+    //     // one if there are more than one components tied for the largest.
+    //     for idx in non_largest_components_idxs {
+    //         for cidx in components[&idx].iter() {
+    //             self.map.tiles[*cidx] = TileType::Wall;
+    //         }
+    //     }
+    // }
 
     // Use cellular noise to create some random contiguous reigons of the map
     // that can be used as pseudo-rooms to spawn entities in.
