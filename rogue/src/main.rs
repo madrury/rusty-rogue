@@ -769,8 +769,8 @@ fn main() -> rltk::BError {
     let context = RltkBuilder::new()
         .with_fps_cap(60.0)
         .with_resource_path("resources".to_string())
-        .with_font("terminal8x8.png".to_string(), 8, 8)
-        .with_simple8x8()
+        .with_font("modified-terminal8x8.png".to_string(), 8, 8)
+        .with_simple_console(80, 50, "modified-terminal8x8.png".to_string())
         .with_title("Roguelike Tutorial")
         .build()?;
 
