@@ -38,7 +38,7 @@ impl WaterSpawnTable {
 }
 
 pub fn large_lakes_spawn_table(map: &Map) -> WaterSpawnTable {
-    water_spawn_table(
+    water_spawn_table_from_noise(
         map,
         LARGE_LAKES_DEEP_WATER_THRESHOLD,
         LARGE_LAKES_SHALLOW_WATER_THRESHOLD,
@@ -47,7 +47,7 @@ pub fn large_lakes_spawn_table(map: &Map) -> WaterSpawnTable {
 }
 
 pub fn small_lakes_spawn_table(map: &Map) -> WaterSpawnTable {
-    water_spawn_table(
+    water_spawn_table_from_noise(
         map,
         SMALL_LAKES_DEEP_WATER_THRESHOLD,
         SMALL_LAKES_SHALLOW_WATER_THRESHOLD,
@@ -62,7 +62,7 @@ pub fn small_lakes_spawn_table(map: &Map) -> WaterSpawnTable {
 // the map's floor. We then fill all but the largest component. The water that
 // carves out these smaller compoents is never actually spawned as entities into
 // the ECS.
-fn water_spawn_table(
+fn water_spawn_table_from_noise(
     map: &Map,
     deep_water_threshold: f32,
     shallow_water_threshold: f32,
@@ -100,6 +100,35 @@ fn water_spawn_table(
     }
     water_spawn_table
 }
+
+
+pub fn spawn_water_from_table(
+    ecs: &mut World,
+    water_spawn_table: &WaterSpawnTable
+) {
+    for e in &water_spawn_table.shallow {
+        {
+            let mut map = ecs.write_resource::<Map>();
+            let idx = map.xy_idx(e.x, e.y);
+            if map.blocked[idx] {
+                continue;
+            }
+            map.ok_to_spawn[idx] = true;
+        }
+        shallow_water(ecs, e.x, e.y, e.fgcolor, e.bgcolor);
+    }
+    for e in &water_spawn_table.deep {
+        {
+            let map = ecs.read_resource::<Map>();
+            let idx = map.xy_idx(e.x, e.y);
+            if map.blocked[idx] {
+                continue;
+            }
+        }
+        deep_water(ecs, e.x, e.y, e.fgcolor, e.bgcolor);
+    }
+}
+
 
 pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -> Option<Entity> {
     let entity = ecs.create_entity()

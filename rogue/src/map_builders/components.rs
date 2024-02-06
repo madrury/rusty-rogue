@@ -1,5 +1,3 @@
-use specs::Entity;
-
 use super::{Map, TileType};
 
 #[derive(PartialEq, Clone, Debug)]

@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
 
-use crate::terrain_spawners::water::WaterSpawnTable;
 use super::{MapBuilder, enumerate_connected_components, fill_all_but_largest_component};
 use super::{
     Map, Point, TileType, entity_spawners, terrain_spawners, get_stairs_position,
@@ -93,28 +92,8 @@ impl MapBuilder for CellularAutomataBuilder {
         water_spawn_table
     }
 
-    fn spawn_water(&mut self, ecs: &mut World, water_spawn_table: &WaterSpawnTable) {
-        for e in &water_spawn_table.shallow {
-            {
-                let mut map = ecs.write_resource::<Map>();
-                let idx = map.xy_idx(e.x, e.y);
-                if map.blocked[idx] {
-                    continue;
-                }
-                map.ok_to_spawn[idx] = true;
-            }
-            terrain_spawners::water::shallow_water(ecs, e.x, e.y, e.fgcolor, e.bgcolor);
-        }
-        for e in &water_spawn_table.deep {
-            {
-                let map = ecs.read_resource::<Map>();
-                let idx = map.xy_idx(e.x, e.y);
-                if map.blocked[idx] {
-                    continue;
-                }
-            }
-            terrain_spawners::water::deep_water(ecs, e.x, e.y, e.fgcolor, e.bgcolor);
-        }
+    fn spawn_water(&mut self, ecs: &mut World, water_spawn_table: &terrain_spawners::water::WaterSpawnTable) {
+        terrain_spawners::water::spawn_water_from_table(ecs, water_spawn_table)
     }
 
     fn spawn_terrain(&mut self, ecs: &mut World) {
