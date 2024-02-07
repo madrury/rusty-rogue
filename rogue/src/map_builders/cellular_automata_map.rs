@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
 
-use super::{MapBuilder, enumerate_connected_components, fill_all_but_largest_component};
+use super::{MapBuilder, enumerate_connected_components, fill_all_but_largest_component, carve_out_water_spawn_table};
 use super::{
     Map, Point, TileType, entity_spawners, terrain_spawners, get_stairs_position,
     DEBUG_VISUALIZE_MAPGEN
@@ -63,31 +63,26 @@ impl MapBuilder for CellularAutomataBuilder {
         //  map has a single connected compoenent. We need to re-compute the
         //  blocked array so that it can be used to determine free squares when
         //  spawning entities.
-        self.map.intitialize_blocked();
+        self.map.synchronize_blocked();
         let components = enumerate_connected_components(&self.map);
         fill_all_but_largest_component(&mut self.map, components);
-        self.map.intitialize_blocked();
+        self.take_snapshot();
+        self.map.synchronize_blocked();
 
         // Now we carve out space to spawn water.
         let water_spawn_table = terrain_spawners::random_water_spawn_table(&mut rng, &self.map);
-        for elem in &water_spawn_table.shallow {
-            let idx = self.map.xy_idx(elem.x, elem.y);
-            self.map.tiles[idx] = TileType::Floor
-        }
-        for elem in &water_spawn_table.deep {
-            let idx = self.map.xy_idx(elem.x, elem.y);
-            self.map.tiles[idx] = TileType::Floor
-        }
+        carve_out_water_spawn_table(&mut self.map, &water_spawn_table);
         // Carving out water maybe creates new connected components, so reduce
         // back to a single connected component.
-        self.map.intitialize_blocked();
+        self.map.synchronize_blocked();
         let components = enumerate_connected_components(&self.map);
         fill_all_but_largest_component(&mut self.map, components);
-        self.map.intitialize_blocked();
+        self.take_snapshot();
+        self.map.synchronize_blocked();
 
         self.populate_noise_areas();
-        self.map.intitialize_opaque();
-        self.map.intitialize_ok_to_spawn();
+        self.map.synchronize_opaque();
+        self.map.synchronize_ok_to_spawn();
 
         water_spawn_table
     }

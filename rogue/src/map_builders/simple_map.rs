@@ -1,12 +1,12 @@
-use rltk::{RandomNumberGenerator};
+use rltk::RandomNumberGenerator;
 use specs::prelude::*;
 
-use crate::terrain_spawners::water::WaterSpawnTable;
 use super::MapBuilder;
 use super::{
     Map, TileType, Point, Rectangle, MAP_WIDTH, MAP_HEIGHT,
-    DEBUG_VISUALIZE_MAPGEN, entity_spawners, terrain_spawners, apply_room,
-    apply_horizontal_tunnel, apply_vertical_tunnel, get_stairs_position,
+    DEBUG_VISUALIZE_MAPGEN, entity_spawners, terrain_spawners,
+    carve_out_rectangular_room, carve_out_horizontal_tunnel,
+    carve_out_vertical_tunnel, carve_out_water_spawn_table, get_stairs_position,
     enumerate_connected_components, fill_all_but_largest_component
 };
 
@@ -35,23 +35,16 @@ impl MapBuilder for SimpleMapBuilder {
         let mut rng = RandomNumberGenerator::new();
         // Now we carve out space to spawn water.
         let water_spawn_table = terrain_spawners::random_water_spawn_table(&mut rng, &self.map);
-        for elem in &water_spawn_table.shallow {
-            let idx = self.map.xy_idx(elem.x, elem.y);
-            self.map.tiles[idx] = TileType::Floor
-        }
-        for elem in &water_spawn_table.deep {
-            let idx = self.map.xy_idx(elem.x, elem.y);
-            self.map.tiles[idx] = TileType::Floor
-        }
+        carve_out_water_spawn_table(&mut self.map, &water_spawn_table);
         // Carving out water maybe creates new connected components, so reduce
         // back to a single connected component.
-        self.map.intitialize_blocked();
+        self.map.synchronize_blocked();
         let components = enumerate_connected_components(&self.map);
         fill_all_but_largest_component(&mut self.map, components);
-        self.map.intitialize_blocked();
+        self.map.synchronize_blocked();
 
-        self.map.intitialize_opaque();
-        self.map.intitialize_ok_to_spawn();
+        self.map.synchronize_opaque();
+        self.map.synchronize_ok_to_spawn();
 
         water_spawn_table
     }
@@ -99,8 +92,8 @@ impl MapBuilder for SimpleMapBuilder {
     fn take_snapshot(&mut self) {
         if DEBUG_VISUALIZE_MAPGEN {
             let mut snapshot = self.map.clone();
+            // So the snapshot will render everything.
             for v in snapshot.revealed_tiles.iter_mut() {
-                // So the snapshot will render everything.
                 *v = true;
             }
             self.history.push(snapshot);
@@ -141,17 +134,17 @@ impl SimpleMapBuilder {
                 .iter()
                 .all(|other| !new_room.intersect(other));
             if ok_to_place {
-                apply_room(&mut self.map, &new_room);
+                carve_out_rectangular_room(&mut self.map, &new_room);
                 self.take_snapshot();
                 if !self.rooms.is_empty() {
                     let (cxnew, cynew) = new_room.center();
                     let (cxprev, cyprev) =self.rooms[self.rooms.len() - 1].center();
                     if rng.range(0, 2) == 1 {
-                        apply_horizontal_tunnel(&mut self.map, cxprev, cxnew, cyprev);
-                        apply_vertical_tunnel(&mut self.map, cyprev, cynew, cxnew);
+                        carve_out_horizontal_tunnel(&mut self.map, cxprev, cxnew, cyprev);
+                        carve_out_vertical_tunnel(&mut self.map, cyprev, cynew, cxnew);
                     } else {
-                        apply_vertical_tunnel(&mut self.map, cyprev, cynew, cxprev);
-                        apply_horizontal_tunnel(&mut self.map, cxprev, cxnew, cynew);
+                        carve_out_vertical_tunnel(&mut self.map, cyprev, cynew, cxprev);
+                        carve_out_horizontal_tunnel(&mut self.map, cxprev, cxnew, cynew);
                     }
                 }
                 self.rooms.push(new_room);
