@@ -137,7 +137,7 @@ pub fn update_particle_lifetimes(ecs: &mut World, ctx: &Rltk) {
     {
         let mut particles = ecs.write_storage::<GameAnimationParticle>();
         let entities = ecs.entities();
-        for (entity, mut particle) in (&entities, &mut particles).join() {
+        for (entity, particle) in (&entities, &mut particles).join() {
             if particle.lifetime <= 0.0 {
                 dead_particles.push(entity);
             } else if particle.delay <= 0.0 {

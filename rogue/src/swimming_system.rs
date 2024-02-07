@@ -33,7 +33,7 @@ impl<'a> System<'a> for SwimmingSystem {
             entities, player, runstate, map, mut log, positions, mut wants_damages, mut swim_staminas
         } = data;
 
-        for (entity, pos, mut stamina) in (&entities, &positions, &mut swim_staminas).join() {
+        for (entity, pos, stamina) in (&entities, &positions, &mut swim_staminas).join() {
 
             let proceed =
                 (*runstate == RunState::PlayerTurn && entity == *player)
