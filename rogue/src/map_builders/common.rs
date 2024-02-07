@@ -82,8 +82,11 @@ fn try_get_stairs_position(ecs: &World) -> Option<Point> {
 }
 
 // Carving functions
+//--------------------------------------------------------------------
 // "Carving" refers to replacing TileType::Wall tiles in a map with
-// Tiletype::Floor tiles during generation.
+// Tiletype::Floor tiles during generation. Each of these functions carves out
+// tiles with a particular geometry.
+//--------------------------------------------------------------------
 pub fn carve_out_rectangular_room(map: &mut Map, room: &Rectangle) {
     for x in (room.x1 + 1)..=room.x2 {
         for y in (room.y1 + 1)..=room.y2 {

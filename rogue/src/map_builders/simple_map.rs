@@ -30,15 +30,16 @@ impl MapBuilder for SimpleMapBuilder {
     }
 
     fn build_map(&mut self) -> terrain_spawners::water::WaterSpawnTable {
-        self.rooms_and_corridors();
+        self.carve_out_rooms_and_corridors();
+        self.map.synchronize_blocked();
 
         let mut rng = RandomNumberGenerator::new();
         // Now we carve out space to spawn water.
         let water_spawn_table = terrain_spawners::random_water_spawn_table(&mut rng, &self.map);
         carve_out_water_spawn_table(&mut self.map, &water_spawn_table);
+        self.map.synchronize_blocked();
         // Carving out water maybe creates new connected components, so reduce
         // back to a single connected component.
-        self.map.synchronize_blocked();
         let components = enumerate_connected_components(&self.map);
         fill_all_but_largest_component(&mut self.map, components);
         self.map.synchronize_blocked();
@@ -117,8 +118,8 @@ impl SimpleMapBuilder {
         }
     }
 
-    fn rooms_and_corridors(&mut self) {
-        const MAX_ROOMS: i32 = 30;
+    fn carve_out_rooms_and_corridors(&mut self) {
+        const MAX_ROOMS: i32 = 40;
         const MIN_ROOM_SIZE: i32 = 6;
         const MAX_ROOM_SIZE: i32 = 10;
 

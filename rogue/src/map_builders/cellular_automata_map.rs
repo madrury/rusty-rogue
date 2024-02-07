@@ -51,8 +51,10 @@ impl MapBuilder for CellularAutomataBuilder {
             self.update();
             self.take_snapshot();
         }
+        self.map.synchronize_blocked();
         // The use of the map.blocked array here is confusing. We need to call
-        // initialize_blocked *twice*.
+        // synchronize_blocked multiple times, which updates the map.blocked
+        // array to by consistent with the map.tiletype (Vec<Tiletype>).
         //
         //   - The *initial calls* to initialize_blocked are to support our use
         //   of the rltk::Dijkstra map when finding the connected components of
@@ -63,7 +65,6 @@ impl MapBuilder for CellularAutomataBuilder {
         //  map has a single connected compoenent. We need to re-compute the
         //  blocked array so that it can be used to determine free squares when
         //  spawning entities.
-        self.map.synchronize_blocked();
         let components = enumerate_connected_components(&self.map);
         fill_all_but_largest_component(&mut self.map, components);
         self.take_snapshot();

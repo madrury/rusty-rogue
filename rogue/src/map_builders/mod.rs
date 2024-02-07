@@ -33,7 +33,8 @@ pub fn random_builder(depth: i32) -> Box<dyn MapBuilder> {
     let mut rng = rltk::RandomNumberGenerator::new();
     let roll = rng.roll_dice(1, 2);
     match roll {
-        1 => Box::new(SimpleMapBuilder::new(depth)),
+        // 1 => Box::new(SimpleMapBuilder::new(depth)),
+        1 => Box::new(CellularAutomataBuilder::new(depth)),
         2 => Box::new(CellularAutomataBuilder::new(depth)),
         _ => panic!("Rolled too high when choosing a map builder.")
     }
