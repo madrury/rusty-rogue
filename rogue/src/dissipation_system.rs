@@ -73,7 +73,8 @@ impl DissipationSystem {
                         EntitySpawnKind::Fire {..} => entity_spawners::hazards::destroy_fire(ecs, &victim),
                         EntitySpawnKind::Chill {..} => entity_spawners::hazards::destroy_chill(ecs, &victim),
                         EntitySpawnKind::Steam {..} => entity_spawners::hazards::destroy_steam(ecs, &victim),
-                        EntitySpawnKind::Grass {..} => terrain_spawners::foliage::destroy_tall_grass(ecs, &victim),
+                        EntitySpawnKind::ShortGrass {..} => terrain_spawners::foliage::destroy_grass(ecs, &victim),
+                        EntitySpawnKind::TallGrass {..} => terrain_spawners::foliage::destroy_tall_grass(ecs, &victim),
                         // TODO: Implement destroy water.
                         _ => {}
                     }

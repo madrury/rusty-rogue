@@ -12,15 +12,17 @@ use rltk::RGB;
 // These components influence entity spawning behaviour.
 //------------------------------------------------------------------
 
-// Enumerates the various types of entities that can spawn. Used to tag a spawn
-// request to lookup the appropriate function used to spawn the entity.
+// Enumerates the various types of entities that can spawn and
+// dissapate/despawn. Used to tag a spawn or despawn request to lookup the
+// appropriate function used to spawn or destroy the entity.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum EntitySpawnKind {
     PinkJelly {max_hp: i32, hp: i32},
     Fire {spread_chance: i32, dissipate_chance: i32},
     Chill {spread_chance: i32, dissipate_chance: i32},
     Steam {spread_chance: i32, dissipate_chance: i32},
-    Grass {fg: RGB},
+    ShortGrass {fg: RGB},
+    TallGrass {fg: RGB},
     Water,
     MagicOrb
 }

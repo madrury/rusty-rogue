@@ -76,6 +76,7 @@ const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
+const DEBUG_HIGHLIGHT_GRASS: bool = true;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
 
@@ -167,6 +168,9 @@ impl State {
         }
         if DEBUG_HIGHLIGHT_FIRE {
             self.debug_highlight_fire(ctx);
+        }
+        if DEBUG_HIGHLIGHT_GRASS {
+            self.debug_highlight_grass(ctx);
         }
         if DEBUG_HIGHLIGHT_FLOOR {
             self.debug_highlight_floor(ctx);
@@ -442,6 +446,20 @@ impl State {
             }
         }
     }
+
+    #[allow(dead_code)]
+    fn debug_highlight_grass(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.grass[idx] {
+                    ctx.set_bg(x, y, RGB::named(rltk::GREEN));
+                }
+            }
+        }
+    }
+
 }
 
 impl GameState for State {
@@ -741,7 +759,7 @@ impl GameState for State {
                     HelpMenuResult::Cancel => match details {
                         None => { newrunstate = RunState::AwaitingInput }
                         Some(_) => { newrunstate = RunState::ShowHelpMenu{details: None} }
-                    } 
+                    }
                     HelpMenuResult::NoSelection {current: _} => {},
                     HelpMenuResult::Selected {selected: s} => {
                         let command = COMMANDS[s];
