@@ -76,7 +76,7 @@ const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
-const DEBUG_HIGHLIGHT_GRASS: bool = true;
+const DEBUG_HIGHLIGHT_GRASS: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 50.0;
 
@@ -839,7 +839,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<IsEntityKind>();
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<CanNotAct>();
-    gs.ecs.register::<MonsterMovementRoutingOptions>();
+    gs.ecs.register::<MovementRoutingAvoids>();
     gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
     gs.ecs.register::<MonsterSupportSpellcasterAI>();

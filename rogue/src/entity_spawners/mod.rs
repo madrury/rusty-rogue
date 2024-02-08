@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use super::{
     Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
     SwimStamina, HungerClock, HungerState, Monster, Hazard, IsEntityKind,
-    MonsterMovementRoutingOptions, MonsterBasicAI,
+    MovementRoutingAvoids, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
-    SupportSpellcasterKind, MovementRoutingOptions, Name, Player, Position,
+    SupportSpellcasterKind, Name, Player, Position,
     Renderable, SetsBgColor, Viewshed, PickUpable, Useable, Castable,
     SpellCharges, Equippable, EquipmentSlot, Throwable, Targeted,
     TargetingKind, Untargeted, Consumable, ProvidesFullHealing,

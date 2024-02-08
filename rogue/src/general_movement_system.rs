@@ -1,6 +1,6 @@
 use super::{
     Map, Point, Position, Viewshed, Renderable, BlocksTile,
-    MonsterMovementRoutingOptions, WantsToMoveToRandomPosition,
+    MovementRoutingAvoids, WantsToMoveToRandomPosition,
     WantsToMoveToPosition, AnimationRequestBuffer, AnimationRequest
 };
 use specs::prelude::*;
@@ -90,7 +90,7 @@ pub struct PositionMovementSystemData<'a> {
     map: WriteExpect<'a, Map>,
     player: ReadExpect<'a, Entity>,
     player_pos: WriteExpect<'a, Point>,
-    routing_options: ReadStorage<'a, MonsterMovementRoutingOptions>,
+    routing_options: ReadStorage<'a, MovementRoutingAvoids>,
     positions: WriteStorage<'a, Position>,
     viewsheds: WriteStorage<'a, Viewshed>,
     is_blockings: WriteStorage<'a, BlocksTile>,
@@ -154,14 +154,14 @@ impl<'a> System<'a> for PositionMovementSystem {
     }
 }
 
-fn ok_to_move_to_position(map: &Map, routing: Option<&MonsterMovementRoutingOptions>, idx: usize) -> bool {
-    match routing {
+fn ok_to_move_to_position(map: &Map, avoids: Option<&MovementRoutingAvoids>, idx: usize) -> bool {
+    match avoids {
         None => !map.blocked[idx],
         Some(routing) => {
             !map.blocked[idx]
-                && !(routing.options.avoid_fire && map.fire[idx])
-                && !(routing.options.avoid_chill && map.chill[idx])
-                && !(routing.options.avoid_water && map.water[idx])
+                && !(routing.fire && map.fire[idx])
+                && !(routing.chill && map.chill[idx])
+                && !(routing.water && map.water[idx])
         }
     }
 }

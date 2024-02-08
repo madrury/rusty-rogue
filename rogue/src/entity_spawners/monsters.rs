@@ -1,12 +1,11 @@
 
 use super::{
-    Map, BlocksTile, CombatStats, Monster, MonsterMovementRoutingOptions,
+    Map, BlocksTile, CombatStats, Monster, MovementRoutingAvoids,
     MonsterBasicAI, MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
-    SupportSpellcasterKind, MovementRoutingOptions,
-    SpawnEntityWhenMeleeAttacked,  EntitySpawnKind, Name, Position,
-    Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
-    StatusIsImmuneToFire, StatusIsImmuneToChill, InSpellBook, CanNotAct,
-    BlessingSlot, spells
+    SupportSpellcasterKind, SpawnEntityWhenMeleeAttacked,  EntitySpawnKind,
+    Name, Position, Renderable, Viewshed, SimpleMarker, SerializeMe,
+    MarkedBuilder, StatusIsImmuneToFire, StatusIsImmuneToChill, InSpellBook,
+    CanNotAct, BlessingSlot, spells
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
@@ -22,16 +21,13 @@ const RAT_BASE_HP: i32 = 6;
 const RAT_BASE_DEFENSE: i32 = 0;
 const RAT_BASE_POWER: i32 = 2;
 
-const RAT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: true,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: true,
-    avoid_brimstone: true,
-    avoid_ice: false,
+const RAT_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
+    blocked: true,
+    fire: true,
+    chill: true,
+    water: true,
+    steam: true,
+    smoke: true,
 };
 
 const RAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
@@ -68,8 +64,8 @@ pub fn rat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..RAT_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: RAT_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..RAT_ROUTING_AVOIDS
         })
         .with(CombatStats {
             max_hp: RAT_BASE_HP,
@@ -99,16 +95,13 @@ const BAT_BASE_HP: i32 = 12;
 const BAT_BASE_DEFENSE: i32 = 0;
 const BAT_BASE_POWER: i32 = 2;
 
-const BAT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: false,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: false,
-    avoid_brimstone: false,
-    avoid_ice: false,
+const BAT_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
+    blocked: true,
+    fire: true,
+    chill: true,
+    water: false,
+    steam: true,
+    smoke: true,
 };
 
 const BAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
@@ -145,8 +138,8 @@ pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..BAT_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: BAT_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..BAT_ROUTING_AVOIDS
         })
         .with(CombatStats {
             max_hp: BAT_BASE_HP,
@@ -182,16 +175,13 @@ const GOLBIN_ATTTACK_SPELLCASTER_DISTANCE: i32 = 3;
 const GOBLIN_SUPPORT_SPELLCASTER_ALLY_DISTANCE: i32 = 2;
 const GOBLIN_SUPPORT_SPELLCASTER_PLAYER_DISTANCE: i32 = 2;
 
-const GOBLIN_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: true,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: true,
-    avoid_brimstone: true,
-    avoid_ice: false,
+const GOBLIN_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
+    blocked: true,
+    fire: true,
+    chill: true,
+    water: true,
+    steam: true,
+    smoke: true,
 };
 
 const GOBLIN_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
@@ -229,8 +219,8 @@ pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..GOBLIN_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: GOBLIN_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..GOBLIN_ROUTING_AVOIDS
         })
         .with(CombatStats {
             max_hp: GOBLIN_BASE_HP,
@@ -278,8 +268,8 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(MonsterAttackSpellcasterAI {
                 distance_to_keep_away: GOLBIN_ATTTACK_SPELLCASTER_DISTANCE,
             })
-            .with(MonsterMovementRoutingOptions {
-                options: GOBLIN_ROUTING_OPTIONS
+            .with(MovementRoutingAvoids {
+                ..GOBLIN_ROUTING_AVOIDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -341,8 +331,8 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(MonsterAttackSpellcasterAI {
                 distance_to_keep_away: GOLBIN_ATTTACK_SPELLCASTER_DISTANCE,
             })
-            .with(MonsterMovementRoutingOptions {
-                options: GOBLIN_ROUTING_OPTIONS
+            .with(MovementRoutingAvoids {
+                ..GOBLIN_ROUTING_AVOIDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -405,8 +395,8 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 distance_to_keep_away_from_monsters: GOBLIN_SUPPORT_SPELLCASTER_ALLY_DISTANCE,
                 distance_to_keep_away_from_player: GOBLIN_SUPPORT_SPELLCASTER_PLAYER_DISTANCE,
             })
-            .with(MonsterMovementRoutingOptions {
-                options: GOBLIN_ROUTING_OPTIONS
+            .with(MovementRoutingAvoids {
+                ..GOBLIN_ROUTING_AVOIDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -461,8 +451,8 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Name {
                 name: "Goblin Enchanter".to_string(),
             })
-            .with(MonsterMovementRoutingOptions {
-                options: GOBLIN_ROUTING_OPTIONS
+            .with(MovementRoutingAvoids {
+                ..GOBLIN_ROUTING_AVOIDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -523,16 +513,13 @@ const ORC_BASE_HP: i32 = 30;
 const ORC_BASE_POWER: i32 = 6;
 const ORC_BASE_DEFENSE: i32 = 0;
 
-const ORC_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: true,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: true,
-    avoid_brimstone: true,
-    avoid_ice: false,
+const ORC_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
+    blocked: true,
+    fire: true,
+    chill: true,
+    water: true,
+    steam: true,
+    smoke: true,
 };
 
 const ORC_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
@@ -545,7 +532,6 @@ const ORC_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
 };
 
 pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
-
 
     let orc = ecs.create_entity()
         .with(Position {
@@ -571,8 +557,8 @@ pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..ORC_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: ORC_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..ORC_ROUTING_AVOIDS
         })
         .with(CombatStats {
             max_hp: ORC_BASE_HP,
@@ -601,16 +587,13 @@ pub const JELLY_BASE_HP: i32 = 20;
 const JELLY_BASE_DEFENSE: i32 = 0;
 const JELLY_BASE_POWER: i32 = 2;
 
-const JELLY_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: true,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: true,
-    avoid_brimstone: true,
-    avoid_ice: false,
+const JELLY_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
+    blocked: true,
+    fire: true,
+    chill: true,
+    water: true,
+    steam: true,
+    smoke: true,
 };
 
 const JELLY_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
@@ -647,8 +630,8 @@ pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Optio
         .with(MonsterBasicAI {
             ..JELLY_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: JELLY_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..JELLY_ROUTING_AVOIDS
         })
         .with(CombatStats {
             max_hp: max_hp,
@@ -685,6 +668,7 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             y: y
         })
         .with(Monster {})
+        .with(BlocksTile {})
         .with(Renderable {
             glyph: rltk::to_cp437('J'),
             fg: RGB::named(rltk::ORANGERED),
@@ -703,8 +687,9 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..JELLY_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: JELLY_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            fire: false,
+            ..JELLY_ROUTING_AVOIDS
         })
         .with(CombatStats {
             max_hp: JELLY_BASE_HP,
@@ -721,7 +706,6 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(StatusIsImmuneToFire {
             remaining_turns: i32::MAX, render_glyph: true
         })
-        .with(BlocksTile {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -738,6 +722,7 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             y: y
         })
         .with(Monster {})
+        .with(BlocksTile {})
         .with(Renderable {
             glyph: rltk::to_cp437('J'),
             fg: RGB::named(rltk::DODGERBLUE),
@@ -756,8 +741,9 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..JELLY_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: JELLY_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            chill: false,
+            ..JELLY_ROUTING_AVOIDS
         })
         .with(CombatStats {
             max_hp: JELLY_BASE_HP,
@@ -775,7 +761,6 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             remaining_turns: i32::MAX,
             render_glyph: true
         })
-        .with(BlocksTile {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
