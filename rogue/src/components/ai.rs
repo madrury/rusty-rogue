@@ -26,7 +26,12 @@ pub struct MovementRoutingAvoids {
     pub chill: bool,
     pub water: bool,
     pub steam: bool,
-    pub smoke: bool,
+}
+
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct MovementRoutingBounds {
+    pub grass: bool
 }
 
 #[derive(Component, ConvertSaveload, Clone)]

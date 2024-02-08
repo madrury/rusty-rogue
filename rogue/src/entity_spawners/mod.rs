@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use super::{
     Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
     SwimStamina, HungerClock, HungerState, Monster, Hazard, IsEntityKind,
-    MovementRoutingAvoids, MonsterBasicAI,
+    MovementRoutingAvoids, MovementRoutingBounds, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
     SupportSpellcasterKind, Name, Player, Position,
     Renderable, SetsBgColor, Viewshed, PickUpable, Useable, Castable,

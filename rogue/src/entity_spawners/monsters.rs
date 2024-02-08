@@ -1,16 +1,25 @@
 
 use super::{
     Map, BlocksTile, CombatStats, Monster, MovementRoutingAvoids,
-    MonsterBasicAI, MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
-    SupportSpellcasterKind, SpawnEntityWhenMeleeAttacked,  EntitySpawnKind,
-    Name, Position, Renderable, Viewshed, SimpleMarker, SerializeMe,
-    MarkedBuilder, StatusIsImmuneToFire, StatusIsImmuneToChill, InSpellBook,
-    CanNotAct, BlessingSlot, spells
+    MovementRoutingBounds, MonsterBasicAI, MonsterAttackSpellcasterAI,
+    MonsterSupportSpellcasterAI, SupportSpellcasterKind,
+    SpawnEntityWhenMeleeAttacked,  EntitySpawnKind, Name, Position, Renderable,
+    Viewshed, SimpleMarker, SerializeMe, MarkedBuilder, StatusIsImmuneToFire,
+    StatusIsImmuneToChill, InSpellBook, CanNotAct, BlessingSlot, spells
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
 
-
+const BASIC_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
+    blocked: true,
+    fire: true,
+    chill: true,
+    water: true,
+    steam: true,
+};
+const BASIC_ROUTING_BOUNDS: MovementRoutingBounds = MovementRoutingBounds {
+    grass: false,
+};
 //----------------------------------------------------------------------------
 // Rat.
 //
@@ -20,15 +29,6 @@ const RAT_VIEW_RANGE: i32 = 4;
 const RAT_BASE_HP: i32 = 6;
 const RAT_BASE_DEFENSE: i32 = 0;
 const RAT_BASE_POWER: i32 = 2;
-
-const RAT_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
-    blocked: true,
-    fire: true,
-    chill: true,
-    water: true,
-    steam: true,
-    smoke: true,
-};
 
 const RAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -65,7 +65,10 @@ pub fn rat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             ..RAT_BASIC_AI
         })
         .with(MovementRoutingAvoids {
-            ..RAT_ROUTING_AVOIDS
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: RAT_BASE_HP,
@@ -94,15 +97,6 @@ const BAT_VIEW_RANGE: i32 = 12;
 const BAT_BASE_HP: i32 = 12;
 const BAT_BASE_DEFENSE: i32 = 0;
 const BAT_BASE_POWER: i32 = 2;
-
-const BAT_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
-    blocked: true,
-    fire: true,
-    chill: true,
-    water: false,
-    steam: true,
-    smoke: true,
-};
 
 const BAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -139,7 +133,11 @@ pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             ..BAT_BASIC_AI
         })
         .with(MovementRoutingAvoids {
-            ..BAT_ROUTING_AVOIDS
+            water: false,
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: BAT_BASE_HP,
@@ -174,15 +172,6 @@ const GOBLIN_BASE_POWER: i32 = 3;
 const GOLBIN_ATTTACK_SPELLCASTER_DISTANCE: i32 = 3;
 const GOBLIN_SUPPORT_SPELLCASTER_ALLY_DISTANCE: i32 = 2;
 const GOBLIN_SUPPORT_SPELLCASTER_PLAYER_DISTANCE: i32 = 2;
-
-const GOBLIN_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
-    blocked: true,
-    fire: true,
-    chill: true,
-    water: true,
-    steam: true,
-    smoke: true,
-};
 
 const GOBLIN_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -220,7 +209,10 @@ pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             ..GOBLIN_BASIC_AI
         })
         .with(MovementRoutingAvoids {
-            ..GOBLIN_ROUTING_AVOIDS
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: GOBLIN_BASE_HP,
@@ -269,7 +261,11 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 distance_to_keep_away: GOLBIN_ATTTACK_SPELLCASTER_DISTANCE,
             })
             .with(MovementRoutingAvoids {
-                ..GOBLIN_ROUTING_AVOIDS
+                fire: false,
+                ..BASIC_ROUTING_AVOIDS
+            })
+            .with(MovementRoutingBounds {
+                ..BASIC_ROUTING_BOUNDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -332,7 +328,11 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 distance_to_keep_away: GOLBIN_ATTTACK_SPELLCASTER_DISTANCE,
             })
             .with(MovementRoutingAvoids {
-                ..GOBLIN_ROUTING_AVOIDS
+                chill: false,
+                ..BASIC_ROUTING_AVOIDS
+            })
+            .with(MovementRoutingBounds {
+                ..BASIC_ROUTING_BOUNDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -396,7 +396,10 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 distance_to_keep_away_from_player: GOBLIN_SUPPORT_SPELLCASTER_PLAYER_DISTANCE,
             })
             .with(MovementRoutingAvoids {
-                ..GOBLIN_ROUTING_AVOIDS
+                ..BASIC_ROUTING_AVOIDS
+            })
+            .with(MovementRoutingBounds {
+                ..BASIC_ROUTING_BOUNDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -452,7 +455,10 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 name: "Goblin Enchanter".to_string(),
             })
             .with(MovementRoutingAvoids {
-                ..GOBLIN_ROUTING_AVOIDS
+                ..BASIC_ROUTING_AVOIDS
+            })
+            .with(MovementRoutingBounds {
+                ..BASIC_ROUTING_BOUNDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -513,15 +519,6 @@ const ORC_BASE_HP: i32 = 30;
 const ORC_BASE_POWER: i32 = 6;
 const ORC_BASE_DEFENSE: i32 = 0;
 
-const ORC_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
-    blocked: true,
-    fire: true,
-    chill: true,
-    water: true,
-    steam: true,
-    smoke: true,
-};
-
 const ORC_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
@@ -558,7 +555,10 @@ pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             ..ORC_BASIC_AI
         })
         .with(MovementRoutingAvoids {
-            ..ORC_ROUTING_AVOIDS
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: ORC_BASE_HP,
@@ -586,15 +586,6 @@ const JELLY_VIEW_RANGE: i32 = 8;
 pub const JELLY_BASE_HP: i32 = 20;
 const JELLY_BASE_DEFENSE: i32 = 0;
 const JELLY_BASE_POWER: i32 = 2;
-
-const JELLY_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
-    blocked: true,
-    fire: true,
-    chill: true,
-    water: true,
-    steam: true,
-    smoke: true,
-};
 
 const JELLY_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -631,7 +622,10 @@ pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Optio
             ..JELLY_BASIC_AI
         })
         .with(MovementRoutingAvoids {
-            ..JELLY_ROUTING_AVOIDS
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: max_hp,
@@ -689,7 +683,10 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(MovementRoutingAvoids {
             fire: false,
-            ..JELLY_ROUTING_AVOIDS
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: JELLY_BASE_HP,
@@ -743,7 +740,10 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         })
         .with(MovementRoutingAvoids {
             chill: false,
-            ..JELLY_ROUTING_AVOIDS
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: JELLY_BASE_HP,
