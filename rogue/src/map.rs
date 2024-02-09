@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::iter::Iterator;
 use take_until::*;
-use super::{DEBUG_DRAW_ALL_MAP, MovementRoutingAvoids};
+use super::{DEBUG_DRAW_ALL_MAP, MovementRoutingAvoids, MovementRoutingBounds};
 
 
 pub const MAP_WIDTH: i32 = 80;
@@ -371,11 +371,16 @@ pub struct RoutingMap {
 }
 
 impl RoutingMap {
-    pub fn from_map(map: &Map, avoids: &MovementRoutingAvoids) -> RoutingMap {
+
+    pub fn from_map(
+        map: &Map,
+        avoids: &MovementRoutingAvoids,
+        bounds: &MovementRoutingBounds
+    ) -> RoutingMap {
         let mut route = RoutingMap {
             width: map.width,
             height: map.height,
-            avoid: vec![false; map.width as usize * map.height as usize]
+            avoid: vec![false; MAP_SIZE]
         };
         for x in 0..map.width {
             for y in 0..map.height {
@@ -385,7 +390,8 @@ impl RoutingMap {
                     || (avoids.blocked && map.blocked[idx])
                     || (avoids.fire && map.fire[idx])
                     || (avoids.chill && map.chill[idx])
-                    || (avoids.water && map.water[idx]);
+                    || (avoids.water && map.water[idx])
+                    || (bounds.grass && !map.grass[idx]);
             }
         }
         route

@@ -840,6 +840,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<CanAct>();
     gs.ecs.register::<CanNotAct>();
     gs.ecs.register::<MovementRoutingAvoids>();
+    gs.ecs.register::<MovementRoutingBounds>();
     gs.ecs.register::<MonsterBasicAI>();
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
     gs.ecs.register::<MonsterSupportSpellcasterAI>();
