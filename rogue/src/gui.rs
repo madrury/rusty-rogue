@@ -619,7 +619,7 @@ pub fn wrap_line(text: &'static str, width: usize) -> Vec<String> {
 }
 
 // Help Menu
-pub fn show_help(ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>) -> HelpMenuResult {
+pub fn show_help(_ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>) -> HelpMenuResult {
     let max_lines_to_show = COMMANDS.len();
     let base_y = MODAL_MENU_Y_POSITION - max_lines_to_show as i32;
 

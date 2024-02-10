@@ -15,13 +15,15 @@ use components::spawn_despawn::*;
 use components::status_effects::*;
 use components::signaling::*;
 
-pub mod map_builders;
 pub mod entity_spawners;
 pub mod terrain_spawners;
 pub mod noise;
 pub mod color;
 mod save_load;
 mod random_table;
+
+pub mod map_builders;
+
 mod map;
 pub use map::*;
 mod player;
@@ -67,7 +69,7 @@ use encroachment_system::*;
 mod general_movement_system;
 use general_movement_system::*;
 mod gamelog;
-use gamelog::{GameLog};
+use gamelog::GameLog;
 
 // Debug flags.
 const DEBUG_DRAW_ALL_MAP: bool = false;
@@ -78,7 +80,7 @@ const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 const DEBUG_HIGHLIGHT_GRASS: bool = false;
 
-const MAPGEN_FRAME_TIME: f32 = 50.0;
+const MAPGEN_FRAME_TIME: f32 = 100.0;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
@@ -293,7 +295,7 @@ impl State {
         // Build the floor layout, and update the dubug map build animation.
         self.mapgen.reset();
         let mut builder = map_builders::random_builder(depth);
-        builder.build_map();
+        let water_spawn_table = builder.build_map();
         self.mapgen.history = builder.snapshot_history();
 
         // Place the built map into the ecs. From here on, we will work with the
@@ -302,6 +304,9 @@ impl State {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
             *worldmap_resource = builder.map();
         }
+        builder.spawn_water(&mut self.ecs, &water_spawn_table);
+        builder.spawn_terrain(&mut self.ecs);
+        builder.spawn_entities(&mut self.ecs);
 
         // Place the stairs and update the associated ECS resources.
         let stairs_position = builder.stairs_position(&self.ecs);
@@ -312,9 +317,6 @@ impl State {
             map.blocked[idx] = false;
             map.ok_to_spawn[idx] = false;
         }
-
-        builder.spawn_terrain(&mut self.ecs);
-        builder.spawn_entities(&mut self.ecs);
 
         // Add all our newly spawned enettities to the tile_content array. This
         // is used below when attempting to place the player.

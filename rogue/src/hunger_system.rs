@@ -27,7 +27,7 @@ impl<'a> System<'a> for HungerSystem {
             entities, player, runstate, mut log, mut wants_damages, mut hungers
         } = data;
 
-        for (entity, mut clock) in (&entities, &mut hungers).join() {
+        for (entity, clock) in (&entities, &mut hungers).join() {
 
             // Only tick the player's clock on their turn and any monster clock
             // on monster's turns.

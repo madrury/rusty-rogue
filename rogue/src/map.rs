@@ -99,19 +99,19 @@ impl Map {
         }
     }
 
-    pub fn intitialize_blocked(&mut self) {
+    pub fn synchronize_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.blocked[i] = *tile == TileType::Wall;
         }
     }
 
-    pub fn intitialize_opaque(&mut self) {
+    pub fn synchronize_opaque(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.opaque[i] = *tile == TileType::Wall;
         }
     }
 
-    pub fn intitialize_ok_to_spawn(&mut self) {
+    pub fn synchronize_ok_to_spawn(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.ok_to_spawn[i] = *tile != TileType::Wall && *tile != TileType::DownStairs;
         }

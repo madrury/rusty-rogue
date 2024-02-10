@@ -1,10 +1,12 @@
 use std::cmp::{max, min};
 use specs::prelude::*;
 use serde::{Serialize, Deserialize};
-use rltk::{RandomNumberGenerator};
+use rltk::RandomNumberGenerator;
+use crate::terrain_spawners::water::WaterSpawnTable;
+
 use super::{Map, Point, TileType, MAP_SIZE};
 
-const PLACE_STAIRS_N_TRYS: i32 = 50;
+const PLACE_STAIRS_N_TRYS: i32 = 250;
 
 pub fn get_stairs_position(ecs: &World) -> Option<Point> {
     for _ in 0..PLACE_STAIRS_N_TRYS {
@@ -79,8 +81,13 @@ fn try_get_stairs_position(ecs: &World) -> Option<Point> {
     return None
 }
 
-
-pub fn apply_room(map: &mut Map, room: &Rectangle) {
+// Carving functions
+//--------------------------------------------------------------------
+// "Carving" refers to replacing TileType::Wall tiles in a map with
+// Tiletype::Floor tiles during generation. Each of these functions carves out
+// tiles with a particular geometry.
+//--------------------------------------------------------------------
+pub fn carve_out_rectangular_room(map: &mut Map, room: &Rectangle) {
     for x in (room.x1 + 1)..=room.x2 {
         for y in (room.y1 + 1)..=room.y2 {
             let idx = map.xy_idx(x, y);
@@ -89,7 +96,7 @@ pub fn apply_room(map: &mut Map, room: &Rectangle) {
     }
 }
 
-pub fn apply_horizontal_tunnel(map: &mut Map, x1: i32, x2: i32, y: i32) {
+pub fn carve_out_horizontal_tunnel(map: &mut Map, x1: i32, x2: i32, y: i32) {
     for x in min(x1, x2)..=max(x1, x2) {
         let idx = map.xy_idx(x, y);
         if idx > 0 && idx < MAP_SIZE {
@@ -98,7 +105,7 @@ pub fn apply_horizontal_tunnel(map: &mut Map, x1: i32, x2: i32, y: i32) {
     }
 }
 
-pub fn apply_vertical_tunnel(map: &mut Map, y1: i32, y2: i32, x: i32) {
+pub fn carve_out_vertical_tunnel(map: &mut Map, y1: i32, y2: i32, x: i32) {
     for y in min(y1, y2)..=max(y1, y2) {
         let idx = map.xy_idx(x, y);
         if idx > 0 && idx < MAP_SIZE {
@@ -107,6 +114,16 @@ pub fn apply_vertical_tunnel(map: &mut Map, y1: i32, y2: i32, x: i32) {
     }
 }
 
+pub fn carve_out_water_spawn_table(map: &mut Map, water_spawn_table: &WaterSpawnTable) {
+    for elem in &water_spawn_table.shallow {
+        let idx = map.xy_idx(elem.x, elem.y);
+        map.tiles[idx] = TileType::Floor
+    }
+    for elem in &water_spawn_table.deep {
+        let idx = map.xy_idx(elem.x, elem.y);
+        map.tiles[idx] = TileType::Floor
+    }
+}
 
 #[derive(PartialEq, Default, Clone, Serialize, Deserialize)]
 pub struct Rectangle {

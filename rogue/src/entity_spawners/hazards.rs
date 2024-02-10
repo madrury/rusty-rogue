@@ -10,7 +10,7 @@ use super::{
     SkipRandomDissipationForOneTurn, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind
 };
-use rltk::{RGB};
+use rltk::RGB;
 use specs::prelude::*;
 
 
@@ -99,10 +99,10 @@ pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
             Some(pos) => {
                 idx = map.xy_idx(pos.x, pos.y);
                 if !map.fire[idx] {
-                    panic!(format!(
+                    panic!(
                         "Attempted to delete fire but no fire in position {} {}.",
                         pos.x, pos.y
-                    ))
+                    )
                 }
             }
             None => panic!("Attempted to delete fire, but fire has no position.")
@@ -192,10 +192,10 @@ pub fn destroy_chill(ecs: &mut World, entity: &Entity) {
             Some(pos) => {
                 idx = map.xy_idx(pos.x, pos.y);
                 if !map.chill[idx] {
-                    panic!(format!(
+                    panic!(
                         "Attempted to delete chill but no chill in position {} {}.",
                         pos.x, pos.y
-                    ))
+                    )
                 }
             }
             None => panic!("Attempted to delete chill, but chill has no position.")
@@ -278,10 +278,10 @@ pub fn destroy_steam(ecs: &mut World, entity: &Entity) {
             Some(pos) => {
                 idx = map.xy_idx(pos.x, pos.y);
                 if !map.steam[idx] {
-                    panic!(format!(
+                    panic!(
                         "Attempted to delete steam but no steam in position {} {}.",
                         pos.x, pos.y
-                    ))
+                    )
                 }
             }
             None => panic!("Attempted to delete steam, but steam has no position.")
