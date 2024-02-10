@@ -27,8 +27,8 @@ impl<'a> System<'a> for MapIndexingSystem {
         let (mut map, positions, blockers, is_opaque, kind, entities) = data;
 
         // Re-initialize each of the map attributes.
-        map.intitialize_blocked();
-        map.intitialize_opaque();
+        map.synchronize_blocked();
+        map.synchronize_opaque();
         for e in map.fire.iter_mut() {*e = false}
         for e in map.chill.iter_mut() {*e = false}
         for e in map.water.iter_mut() {*e = false}
