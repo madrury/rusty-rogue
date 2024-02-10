@@ -101,7 +101,6 @@ fn water_spawn_table_from_noise(
     water_spawn_table
 }
 
-
 pub fn spawn_water_from_table(
     ecs: &mut World,
     water_spawn_table: &WaterSpawnTable

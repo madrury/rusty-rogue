@@ -20,6 +20,7 @@ const BASIC_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
 const BASIC_ROUTING_BOUNDS: MovementRoutingBounds = MovementRoutingBounds {
     grass: false,
 };
+
 //----------------------------------------------------------------------------
 // Rat.
 //
@@ -155,6 +156,72 @@ pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(bat)
 }
 
+//----------------------------------------------------------------------------
+// Sanke.
+//
+// Grassbound and invisible in tall grass.
+//----------------------------------------------------------------------------
+const SNAKE_VIEW_RANGE: i32 = 6;
+const SNAKE_BASE_HP: i32 = 10;
+const SNAKE_BASE_DEFENSE: i32 = 0;
+const SNAKE_BASE_POWER: i32 = 2;
+
+const SNAKE_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
+    only_follow_within_viewshed: true,
+    no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 0,
+    escape_when_at_low_health: true,
+    lost_visibility_keep_following_turns_max: 20,
+    lost_visibility_keep_following_turns_remaining: 20,
+};
+
+pub fn snake(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let snake = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('s'),
+            fg: RGB::named(rltk::GREENYELLOW),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: SNAKE_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Snake".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..SNAKE_BASIC_AI
+        })
+        .with(MovementRoutingAvoids {
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            grass: true,
+            ..BASIC_ROUTING_BOUNDS
+        })
+        .with(CombatStats {
+            max_hp: SNAKE_BASE_HP,
+            hp: SNAKE_BASE_HP,
+            power: SNAKE_BASE_POWER,
+            defense: SNAKE_BASE_DEFENSE
+        })
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(snake)
+}
 
 //----------------------------------------------------------------------------
 // Goblins.

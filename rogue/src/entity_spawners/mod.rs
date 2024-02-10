@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Bound};
 use super::{
     Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
     SwimStamina, HungerClock, HungerState, Monster, Hazard, IsEntityKind,
@@ -170,39 +170,12 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
 // spawning monsters, we continue until the total difficulty of all monster
 // spawned first exceeds the floor's quota.
 //----------------------------------------------------------------------------
-pub fn spawn_monsters(ecs: &mut World, depth: i32) {
-    let monster_difficulty_quota: i32 = 10 + (5 * depth) / 2;
-    let monster_spawn_table = get_monster_spawn_table();
-    let mut monster_seen_difficulty: i32 = 0;
-    let mut monster_spawn_locations: Vec<(i32, i32)>;
-    {
-        let map = ecs.fetch::<Map>();
-        monster_spawn_locations = noise::monster_spawn_locations(&map);
-    }
-    loop {
-        let point = monster_spawn_locations.pop()
-            .expect("Ran out of Monster spawn locations.");
-        { // Holy scopes!
-            let mut map = ecs.write_resource::<Map>();
-            let idx = map.xy_idx(point.0, point.1);
-            if !map.ok_to_spawn[idx] {continue;}
-            map.ok_to_spawn[idx] = false;
-        }
-        let monster_type = spawn_random_monster(ecs, point.0, point.1, depth);
-        if let Some(monster_type) = monster_type {
-            let monster_difficulty = monster_spawn_table[&monster_type].difficulty;
-            monster_seen_difficulty += monster_difficulty;
-        }
-        if monster_seen_difficulty > monster_difficulty_quota {
-            break;
-        }
-    }
-}
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum MonsterType {
     Rat,
     Bat,
+    Snake,
     GoblinBasic,
     GoblinCleric,
     GoblinEnchanter,
@@ -212,6 +185,12 @@ enum MonsterType {
     PinkJelly,
     OrangeJelly,
     BlueJelly
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum MonsterSpawnBound {
+    None,
+    Grass
 }
 
 // Entries in the monster spawn table.
@@ -226,34 +205,117 @@ struct MonsterSpawnParameters {
     max_depth: i32,
     // A positive integer representing the chance that a monster spawns in a
     // singular spawn event.
-    chance: i32
+    chance: i32,
+    // Indicates if the monster must spawn in a tile occupied by the specified
+    // terrain. Used for ensuring terrain bounds are satisfied at spawn time.
+    bound: MonsterSpawnBound
 }
 impl MonsterSpawnParameters {
-    fn new(difficulty: i32, min_depth: i32, max_depth: i32, chance: i32) -> MonsterSpawnParameters {
+    fn new(difficulty: i32, min_depth: i32, max_depth: i32, chance: i32, bound: MonsterSpawnBound) -> MonsterSpawnParameters {
         MonsterSpawnParameters {
-            difficulty, min_depth, max_depth, chance
+            difficulty, min_depth, max_depth, chance, bound
         }
     }
 }
 
 // Construct the (static) monster spawn table.
-// TODO: It seems wasteful to reconstruct this every time we spawn a monster,
-// maybe we could insert it into the ECS?
 fn get_monster_spawn_table() -> HashMap<MonsterType, MonsterSpawnParameters> {
     let mut spawn_table: HashMap<MonsterType, MonsterSpawnParameters> = HashMap::new();
-    //                                                 difficulty, min-depth, max-depth, chance.
-    spawn_table.insert(MonsterType::Rat,               MonsterSpawnParameters::new(1, 1, 4, 25));
-    spawn_table.insert(MonsterType::Bat,               MonsterSpawnParameters::new(1, 1, 4, 25));
-    spawn_table.insert(MonsterType::GoblinBasic,       MonsterSpawnParameters::new(2, 1, 6, 25));
-    spawn_table.insert(MonsterType::GoblinCleric,      MonsterSpawnParameters::new(2, 2, 8, 20));
-    spawn_table.insert(MonsterType::GoblinEnchanter,   MonsterSpawnParameters::new(2, 2, 8, 20));
-    spawn_table.insert(MonsterType::GoblinFirecaster,  MonsterSpawnParameters::new(4, 3, 8, 15));
-    spawn_table.insert(MonsterType::GoblinChillcaster, MonsterSpawnParameters::new(4, 3, 8, 15));
-    spawn_table.insert(MonsterType::PinkJelly,         MonsterSpawnParameters::new(3, 4, 10, 15));
-    spawn_table.insert(MonsterType::OrangeJelly,       MonsterSpawnParameters::new(4, 4, 12, 10));
-    spawn_table.insert(MonsterType::BlueJelly,         MonsterSpawnParameters::new(4, 4, 12, 10));
-    spawn_table.insert(MonsterType::Orc,               MonsterSpawnParameters::new(4, 5, 12, 25));
+    //                                                 difficulty, min-depth, max-depth, chance, bounds.
+    spawn_table.insert(MonsterType::Rat,               MonsterSpawnParameters::new(1, 1, 4, 25, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::Bat,               MonsterSpawnParameters::new(1, 1, 4, 25, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::Snake,             MonsterSpawnParameters::new(1, 1, 4, 500, MonsterSpawnBound::Grass));
+    spawn_table.insert(MonsterType::GoblinBasic,       MonsterSpawnParameters::new(2, 1, 6, 25, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::GoblinCleric,      MonsterSpawnParameters::new(2, 2, 8, 20, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::GoblinEnchanter,   MonsterSpawnParameters::new(2, 2, 8, 20, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::GoblinFirecaster,  MonsterSpawnParameters::new(4, 3, 8, 15, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::GoblinChillcaster, MonsterSpawnParameters::new(4, 3, 8, 15, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::PinkJelly,         MonsterSpawnParameters::new(3, 4, 10, 15, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::OrangeJelly,       MonsterSpawnParameters::new(4, 4, 12, 10, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::BlueJelly,         MonsterSpawnParameters::new(4, 4, 12, 10, MonsterSpawnBound::None));
+    spawn_table.insert(MonsterType::Orc,               MonsterSpawnParameters::new(4, 5, 12, 25, MonsterSpawnBound::None));
     spawn_table
+}
+
+pub fn spawn_monsters(ecs: &mut World, depth: i32) {
+    let monsters_with_locations = sample_monster_spawn_vector(ecs, depth);
+    for (monster, (x, y)) in monsters_with_locations.into_iter() {
+        insert_monster(ecs, monster, x, y);
+    }
+}
+
+fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType, (i32, i32))> {
+
+    let spawn_table = get_monster_spawn_table();
+    let mut rtable: random_table::RandomTable<(MonsterType, MonsterSpawnBound)>
+        = random_table::RandomTable::new();
+    for (monster_type, spawn_parameters) in spawn_table.iter() {
+        let ok_to_spawn_by_depth = (spawn_parameters.min_depth <= depth)
+            && (depth <= spawn_parameters.max_depth);
+        let ok_to_spawn_by_bound = match spawn_parameters.bound {
+            MonsterSpawnBound::None => true,
+            MonsterSpawnBound::Grass => {
+                let map = ecs.fetch::<Map>();
+                map.grass.iter().filter(|b| **b).count() > 0
+            }
+        };
+        if ok_to_spawn_by_depth && ok_to_spawn_by_bound {
+            rtable = rtable.insert((*monster_type, spawn_parameters.bound), spawn_parameters.chance);
+        }
+    }
+
+    let mut monsters_with_bounds: Vec<(MonsterType, MonsterSpawnBound)> = Vec::new();
+    let difficulty_quota: i32 = 10 + (5 * depth) / 2;
+    let mut seen_difficulty: i32 = 0;
+    let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+    loop {
+        let (monster, bound) = rtable.roll(&mut rng).expect("Monster spawn sampling failed.");
+        let difficulty = spawn_table[&monster].difficulty;
+        monsters_with_bounds.push((monster, bound));
+        seen_difficulty += difficulty;
+        if seen_difficulty > difficulty_quota {
+            break;
+        }
+    }
+
+    let mut base_monster_spawn_locations: Vec<(i32, i32)>;
+    {
+        let map = ecs.fetch::<Map>();
+        base_monster_spawn_locations = noise::monster_spawn_locations(&map);
+    }
+
+    let mut monsters_with_locations: Vec<(MonsterType, (i32, i32))> = Vec::new();
+    for (monster, bound) in monsters_with_bounds.iter() {
+        match bound {
+            MonsterSpawnBound::None => {
+                monsters_with_locations.push(
+                    (
+                        *monster,
+                        base_monster_spawn_locations.pop()
+                            .expect("Ran out of monster spawn locations.")
+                    )
+                )
+            }
+            MonsterSpawnBound::Grass => {
+                println!("Sampling location for grassbound monster.");
+                let map = ecs.fetch::<Map>();
+                let mut is_new_spawnpt: bool = false;
+                let mut spawnpt: (i32, i32) = (0, 0);
+                while !is_new_spawnpt {
+                    spawnpt = map.random_point_with_tile_classification(500, &mut rng, &map.grass)
+                        .expect("Failed to sample grass spawnpoint.");
+                    is_new_spawnpt = !monsters_with_locations
+                        .iter()
+                        .map(|(_, x)| *x)
+                        .collect::<Vec<(i32, i32)>>()
+                        .contains(&spawnpt);
+                }
+                println!("Inserting new point: {:?}", spawnpt);
+                monsters_with_locations.push((*monster, spawnpt));
+            }
+        }
+    }
+    monsters_with_locations
 }
 
 // TODO: When we get around to implementing a more general drop system, this
@@ -262,33 +324,21 @@ const CHANCE_DROP_ORB: i32 = 20;
 
 // Spawn a single random monster at a given depth, according to the static spawn
 // table given above.
-fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) -> Option<MonsterType> {
-    let monster: Option<MonsterType>;
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        let spawn_table = get_monster_spawn_table();
-        let mut rtable: random_table::RandomTable<MonsterType> = random_table::RandomTable::new();
-        for (monster_type, spawn_parameters) in spawn_table.into_iter() {
-            if spawn_parameters.min_depth <= depth && depth <= spawn_parameters.max_depth {
-                rtable = rtable.insert(monster_type, spawn_parameters.chance);
-            }
-        }
-        monster = rtable.roll(&mut rng);
-    }
+fn insert_monster(ecs: &mut World, monster: MonsterType, x: i32, y: i32) {
     let entity = match monster {
-        Some(MonsterType::Rat) => monsters::rat(ecs, x, y),
-        Some(MonsterType::Bat) => monsters::bat(ecs, x, y),
-        Some(MonsterType::GoblinBasic) => monsters::goblin_basic(ecs, x, y),
-        Some(MonsterType::GoblinCleric) => monsters::goblin_cleric(ecs, x, y),
-        Some(MonsterType::GoblinEnchanter) => monsters::goblin_enchanter(ecs, x, y),
-        Some(MonsterType::GoblinFirecaster) => monsters::goblin_firecaster(ecs, x, y),
-        Some(MonsterType::GoblinChillcaster) => monsters::goblin_chillcaster(ecs, x, y),
-        Some(MonsterType::Orc) => monsters::orc_basic(ecs, x, y),
-        Some(MonsterType::PinkJelly) => monsters::pink_jelly(
+        MonsterType::Rat => monsters::rat(ecs, x, y),
+        MonsterType::Bat => monsters::bat(ecs, x, y),
+        MonsterType::Snake => monsters::snake(ecs, x, y),
+        MonsterType::GoblinBasic => monsters::goblin_basic(ecs, x, y),
+        MonsterType::GoblinCleric => monsters::goblin_cleric(ecs, x, y),
+        MonsterType::GoblinEnchanter => monsters::goblin_enchanter(ecs, x, y),
+        MonsterType::GoblinFirecaster => monsters::goblin_firecaster(ecs, x, y),
+        MonsterType::GoblinChillcaster => monsters::goblin_chillcaster(ecs, x, y),
+        MonsterType::Orc => monsters::orc_basic(ecs, x, y),
+        MonsterType::PinkJelly => monsters::pink_jelly(
             ecs, x, y, monsters::JELLY_BASE_HP, monsters::JELLY_BASE_HP),
-        Some(MonsterType::OrangeJelly) => monsters::orange_jelly(ecs, x, y),
-        Some(MonsterType::BlueJelly) => monsters::blue_jelly(ecs, x, y),
-        _ => {None}
+        MonsterType::OrangeJelly => monsters::orange_jelly(ecs, x, y),
+        MonsterType::BlueJelly => monsters::blue_jelly(ecs, x, y),
     };
     // TODO: Same as above, this should really be part of a more general drop
     // system.
@@ -301,5 +351,4 @@ fn spawn_random_monster(ecs: &mut World, x: i32, y: i32, depth: i32) -> Option<M
                 .expect("Could not add orb drop to monster.");
         }
     }
-    monster
 }

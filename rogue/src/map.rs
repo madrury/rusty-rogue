@@ -170,6 +170,8 @@ impl Map {
         return None
     }
 
+    // TODO: This could be greatly improved, there's no need to use rejection
+    // sampling here.
     pub fn random_point_with_tile_classification(
         &self,
         n_tries: i32,
@@ -180,7 +182,7 @@ impl Map {
             let pt = self.random_point(n_tries, rng);
             if let Some(pt) = pt {
                 let idx = self.xy_idx(pt.0, pt.1);
-                if !classification[idx] {
+                if classification[idx] {
                     return Some(pt);
                 }
             }
@@ -189,7 +191,12 @@ impl Map {
     }
 
     pub fn random_unblocked_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
-        return self.random_point_with_tile_classification(n_tries, rng, &self.blocked);
+        return self.random_point_with_tile_classification(
+            n_tries,
+            rng,
+            // Blocked -> Unblocked.
+            &self.blocked.iter().map(|b| !b).collect::<Vec<bool>>()
+        );
     }
 
     pub fn get_adjacent_tiles(&self, x: i32, y: i32) -> Vec<(i32, i32)> {
