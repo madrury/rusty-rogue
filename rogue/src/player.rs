@@ -189,7 +189,7 @@ struct NoopCommand {
     description: &'static str,
 }
 impl KeyboundCommand for NoopCommand {
-    fn exec(&self, ecs: &mut World) -> RunState {
+    fn exec(&self, _ecs: &mut World) -> RunState {
         RunState::AwaitingInput
     }
 
@@ -207,7 +207,7 @@ impl KeyboundCommand for NoopCommand {
 }
 
 pub const COMMANDS: [&'static dyn KeyboundCommand; 21] = [
-    
+
     &NoopCommand{description: DESCRIPTION_MOVEMENT_SECTION},
     &TryMovePlayerCommand{dx: -1, dy: 0, codes: &[VirtualKeyCode::Left, VirtualKeyCode::H], description: DESCRIPTION_MOVE_LEFT, details: DETAILS_MOVE_LEFT},
     &TryMovePlayerCommand{dx: 1, dy: 0, codes: &[VirtualKeyCode::Right, VirtualKeyCode::L], description: DESCRIPTION_MOVE_RIGHT, details: DETAILS_MOVE_RIGHT},

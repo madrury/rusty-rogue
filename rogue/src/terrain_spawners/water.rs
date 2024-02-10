@@ -6,7 +6,7 @@ use super::{
     DissipateFireWhenEncroachedUpon, EntitySpawnKind, StatusIsImmuneToChill,
     IsEntityKind, TileType, color, noise
 };
-use rltk::{RGB};
+use rltk::RGB;
 use specs::prelude::*;
 
 

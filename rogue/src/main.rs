@@ -67,7 +67,7 @@ use encroachment_system::*;
 mod general_movement_system;
 use general_movement_system::*;
 mod gamelog;
-use gamelog::{GameLog};
+use gamelog::GameLog;
 
 // Debug flags.
 const DEBUG_DRAW_ALL_MAP: bool = false;
@@ -741,7 +741,7 @@ impl GameState for State {
                     HelpMenuResult::Cancel => match details {
                         None => { newrunstate = RunState::AwaitingInput }
                         Some(_) => { newrunstate = RunState::ShowHelpMenu{details: None} }
-                    } 
+                    }
                     HelpMenuResult::NoSelection {current: _} => {},
                     HelpMenuResult::Selected {selected: s} => {
                         let command = COMMANDS[s];

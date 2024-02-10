@@ -3,7 +3,7 @@ use specs_derive::*;
 use specs::saveload::{ConvertSaveload, Marker};
 use specs::error::NoError;
 use serde::{Serialize, Deserialize};
-use rltk::{RGB};
+use rltk::RGB;
 
 //------------------------------------------------------------------
 // Components and data structures for ggame animations.

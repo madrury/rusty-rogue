@@ -3,9 +3,9 @@ use super::{
     DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
 mod simple_map;
-use simple_map::{SimpleMapBuilder};
+use simple_map::SimpleMapBuilder;
 mod cellular_automata_map;
-use cellular_automata_map::{CellularAutomataBuilder};
+use cellular_automata_map::CellularAutomataBuilder;
 mod common;
 use common::*;
 
