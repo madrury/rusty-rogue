@@ -1,6 +1,6 @@
 use specs::prelude::*;
 
-use crate::SpawnEntityWhenTrampledUpon;
+use crate::StatusEffect;
 
 use super::{
     Map, Name, GameLog, Position, Tramples, EntitySpawnRequest,
@@ -10,7 +10,9 @@ use super::{
     RemoveBurningWhenEncroachedUpon, DissipateFireWhenEncroachedUpon,
     DissipateWhenTrampledUpon, WantsToTakeDamage, StatusIsBurning,
     StatusIsFrozen, StatusIsImmuneToFire, StatusIsImmuneToChill,
-    WantsToDissipate, IsEntityKind, EntitySpawnKind, new_status_with_immunity,
+    WantsToDissipate, IsEntityKind, EntitySpawnKind,
+    InvisibleWhenEncroachingEntityKind, StatusInvisibleToPlayer,
+    SpawnEntityWhenTrampledUpon, new_status, new_status_with_immunity,
     remove_status
 };
 
@@ -35,6 +37,8 @@ pub struct EncroachmentSystemData<'a> {
     spawn_when_trampled: ReadStorage<'a, SpawnEntityWhenTrampledUpon>,
     remove_burning_when_encroached: ReadStorage<'a, RemoveBurningWhenEncroachedUpon>,
     dissipate_fire_when_encroached: ReadStorage<'a, DissipateFireWhenEncroachedUpon>,
+    invisible_when_encroaching: ReadStorage<'a, InvisibleWhenEncroachingEntityKind>,
+    status_invisible: WriteStorage<'a, StatusInvisibleToPlayer>,
     is_fire_immune: WriteStorage<'a, StatusIsImmuneToFire>,
     is_chill_immune: WriteStorage<'a, StatusIsImmuneToChill>,
     wants_damage: WriteStorage<'a, WantsToTakeDamage>,
@@ -66,6 +70,8 @@ impl<'a> System<'a> for EncroachmentSystem {
             spawn_when_trampled,
             remove_burning_when_encroached,
             dissipate_fire_when_encroached,
+            invisible_when_encroaching,
+            mut status_invisible,
             is_fire_immune,
             is_chill_immune,
             mut wants_damage,
@@ -76,7 +82,9 @@ impl<'a> System<'a> for EncroachmentSystem {
         } = data;
 
         for (entity, pos) in (&entities, &positions).join() {
+
             let idx = map.xy_idx(pos.x, pos.y);
+
             for encroaching in map.tile_content[idx].iter().filter(|e| **e != entity) {
 
                 let encroaching_does_trample = tramples.get(*encroaching).is_some();
@@ -185,13 +193,22 @@ impl<'a> System<'a> for EncroachmentSystem {
 
                 // DissipateFireWhenEncroachedUpon.
                 let dissipates_fire = dissipate_fire_when_encroached.get(entity).is_some();
-                let is_fire = entity_kind.get(*encroaching)
+                let encroaching_is_fire = entity_kind.get(*encroaching)
                     .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Fire {..}));
-                if is_fire && dissipates_fire {
+                if encroaching_is_fire && dissipates_fire {
                     wants_dissipate.insert(*encroaching, WantsToDissipate {})
                         .expect("Could not insert wants to dissipate on fire entity.");
                 }
-            }
-        }
+
+                // InvisibleWhenEncroachingEntityKind
+                let is_tall_grass = entity_kind.get(entity)
+                    .map_or(false, |k| matches!(k.kind, EntitySpawnKind::TallGrass {..}));
+                let encroaching_is_hidden = invisible_when_encroaching.get(*encroaching).is_some();
+                if is_tall_grass && encroaching_is_hidden {
+                    new_status::<StatusInvisibleToPlayer>(&mut status_invisible, *encroaching, 1, false);
+                }
+
+            } // for encroaching
+        } // for (entity, pos)
     }
 }

@@ -146,6 +146,8 @@ pub fn save_game(ecs: &mut World) {
             StatusIsImmuneToChill,
             StatusIsMeleeAttackBuffed,
             StatusIsPhysicalDefenseBuffed,
+            StatusInvisibleToPlayer,
+            InvisibleWhenEncroachingEntityKind,
             AreaOfEffectAnimationWhenTargeted,
             AlongRayAnimationWhenTargeted,
             SerializationHelper
@@ -290,6 +292,8 @@ pub fn load_game(ecs: &mut World) {
             StatusIsImmuneToChill,
             StatusIsMeleeAttackBuffed,
             StatusIsPhysicalDefenseBuffed,
+            StatusInvisibleToPlayer,
+            InvisibleWhenEncroachingEntityKind,
             AreaOfEffectAnimationWhenTargeted,
             AlongRayAnimationWhenTargeted,
             SerializationHelper

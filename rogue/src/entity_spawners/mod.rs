@@ -25,7 +25,8 @@ use super::{
     DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
     StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
-    SpawnEntityWhenKilled, DissipateWhenBurning, MAP_WIDTH, random_table
+    SpawnEntityWhenKilled, DissipateWhenBurning,
+    InvisibleWhenEncroachingEntityKind, MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;

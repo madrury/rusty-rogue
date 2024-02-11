@@ -89,6 +89,11 @@ pub struct ChanceToSpawnEntityWhenBurning {
     pub chance: i32
 }
 
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct InvisibleWhenEncroachingEntityKind {
+    pub kind: EntitySpawnKind
+}
+
 // An entity with this component has a chance to dissipate every turn.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct ChanceToDissipate {

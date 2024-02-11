@@ -71,8 +71,8 @@ mod gamelog;
 use gamelog::GameLog;
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_DRAW_ALL_MAP: bool = true;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
@@ -137,14 +137,18 @@ impl State {
 
     // Draw all entities with a Renderable component on the console.
     fn render_all(&self, ctx: &mut Rltk) {
+        let entities = self.ecs.entities();
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
+        let invisibles = self.ecs.read_storage::<StatusInvisibleToPlayer>();
         let sets_bg = self.ecs.read_storage::<SetsBgColor>();
         let map = self.ecs.fetch::<Map>();
         // First loop through the entities in render order and draw them all.
-        let mut render_data = (&positions, &renderables).join().collect::<Vec<_>>();
-        render_data.sort_by(|&a, &b| b.1.order.cmp(&a.1.order));
-        for (pos, render) in render_data {
+        let mut render_data = (&entities, &positions, &renderables).join().collect::<Vec<_>>();
+        render_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
+        for (e, pos, render) in render_data {
+            let invisible = invisibles.get(e).is_some();
+            if invisible { continue; }
             let idx = map.xy_idx(pos.x, pos.y);
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
@@ -154,9 +158,11 @@ impl State {
         }
         // Then loop through the enetities that override bg colors, and fill in
         // the backgrounds of their tiles.
-        let mut bg_data = (&positions, &renderables, &sets_bg).join().collect::<Vec<_>>();
+        let mut bg_data = (&entities, &positions, &renderables, &sets_bg).join().collect::<Vec<_>>();
         bg_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
-        for (pos, render, _bg) in bg_data {
+        for (e, pos, render, _bg) in bg_data {
+            let invisible = invisibles.get(e).is_some();
+            if invisible { continue; }
             let idx = map.xy_idx(pos.x, pos.y);
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
                 ctx.set_bg(pos.x, pos.y, render.bg);
@@ -534,7 +540,7 @@ impl GameState for State {
             RunState::PreGame => {
                 self.run_pregame_systems();
                 self.run_map_indexing_system();
-                newrunstate = RunState::AwaitingInput;
+                newrunstate = RunState::HazardTurn;
             }
             RunState::AwaitingInput => {
                 newrunstate = player_input(self, ctx);
@@ -558,7 +564,7 @@ impl GameState for State {
                 } else {
                     self.run_cleanup_systems();
                     self.run_map_indexing_system();
-                    newrunstate = RunState::HazardTurn;
+                    newrunstate = RunState::MonsterTurn;
                 }
             }
             RunState::HazardTurn => {
@@ -569,7 +575,7 @@ impl GameState for State {
                     create_offered_blessings(&mut self.ecs);
                     RunState::ShowBlessingSelectionMenu
                 } else {
-                    RunState::MonsterTurn
+                    RunState::AwaitingInput
                 };
                 if is_any_animation_alive(&self.ecs) {
                     self.next_state = Some(nextstate);
@@ -594,7 +600,7 @@ impl GameState for State {
             RunState::UpkeepTrun => {
                 self.run_upkeep_turn_systems();
                 self.run_map_indexing_system();
-                newrunstate = RunState::AwaitingInput;
+                newrunstate = RunState::HazardTurn;
             }
             RunState::ShowBlessingSelectionMenu => {
                 let result = gui::show_blessings(&mut self.ecs, ctx);
@@ -901,6 +907,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusIsImmuneToChill>();
     gs.ecs.register::<StatusIsMeleeAttackBuffed>();
     gs.ecs.register::<StatusIsPhysicalDefenseBuffed>();
+    gs.ecs.register::<StatusInvisibleToPlayer>();
+    gs.ecs.register::<InvisibleWhenEncroachingEntityKind>();
     gs.ecs.register::<GameAnimationParticle>();
     gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
     gs.ecs.register::<AlongRayAnimationWhenTargeted>();

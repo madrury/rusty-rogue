@@ -4,13 +4,11 @@ use rltk::{RGB, RandomNumberGenerator};
 use super::{
     Map, GameLog, Name, RunState, Monster, Hazard, Position, StatusIsFrozen,
     StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
-    StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed,
-    WantsToTakeDamage, WantsToDissipate, ElementalDamageKind,
-    DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    ChanceToInflictBurningOnAdjacentEntities, RemoveBurningOnUpkeep,
-    EntitySpawnRequestBuffer, EntitySpawnRequest,
-    StatusEffect,
-    tick_status, remove_status,
+    StatusIsMeleeAttackBuffed, StatusIsPhysicalDefenseBuffed, WantsToTakeDamage,
+    WantsToDissipate, ElementalDamageKind, DissipateWhenBurning,
+    ChanceToSpawnEntityWhenBurning, ChanceToInflictBurningOnAdjacentEntities,
+    RemoveBurningOnUpkeep, EntitySpawnRequestBuffer, EntitySpawnRequest,
+    StatusEffect, StatusInvisibleToPlayer, tick_status, remove_status,
     tick_status_with_immunity, new_status_with_immunity, BURNING_TICK_DAMAGE
 };
 
@@ -30,6 +28,7 @@ pub struct StatusTickSystemData<'a> {
     status_immune_chill: WriteStorage<'a, StatusIsImmuneToChill>,
     status_attack_buffed: WriteStorage<'a, StatusIsMeleeAttackBuffed>,
     status_defense_buffed: WriteStorage<'a, StatusIsPhysicalDefenseBuffed>,
+    status_invisible: WriteStorage<'a, StatusInvisibleToPlayer>,
     remove_burning_on_upkeep: ReadStorage<'a, RemoveBurningOnUpkeep>
 }
 
@@ -48,6 +47,7 @@ impl<'a> System<'a> for StatusTickSystem {
             mut status_immune_chill,
             mut status_attack_buffed,
             mut status_defense_buffed,
+            mut status_invisible,
             remove_burning_on_upkeep
         } = data;
 
@@ -111,6 +111,13 @@ impl<'a> System<'a> for StatusTickSystem {
                 &mut log,
                 entity,
                 msg
+            );
+            // StatusInvisibleToPlayer
+            tick_status::<StatusInvisibleToPlayer>(
+                &mut status_invisible,
+                &mut log,
+                entity,
+                None
             );
 
             // RemoveBurningOnUpkeep

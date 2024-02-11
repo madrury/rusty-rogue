@@ -308,3 +308,30 @@ impl StatusEffect for StatusIsImmuneToChill {
         self.render_glyph
     }
 }
+
+
+// Tags an entitiy as invisible to the player (optionally for some number of
+// turns).
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct StatusInvisibleToPlayer {
+    pub remaining_turns: i32,
+}
+impl StatusEffect for StatusInvisibleToPlayer {
+    fn new(turns: i32, render_glyph: bool) -> StatusInvisibleToPlayer {
+        if render_glyph {
+            println!("WARNING: renger_glyph is ignored on InvisibleToPlayer")
+        }
+        StatusInvisibleToPlayer {
+            remaining_turns: turns,
+        }
+    }
+    fn remaining_turns(&self) -> i32 {
+        self.remaining_turns
+    }
+    fn set_remaining_turns(&mut self, turns: i32) {
+        self.remaining_turns = turns
+    }
+    fn do_render(&self) -> bool {
+        false
+    }
+}

@@ -7,7 +7,8 @@ use super::{
     MonsterSupportSpellcasterAI, SupportSpellcasterKind,
     SpawnEntityWhenMeleeAttacked,  EntitySpawnKind, Name, Position, Renderable,
     Viewshed, SimpleMarker, SerializeMe, MarkedBuilder, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, InSpellBook, CanNotAct, BlessingSlot, spells
+    StatusIsImmuneToChill, InSpellBook, CanNotAct, BlessingSlot,
+    InvisibleWhenEncroachingEntityKind, spells
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
@@ -55,6 +56,12 @@ pub fn rat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             bg: RGB::named(rltk::BLACK),
             order: 1,
             visible_out_of_fov: false
+        })
+        .with( InvisibleWhenEncroachingEntityKind {
+            kind: EntitySpawnKind::TallGrass {
+                // Placeholder
+                fg: RGB::named(rltk::GREEN)
+            }
         })
         .with(Viewshed {
             visible_tiles: Vec::new(),
@@ -190,6 +197,12 @@ pub fn snake(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             bg: RGB::named(rltk::BLACK),
             order: 1,
             visible_out_of_fov: false
+        })
+        .with( InvisibleWhenEncroachingEntityKind {
+            kind: EntitySpawnKind::TallGrass {
+                // Placeholder
+                fg: RGB::named(rltk::GREEN)
+            }
         })
         .with(Viewshed {
             visible_tiles: Vec::new(),
