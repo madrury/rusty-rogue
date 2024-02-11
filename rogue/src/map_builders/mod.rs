@@ -17,6 +17,7 @@ use components::*;
 pub trait MapBuilder {
     fn map(&self) -> Map;
     fn build_map(&mut self) -> NoiseMaps;
+    fn spawn_blessing_tile(&mut self, ecs: &mut World);
     fn spawn_water(&mut self, ecs: &mut World);
     fn spawn_terrain(&mut self, ecs: &mut World);
     fn spawn_entities(&mut self, ecs: &mut World);

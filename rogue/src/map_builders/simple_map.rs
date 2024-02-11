@@ -52,19 +52,14 @@ impl MapBuilder for SimpleMapBuilder {
         noisemaps
     }
 
-    fn spawn_entities(&mut self, ecs: &mut World) {
-        entity_spawners::spawn_monsters(ecs, self.depth);
-        for room in self.rooms.iter().skip(1) {
-            let mut region: Vec<usize> = Vec::new();
-            for y in room.y1 + 1 .. room.y2 {
-                for x in room.x1 + 1 .. room.x2 {
-                    let idx = self.map.xy_idx(x, y);
-                    if self.map.tiles[idx] == TileType::Floor {
-                        region.push(idx);
-                    }
-                }
-            }
-            entity_spawners::spawn_items_in_region(ecs, &region, self.depth);
+    fn spawn_blessing_tile(&mut self, ecs: &mut World) {
+        let blessing: Option<Point>;
+        {
+            let noisemaps = &*ecs.read_resource::<NoiseMaps>();
+            blessing = noisemaps.blessing;
+        }
+        if let Some(b) = blessing {
+            terrain_spawners::magic::blessing_tile(ecs, b.x, b.y);
         }
     }
 
@@ -90,6 +85,23 @@ impl MapBuilder for SimpleMapBuilder {
         terrain_spawners::foliage::spawn_grass_from_table(ecs, &grass_spawn_table);
         terrain_spawners::statues::spawn_statues_from_table(ecs, &statue_spawn_table);
     }
+
+    fn spawn_entities(&mut self, ecs: &mut World) {
+        entity_spawners::spawn_monsters(ecs, self.depth);
+        for room in self.rooms.iter().skip(1) {
+            let mut region: Vec<usize> = Vec::new();
+            for y in room.y1 + 1 .. room.y2 {
+                for x in room.x1 + 1 .. room.x2 {
+                    let idx = self.map.xy_idx(x, y);
+                    if self.map.tiles[idx] == TileType::Floor {
+                        region.push(idx);
+                    }
+                }
+            }
+            entity_spawners::spawn_items_in_region(ecs, &region, self.depth);
+        }
+    }
+
 
     fn starting_position(&self, ecs: &World) -> Point {
         let start = entity_spawners::player::get_spawn_position(ecs);

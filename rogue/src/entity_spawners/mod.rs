@@ -226,7 +226,7 @@ fn get_monster_spawn_table() -> HashMap<MonsterType, MonsterSpawnParameters> {
     //                                                 difficulty, min-depth, max-depth, chance, bounds.
     spawn_table.insert(MonsterType::Rat,               MonsterSpawnParameters::new(1, 1, 4, 25, MonsterSpawnBound::None));
     spawn_table.insert(MonsterType::Bat,               MonsterSpawnParameters::new(1, 1, 4, 25, MonsterSpawnBound::None));
-    spawn_table.insert(MonsterType::Snake,             MonsterSpawnParameters::new(1, 1, 4, 500, MonsterSpawnBound::Grass));
+    spawn_table.insert(MonsterType::Snake,             MonsterSpawnParameters::new(1, 1, 4, 25, MonsterSpawnBound::Grass));
     spawn_table.insert(MonsterType::GoblinBasic,       MonsterSpawnParameters::new(2, 1, 6, 25, MonsterSpawnBound::None));
     spawn_table.insert(MonsterType::GoblinCleric,      MonsterSpawnParameters::new(2, 2, 8, 20, MonsterSpawnBound::None));
     spawn_table.insert(MonsterType::GoblinEnchanter,   MonsterSpawnParameters::new(2, 2, 8, 20, MonsterSpawnBound::None));
@@ -309,7 +309,7 @@ fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType,
                     loc = grass_monster_spawn_locations.pop()
                         .expect("Failed to pop spawn location.");
                     idx = map.xy_idx(loc.x, loc.y);
-                    if map.ok_to_spawn[idx] { break; }
+                    if map.ok_to_spawn[idx] || !map.grass[idx] { break; }
                 }
             }
         }

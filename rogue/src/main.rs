@@ -305,6 +305,7 @@ impl State {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
             *worldmap_resource = builder.map();
         }
+        builder.spawn_blessing_tile(&mut self.ecs);
         builder.spawn_water(&mut self.ecs);
         builder.spawn_terrain(&mut self.ecs);
         builder.spawn_entities(&mut self.ecs);

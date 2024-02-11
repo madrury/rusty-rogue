@@ -99,6 +99,7 @@ pub struct NoiseMaps {
     grass: Vec<(Point, (f32, f32))>,
     water: Vec<(Point, (f32, f32))>,
     statue: Vec<(Point, f32)>,
+    pub blessing: Option<Point>,
 
     pub water_geometry: WaterGeometry,
     pub grass_geometry: GrassGeometry,
@@ -116,6 +117,11 @@ impl NoiseMaps {
         };
         let grassgeom = GrassGeometry::random(rng);
         let statuegeom = StatueGeometry::random(rng);
+        let blessingloc = map.random_unblocked_point(100, rng);
+        let blessingpt = match blessingloc {
+            None => None,
+            Some(loc) => Some(Point {x: loc.0, y: loc.1}),
+        };
         NoiseMaps {
             water_geometry: watergeom,
             grass_geometry: grassgeom,
@@ -124,6 +130,7 @@ impl NoiseMaps {
             grass: grass_noisemap(rng, map),
             water: water_noisemap(rng, map, watervfreq),
             statue: statue_noisemap(rng, map),
+            blessing: blessingpt
         }
     }
 
@@ -157,11 +164,18 @@ impl NoiseMaps {
 
     pub fn to_water_spawn_table(&self, map: &Map) -> WaterSpawnTable {
         let mut water_spawn_table = WaterSpawnTable::new();
+        let mut blessing_adjacent_tiles: Vec<Point> = Vec::new();
+        if let Some(blessing) = self.blessing {
+            blessing_adjacent_tiles = map.get_adjacent_tiles(blessing.x, blessing.y)
+                .iter()
+                .map(|t| Point::from_tuple(*t))
+                .collect();
+        }
         for (pt, (vnoise, wnoise)) in self.water.iter() {
             let idx = map.xy_idx(pt.x, pt.y);
             if map.is_edge_tile(pt.x, pt.y) {continue;}
             if map.tiles[idx] == TileType::DownStairs {continue;}
-            if *vnoise > self.deep_water_noise_threshold() {
+            if *vnoise > self.deep_water_noise_threshold() || blessing_adjacent_tiles.contains(pt) {
                 let colorseeds = (vnoise + 0.6, 0.7 * vnoise + 0.2 * wnoise + 0.4);
                 let fgcolor = color::water_fg_from_noise(colorseeds.0);
                 let bgcolor = color::water_bg_from_noise(colorseeds.1);
@@ -176,7 +190,6 @@ impl NoiseMaps {
                     x: pt.x, y: pt.y, fgcolor: fgcolor, bgcolor: bgcolor
                 })
             }
-
         }
         water_spawn_table
     }

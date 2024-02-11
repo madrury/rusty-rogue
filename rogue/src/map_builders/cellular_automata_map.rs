@@ -89,6 +89,17 @@ impl MapBuilder for CellularAutomataBuilder {
         noisemaps
     }
 
+    fn spawn_blessing_tile(&mut self, ecs: &mut World) {
+        let blessing: Option<Point>;
+        {
+            let noisemaps = &*ecs.read_resource::<NoiseMaps>();
+            blessing = noisemaps.blessing;
+        }
+        if let Some(b) = blessing {
+            terrain_spawners::magic::blessing_tile(ecs, b.x, b.y);
+        }
+    }
+
     fn spawn_water(&mut self, ecs: &mut World) {
         let table: WaterSpawnTable;
         {
