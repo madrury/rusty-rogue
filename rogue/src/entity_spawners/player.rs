@@ -1,3 +1,5 @@
+use crate::Tramples;
+
 use super::{
     Point, Map, CombatStats, SwimStamina, HungerClock, HungerState, Name, Player,
     Monster, Position, Renderable, Viewshed, BlessingOrbBag, SimpleMarker, SerializeMe, MarkedBuilder,
@@ -53,6 +55,7 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             drowning_damage: PLAYER_DROWNING_TICK_DAMAGE
         })
         .with(BlessingOrbBag {count: 0})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }

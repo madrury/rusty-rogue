@@ -49,6 +49,14 @@ pub struct SpawnEntityWhenEncroachedUpon {
     pub kind: EntitySpawnKind
 }
 
+// Component indicates that the entity has a random chance to spawn entities in
+// an adjacent space.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnEntityWhenTrampledUpon {
+    pub chance: i32,
+    pub kind: EntitySpawnKind
+}
+
 // Component indicates that the entity will spawn another entity when melee
 // attacked. Used on Jellys, which split off either copies of themselves, or
 // hazards, when attacked.
@@ -101,6 +109,9 @@ pub struct DissipateWhenBurning {}
 // on it's position. For example: long grass.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct DissipateWhenEnchroachedUpon {}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct DissipateWhenTrampledUpon {}
 
 // An entity with this component has dissipated and should be removed from the
 // ECS at the end of the current turn.

@@ -108,7 +108,7 @@ pub struct NoiseMaps {
 
 impl NoiseMaps {
 
-    pub fn sample(rng: &mut RandomNumberGenerator, map: &Map) -> Self {
+    pub fn random(rng: &mut RandomNumberGenerator, map: &Map) -> Self {
         let watergeom = WaterGeometry::random(rng);
         let watervfreq = match watergeom {
             WaterGeometry::None => 1.0,

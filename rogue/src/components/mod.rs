@@ -78,6 +78,12 @@ pub struct Consumable {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Opaque {}
 
+// An entity with this compoennt tramples the contents of any tile it enteres.
+// For example, entities with this component will encroach on tall grass and
+// trample it into short grass.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Tramples {}
+
 
 //------------------------------------------------------------------
 // Core Data Components:

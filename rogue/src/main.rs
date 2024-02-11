@@ -71,8 +71,8 @@ mod gamelog;
 use gamelog::GameLog;
 
 // Debug flags.
-const DEBUG_DRAW_ALL_MAP: bool = true;
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
@@ -827,6 +827,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<PickUpable>();
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<Opaque>();
+    gs.ecs.register::<Tramples>();
     gs.ecs.register::<Equippable>();
     gs.ecs.register::<Castable>();
     gs.ecs.register::<Targeted>();
@@ -861,10 +862,11 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToDissipate>();
     gs.ecs.register::<DissipateWhenBurning>();
     gs.ecs.register::<DissipateWhenEnchroachedUpon>();
+    gs.ecs.register::<DissipateWhenTrampledUpon>();
     gs.ecs.register::<ProvidesFullHealing>();
+    gs.ecs.register::<IncreasesMaxHpWhenUsed>();
     gs.ecs.register::<ProvidesFullFood>();
     gs.ecs.register::<ProvidesFullSpellRecharge>();
-    gs.ecs.register::<IncreasesMaxHpWhenUsed>();
     gs.ecs.register::<DecreasesSpellRechargeWhenUsed>();
     gs.ecs.register::<ProvidesFireImmunityWhenUsed>();
     gs.ecs.register::<ProvidesChillImmunityWhenUsed>();
@@ -883,6 +885,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InflictsFreezingWhenEncroachedUpon>();
     gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
     gs.ecs.register::<SpawnEntityWhenEncroachedUpon>();
+    gs.ecs.register::<SpawnEntityWhenTrampledUpon>();
     gs.ecs.register::<SpawnEntityWhenMeleeAttacked>();
     gs.ecs.register::<SpawnEntityWhenKilled>();
     gs.ecs.register::<ChanceToSpawnAdjacentEntity>();

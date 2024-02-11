@@ -1,13 +1,17 @@
 use specs::prelude::*;
+
+use crate::SpawnEntityWhenTrampledUpon;
+
 use super::{
-    Map, Name, GameLog, Position, EntitySpawnRequest,
+    Map, Name, GameLog, Position, Tramples, EntitySpawnRequest,
     EntitySpawnRequestBuffer, InflictsDamageWhenEncroachedUpon,
     InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
     DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     RemoveBurningWhenEncroachedUpon, DissipateFireWhenEncroachedUpon,
-    WantsToTakeDamage, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, WantsToDissipate, IsEntityKind, EntitySpawnKind,
-    new_status_with_immunity, remove_status
+    DissipateWhenTrampledUpon, WantsToTakeDamage, StatusIsBurning,
+    StatusIsFrozen, StatusIsImmuneToFire, StatusIsImmuneToChill,
+    WantsToDissipate, IsEntityKind, EntitySpawnKind, new_status_with_immunity,
+    remove_status
 };
 
 
@@ -21,11 +25,14 @@ pub struct EncroachmentSystemData<'a> {
     spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
     positions: ReadStorage<'a, Position>,
     names: ReadStorage<'a, Name>,
+    tramples: ReadStorage<'a, Tramples>,
     damage_when_encroached: ReadStorage<'a, InflictsDamageWhenEncroachedUpon>,
     burning_when_encroached: ReadStorage<'a, InflictsBurningWhenEncroachedUpon>,
     freezing_when_encroached: ReadStorage<'a, InflictsFreezingWhenEncroachedUpon>,
     dissipate_when_encroached: ReadStorage<'a, DissipateWhenEnchroachedUpon>,
+    dissipate_when_trampled: ReadStorage<'a, DissipateWhenTrampledUpon>,
     spawn_when_encroached: ReadStorage<'a, SpawnEntityWhenEncroachedUpon>,
+    spawn_when_trampled: ReadStorage<'a, SpawnEntityWhenTrampledUpon>,
     remove_burning_when_encroached: ReadStorage<'a, RemoveBurningWhenEncroachedUpon>,
     dissipate_fire_when_encroached: ReadStorage<'a, DissipateFireWhenEncroachedUpon>,
     is_fire_immune: WriteStorage<'a, StatusIsImmuneToFire>,
@@ -49,11 +56,14 @@ impl<'a> System<'a> for EncroachmentSystem {
             mut spawn_buffer,
             positions,
             names,
+            tramples,
             damage_when_encroached,
             burning_when_encroached,
             freezing_when_encroached,
             dissipate_when_encroached,
+            dissipate_when_trampled,
             spawn_when_encroached,
+            spawn_when_trampled,
             remove_burning_when_encroached,
             dissipate_fire_when_encroached,
             is_fire_immune,
@@ -68,6 +78,8 @@ impl<'a> System<'a> for EncroachmentSystem {
         for (entity, pos) in (&entities, &positions).join() {
             let idx = map.xy_idx(pos.x, pos.y);
             for encroaching in map.tile_content[idx].iter().filter(|e| **e != entity) {
+
+                let encroaching_does_trample = tramples.get(*encroaching).is_some();
 
                 // Component: InflictsDamageWhenEncroachedUpon.
                 let dmg = damage_when_encroached.get(entity);
@@ -133,7 +145,14 @@ impl<'a> System<'a> for EncroachmentSystem {
                         .expect("Could not insert wants to dissipate upon encroachement.");
                 }
 
-                // SpawnEntityWhenEncroachedUpon.
+                // Component: DissipatesWhenTrampledUpon.
+                let dissipate = dissipate_when_trampled.get(entity).is_some();
+                if dissipate && encroaching_does_trample {
+                    wants_dissipate.insert(entity, WantsToDissipate {})
+                        .expect("Could not insert wants to dissipate upon encroachement.");
+                }
+
+                // Component: SpawnEntityWhenEncroachedUpon.
                 let spawn = spawn_when_encroached.get(entity);
                 if let Some(spawn) = spawn {
                     spawn_buffer.request(EntitySpawnRequest {
@@ -141,6 +160,18 @@ impl<'a> System<'a> for EncroachmentSystem {
                         y: pos.y,
                         kind: spawn.kind
                     })
+                }
+
+                // Component: SpawnEntityWhenTrampledUpon.
+                let spawn = spawn_when_trampled.get(entity);
+                if let Some(spawn) = spawn {
+                    if encroaching_does_trample {
+                        spawn_buffer.request(EntitySpawnRequest {
+                            x: pos.x,
+                            y: pos.y,
+                            kind: spawn.kind
+                        })
+                    }
                 }
 
                 // RemoveBurningWhenEncroachedUpon.

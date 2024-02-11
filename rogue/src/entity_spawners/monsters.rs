@@ -1,4 +1,6 @@
 
+use crate::Tramples;
+
 use super::{
     Map, BlocksTile, CombatStats, Monster, MovementRoutingAvoids,
     MovementRoutingBounds, MonsterBasicAI, MonsterAttackSpellcasterAI,
@@ -288,6 +290,7 @@ pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             defense: GOBLIN_BASE_DEFENSE
         })
         .with(BlocksTile {})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -345,6 +348,7 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 render_glyph: true
             })
             .with(BlocksTile {})
+            .with(Tramples {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -411,6 +415,7 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 remaining_turns: i32::MAX, render_glyph: true
             })
             .with(BlocksTile {})
+            .with(Tramples {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -475,6 +480,7 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 defense: GOBLIN_BASE_DEFENSE
             })
             .with(BlocksTile {})
+            .with(Tramples {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -534,6 +540,7 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 defense: GOBLIN_BASE_DEFENSE
             })
             .with(BlocksTile {})
+            .with(Tramples {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -634,6 +641,7 @@ pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             defense: ORC_BASE_DEFENSE
         })
         .with(BlocksTile {})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -708,11 +716,12 @@ pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Optio
                 max_hp: 0, hp: 0
             }
         })
-        // We prevent pink jelly's from acting on their first turn. If they move
-        // immediately, it's hard to tell what actually happened, this improves
-        // their gameplay behaviour.
+        // We prevent pink jelly's from acting on their first turn. If jellies
+        // spawned after a mele attack move immediately, it's hard to tell what
+        // actually happened, this improves their gameplay behaviour.
         .with(CanNotAct {})
         .with(BlocksTile {})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -729,7 +738,6 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             y: y
         })
         .with(Monster {})
-        .with(BlocksTile {})
         .with(Renderable {
             glyph: rltk::to_cp437('J'),
             fg: RGB::named(rltk::ORANGERED),
@@ -770,6 +778,8 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(StatusIsImmuneToFire {
             remaining_turns: i32::MAX, render_glyph: true
         })
+        .with(BlocksTile {})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 

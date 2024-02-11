@@ -36,7 +36,7 @@ impl MapBuilder for SimpleMapBuilder {
 
         let mut rng = RandomNumberGenerator::new();
         // Now we carve out space to spawn water.
-        let noisemaps = NoiseMaps::sample(&mut rng, &self.map);
+        let noisemaps = NoiseMaps::random(&mut rng, &self.map);
         let water_spawn_table = &noisemaps.to_water_spawn_table(&self.map);
         carve_out_water_spawn_table(&mut self.map, water_spawn_table);
         self.map.synchronize_blocked();

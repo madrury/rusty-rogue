@@ -1,4 +1,4 @@
-use crate::IsEntityKind;
+use crate::{DissipateWhenTrampledUpon, IsEntityKind, SpawnEntityWhenTrampledUpon};
 
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
@@ -91,8 +91,8 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entit
         .with(Hazard {})
         .with(Opaque {})
         .with(DissipateWhenBurning {})
-        .with(DissipateWhenEnchroachedUpon {})
-        .with(SpawnEntityWhenEncroachedUpon {
+        .with(DissipateWhenTrampledUpon {})
+        .with(SpawnEntityWhenTrampledUpon {
             chance: 100,
             kind: EntitySpawnKind::ShortGrass {fg: fgcolor}
         })
