@@ -23,6 +23,7 @@ pub enum EntitySpawnKind {
     Steam {spread_chance: i32, dissipate_chance: i32},
     ShortGrass {fg: RGB},
     TallGrass {fg: RGB},
+    ShallowWater,
     DeepWater,
     MagicOrb
 }

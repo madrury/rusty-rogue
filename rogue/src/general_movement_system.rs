@@ -177,7 +177,9 @@ fn ok_to_move_to_position(
     let ok_according_to_bounds = match bounds {
         None => true,
         Some(bounds) => {
-            !bounds.grass || map.grass[idx]
+            !bounds.shallow_water || map.shallow_water[idx]
+            && !bounds.deep_water || map.deep_water[idx]
+            && !bounds.grass || map.grass[idx]
         }
     };
     ok_according_to_avoids && ok_according_to_bounds

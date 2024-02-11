@@ -43,9 +43,12 @@ impl<'a> System<'a> for MapIndexingSystem {
             let is_chill = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Chill {..}));
             map.chill[idx] |= is_chill;
-            let is_water = kind.get(entity)
+            let is_shallow_water = kind.get(entity)
+                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::ShallowWater {..}));
+            map.deep_water[idx] |= is_shallow_water;
+            let is_deep_water = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::DeepWater {..}));
-            map.deep_water[idx] |= is_water;
+            map.deep_water[idx] |= is_deep_water;
             let is_steam = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Steam {..}));
             map.steam[idx] |= is_steam;

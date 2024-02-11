@@ -31,6 +31,8 @@ pub struct MovementRoutingAvoids {
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MovementRoutingBounds {
+    pub shallow_water: bool,
+    pub deep_water: bool,
     pub grass: bool
 }
 

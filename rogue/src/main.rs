@@ -79,6 +79,8 @@ const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
+const DEBUG_HIGHLIGHT_DEEP_WATER: bool = false;
+const DEBUG_HIGHLIGHT_SHALLOW_WATER: bool = false;
 const DEBUG_HIGHLIGHT_GRASS: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 100.0;
@@ -243,11 +245,19 @@ impl State {
                 ctx.set_bg(pos.x, pos.y, render.bg.to_greyscale());
             }
         }
+        // DEBUG FLAGS: Highlight entities of various types according to debug
+        // flags.
         if DEBUG_HIGHLIGHT_STAIRS {
             self.debug_highlight_stairs(ctx);
         }
         if DEBUG_HIGHLIGHT_FIRE {
             self.debug_highlight_fire(ctx);
+        }
+        if DEBUG_HIGHLIGHT_SHALLOW_WATER {
+            self.debug_highlight_shallow_water(ctx);
+        }
+        if DEBUG_HIGHLIGHT_DEEP_WATER {
+            self.debug_highlight_deep_water(ctx);
         }
         if DEBUG_HIGHLIGHT_GRASS {
             self.debug_highlight_grass(ctx);
@@ -524,6 +534,32 @@ impl State {
             for y in 0..map.height {
                 let idx = map.xy_idx(x, y);
                 if map.fire[idx] {
+                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
+                }
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    fn debug_highlight_shallow_water(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.shallow_water[idx] {
+                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
+                }
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    fn debug_highlight_deep_water(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.deep_water[idx] {
                     ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
                 }
             }

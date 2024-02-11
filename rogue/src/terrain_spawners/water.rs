@@ -66,6 +66,9 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    let mut map = ecs.write_resource::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.shallow_water[idx] = true;
     Some(entity)
 }
 

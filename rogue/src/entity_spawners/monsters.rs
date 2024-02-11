@@ -22,6 +22,8 @@ const BASIC_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
 };
 const BASIC_ROUTING_BOUNDS: MovementRoutingBounds = MovementRoutingBounds {
     grass: false,
+    shallow_water: false,
+    deep_water: false,
 };
 
 //----------------------------------------------------------------------------
