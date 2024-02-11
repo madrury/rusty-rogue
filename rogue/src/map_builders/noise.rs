@@ -133,9 +133,10 @@ pub struct NoiseMaps {
     pub grass_geometry: GrassGeometry,
     // Noisemap for sampling grass spawn positions and colorization.
     // The noise value is a pair (smooth, white) noise. Grass spawn positions
-    // are determined by thresholding the smooth component, a larger threshold
-    // produces tall grass, a lesser produces shor grass. Colorization is
-    // determined as a linear combination of the two components.
+    // are determined by thresholding either the smooth or white component
+    // (depending on desired geometry), above the threshold produces tall grass,
+    // below produces short grass. Colorization is determined as a linear
+    // combination of the two components.
     grass: Vec<(Point, (f32, f32))>,
     // The geometric structure of pools/lakes of water spawned on the map.
     pub water_geometry: WaterGeometry,
