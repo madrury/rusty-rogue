@@ -70,7 +70,9 @@ use general_movement_system::*;
 mod gamelog;
 use gamelog::GameLog;
 
+//--------------------------------------------------------------------
 // Debug flags.
+//--------------------------------------------------------------------
 const DEBUG_DRAW_ALL_MAP: bool = true;
 const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
@@ -81,35 +83,104 @@ const DEBUG_HIGHLIGHT_GRASS: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 100.0;
 
+//--------------------------------------------------------------------
+// States in the Main State Machine.
+//--------------------------------------------------------------------
+// The following states are used in a match statement in the main game loop (see
+// the `tick` method in the implementation). This is the main state machine of
+// the game, responsibile for coordinating the sequence of actions taken by
+// entites in the dungeon.
+//
+// When starting the game, we begin in the MainMenu state, and assuming we
+// choose "new game", the state transition diagram is:
+//
+//        MainMenu (Start)
+//        v
+//        PreGame
+//        v
+//   +--->HazardTurn--->ShowBlessingSelectionMenu
+//   |    |                         |
+//   |    v                         |
+//   |    Awaiting Input --> Show{Item|Throw|Equip|Spell|Help}Menu --+
+//   |    |                         |             |                  |
+//   |    |                         |  ShowTargeting{Keyboard|Mouse} |
+//   |    |                         |             |                  |
+//   |    v    +-----------------------------------------------------+
+//   |    |    v                    |             |
+//   |    PlayerTurn <--------------+-------------+
+//   |    v
+//   |    MonsterTurn
+//   |    v
+//   +----UpkeepTurn
+//
+// When descending to a new floor, the state is reset to PreGame and the machine
+// begins anew.
+//--------------------------------------------------------------------
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
+    // Render the main menu with selections: New Game, Load Game, Exit.
+    // Wait for player to choose a selection.
     MainMenu {current: MainMenuSelection},
+    // Animate the map generation. A debug state only used when the debug flag
+    // DEBUG_VISUALIZE_MAPGEN is true.
     MapGeneration,
+    // Waiting state while game object are serialized.
     SaveGame,
+    // Entered exactly one time each floor to initialize the map. Runs the map
+    // indexing system and computes initial visibility of all relevent entities.
     PreGame,
-    AwaitingInput,
-    PlayerTurn,
+    // A turn for actions taken by non-player, non-monster entities in the
+    // dungeon. For example:
+    //   - Fire or gas spreads.
+    //   - Check encroachment (when two entities occupy the same tile), grass
+    //   provides cloaking, fire inflicts burning, chill inflicts frezing, etc.
     HazardTurn,
+    // Waiting for player input. Re-entered every frame until input is detected.
+    // Can optionally transition this state into the various player menus to use
+    // items, cast spells, equip objects, get help, etc.
+    AwaitingInput,
+    // Post player input systems run. Process immediate consequences of player
+    // input.
+    PlayerTurn,
+    // Monsters take all their turns, then we process immediate consequences of
+    // their actions.
     MonsterTurn,
+    // Systems that run once ever turn cycle. Tick status effects and spell
+    // charges.
     UpkeepTrun,
+    // We're rendering the help menu.
     ShowHelpMenu{details: Option<&'static str>},
+    // We're rendering the blessing selection menu.
     ShowBlessingSelectionMenu,
+    // We're rendering the use (untargeted) item menu.
     ShowUseInventory,
+    // We're rendering the throw (targeted) item menu.
     ShowThrowInventory,
+    // We're rendering the equip item menu.
     ShowEquipInventory,
+    // We're rendering the cast spell menu.
     ShowSpellbook,
+    // We're asking the player to select a target for a targeted effect using
+    // the mouse.
     ShowTargetingMouse {
         range: f32,
         kind: TargetingKind,
         thing: Entity
     },
+    // We're asking the player to select a target for a targeted effect using
+    // the keyboard.
     ShowTargetingKeyboard {
         range: f32,
         kind: TargetingKind,
         thing: Entity,
         current: Option<Point>
     },
+    // We're playing an animation, no input is allowed. This can be entered from
+    // any of the main game states, and buffers returning to the "next" state
+    // depending on the state it was entered from.
     PlayingAnimation,
+    // Descend. Remove entities from the current floor from the ECS, sample a
+    // new map, let's go.
     NextLevel
 }
 
@@ -143,7 +214,8 @@ impl State {
         let invisibles = self.ecs.read_storage::<StatusInvisibleToPlayer>();
         let sets_bg = self.ecs.read_storage::<SetsBgColor>();
         let map = self.ecs.fetch::<Map>();
-        // First loop through the entities in render order and draw them all.
+        // First loop through the entities in reverse render order and draw them
+        // all. Later calls to ctx.set overwrite previous writes.
         let mut render_data = (&entities, &positions, &renderables).join().collect::<Vec<_>>();
         render_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
         for (e, pos, render) in render_data {
@@ -156,8 +228,9 @@ impl State {
                 ctx.set(pos.x, pos.y, render.fg.to_greyscale(), render.bg.to_greyscale(), render.glyph);
             }
         }
-        // Then loop through the enetities that override bg colors, and fill in
-        // the backgrounds of their tiles.
+        // Loop through the enetities that override bg colors, and fill in the
+        // backgrounds of their tiles. For example, water should always render
+        // its tile background as blue.
         let mut bg_data = (&entities, &positions, &renderables, &sets_bg).join().collect::<Vec<_>>();
         bg_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
         for (e, pos, render, _bg) in bg_data {
@@ -195,11 +268,25 @@ impl State {
         vis.run_now(&self.ecs);
     }
 
-    fn run_cleanup_systems(&mut self) {
-        let mut pos = PositionMovementSystem {};
-        pos.run_now(&self.ecs);
-        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
-        DamageSystem::clean_up_the_dead(&mut self.ecs);
+    fn run_upkeep_turn_systems(&mut self) {
+        let mut status = StatusTickSystem{};
+        status.run_now(&self.ecs);
+        let mut charges = SpellChargeSystem{};
+        charges.run_now(&self.ecs);
+        self.ecs.maintain();
+    }
+
+    fn run_hazard_turn_systems(&mut self) {
+        let mut encroachment = EncroachmentSystem{};
+        encroachment.run_now(&self.ecs);
+        let mut status_effects = StatusEffectSystem{};
+        status_effects.run_now(&self.ecs);
+        let mut dmg = DamageSystem{};
+        dmg.run_now(&self.ecs);
+        let mut dissipates = DissipationSystem{};
+        dissipates.run_now(&self.ecs);
+        let mut spawns = EntitySpawnSystem{};
+        spawns.run_now(&self.ecs);
         process_entity_spawn_request_buffer(&mut self.ecs);
         self.ecs.maintain();
     }
@@ -237,21 +324,6 @@ impl State {
         self.ecs.maintain();
     }
 
-    fn run_hazard_turn_systems(&mut self) {
-        let mut encroachment = EncroachmentSystem{};
-        encroachment.run_now(&self.ecs);
-        let mut status_effects = StatusEffectSystem{};
-        status_effects.run_now(&self.ecs);
-        let mut dmg = DamageSystem{};
-        dmg.run_now(&self.ecs);
-        let mut dissipates = DissipationSystem{};
-        dissipates.run_now(&self.ecs);
-        let mut spawns = EntitySpawnSystem{};
-        spawns.run_now(&self.ecs);
-        process_entity_spawn_request_buffer(&mut self.ecs);
-        self.ecs.maintain();
-    }
-
     fn run_monster_turn_systems(&mut self) {
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
@@ -283,11 +355,12 @@ impl State {
         self.ecs.maintain();
     }
 
-    fn run_upkeep_turn_systems(&mut self) {
-        let mut status = StatusTickSystem{};
-        status.run_now(&self.ecs);
-        let mut charges = SpellChargeSystem{};
-        charges.run_now(&self.ecs);
+    fn run_cleanup_systems(&mut self) {
+        let mut pos = PositionMovementSystem {};
+        pos.run_now(&self.ecs);
+        DissipationSystem::clean_up_dissipated_entities(&mut self.ecs);
+        DamageSystem::clean_up_the_dead(&mut self.ecs);
+        process_entity_spawn_request_buffer(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -474,16 +547,22 @@ impl State {
 
 impl GameState for State {
 
+    //------------------------------------------------------------------------
+    // Implements the main state machine for running the game tick-by-tick. See
+    // the commentary on the RunState enum for details on each state, and a map
+    // of state transitions.
+    //------------------------------------------------------------------------
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
 
+        // Update the current game state at the start of each tick.
         let mut newrunstate;
         {
             let runstate = self.ecs.fetch::<RunState>();
             newrunstate = *runstate;
         }
 
-        // Guard against rendering the game map if we are in the main menu.
+        // Guards against rendering the game map if we are in the main menu.
         match newrunstate {
             RunState::MainMenu {..} => {},
             // We're playng the game.
@@ -496,7 +575,7 @@ impl GameState for State {
              }
         }
 
-        // The big switch.
+        // The state machine.
         match newrunstate {
             RunState::MainMenu {..} => {
                 let result = gui::main_menu(&mut self.ecs, ctx);
@@ -559,7 +638,7 @@ impl GameState for State {
             RunState::PlayerTurn => {
                 self.run_player_turn_systems();
                 if is_any_animation_alive(&self.ecs) {
-                    self.next_state = Some(RunState::HazardTurn);
+                    self.next_state = Some(RunState::MonsterTurn);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
@@ -605,11 +684,19 @@ impl GameState for State {
             RunState::ShowBlessingSelectionMenu => {
                 let result = gui::show_blessings(&mut self.ecs, ctx);
                 match result {
+                    // The player declines to choose a blessing. We do not use
+                    // their next turn, and allow a follow up action.
                     MenuResult::Cancel => {
                         clean_up_offered_blessings(&mut self.ecs);
-                        newrunstate = RunState::MonsterTurn
+                        // Choosing a blessing uses up the player's turn.
+                        newrunstate = RunState::AwaitingInput
                     },
+                    // Waiting...
                     MenuResult::NoResponse => {},
+                    // The player chooses a new blessing. This uses up the
+                    // player's turn, so we just *over* the AwaitingInput state,
+                    // and hop to PlayerTurn to allow status systems and such to
+                    // tick for the player.
                     MenuResult::Selected {thing} => {
                         receive_blessing(&mut self.ecs, thing);
                         cash_in_orbs_for_blessing(&mut self.ecs);
@@ -618,7 +705,7 @@ impl GameState for State {
                             offereds.remove(thing);
                         }
                         clean_up_offered_blessings(&mut self.ecs);
-                        newrunstate = RunState::MonsterTurn;
+                        newrunstate = RunState::PlayerTurn;
                     }
                 }
             }
@@ -918,6 +1005,9 @@ fn main() -> rltk::BError {
     gs.ecs.insert(Map::new(1));
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     gs.ecs.insert(GameLog::new());
+    // Buffers for accumulating requests for ECS changes throughout a turn.
+    // Think like it's a database, we queue operations, then commit the changes
+    // all at once.
     gs.ecs.insert(AnimationRequestBuffer::new());
     gs.ecs.insert(ParticleRequestBuffer::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
@@ -926,6 +1016,9 @@ fn main() -> rltk::BError {
     // position to place the player here, since that needs to happen after we've
     // generated terrain and monsters.
     let player = entity_spawners::player::spawn_player(&mut gs.ecs, 0, 0);
+    // The player is the only Entity object inserted intot he ECS as a resource,
+    // so it is easily fetchable since fetching the player is such a common
+    // operation.
     gs.ecs.insert(player);
     gs.ecs.insert(RunState::MapGeneration {});
 

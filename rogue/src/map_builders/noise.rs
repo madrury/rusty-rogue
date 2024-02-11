@@ -94,21 +94,75 @@ pub struct StatueSpawnData {
 }
 
 
+//----------------------------------------------------------------------------
+// NoiseMaps
+//
+// Encapsulating objects for random geometric structures, which we refer to
+// collectively as noise-maps. These have various applications:
+//
+// - Various dungeon terrain like grass and water should be spawned in smooth
+// contiguous reigons,
+// - Colorization on dungeon terrain should vary smoothly with some variation,
+// it looks nice!
+// - Spawning of monsters should cluster together in groups to provide engaging
+// combat experiences.
+//----------------------------------------------------------------------------
+// Public API:
+// There are two types of functions eposed in the public NoiseMaps AIP.
+//
+// - to_<terraintype>_spawn_table:
+// Returns a SpawnTable type obejct for terraintype (GrassSpawnTable,
+// WaterSpawnTable, ... for example). These encaspulate a sequence of
+// instructions for spawning the required entities into the ECS to construct
+// terrain of the given type.
+//
+// - <monstertype>_monster_spawn_buffer
+// Returns a Vec<Point>, sorted in order that we should attempt to spawn a
+// monster. There are multiple of these methods and the client is reposible for
+// depulicating the streams (yo! But they probably shouldnt be, you could do
+// this with some internal state on this thing).
+//----------------------------------------------------------------------------
 pub struct NoiseMaps {
+    // Noisemap for sampling monster spawn positions.
+    // Spawn locations are determined by sorting this vector by noise value, and
+    // poping off the points with the largest noise values. The noise value is a
+    // sum of smooth and white noise, the smooth allows them to cluster and the
+    // white noise breaks up the clusters a little.
     spawning: Vec<(Point, f32)>,
-    grass: Vec<(Point, (f32, f32))>,
-    water: Vec<(Point, (f32, f32))>,
-    statue: Vec<(Point, f32)>,
-    pub blessing: Option<Point>,
-
-    pub water_geometry: WaterGeometry,
+    // The geometric structure of grass spawned on the map.
     pub grass_geometry: GrassGeometry,
+    // Noisemap for sampling grass spawn positions and colorization.
+    // The noise value is a pair (smooth, white) noise. Grass spawn positions
+    // are determined by thresholding the smooth component, a larger threshold
+    // produces tall grass, a lesser produces shor grass. Colorization is
+    // determined as a linear combination of the two components.
+    grass: Vec<(Point, (f32, f32))>,
+    // The geometric structure of pools/lakes of water spawned on the map.
+    pub water_geometry: WaterGeometry,
+    // Noisemap for sampling water spawn positions and colorization.
+    // The noise value is a pair (smooth, white) noise. Water spawn positions
+    // are determined by thresholding the smooth component, a larger threshold
+    // produces deep water, and slighly lesser threshold produces shallower;
+    // this tends to produce pools of deep water ringed by shallow. Colorization
+    // is determined as a linear combination of the two components.
+    water: Vec<(Point, (f32, f32))>,
+    // The geometric structure of statues spawned on the map.
     pub statue_geometry: StatueGeometry,
+    // Noisemap for sampling statue spawn locations.
+    // The noise value is a pair (smooth, white) noise. Water spawn positions
+    // are determined by thresholding the smooth component, a larger threshold
+    // produces deep water, and slighly lesser threshold produces shallower;
+    // this tends to produce pools of deep water ringed by shallow. Colorization
+    // is determined as a linear combination of the two components.
+    statue: Vec<(Point, f32)>,
+    // The possition of the blessing tile.
+    pub blessing: Option<Point>,
 }
 
 impl NoiseMaps {
 
     pub fn random(rng: &mut RandomNumberGenerator, map: &Map) -> Self {
+        // Roll for the type of geometry for each of our terrain features.
         let watergeom = WaterGeometry::random(rng);
         let watervfreq = match watergeom {
             WaterGeometry::None => 1.0,
@@ -117,6 +171,7 @@ impl NoiseMaps {
         };
         let grassgeom = GrassGeometry::random(rng);
         let statuegeom = StatueGeometry::random(rng);
+        // Determine the blessing location. Nothing fancy.
         let blessingloc = map.random_unblocked_point(100, rng);
         let blessingpt = match blessingloc {
             None => None,
@@ -126,17 +181,18 @@ impl NoiseMaps {
             water_geometry: watergeom,
             grass_geometry: grassgeom,
             statue_geometry: statuegeom,
+            blessing: blessingpt,
+            // Sample the noisemaps.
             spawning: monster_spawn_noisemap(rng, map),
             grass: grass_noisemap(rng, map),
             water: water_noisemap(rng, map, watervfreq),
             statue: statue_noisemap(rng, map),
-            blessing: blessingpt
         }
     }
 
     pub fn general_monster_spawn_position_buffer(&self) -> Vec<Point> {
         let mut buffer = self.spawning.clone();
-        buffer.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        buffer.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
         buffer.iter().map(|(pt, _)| *pt).collect()
     }
 
@@ -242,10 +298,8 @@ impl NoiseMaps {
     }
 }
 
-//------------------------------------------------------------------
-// NOISEMAPS!
-//------------------------------------------------------------------
-pub fn grass_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f32, f32))> {
+
+fn grass_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f32, f32))> {
     let mut valuenoise = FastNoise::seeded(rng.next_u64());
     valuenoise.set_noise_type(NoiseType::ValueFractal);
     valuenoise.set_frequency(0.1);
@@ -265,7 +319,7 @@ pub fn grass_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point,
     noisemap
 }
 
-pub fn water_noisemap(rng: &mut RandomNumberGenerator, map: &Map, vfreq: f32) -> Vec<(Point, (f32, f32))> {
+fn water_noisemap(rng: &mut RandomNumberGenerator, map: &Map, vfreq: f32) -> Vec<(Point, (f32, f32))> {
     let mut valuenoise = FastNoise::seeded(rng.next_u64());
     valuenoise.set_noise_type(NoiseType::Value);
     valuenoise.set_frequency(vfreq);
@@ -285,7 +339,7 @@ pub fn water_noisemap(rng: &mut RandomNumberGenerator, map: &Map, vfreq: f32) ->
     noisemap
 }
 
-pub fn statue_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, f32)> {
+fn statue_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, f32)> {
     let mut whitenoise = FastNoise::seeded(rng.next_u64());
     whitenoise.set_noise_type(NoiseType::WhiteNoise);
     whitenoise.set_frequency(0.5);
@@ -300,7 +354,7 @@ pub fn statue_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point
     noisemap
 }
 
-pub fn monster_spawn_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec::<(Point, f32)> {
+fn monster_spawn_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec::<(Point, f32)> {
     let mut valuenoise = FastNoise::seeded(rng.next_u64());
     valuenoise.set_noise_type(NoiseType::Value);
     valuenoise.set_frequency(0.25);
