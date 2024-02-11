@@ -50,12 +50,12 @@ impl WaterSpawnTable {
 pub enum GrassGeometry { None, OnlyShort, SporadicTall, GroveTall }
 impl GrassGeometry {
     pub fn random(rng: &mut RandomNumberGenerator) -> Self {
-        match rng.roll_dice(1, 3) {
+        match rng.roll_dice(1, 5) {
             // Not including GrassGeometry::None for now, None is boring with
             // our limited terrain types.
             1 => GrassGeometry::OnlyShort,
-            2 => GrassGeometry::SporadicTall,
-            3 => GrassGeometry::GroveTall,
+            2 | 3 => GrassGeometry::SporadicTall,
+            4 | 5 => GrassGeometry::GroveTall,
             _ => panic!("Rolled to high on grass spawning.")
         }
     }
@@ -270,7 +270,11 @@ impl NoiseMaps {
             if map.is_edge_tile(pt.x, pt.y) {continue;}
             if map.tiles[idx] == TileType::DownStairs {continue;}
             if *vnoise > self.short_grass_noise_threshold() && map.ok_to_spawn[idx] {
-                if *vnoise > self.long_grass_noise_threshold() {
+                let long_grass_noise = match self.grass_geometry {
+                    GrassGeometry::SporadicTall => wnoise,
+                    _ => vnoise
+                };
+                if *long_grass_noise > self.long_grass_noise_threshold() {
                     let colorseed = vnoise + 0.3 * wnoise;
                     let gcolor = color::grass_green_from_noise(colorseed);
                     grass_spawn_table.long.push(GrassSpawnData {x: pt.x, y: pt.y, fgcolor: gcolor})
