@@ -17,9 +17,9 @@ pub fn spawn_grass_from_table(
 ) {
     for e in &grass_spawn_table.short {
         {
-            let mut map = ecs.write_resource::<Map>();
+            let map = ecs.read_resource::<Map>();
             let idx = map.xy_idx(e.x, e.y);
-            if map.blocked[idx] { continue; }
+            if map.blocked[idx] || map.water[idx] { continue; }
         }
         grass(ecs, e.x, e.y, e.fgcolor);
     }
@@ -27,7 +27,7 @@ pub fn spawn_grass_from_table(
         {
             let map = ecs.read_resource::<Map>();
             let idx = map.xy_idx(e.x, e.y);
-            if map.blocked[idx] {
+            if map.blocked[idx] || map.water[idx] {
                 continue;
             }
         }
@@ -48,6 +48,9 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
             visible_out_of_fov: true
         })
         .with(Name {name: "Grass".to_string()})
+        .with(IsEntityKind {
+            kind: EntitySpawnKind::ShortGrass { fg: fgcolor }
+        })
         // Hard to justify as a hazard? Well, it needs to take a turn ok?
         .with(Hazard {})
         .with(DissipateWhenBurning {})
@@ -61,6 +64,9 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    let mut map = ecs.write_resource::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.grass[idx] = true;
     Some(entity)
 }
 

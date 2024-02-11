@@ -1,5 +1,5 @@
 use std::{collections::HashMap, ops::Bound};
-use crate::map_builders::NoiseMaps;
+use crate::map_builders::{GrassGeometry, NoiseMaps};
 
 use super::{
     Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
@@ -173,7 +173,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
 // spawned first exceeds the floor's quota.
 //----------------------------------------------------------------------------
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum MonsterType {
     Rat,
     Bat,
@@ -189,7 +189,7 @@ enum MonsterType {
     BlueJelly
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum MonsterSpawnBound {
     None,
     Grass
@@ -257,8 +257,11 @@ fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType,
         let ok_to_spawn_by_bound = match spawn_parameters.bound {
             MonsterSpawnBound::None => true,
             MonsterSpawnBound::Grass => {
-                let map = ecs.fetch::<Map>();
-                map.grass.iter().filter(|b| **b).count() > 0
+                let noisemaps = ecs.fetch::<NoiseMaps>();
+                match noisemaps.grass_geometry {
+                    GrassGeometry::None => false,
+                    _ => true,
+                }
             }
         };
         if ok_to_spawn_by_depth && ok_to_spawn_by_bound {
@@ -283,30 +286,36 @@ fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType,
     let mut base_monster_spawn_locations: Vec<Point>;
     let mut grass_monster_spawn_locations: Vec<Point>;
     {
-        // let map = ecs.fetch::<Map>();
         let noisemaps = ecs.fetch::<NoiseMaps>();
         base_monster_spawn_locations = noisemaps.general_monster_spawn_position_buffer();
-        grass_monster_spawn_locations = noisemaps.general_monster_spawn_position_buffer();
+        grass_monster_spawn_locations = noisemaps.grassbound_monster_spawn_position_buffer();
     }
 
     let mut monsters_with_locations: Vec<(MonsterType, Point)> = Vec::new();
+    let mut map = ecs.fetch_mut::<Map>();
     for (monster, bound) in monster_spawns_with_bounds.iter() {
-        let loc: Point;
+        let (mut loc, mut idx): (Point, usize);
         match bound {
             MonsterSpawnBound::None => {
-                loc = base_monster_spawn_locations.pop()
-                    .expect("Failed to pop spawn location.");
+                loop {
+                    loc = base_monster_spawn_locations.pop()
+                        .expect("Failed to pop spawn location.");
+                    idx = map.xy_idx(loc.x, loc.y);
+                    if map.ok_to_spawn[idx] { break; }
+                }
             }
             MonsterSpawnBound::Grass => {
-                // let map = ecs.fetch::<Map>();
-                loc = grass_monster_spawn_locations.pop()
-                    .expect("Failed to pop spawn location.");
+                loop {
+                    loc = grass_monster_spawn_locations.pop()
+                        .expect("Failed to pop spawn location.");
+                    idx = map.xy_idx(loc.x, loc.y);
+                    if map.ok_to_spawn[idx] { break; }
+                }
             }
         }
-        let map = ecs.fetch::<Map>();
-        let idx = map.xy_idx(loc.x, loc.y);
         if !map.ok_to_spawn[idx] { continue; }
-        monsters_with_locations.push((*monster, loc))
+        map.ok_to_spawn[idx] = false;
+        monsters_with_locations.push((*monster, loc));
     }
     monsters_with_locations
 }

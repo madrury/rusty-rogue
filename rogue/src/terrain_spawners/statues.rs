@@ -13,9 +13,9 @@ pub fn spawn_statues_from_table(
 ) {
     for e in statue_spawn_table {
         {
-            let mut map = ecs.write_resource::<Map>();
+            let map = ecs.read_resource::<Map>();
             let idx = map.xy_idx(e.x, e.y);
-            if map.blocked[idx] { continue; }
+            if map.blocked[idx] || map.water[idx] { continue; }
         }
         statue(ecs, e.x, e.y);
     }

@@ -23,7 +23,7 @@ impl WaterGeometry {
             1 => WaterGeometry::None,
             2 => WaterGeometry::LargeLakes,
             3 => WaterGeometry::SmallLakes,
-            _ => panic!("Rolled to high on water spawning.")
+            _ => panic!("Rolled too high on water spawning.")
         }
     }
 }
@@ -47,14 +47,16 @@ impl WaterSpawnTable {
     }
 }
 
-pub enum GrassGeometry { OnlyShort, SporadicTall, GroveTall }
+pub enum GrassGeometry { None, OnlyShort, SporadicTall, GroveTall }
 impl GrassGeometry {
     pub fn random(rng: &mut RandomNumberGenerator) -> Self {
         match rng.roll_dice(1, 3) {
+            // Not including GrassGeometry::None for now, None is boring with
+            // our limited terrain types.
             1 => GrassGeometry::OnlyShort,
             2 => GrassGeometry::SporadicTall,
             3 => GrassGeometry::GroveTall,
-            _ => panic!("Rolled to high on water spawning.")
+            _ => panic!("Rolled to high on grass spawning.")
         }
     }
 }
@@ -98,9 +100,9 @@ pub struct NoiseMaps {
     water: Vec<(Point, (f32, f32))>,
     statue: Vec<(Point, f32)>,
 
-    water_geometry: WaterGeometry,
-    grass_geometry: GrassGeometry,
-    statue_geometry: StatueGeometry,
+    pub water_geometry: WaterGeometry,
+    pub grass_geometry: GrassGeometry,
+    pub statue_geometry: StatueGeometry,
 }
 
 impl NoiseMaps {
@@ -127,13 +129,13 @@ impl NoiseMaps {
 
     pub fn general_monster_spawn_position_buffer(&self) -> Vec<Point> {
         let mut buffer = self.spawning.clone();
-        buffer.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        buffer.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         buffer.iter().map(|(pt, _)| *pt).collect()
     }
 
     pub fn grassbound_monster_spawn_position_buffer(&self) -> Vec<Point> {
         let mut buffer = self.grass.clone();
-        buffer.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        buffer.sort_by(|a, b| a.1.0.partial_cmp(&b.1.0).unwrap());
         buffer.iter().map(|(pt, _)| *pt).collect()
     }
 
@@ -185,6 +187,7 @@ impl NoiseMaps {
 
     fn long_grass_noise_threshold(&self) -> f32 {
         match self.grass_geometry {
+            GrassGeometry::None => f32::MAX,
             GrassGeometry::OnlyShort => f32::MAX,
             GrassGeometry::SporadicTall => SPORADIC_TALL_GRASS_NOISE_THRESHOLD,
             GrassGeometry::GroveTall => GROVE_TALL_GRASS_NOISE_THRESHOLD,
