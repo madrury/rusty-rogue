@@ -17,7 +17,7 @@ const BASIC_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
     blocked: true,
     fire: true,
     chill: true,
-    water: true,
+    deep_water: true,
     steam: true,
 };
 const BASIC_ROUTING_BOUNDS: MovementRoutingBounds = MovementRoutingBounds {
@@ -143,7 +143,7 @@ pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             ..BAT_BASIC_AI
         })
         .with(MovementRoutingAvoids {
-            water: false,
+            deep_water: false,
             ..BASIC_ROUTING_AVOIDS
         })
         .with(MovementRoutingBounds {

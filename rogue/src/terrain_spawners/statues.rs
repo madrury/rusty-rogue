@@ -15,7 +15,7 @@ pub fn spawn_statues_from_table(
         {
             let map = ecs.read_resource::<Map>();
             let idx = map.xy_idx(e.x, e.y);
-            if map.blocked[idx] || map.water[idx] { continue; }
+            if map.blocked[idx] || map.deep_water[idx] { continue; }
         }
         statue(ecs, e.x, e.y);
     }

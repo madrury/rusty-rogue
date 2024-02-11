@@ -82,7 +82,7 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .with(SetsBgColor {order: 2})
         .with(Name {name: "Deep Water".to_string()})
         .with(Hazard {})
-        .with(IsEntityKind {kind: EntitySpawnKind::Water})
+        .with(IsEntityKind {kind: EntitySpawnKind::DeepWater})
         .with(RemoveBurningWhenEncroachedUpon {})
         .with(RemoveBurningOnUpkeep {})
         .with(DissipateFireWhenEncroachedUpon {})
@@ -93,6 +93,6 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
     let mut map = ecs.write_resource::<Map>();
     let idx = map.xy_idx(x, y);
     map.ok_to_spawn[idx] = false;
-    map.water[idx] = true;
+    map.deep_water[idx] = true;
     Some(entity)
 }

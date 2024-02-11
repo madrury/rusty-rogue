@@ -171,7 +171,7 @@ fn ok_to_move_to_position(
             !map.blocked[idx]
                 && !(routing.fire && map.fire[idx])
                 && !(routing.chill && map.chill[idx])
-                && !(routing.water && map.water[idx])
+                && !(routing.deep_water && map.deep_water[idx])
         }
     };
     let ok_according_to_bounds = match bounds {

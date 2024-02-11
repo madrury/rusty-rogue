@@ -24,7 +24,7 @@ pub struct MovementRoutingAvoids {
     pub blocked: bool,
     pub fire: bool,
     pub chill: bool,
-    pub water: bool,
+    pub deep_water: bool,
     pub steam: bool,
 }
 
