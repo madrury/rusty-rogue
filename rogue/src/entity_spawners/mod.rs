@@ -1,4 +1,6 @@
 use std::{collections::HashMap, ops::Bound};
+use crate::map_builders::NoiseMaps;
+
 use super::{
     Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
     SwimStamina, HungerClock, HungerState, Monster, Hazard, IsEntityKind,
@@ -23,7 +25,7 @@ use super::{
     DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
     StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
-    SpawnEntityWhenKilled, DissipateWhenBurning, MAP_WIDTH, random_table, noise
+    SpawnEntityWhenKilled, DissipateWhenBurning, MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
@@ -239,12 +241,12 @@ fn get_monster_spawn_table() -> HashMap<MonsterType, MonsterSpawnParameters> {
 
 pub fn spawn_monsters(ecs: &mut World, depth: i32) {
     let monsters_with_locations = sample_monster_spawn_vector(ecs, depth);
-    for (monster, (x, y)) in monsters_with_locations.into_iter() {
+    for (monster, Point {x, y}) in monsters_with_locations.into_iter() {
         insert_monster(ecs, monster, x, y);
     }
 }
 
-fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType, (i32, i32))> {
+fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType, Point)> {
 
     let spawn_table = get_monster_spawn_table();
     let mut rtable: random_table::RandomTable<(MonsterType, MonsterSpawnBound)>
@@ -264,56 +266,47 @@ fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType,
         }
     }
 
-    let mut monsters_with_bounds: Vec<(MonsterType, MonsterSpawnBound)> = Vec::new();
+    let mut monster_spawns_with_bounds: Vec<(MonsterType, MonsterSpawnBound)> = Vec::new();
     let difficulty_quota: i32 = 10 + (5 * depth) / 2;
     let mut seen_difficulty: i32 = 0;
     let mut rng = ecs.write_resource::<RandomNumberGenerator>();
     loop {
         let (monster, bound) = rtable.roll(&mut rng).expect("Monster spawn sampling failed.");
         let difficulty = spawn_table[&monster].difficulty;
-        monsters_with_bounds.push((monster, bound));
+        monster_spawns_with_bounds.push((monster, bound));
         seen_difficulty += difficulty;
         if seen_difficulty > difficulty_quota {
             break;
         }
     }
 
-    let mut base_monster_spawn_locations: Vec<(i32, i32)>;
+    let mut base_monster_spawn_locations: Vec<Point>;
+    let mut grass_monster_spawn_locations: Vec<Point>;
     {
-        let map = ecs.fetch::<Map>();
-        base_monster_spawn_locations = noise::monster_spawn_locations(&map);
+        // let map = ecs.fetch::<Map>();
+        let noisemaps = ecs.fetch::<NoiseMaps>();
+        base_monster_spawn_locations = noisemaps.general_monster_spawn_position_buffer();
+        grass_monster_spawn_locations = noisemaps.general_monster_spawn_position_buffer();
     }
 
-    let mut monsters_with_locations: Vec<(MonsterType, (i32, i32))> = Vec::new();
-    for (monster, bound) in monsters_with_bounds.iter() {
+    let mut monsters_with_locations: Vec<(MonsterType, Point)> = Vec::new();
+    for (monster, bound) in monster_spawns_with_bounds.iter() {
+        let loc: Point;
         match bound {
             MonsterSpawnBound::None => {
-                monsters_with_locations.push(
-                    (
-                        *monster,
-                        base_monster_spawn_locations.pop()
-                            .expect("Ran out of monster spawn locations.")
-                    )
-                )
+                loc = base_monster_spawn_locations.pop()
+                    .expect("Failed to pop spawn location.");
             }
             MonsterSpawnBound::Grass => {
-                println!("Sampling location for grassbound monster.");
-                let map = ecs.fetch::<Map>();
-                let mut is_new_spawnpt: bool = false;
-                let mut spawnpt: (i32, i32) = (0, 0);
-                while !is_new_spawnpt {
-                    spawnpt = map.random_point_with_tile_classification(500, &mut rng, &map.grass)
-                        .expect("Failed to sample grass spawnpoint.");
-                    is_new_spawnpt = !monsters_with_locations
-                        .iter()
-                        .map(|(_, x)| *x)
-                        .collect::<Vec<(i32, i32)>>()
-                        .contains(&spawnpt);
-                }
-                println!("Inserting new point: {:?}", spawnpt);
-                monsters_with_locations.push((*monster, spawnpt));
+                // let map = ecs.fetch::<Map>();
+                loc = grass_monster_spawn_locations.pop()
+                    .expect("Failed to pop spawn location.");
             }
         }
+        let map = ecs.fetch::<Map>();
+        let idx = map.xy_idx(loc.x, loc.y);
+        if !map.ok_to_spawn[idx] { continue; }
+        monsters_with_locations.push((*monster, loc))
     }
     monsters_with_locations
 }

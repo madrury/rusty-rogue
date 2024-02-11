@@ -17,7 +17,6 @@ use components::signaling::*;
 
 pub mod entity_spawners;
 pub mod terrain_spawners;
-pub mod noise;
 pub mod color;
 mod save_load;
 mod random_table;
@@ -295,7 +294,9 @@ impl State {
         // Build the floor layout, and update the dubug map build animation.
         self.mapgen.reset();
         let mut builder = map_builders::random_builder(depth);
-        let water_spawn_table = builder.build_map();
+        let noisemap = builder.build_map();
+        self.ecs.insert(noisemap);
+
         self.mapgen.history = builder.snapshot_history();
 
         // Place the built map into the ecs. From here on, we will work with the
@@ -304,8 +305,8 @@ impl State {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
             *worldmap_resource = builder.map();
         }
-        builder.spawn_water(&mut self.ecs, &water_spawn_table);
         builder.spawn_terrain(&mut self.ecs);
+        builder.spawn_water(&mut self.ecs);
         builder.spawn_entities(&mut self.ecs);
 
         // Place the stairs and update the associated ECS resources.

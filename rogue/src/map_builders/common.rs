@@ -2,9 +2,8 @@ use std::cmp::{max, min};
 use specs::prelude::*;
 use serde::{Serialize, Deserialize};
 use rltk::RandomNumberGenerator;
-use crate::terrain_spawners::water::WaterSpawnTable;
 
-use super::{Map, Point, TileType, MAP_SIZE};
+use super::{Map, Point, TileType, WaterSpawnTable, MAP_SIZE};
 
 const PLACE_STAIRS_N_TRYS: i32 = 250;
 

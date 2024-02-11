@@ -1,7 +1,7 @@
 use super::{
     Map, Position, Renderable, Name, BlessingSelectionTile, SimpleMarker,
     SerializeMe, MarkedBuilder, TileType, StatusIsImmuneToChill,
-    StatusIsImmuneToFire, water, noise, color
+    StatusIsImmuneToFire, water, color
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
@@ -40,7 +40,7 @@ fn spawn_blessing_tile_aparatus_at_position(ecs: &mut World, x: i32, y: i32) -> 
         adjacent_tile_idxs = map.get_adjacent_tiles(x, y).iter()
             .map(|(xx, yy)| map.xy_idx(*xx, *yy))
             .collect();
-        water_noise = noise::water_noisemap(&map, BLESSING_LAKE_NOISE_FREQUENCY);
+        // water_noise = noise::water_noisemap(&map, BLESSING_LAKE_NOISE_FREQUENCY);
     }
     // Carve out any walls surrounding the tile spawn position.
     for tile_idx in adjacent_tile_idxs.iter() {
@@ -51,24 +51,24 @@ fn spawn_blessing_tile_aparatus_at_position(ecs: &mut World, x: i32, y: i32) -> 
         }
     }
     // Spawn a ring of water around the blessing tile.
-    for (tile, tile_idx) in adjacent_tiles.into_iter().zip(adjacent_tile_idxs) {
-        let ok_to_spawn;
-        {
-            let map = ecs.read_resource::<Map>();
-            ok_to_spawn = map.ok_to_spawn[tile_idx];
-        }
-        if ok_to_spawn {
-            let (vnoise, wnoise) = water_noise[tile_idx];
-            let colorseeds = (vnoise + 1.0, 0.7 * vnoise + 0.2 * wnoise + 0.4);
-            let fgcolor = color::water_fg_from_noise(colorseeds.0);
-            let bgcolor = color::water_bg_from_noise(colorseeds.1);
-            water::deep_water(ecs, tile.0, tile.1, fgcolor, bgcolor);
-            {
-                let mut map = ecs.write_resource::<Map>();
-                map.ok_to_spawn[tile_idx] = false;
-            }
-        }
-    }
+    // for (tile, tile_idx) in adjacent_tiles.into_iter().zip(adjacent_tile_idxs) {
+    //     let ok_to_spawn;
+    //     {
+    //         let map = ecs.read_resource::<Map>();
+    //         ok_to_spawn = map.ok_to_spawn[tile_idx];
+    //     }
+    //     if ok_to_spawn {
+    //         let (vnoise, wnoise) = water_noise[tile_idx];
+    //         let colorseeds = (vnoise + 1.0, 0.7 * vnoise + 0.2 * wnoise + 0.4);
+    //         let fgcolor = color::water_fg_from_noise(colorseeds.0);
+    //         let bgcolor = color::water_bg_from_noise(colorseeds.1);
+    //         water::deep_water(ecs, tile.0, tile.1, fgcolor, bgcolor);
+    //         {
+    //             let mut map = ecs.write_resource::<Map>();
+    //             map.ok_to_spawn[tile_idx] = false;
+    //         }
+    //     }
+    // }
     mtile
 }
 
