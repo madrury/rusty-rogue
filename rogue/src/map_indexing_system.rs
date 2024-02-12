@@ -45,7 +45,7 @@ impl<'a> System<'a> for MapIndexingSystem {
             map.chill[idx] |= is_chill;
             let is_shallow_water = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::ShallowWater {..}));
-            map.deep_water[idx] |= is_shallow_water;
+            map.shallow_water[idx] |= is_shallow_water;
             let is_deep_water = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::DeepWater {..}));
             map.deep_water[idx] |= is_deep_water;

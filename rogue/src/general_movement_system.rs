@@ -176,11 +176,13 @@ fn ok_to_move_to_position(
     };
     let ok_according_to_bounds = match bounds {
         None => true,
-        Some(bounds) => {
-            !bounds.shallow_water || map.shallow_water[idx]
-            && !bounds.deep_water || map.deep_water[idx]
-            && !bounds.grass || map.grass[idx]
+        Some(routing) => {
+            (!routing.water || map.shallow_water[idx] || map.deep_water[idx])
+            && (!routing.grass || map.grass[idx])
         }
     };
+    println!();
+    if !ok_according_to_avoids {println!("Rejected because of avoids.")}
+    if !ok_according_to_bounds {println!("Rejected because of bounds.")}
     ok_according_to_avoids && ok_according_to_bounds
 }

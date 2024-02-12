@@ -52,6 +52,7 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
         .with(SetsBgColor {order: 2})
         .with(Name {name: "Shallow Water".to_string()})
         .with(Hazard {})
+        .with(IsEntityKind {kind: EntitySpawnKind::ShallowWater})
         .with(ChanceToSpawnEntityWhenBurning {
             kind: EntitySpawnKind::Steam {
                 spread_chance: 75,

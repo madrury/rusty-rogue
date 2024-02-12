@@ -80,7 +80,7 @@ const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 const DEBUG_HIGHLIGHT_DEEP_WATER: bool = false;
-const DEBUG_HIGHLIGHT_SHALLOW_WATER: bool = false;
+const DEBUG_HIGHLIGHT_SHALLOW_WATER: bool = true;
 const DEBUG_HIGHLIGHT_GRASS: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 100.0;
@@ -283,12 +283,12 @@ impl State {
         status.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
         charges.run_now(&self.ecs);
+        let mut encroachment = EncroachmentSystem{};
+        encroachment.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
     fn run_hazard_turn_systems(&mut self) {
-        let mut encroachment = EncroachmentSystem{};
-        encroachment.run_now(&self.ecs);
         let mut status_effects = StatusEffectSystem{};
         status_effects.run_now(&self.ecs);
         let mut dmg = DamageSystem{};

@@ -402,8 +402,7 @@ impl RoutingMap {
                     || (avoids.chill && map.chill[idx])
                     || (avoids.deep_water && map.deep_water[idx])
                     // Bounds.
-                    || (bounds.shallow_water && !map.shallow_water[idx])
-                    || (bounds.deep_water && !map.deep_water[idx])
+                    || (bounds.water && !map.shallow_water[idx] && !map.deep_water[idx])
                     || (bounds.grass && !map.grass[idx]);
             }
         }
