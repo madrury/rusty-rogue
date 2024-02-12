@@ -112,14 +112,14 @@ pub struct StatueSpawnData {
 //
 // - to_<terraintype>_spawn_table:
 // Returns a SpawnTable type obejct for terraintype (GrassSpawnTable,
-// WaterSpawnTable, ... for example). These encaspulate a sequence of
+// WaterSpawnTable, ... for example). These encapsulate a sequence of
 // instructions for spawning the required entities into the ECS to construct
 // terrain of the given type.
 //
 // - <monstertype>_monster_spawn_buffer
 // Returns a Vec<Point>, sorted in order that we should attempt to spawn a
-// monster. There are multiple of these methods and the client is reposible for
-// depulicating the streams (yo! But they probably shouldnt be, you could do
+// monster. There are multiple of these methods and the client is responsible for
+// deduplicating the streams (yo! But they probably shouldnt be, you could do
 // this with some internal state on this thing).
 //----------------------------------------------------------------------------
 pub struct NoiseMaps {
