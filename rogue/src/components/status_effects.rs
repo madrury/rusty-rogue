@@ -319,7 +319,7 @@ pub struct StatusInvisibleToPlayer {
 impl StatusEffect for StatusInvisibleToPlayer {
     fn new(turns: i32, render_glyph: bool) -> StatusInvisibleToPlayer {
         if render_glyph {
-            println!("WARNING: renger_glyph is ignored on InvisibleToPlayer")
+            println!("WARNING: render_glyph is ignored on InvisibleToPlayer")
         }
         StatusInvisibleToPlayer {
             remaining_turns: turns,

@@ -1,5 +1,5 @@
-use std::{collections::HashMap, ops::Bound};
-use crate::map_builders::{GrassGeometry, NoiseMaps, WaterGeometry};
+use std::collections::HashMap;
+use crate::map_builders::{GrassGeometry, NoiseMaps};
 
 use super::{
     Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
@@ -235,7 +235,7 @@ impl MonsterSpawnParameters {
 //   will not spawn on shallower floors.
 // max_depth: i32
 //   The depth at which the monster is last avalable to spawn. This monster will
-//   now spawn on deeper floors.
+//   not spawn on deeper floors.
 // chance: i32
 //   The *relative* chance this monster spawns in a single spawn event, taken in
 //   ratio to the total chance of all monster types available to spawn on the
