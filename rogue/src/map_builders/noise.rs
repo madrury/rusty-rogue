@@ -376,5 +376,5 @@ fn monster_spawn_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec::<(
             noisemap.push((Point {x, y}, wn + vn));
         }
     }
-    noisemap//.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+    noisemap
 }
