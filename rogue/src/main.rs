@@ -73,14 +73,14 @@ use gamelog::GameLog;
 //--------------------------------------------------------------------
 // Debug flags.
 //--------------------------------------------------------------------
-const DEBUG_DRAW_ALL_MAP: bool = true;
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 const DEBUG_HIGHLIGHT_DEEP_WATER: bool = false;
-const DEBUG_HIGHLIGHT_SHALLOW_WATER: bool = true;
+const DEBUG_HIGHLIGHT_SHALLOW_WATER: bool = false;
 const DEBUG_HIGHLIGHT_GRASS: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 100.0;
@@ -279,6 +279,27 @@ impl State {
     }
 
     fn run_upkeep_turn_systems(&mut self) {
+        // The ordering here is important, but for stupid reasons that should
+        // probably be re-evaluated at some point: the EncroachmentSystem run
+        // must occur *after* the status tick system.
+        //
+        // This is because we use StatusInvisibleToPlayer to hide monsters that
+        // are occupying deep water or tall grass tiles. The order of operations
+        // is:
+        //
+        //   EncroachmentSystem sees that the monster should be doing, and
+        //   creates the status effect *with timer zero*.
+        //   ...Terrain Turn...Player Turn...Monster Turn...
+        //   StatusTickSystem sees the timer of zero, the status falls off.
+        //   EncroachmentSystem sees...
+        //
+        // If these run in the *other* order, the status is added and
+        // immediately removed, doing nothing.
+        //
+        // It's important for the StatusTickSystem and the EncroachmentSystem to
+        // reside in the same RunState, otherwise at least one frame will be
+        // rendered between when the status falls off, and when it is reapplied,
+        // causing the "hidden" entity to flicker.
         let mut status = StatusTickSystem{};
         status.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};

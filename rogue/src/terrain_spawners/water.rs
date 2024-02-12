@@ -96,7 +96,6 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .build();
     let mut map = ecs.write_resource::<Map>();
     let idx = map.xy_idx(x, y);
-    map.ok_to_spawn[idx] = false;
     map.deep_water[idx] = true;
     Some(entity)
 }
