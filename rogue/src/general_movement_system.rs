@@ -181,8 +181,5 @@ fn ok_to_move_to_position(
             && (!routing.grass || map.grass[idx])
         }
     };
-    println!();
-    if !ok_according_to_avoids {println!("Rejected because of avoids.")}
-    if !ok_according_to_bounds {println!("Rejected because of bounds.")}
     ok_according_to_avoids && ok_according_to_bounds
 }

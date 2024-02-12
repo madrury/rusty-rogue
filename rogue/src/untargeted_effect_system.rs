@@ -220,9 +220,7 @@ impl<'a> System<'a> for UntargetedSystem {
                     .map(|(_e, _c, _sb, charges)| charges)
                     .collect();
                 for sc in spell_charges_for_user {
-                    println!("{}", sc.regen_time);
                     sc.regen_time = sc.regen_time * (100 - thing_decreases_recharge.percentage) / 100;
-                    println!("{}", sc.regen_time);
                     sc.time = i32::min(sc.time, sc.regen_time);
                 }
             }
