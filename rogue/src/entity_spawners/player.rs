@@ -1,3 +1,5 @@
+use crate::Tramples;
+
 use super::{
     Point, Map, CombatStats, SwimStamina, HungerClock, HungerState, Name, Player,
     Monster, Position, Renderable, Viewshed, BlessingOrbBag, SimpleMarker, SerializeMe, MarkedBuilder,
@@ -53,6 +55,7 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
             drowning_damage: PLAYER_DROWNING_TICK_DAMAGE
         })
         .with(BlessingOrbBag {count: 0})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }
@@ -66,7 +69,7 @@ pub fn spawn_player(ecs: &mut World, px: i32, py: i32) -> Entity {
 //
 // The strategy here is crude, but seems to work alright. We attempt to spawn at
 // a random point and check how far away we are from the closest monster. If
-// we're too close, we tray again for some number of times, and if we fail
+// we're too close, we try again for some number of times, and if we fail
 // repeatedly, we lower the acceptable threshold and try again until. We
 // continue like this until we succeed.
 //----------------------------------------------------------------------------

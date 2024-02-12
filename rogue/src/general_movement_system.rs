@@ -1,6 +1,6 @@
 use super::{
     Map, Point, Position, Viewshed, Renderable, BlocksTile,
-    MonsterMovementRoutingOptions, WantsToMoveToRandomPosition,
+    MovementRoutingAvoids, MovementRoutingBounds, WantsToMoveToRandomPosition,
     WantsToMoveToPosition, AnimationRequestBuffer, AnimationRequest
 };
 use specs::prelude::*;
@@ -90,7 +90,8 @@ pub struct PositionMovementSystemData<'a> {
     map: WriteExpect<'a, Map>,
     player: ReadExpect<'a, Entity>,
     player_pos: WriteExpect<'a, Point>,
-    routing_options: ReadStorage<'a, MonsterMovementRoutingOptions>,
+    avoids: ReadStorage<'a, MovementRoutingAvoids>,
+    bounds: ReadStorage<'a, MovementRoutingBounds>,
     positions: WriteStorage<'a, Position>,
     viewsheds: WriteStorage<'a, Viewshed>,
     is_blockings: WriteStorage<'a, BlocksTile>,
@@ -109,7 +110,8 @@ impl<'a> System<'a> for PositionMovementSystem {
             player,
             mut player_pos,
             mut positions,
-            routing_options,
+            avoids,
+            bounds,
             mut viewsheds,
             is_blockings,
             mut wants_to_move,
@@ -124,12 +126,13 @@ impl<'a> System<'a> for PositionMovementSystem {
 
             let is_player = entity == *player;
             let is_blocking = is_blockings.get(entity).is_some();
-            let routing = routing_options.get(entity);
+            let eavoids = avoids.get(entity);
+            let ebounds = bounds.get(entity);
 
             let new_pos_is_player_pos =
                 new_pos.x == player_pos.x && new_pos.y == player_pos.y;
             let ok_to_move =
-                wants_to_move.force || ok_to_move_to_position(&map, routing, new_idx);
+                wants_to_move.force || ok_to_move_to_position(&map, eavoids, ebounds, new_idx);
 
             if (!is_player && new_pos_is_player_pos) || !ok_to_move {
                 continue
@@ -154,14 +157,28 @@ impl<'a> System<'a> for PositionMovementSystem {
     }
 }
 
-fn ok_to_move_to_position(map: &Map, routing: Option<&MonsterMovementRoutingOptions>, idx: usize) -> bool {
-    match routing {
+// Check the constraints imposed on movement by the MovementRoutingAvoids and
+// MovementRoutingBounds arrays are satisfied.
+fn ok_to_move_to_position(
+    map: &Map,
+    avoids: Option<&MovementRoutingAvoids>,
+    bounds: Option<&MovementRoutingBounds>,
+    idx: usize
+) -> bool {
+    let ok_according_to_avoids = match avoids {
         None => !map.blocked[idx],
         Some(routing) => {
             !map.blocked[idx]
-                && !(routing.options.avoid_fire && map.fire[idx])
-                && !(routing.options.avoid_chill && map.chill[idx])
-                && !(routing.options.avoid_water && map.water[idx])
+                && !(routing.fire && map.fire[idx])
+                && !(routing.chill && map.chill[idx])
+                && !(routing.water && map.water[idx])
         }
-    }
+    };
+    let ok_according_to_bounds = match bounds {
+        None => true,
+        Some(bounds) => {
+            !bounds.grass || map.grass[idx]
+        }
+    };
+    ok_according_to_avoids && ok_according_to_bounds
 }

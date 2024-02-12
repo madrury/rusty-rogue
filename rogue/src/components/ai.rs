@@ -20,20 +20,18 @@ pub struct CanAct {}
 pub struct CanNotAct {}
 
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct MovementRoutingOptions {
-    pub avoid_blocked: bool,
-    pub avoid_fire: bool,
-    pub avoid_chill: bool,
-    pub avoid_water: bool,
-    pub avoid_steam: bool,
-    pub avoid_smoke: bool,
-    pub avoid_lava: bool,
-    pub avoid_brimstone: bool,
-    pub avoid_ice: bool,
+pub struct MovementRoutingAvoids {
+    pub blocked: bool,
+    pub fire: bool,
+    pub chill: bool,
+    pub water: bool,
+    pub steam: bool,
 }
+
+
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct MonsterMovementRoutingOptions {
-    pub options: MovementRoutingOptions
+pub struct MovementRoutingBounds {
+    pub grass: bool
 }
 
 #[derive(Component, ConvertSaveload, Clone)]

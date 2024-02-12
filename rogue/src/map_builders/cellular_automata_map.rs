@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
 
-use super::{MapBuilder, enumerate_connected_components, fill_all_but_largest_component, carve_out_water_spawn_table};
+use super::{carve_out_water_spawn_table, enumerate_connected_components, fill_all_but_largest_component, GrassSpawnTable, MapBuilder, StatueSpawnData, WaterSpawnTable};
 use super::{
-    Map, Point, TileType, entity_spawners, terrain_spawners, get_stairs_position,
+    Map, Point, TileType, NoiseMaps,entity_spawners, terrain_spawners, get_stairs_position,
     DEBUG_VISUALIZE_MAPGEN
 };
 
@@ -43,7 +43,7 @@ impl MapBuilder for CellularAutomataBuilder {
         self.history.clone()
     }
 
-    fn build_map(&mut self) -> terrain_spawners::water::WaterSpawnTable {
+    fn build_map(&mut self) -> NoiseMaps {
         let mut rng = RandomNumberGenerator::new();
         self.ititialize(&mut rng);
         self.take_snapshot();
@@ -71,8 +71,9 @@ impl MapBuilder for CellularAutomataBuilder {
         self.map.synchronize_blocked();
 
         // Now we carve out space to spawn water.
-        let water_spawn_table = terrain_spawners::random_water_spawn_table(&mut rng, &self.map);
-        carve_out_water_spawn_table(&mut self.map, &water_spawn_table);
+        let noisemaps = NoiseMaps::random(&mut rng, &self.map);
+        let water_spawn_table = &noisemaps.to_water_spawn_table(&self.map);
+        carve_out_water_spawn_table(&mut self.map, water_spawn_table);
         // Carving out water maybe creates new connected components, so reduce
         // back to a single connected component.
         self.map.synchronize_blocked();
@@ -85,15 +86,41 @@ impl MapBuilder for CellularAutomataBuilder {
         self.map.synchronize_opaque();
         self.map.synchronize_ok_to_spawn();
 
-        water_spawn_table
+        noisemaps
     }
 
-    fn spawn_water(&mut self, ecs: &mut World, water_spawn_table: &terrain_spawners::water::WaterSpawnTable) {
-        terrain_spawners::water::spawn_water_from_table(ecs, water_spawn_table)
+    fn spawn_blessing_tile(&mut self, ecs: &mut World) {
+        let blessing: Option<Point>;
+        {
+            let noisemaps = &*ecs.read_resource::<NoiseMaps>();
+            blessing = noisemaps.blessing;
+        }
+        if let Some(b) = blessing {
+            terrain_spawners::magic::blessing_tile(ecs, b.x, b.y);
+        }
+    }
+
+    fn spawn_water(&mut self, ecs: &mut World) {
+        let table: WaterSpawnTable;
+        {
+            let noisemaps = &*ecs.read_resource::<NoiseMaps>();
+            let map = &*ecs.read_resource::<Map>();
+            table = noisemaps.to_water_spawn_table(map);
+        }
+        terrain_spawners::water::spawn_water_from_table(ecs, &table)
     }
 
     fn spawn_terrain(&mut self, ecs: &mut World) {
-        terrain_spawners::spawn_terrain(ecs, self.depth);
+        let grass_spawn_table: GrassSpawnTable;
+        let statue_spawn_table: Vec<StatueSpawnData>;
+        {
+            let noisemaps = &*ecs.read_resource::<NoiseMaps>();
+            let map = &*ecs.read_resource::<Map>();
+            grass_spawn_table = noisemaps.to_grass_spawn_table(map);
+            statue_spawn_table = noisemaps.to_statue_spawn_table(map);
+        }
+        terrain_spawners::foliage::spawn_grass_from_table(ecs, &grass_spawn_table);
+        terrain_spawners::statues::spawn_statues_from_table(ecs, &statue_spawn_table);
     }
 
     fn spawn_entities(&mut self, ecs: &mut World) {

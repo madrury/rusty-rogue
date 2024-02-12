@@ -1,7 +1,9 @@
 use super::{
-    get_status_indicators, BlessingOrbBag, Castable, CombatStats, Equipped, GameLog, HungerClock,
-    HungerState, InBackpack, InSpellBook, Map, Name, OfferedBlessing, Player, Position, Renderable,
-    RunState, SpellCharges, StatusIndicatorGlyph, SwimStamina, TargetingKind, Viewshed, COMMANDS,
+    get_status_indicators, BlessingOrbBag, Castable, CombatStats, Equipped,
+    GameLog, HungerClock, HungerState, InBackpack, InSpellBook, Map, Name,
+    OfferedBlessing, Player, Position, Renderable, RunState, SpellCharges,
+    StatusIndicatorGlyph, StatusInvisibleToPlayer ,SwimStamina, TargetingKind,
+    Viewshed, COMMANDS,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -334,6 +336,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
 
     let map = ecs.fetch::<Map>();
     let names = ecs.read_storage::<Name>();
+    let invisibles = ecs.read_storage::<StatusInvisibleToPlayer>();
     let positions = ecs.read_storage::<Position>();
 
     let mpos = ctx.mouse_pos();
@@ -346,9 +349,14 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let mut status_indicators: Vec<Vec<StatusIndicatorGlyph>> = Vec::new();
     for (entity, name, pos) in (&ecs.entities(), &names, &positions).join() {
         let idx = map.xy_idx(pos.x, pos.y);
-        if pos.x == mpos.0 && pos.y == mpos.1 && map.visible_tiles[idx] {
+        let do_render =
+            pos.x == mpos.0
+            && pos.y == mpos.1
+            && map.visible_tiles[idx]
+            && invisibles.get(entity).is_none();
+        if do_render  {
             tooltips.push(name.name.to_string());
-            status_indicators.push(get_status_indicators(&ecs, &entity))
+            status_indicators.push(get_status_indicators(&ecs, &entity));
         }
     }
     // Sort the tooltip, status pairs by increasing length of the tooltip. This

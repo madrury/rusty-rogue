@@ -299,6 +299,8 @@ impl<'a> System<'a> for TargetedSystem {
                 wants_to_move.insert(user, WantsToMoveToPosition {
                     pt: target_point.clone(),
                     // Not sure about this one.
+                    // Many years later: Yah, this lets you move into the same
+                    // tile as enemies. Probably not great.
                     force: true
                 })
                     .expect("Could not insert WantsToMoveToPosition.");

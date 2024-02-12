@@ -5,13 +5,10 @@ use super::{Map, Position, BlocksTile, Opaque, IsEntityKind, EntitySpawnKind};
 pub struct MapIndexingSystem {}
 
 //----------------------------------------------------------------------------
-// Updates/sychronizes internal data stores on Map.
+// Updates/sychronizes tile classification vectors on the map.
 //   This system runs each turn and synchronizes various attributes of Map with
-//   the entities currently on the game map:
-//
-//   - blocked: A boolean array that tracks what indexes are blocked for movement.
-//   - fire: A boolean array that tracks if fire currently burning in the tile?
-//   - tile_content: Vector of entities residing in a tile.
+//   the positions of entities currently in the ECS. These vectors are used when
+//   computing routing for movement.
 //----------------------------------------------------------------------------
 impl<'a> System<'a> for MapIndexingSystem {
     type SystemData = (
@@ -32,26 +29,29 @@ impl<'a> System<'a> for MapIndexingSystem {
         for e in map.fire.iter_mut() {*e = false}
         for e in map.chill.iter_mut() {*e = false}
         for e in map.water.iter_mut() {*e = false}
+        for e in map.steam.iter_mut() {*e = false}
+        for e in map.grass.iter_mut() {*e = false}
         map.clear_tile_content();
 
         for (pos, entity) in (&positions, &entities).join() {
             let idx = map.xy_idx(pos.x, pos.y);
-            // Syncronize map.blocked.
             map.blocked[idx] |= blockers.get(entity).is_some();
-            // Syncronize map.opaque.
             map.opaque[idx] |= is_opaque.get(entity).is_some();
-            // Syncronize map.fire.
             let is_fire = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Fire {..}));
             map.fire[idx] |= is_fire;
-            // Syncronize map.chill.
             let is_chill = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Chill {..}));
             map.chill[idx] |= is_chill;
-            // Syncronize map.water.
             let is_water = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Water {..}));
             map.water[idx] |= is_water;
+            let is_steam = kind.get(entity)
+                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Steam {..}));
+            map.steam[idx] |= is_steam;
+            let is_grass = kind.get(entity)
+                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::ShortGrass {..} | EntitySpawnKind::TallGrass {..} ));
+            map.grass[idx] |= is_grass;
             // Update tile content.
             map.tile_content[idx].push(entity);
         }

@@ -1,38 +1,23 @@
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, BlocksTile, TileType, StatusIsImmuneToChill,
-    StatusIsImmuneToFire, noise
+    StatusIsImmuneToFire
 };
-use rltk::{RGB};
+use crate::map_builders::StatueSpawnData;
+use rltk::{Point, RGB};
 use specs::prelude::*;
 
-const STATUE_NOISE_THRESHOLD: f32 = 0.98;
-
-//----------------------------------------------------------------------------
-// Statues.
-//----------------------------------------------------------------------------
-struct StatueSpawnData {
-    x: i32, y: i32
-}
-
-// Spawn statues randomly throughout the map.
-pub fn spawn_statues(ecs: &mut World) {
-    let mut statue_spawn_buffer = Vec::<StatueSpawnData>::new();
-    { // Contain the borrow of the ECS.
-        let map = ecs.read_resource::<Map>();
-        let statue_noise = noise::statue_noisemap(&map);
-        for x in 0..map.width {
-            for y in 0..map.height {
-                let idx = map.xy_idx(x, y);
-                let wnoise = statue_noise[idx];
-                if wnoise > STATUE_NOISE_THRESHOLD && map.ok_to_spawn[idx] {
-                    statue_spawn_buffer.push(StatueSpawnData {x: x, y: y})
-                }
-            }
+pub fn spawn_statues_from_table(
+    ecs: &mut World,
+    statue_spawn_table: &Vec<StatueSpawnData>
+) {
+    for e in statue_spawn_table {
+        {
+            let map = ecs.read_resource::<Map>();
+            let idx = map.xy_idx(e.x, e.y);
+            if map.blocked[idx] || map.water[idx] { continue; }
         }
-    }
-    for data in statue_spawn_buffer {
-        statue(ecs, data.x, data.y);
+        statue(ecs, e.x, e.y);
     }
 }
 

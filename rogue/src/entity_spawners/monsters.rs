@@ -1,16 +1,28 @@
 
+use crate::Tramples;
+
 use super::{
-    Map, BlocksTile, CombatStats, Monster, MonsterMovementRoutingOptions,
-    MonsterBasicAI, MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
-    SupportSpellcasterKind, MovementRoutingOptions,
-    SpawnEntityWhenMeleeAttacked,  EntitySpawnKind, Name, Position,
-    Renderable, Viewshed, SimpleMarker, SerializeMe, MarkedBuilder,
-    StatusIsImmuneToFire, StatusIsImmuneToChill, InSpellBook, CanNotAct,
-    BlessingSlot, spells
+    Map, BlocksTile, CombatStats, Monster, MovementRoutingAvoids,
+    MovementRoutingBounds, MonsterBasicAI, MonsterAttackSpellcasterAI,
+    MonsterSupportSpellcasterAI, SupportSpellcasterKind,
+    SpawnEntityWhenMeleeAttacked,  EntitySpawnKind, Name, Position, Renderable,
+    Viewshed, SimpleMarker, SerializeMe, MarkedBuilder, StatusIsImmuneToFire,
+    StatusIsImmuneToChill, InSpellBook, CanNotAct, BlessingSlot,
+    InvisibleWhenEncroachingEntityKind, spells
 };
 use rltk::{RGB, RandomNumberGenerator};
 use specs::prelude::*;
 
+const BASIC_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
+    blocked: true,
+    fire: true,
+    chill: true,
+    water: true,
+    steam: true,
+};
+const BASIC_ROUTING_BOUNDS: MovementRoutingBounds = MovementRoutingBounds {
+    grass: false,
+};
 
 //----------------------------------------------------------------------------
 // Rat.
@@ -21,18 +33,6 @@ const RAT_VIEW_RANGE: i32 = 4;
 const RAT_BASE_HP: i32 = 6;
 const RAT_BASE_DEFENSE: i32 = 0;
 const RAT_BASE_POWER: i32 = 2;
-
-const RAT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: true,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: true,
-    avoid_brimstone: true,
-    avoid_ice: false,
-};
 
 const RAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -57,6 +57,12 @@ pub fn rat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             order: 1,
             visible_out_of_fov: false
         })
+        .with( InvisibleWhenEncroachingEntityKind {
+            kind: EntitySpawnKind::TallGrass {
+                // Placeholder
+                fg: RGB::named(rltk::GREEN)
+            }
+        })
         .with(Viewshed {
             visible_tiles: Vec::new(),
             range: RAT_VIEW_RANGE,
@@ -68,8 +74,11 @@ pub fn rat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..RAT_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: RAT_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: RAT_BASE_HP,
@@ -98,18 +107,6 @@ const BAT_VIEW_RANGE: i32 = 12;
 const BAT_BASE_HP: i32 = 12;
 const BAT_BASE_DEFENSE: i32 = 0;
 const BAT_BASE_POWER: i32 = 2;
-
-const BAT_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: false,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: false,
-    avoid_brimstone: false,
-    avoid_ice: false,
-};
 
 const BAT_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -145,8 +142,12 @@ pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..BAT_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: BAT_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            water: false,
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: BAT_BASE_HP,
@@ -164,6 +165,78 @@ pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     Some(bat)
 }
 
+//----------------------------------------------------------------------------
+// Sanke.
+//
+// Grassbound and invisible in tall grass.
+//----------------------------------------------------------------------------
+const SNAKE_VIEW_RANGE: i32 = 6;
+const SNAKE_BASE_HP: i32 = 10;
+const SNAKE_BASE_DEFENSE: i32 = 0;
+const SNAKE_BASE_POWER: i32 = 2;
+
+const SNAKE_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
+    only_follow_within_viewshed: true,
+    no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 0,
+    escape_when_at_low_health: true,
+    lost_visibility_keep_following_turns_max: 20,
+    lost_visibility_keep_following_turns_remaining: 20,
+};
+
+pub fn snake(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let snake = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('s'),
+            fg: RGB::named(rltk::GREENYELLOW),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with( InvisibleWhenEncroachingEntityKind {
+            kind: EntitySpawnKind::TallGrass {
+                // Placeholder
+                fg: RGB::named(rltk::GREEN)
+            }
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: SNAKE_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Snake".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..SNAKE_BASIC_AI
+        })
+        .with(MovementRoutingAvoids {
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            grass: true,
+            ..BASIC_ROUTING_BOUNDS
+        })
+        .with(CombatStats {
+            max_hp: SNAKE_BASE_HP,
+            hp: SNAKE_BASE_HP,
+            power: SNAKE_BASE_POWER,
+            defense: SNAKE_BASE_DEFENSE
+        })
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(snake)
+}
 
 //----------------------------------------------------------------------------
 // Goblins.
@@ -181,18 +254,6 @@ const GOBLIN_BASE_POWER: i32 = 3;
 const GOLBIN_ATTTACK_SPELLCASTER_DISTANCE: i32 = 3;
 const GOBLIN_SUPPORT_SPELLCASTER_ALLY_DISTANCE: i32 = 2;
 const GOBLIN_SUPPORT_SPELLCASTER_PLAYER_DISTANCE: i32 = 2;
-
-const GOBLIN_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: true,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: true,
-    avoid_brimstone: true,
-    avoid_ice: false,
-};
 
 const GOBLIN_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -229,8 +290,11 @@ pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..GOBLIN_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: GOBLIN_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: GOBLIN_BASE_HP,
@@ -239,6 +303,7 @@ pub fn goblin_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             defense: GOBLIN_BASE_DEFENSE
         })
         .with(BlocksTile {})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -278,8 +343,12 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(MonsterAttackSpellcasterAI {
                 distance_to_keep_away: GOLBIN_ATTTACK_SPELLCASTER_DISTANCE,
             })
-            .with(MonsterMovementRoutingOptions {
-                options: GOBLIN_ROUTING_OPTIONS
+            .with(MovementRoutingAvoids {
+                fire: false,
+                ..BASIC_ROUTING_AVOIDS
+            })
+            .with(MovementRoutingBounds {
+                ..BASIC_ROUTING_BOUNDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -292,6 +361,7 @@ pub fn goblin_firecaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 render_glyph: true
             })
             .with(BlocksTile {})
+            .with(Tramples {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -341,8 +411,12 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(MonsterAttackSpellcasterAI {
                 distance_to_keep_away: GOLBIN_ATTTACK_SPELLCASTER_DISTANCE,
             })
-            .with(MonsterMovementRoutingOptions {
-                options: GOBLIN_ROUTING_OPTIONS
+            .with(MovementRoutingAvoids {
+                chill: false,
+                ..BASIC_ROUTING_AVOIDS
+            })
+            .with(MovementRoutingBounds {
+                ..BASIC_ROUTING_BOUNDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -354,6 +428,7 @@ pub fn goblin_chillcaster(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 remaining_turns: i32::MAX, render_glyph: true
             })
             .with(BlocksTile {})
+            .with(Tramples {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -405,8 +480,11 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 distance_to_keep_away_from_monsters: GOBLIN_SUPPORT_SPELLCASTER_ALLY_DISTANCE,
                 distance_to_keep_away_from_player: GOBLIN_SUPPORT_SPELLCASTER_PLAYER_DISTANCE,
             })
-            .with(MonsterMovementRoutingOptions {
-                options: GOBLIN_ROUTING_OPTIONS
+            .with(MovementRoutingAvoids {
+                ..BASIC_ROUTING_AVOIDS
+            })
+            .with(MovementRoutingBounds {
+                ..BASIC_ROUTING_BOUNDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -415,6 +493,7 @@ pub fn goblin_cleric(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 defense: GOBLIN_BASE_DEFENSE
             })
             .with(BlocksTile {})
+            .with(Tramples {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -461,8 +540,11 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             .with(Name {
                 name: "Goblin Enchanter".to_string(),
             })
-            .with(MonsterMovementRoutingOptions {
-                options: GOBLIN_ROUTING_OPTIONS
+            .with(MovementRoutingAvoids {
+                ..BASIC_ROUTING_AVOIDS
+            })
+            .with(MovementRoutingBounds {
+                ..BASIC_ROUTING_BOUNDS
             })
             .with(CombatStats {
                 max_hp: GOBLIN_SPELLCASTER_HP,
@@ -471,6 +553,7 @@ pub fn goblin_enchanter(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 defense: GOBLIN_BASE_DEFENSE
             })
             .with(BlocksTile {})
+            .with(Tramples {})
             .marked::<SimpleMarker<SerializeMe>>()
             .build();
         let mut map = ecs.fetch_mut::<Map>();
@@ -523,18 +606,6 @@ const ORC_BASE_HP: i32 = 30;
 const ORC_BASE_POWER: i32 = 6;
 const ORC_BASE_DEFENSE: i32 = 0;
 
-const ORC_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: true,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: true,
-    avoid_brimstone: true,
-    avoid_ice: false,
-};
-
 const ORC_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
     no_visibility_wander: true,
@@ -545,7 +616,6 @@ const ORC_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
 };
 
 pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
-
 
     let orc = ecs.create_entity()
         .with(Position {
@@ -571,8 +641,11 @@ pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..ORC_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: ORC_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: ORC_BASE_HP,
@@ -581,6 +654,7 @@ pub fn orc_basic(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             defense: ORC_BASE_DEFENSE
         })
         .with(BlocksTile {})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -600,18 +674,6 @@ const JELLY_VIEW_RANGE: i32 = 8;
 pub const JELLY_BASE_HP: i32 = 20;
 const JELLY_BASE_DEFENSE: i32 = 0;
 const JELLY_BASE_POWER: i32 = 2;
-
-const JELLY_ROUTING_OPTIONS: MovementRoutingOptions = MovementRoutingOptions {
-    avoid_blocked: true,
-    avoid_fire: true,
-    avoid_chill: true,
-    avoid_water: true,
-    avoid_steam: true,
-    avoid_smoke: true,
-    avoid_lava: true,
-    avoid_brimstone: true,
-    avoid_ice: false,
-};
 
 const JELLY_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
     only_follow_within_viewshed: true,
@@ -647,8 +709,11 @@ pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Optio
         .with(MonsterBasicAI {
             ..JELLY_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: JELLY_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: max_hp,
@@ -664,11 +729,12 @@ pub fn pink_jelly(ecs: &mut World, x: i32, y: i32, max_hp:i32, hp: i32) -> Optio
                 max_hp: 0, hp: 0
             }
         })
-        // We prevent pink jelly's from acting on their first turn. If they move
-        // immediately, it's hard to tell what actually happened, this improves
-        // their gameplay behaviour.
+        // We prevent pink jelly's from acting on their first turn. If jellies
+        // spawned after a mele attack move immediately, it's hard to tell what
+        // actually happened, this improves their gameplay behaviour.
         .with(CanNotAct {})
         .with(BlocksTile {})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -703,8 +769,12 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..JELLY_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: JELLY_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            fire: false,
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: JELLY_BASE_HP,
@@ -722,6 +792,7 @@ pub fn orange_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             remaining_turns: i32::MAX, render_glyph: true
         })
         .with(BlocksTile {})
+        .with(Tramples {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -738,6 +809,7 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             y: y
         })
         .with(Monster {})
+        .with(BlocksTile {})
         .with(Renderable {
             glyph: rltk::to_cp437('J'),
             fg: RGB::named(rltk::DODGERBLUE),
@@ -756,8 +828,12 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(MonsterBasicAI {
             ..JELLY_BASIC_AI
         })
-        .with(MonsterMovementRoutingOptions {
-            options: JELLY_ROUTING_OPTIONS
+        .with(MovementRoutingAvoids {
+            chill: false,
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            ..BASIC_ROUTING_BOUNDS
         })
         .with(CombatStats {
             max_hp: JELLY_BASE_HP,
@@ -775,7 +851,6 @@ pub fn blue_jelly(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             remaining_turns: i32::MAX,
             render_glyph: true
         })
-        .with(BlocksTile {})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 

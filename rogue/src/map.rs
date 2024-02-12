@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use specs::prelude::*;
 use std::iter::Iterator;
 use take_until::*;
-use super::{DEBUG_DRAW_ALL_MAP, MovementRoutingOptions};
+use super::{DEBUG_DRAW_ALL_MAP, MovementRoutingAvoids, MovementRoutingBounds};
 
 
 pub const MAP_WIDTH: i32 = 80;
@@ -28,26 +28,41 @@ pub struct Map {
     pub depth: i32,
     pub tiles: Vec<TileType>,
     // Has the player seen this tile? If so, we render it even when it is out of
-    // visibility, but darkened.
+    // visibility, but in greyscale.
     pub revealed_tiles: Vec<bool>,
     // Is this tile currently visible to the player. This array is updated in
     // visibility_system every turn.
     pub visible_tiles: Vec<bool>,
-    // Is the tile currently blocked for movement? This array needs to be kept
-    // synced with game state.
+    //----------------------------------------------------------------------------
+    // WARNING:
+    // These *tile classification vectors* need to be synchronized with the
+    // presense or absense of entities occupying the tile. We have a system, in
+    // map_indexing_system.rs, that is responsable for this task, and runs once
+    // a turn cycle. If a new such vector is added, the logic to synchronize
+    // with the ECS needs to be added in the indexing system.
+    //
+    // These arrays are used:
+    //   - To construct boolean masks used for routing, i.e., used within the
+    //   alogirthms for determining which location a monster move into each
+    //   turn.
+    //   - To spawn terrain bound entities in tiles that satisfy their terrain
+    //   bound.
+    //---------------------------------------------------------------------------
+    // Is the tile currently blocked? Each tile can be occupied by exactly one
+    // entitiy with the BlocksTile component. Any attempts for a second such entitiy to move into the tile will be abandoned.
     pub blocked: Vec<bool>,
     // Is the tile currently opaque, i.e., does it block visibility?
     pub opaque: Vec<bool>,
-    // Is the tile currently occuped by fire? We only want to spawn one fire
-    // entity in each tile, so we need a source of truth for this.
+    // Is the tile currently occuped by fire?
     pub fire: Vec<bool>,
-    // Is the tile currently occuped by chill? We only want to spawn one chill
-    // entity in each tile, so we need a source of truth for this.
+    // Is the tile currently occuped by chill?
     pub chill: Vec<bool>,
     // Is the tile currently occupied by steam?
     pub steam: Vec<bool>,
     // Is the tile currently occuped by water?
     pub water: Vec<bool>,
+    // IS the tile currently occupied by grass? (Long grass counts.)
+    pub grass: Vec<bool>,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -78,6 +93,7 @@ impl Map {
             chill: vec![false; MAP_SIZE],
             steam: vec![false; MAP_SIZE],
             water: vec![false; MAP_SIZE],
+            grass: vec![false; MAP_SIZE],
             tile_content : vec![Vec::new(); MAP_SIZE],
             ok_to_spawn: vec![true; MAP_SIZE],
         }
@@ -154,17 +170,33 @@ impl Map {
         return None
     }
 
-    pub fn random_unblocked_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
+    // TODO: This could be greatly improved, there's no need to use rejection
+    // sampling here.
+    pub fn random_point_with_tile_classification(
+        &self,
+        n_tries: i32,
+        rng: &mut RandomNumberGenerator,
+        classification: &Vec<bool>
+    ) -> Option<(i32, i32)> {
         for _ in 0..n_tries {
             let pt = self.random_point(n_tries, rng);
             if let Some(pt) = pt {
                 let idx = self.xy_idx(pt.0, pt.1);
-                if !self.blocked[idx] {
+                if classification[idx] {
                     return Some(pt);
                 }
             }
         }
         return None;
+    }
+
+    pub fn random_unblocked_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
+        return self.random_point_with_tile_classification(
+            n_tries,
+            rng,
+            // Blocked -> Unblocked.
+            &self.blocked.iter().map(|b| !b).collect::<Vec<bool>>()
+        );
     }
 
     pub fn get_adjacent_tiles(&self, x: i32, y: i32) -> Vec<(i32, i32)> {
@@ -346,21 +378,27 @@ pub struct RoutingMap {
 }
 
 impl RoutingMap {
-    pub fn from_map(map: &Map, options: &MovementRoutingOptions) -> RoutingMap {
+
+    pub fn from_map(
+        map: &Map,
+        avoids: &MovementRoutingAvoids,
+        bounds: &MovementRoutingBounds
+    ) -> RoutingMap {
         let mut route = RoutingMap {
             width: map.width,
             height: map.height,
-            avoid: vec![false; map.width as usize * map.height as usize]
+            avoid: vec![false; MAP_SIZE]
         };
         for x in 0..map.width {
             for y in 0..map.height {
                 let idx = map.xy_idx(x, y);
                 route.avoid[idx] =
                     map.tiles[idx] == TileType::Wall
-                    || (options.avoid_blocked && map.blocked[idx])
-                    || (options.avoid_fire && map.fire[idx])
-                    || (options.avoid_chill && map.chill[idx])
-                    || (options.avoid_water && map.water[idx]);
+                    || (avoids.blocked && map.blocked[idx])
+                    || (avoids.fire && map.fire[idx])
+                    || (avoids.chill && map.chill[idx])
+                    || (avoids.water && map.water[idx])
+                    || (bounds.grass && !map.grass[idx]);
             }
         }
         route

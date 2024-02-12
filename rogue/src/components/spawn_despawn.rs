@@ -12,15 +12,17 @@ use rltk::RGB;
 // These components influence entity spawning behaviour.
 //------------------------------------------------------------------
 
-// Enumerates the various types of entities that can spawn. Used to tag a spawn
-// request to lookup the appropriate function used to spawn the entity.
+// Enumerates the various types of entities that can spawn and
+// dissapate/despawn. Used to tag a spawn or despawn request to lookup the
+// appropriate function used to spawn or destroy the entity.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum EntitySpawnKind {
     PinkJelly {max_hp: i32, hp: i32},
     Fire {spread_chance: i32, dissipate_chance: i32},
     Chill {spread_chance: i32, dissipate_chance: i32},
     Steam {spread_chance: i32, dissipate_chance: i32},
-    Grass {fg: RGB},
+    ShortGrass {fg: RGB},
+    TallGrass {fg: RGB},
     Water,
     MagicOrb
 }
@@ -43,6 +45,14 @@ pub struct SpawnsEntityInAreaWhenTargeted {
 // an adjacent space.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct SpawnEntityWhenEncroachedUpon {
+    pub chance: i32,
+    pub kind: EntitySpawnKind
+}
+
+// Component indicates that the entity has a random chance to spawn entities in
+// an adjacent space.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnEntityWhenTrampledUpon {
     pub chance: i32,
     pub kind: EntitySpawnKind
 }
@@ -79,6 +89,11 @@ pub struct ChanceToSpawnEntityWhenBurning {
     pub chance: i32
 }
 
+#[derive(Component, ConvertSaveload, Clone, Copy)]
+pub struct InvisibleWhenEncroachingEntityKind {
+    pub kind: EntitySpawnKind
+}
+
 // An entity with this component has a chance to dissipate every turn.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct ChanceToDissipate {
@@ -99,6 +114,9 @@ pub struct DissipateWhenBurning {}
 // on it's position. For example: long grass.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct DissipateWhenEnchroachedUpon {}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct DissipateWhenTrampledUpon {}
 
 // An entity with this component has dissipated and should be removed from the
 // ECS at the end of the current turn.
