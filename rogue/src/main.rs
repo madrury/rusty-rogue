@@ -14,6 +14,7 @@ use components::game_effects::*;
 use components::spawn_despawn::*;
 use components::status_effects::*;
 use components::signaling::*;
+use components::melee::*;
 
 pub mod entity_spawners;
 pub mod terrain_spawners;
@@ -67,6 +68,8 @@ mod encroachment_system;
 use encroachment_system::*;
 mod general_movement_system;
 use general_movement_system::*;
+mod weapon_special_system;
+use weapon_special_system::*;
 mod gamelog;
 use gamelog::GameLog;
 
@@ -271,6 +274,8 @@ impl State {
     fn run_upkeep_turn_systems(&mut self) {
         let mut status = StatusTickSystem{};
         status.run_now(&self.ecs);
+        let mut specials = WeaponSpecialTickSystem{};
+        specials.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
         charges.run_now(&self.ecs);
         self.ecs.maintain();
@@ -943,6 +948,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
     gs.ecs.register::<MonsterSupportSpellcasterAI>();
     gs.ecs.register::<SpellCharges>();
+    gs.ecs.register::<WeaponSpecial>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();
     gs.ecs.register::<WantsToPickupItem>();

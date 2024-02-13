@@ -3,7 +3,7 @@ use super::{
     Throwable, Targeted, TargetingKind, Consumable,
     InflictsDamageWhenTargeted, GrantsMeleeAttackBonus,
     GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, AlongRayAnimationWhenTargeted, StatusIsImmuneToChill, StatusIsImmuneToFire
+    ElementalDamageKind, AlongRayAnimationWhenTargeted, StatusIsImmuneToChill, StatusIsImmuneToFire, WeaponSpecial, WeaponSpecialKind
 };
 use rltk::{RGB};
 use specs::prelude::*;
@@ -38,6 +38,11 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             bg: RGB::named(rltk::BLACK),
             glyph: rltk::to_cp437('•'),
             until_blocked: true
+        })
+        .with(WeaponSpecial {
+            regen_time: 10,
+            time: 0,
+            kind: WeaponSpecialKind::ThrowWithoutExpending
         })
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})

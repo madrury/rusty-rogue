@@ -26,7 +26,8 @@ use super::{
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
     StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
     SpawnEntityWhenKilled, DissipateWhenBurning,
-    InvisibleWhenEncroachingEntityKind, MAP_WIDTH, random_table
+    InvisibleWhenEncroachingEntityKind, WeaponSpecial, WeaponSpecialKind,
+    MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
@@ -114,7 +115,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, depth)
             .insert(ItemType::FreezingPotion, depth)
-            .insert(ItemType::Dagger, 1 + depth)
+            .insert(ItemType::Dagger, 100)//1 + depth)
             .insert(ItemType::LeatherArmor, 1 + depth)
             .insert(ItemType::MagicMissileScroll, 1 + depth)
             .insert(ItemType::BlinkScroll, depth)

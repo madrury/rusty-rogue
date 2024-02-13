@@ -18,6 +18,7 @@ use super::components::game_effects::*;
 use super::components::spawn_despawn::*;
 use super::components::status_effects::*;
 use super::components::signaling::*;
+use super::components::melee::*;
 
 
 macro_rules! serialize_individually {
@@ -97,6 +98,7 @@ pub fn save_game(ecs: &mut World) {
             Equipped,
             BlessingOrbBag,
             SpellCharges,
+            WeaponSpecial,
             WantsToMeleeAttack,
             WantsToPickupItem,
             WantsToUseUntargeted,
@@ -240,6 +242,7 @@ pub fn load_game(ecs: &mut World) {
             WantsToDissipate,
             InBackpack,
             InSpellBook,
+            WeaponSpecial,
             Equipped,
             BlessingOrbBag,
             SpellCharges,
