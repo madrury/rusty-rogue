@@ -5,7 +5,7 @@ use super::{
     GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
     ElementalDamageKind, AlongRayAnimationWhenTargeted, StatusIsImmuneToChill, StatusIsImmuneToFire, WeaponSpecial, WeaponSpecialKind
 };
-use rltk::{RGB};
+use rltk::RGB;
 use specs::prelude::*;
 
 pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
@@ -13,7 +13,7 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('↑'),
-            fg: RGB::named(rltk::YELLOW),
+            fg: RGB::named(rltk::SILVER),
             bg: RGB::named(rltk::BLACK),
             order: 2,
             visible_out_of_fov: false
@@ -34,9 +34,9 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             kind: ElementalDamageKind::Physical
         })
         .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::WHITE),
+            fg: RGB::named(rltk::SILVER),
             bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('•'),
+            glyph: rltk::to_cp437('↑'),
             until_blocked: true
         })
         .with(WeaponSpecial {
