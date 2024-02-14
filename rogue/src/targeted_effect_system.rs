@@ -10,8 +10,8 @@ use super::{
     WantsToTakeDamage, WantsToMoveToPosition, WantsToMoveToRandomPosition,
     StatusIsFrozen, StatusIsBurning, SpawnsEntityInAreaWhenTargeted,
     StatusIsImmuneToFire, StatusIsImmuneToChill, StatusIsMeleeAttackBuffed,
-    StatusIsPhysicalDefenseBuffed, new_status_with_immunity,
-    new_combat_stats_status
+    StatusIsPhysicalDefenseBuffed, WeaponSpecial, WeaponSpecialKind,
+    new_status_with_immunity, new_combat_stats_status
 };
 use specs::prelude::*;
 
@@ -32,6 +32,7 @@ pub struct TargetedSystemData<'a> {
         positions: WriteStorage<'a, Position>,
         consumables: ReadStorage<'a, Consumable>,
         spell_charges: WriteStorage<'a, SpellCharges>,
+        specials: WriteStorage<'a, WeaponSpecial>,
         targeteds: ReadStorage<'a, Targeted>,
         wants_target: WriteStorage<'a, WantsToUseTargeted>,
         combat_stats: WriteStorage<'a, CombatStats>,
@@ -73,6 +74,7 @@ impl<'a> System<'a> for TargetedSystem {
             mut positions,
             consumables,
             mut spell_charges,
+            mut specials,
             targeteds,
             mut wants_target,
             mut combat_stats,
@@ -303,9 +305,12 @@ impl<'a> System<'a> for TargetedSystem {
                     // tile as enemies. Probably not great.
                     force: true
                 })
-                    .expect("Could not insert WantsToMoveToPosition.");
+                .expect("Could not insert WantsToMoveToPosition.");
             }
 
+            //----------------------------------------------------------------
+            // Animations.
+            //----------------------------------------------------------------
             // Component: AreaOfEffectAnimationWhenTargeted
             let has_aoe_animation = aoe_animations.get(want_target.thing);
             if let Some(has_aoe_animation) = has_aoe_animation {
@@ -318,7 +323,6 @@ impl<'a> System<'a> for TargetedSystem {
                     radius: has_aoe_animation.radius
                 })
             }
-
             // Component: AlongRayAnimationWhenTargeted
             let has_ray_animation = along_ray_animations.get(want_target.thing);
             if let Some(has_ray_animation) = has_ray_animation {
@@ -334,11 +338,23 @@ impl<'a> System<'a> for TargetedSystem {
                 })
             }
 
-            // If the thing was single use, clean it up.
-            let consumable = consumables.get(want_target.thing);
-            if let Some(_) = consumable {
-                entities.delete(want_target.thing).expect("Potion delete failed.");
+            //----------------------------------------------------------------
+            // Cleanup and resource expnditure.
+            //----------------------------------------------------------------
+            // If the thing was single use, clean it up. Weapon specials
+            // sometimes give a free throw of a consumable thrown weapon.
+            let consumable = consumables.get(want_target.thing).is_some();
+            let freethrow = specials.get(want_target.thing)
+                .map(|s| matches!(s.kind, WeaponSpecialKind::ThrowWithoutExpending))
+                .map_or(false, |b| b);
+            if freethrow {
+                let special = specials.get_mut(want_target.thing);
+                special.expect("Failure attempting to clear weapon special charge.").expend();
             }
+            if consumable && !freethrow {
+                entities.delete(want_target.thing).expect("Consumable delete failed.");
+            }
+
             // If the thing is a spell, we've used up one of the spell charges.
             let sc = spell_charges.get_mut(want_target.thing);
             if let Some(sc) = sc {

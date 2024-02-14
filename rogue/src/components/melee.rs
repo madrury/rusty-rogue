@@ -55,4 +55,7 @@ impl WeaponSpecial {
     pub fn is_charged(&self) -> bool {
         return self.time == self.regen_time
     }
+    pub fn expend(&mut self) {
+        self.time = 0;
+    }
 }
