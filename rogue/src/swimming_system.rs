@@ -43,7 +43,7 @@ impl<'a> System<'a> for SwimmingSystem {
             }
 
             let idx = map.xy_idx(pos.x, pos.y);
-            let in_water = map.water[idx];
+            let in_water = map.deep_water[idx];
 
             let log_message: Option<String>;
             if in_water {

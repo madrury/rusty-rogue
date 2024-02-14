@@ -28,7 +28,7 @@ impl<'a> System<'a> for MapIndexingSystem {
         map.synchronize_opaque();
         for e in map.fire.iter_mut() {*e = false}
         for e in map.chill.iter_mut() {*e = false}
-        for e in map.water.iter_mut() {*e = false}
+        for e in map.deep_water.iter_mut() {*e = false}
         for e in map.steam.iter_mut() {*e = false}
         for e in map.grass.iter_mut() {*e = false}
         map.clear_tile_content();
@@ -43,9 +43,12 @@ impl<'a> System<'a> for MapIndexingSystem {
             let is_chill = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Chill {..}));
             map.chill[idx] |= is_chill;
-            let is_water = kind.get(entity)
-                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Water {..}));
-            map.water[idx] |= is_water;
+            let is_shallow_water = kind.get(entity)
+                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::ShallowWater {..}));
+            map.shallow_water[idx] |= is_shallow_water;
+            let is_deep_water = kind.get(entity)
+                .map_or(false, |k| matches!(k.kind, EntitySpawnKind::DeepWater {..}));
+            map.deep_water[idx] |= is_deep_water;
             let is_steam = kind.get(entity)
                 .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Steam {..}));
             map.steam[idx] |= is_steam;

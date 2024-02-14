@@ -19,7 +19,7 @@ pub fn spawn_grass_from_table(
         {
             let map = ecs.read_resource::<Map>();
             let idx = map.xy_idx(e.x, e.y);
-            if map.blocked[idx] || map.water[idx] { continue; }
+            if map.blocked[idx] || map.deep_water[idx] { continue; }
         }
         grass(ecs, e.x, e.y, e.fgcolor);
     }
@@ -27,7 +27,7 @@ pub fn spawn_grass_from_table(
         {
             let map = ecs.read_resource::<Map>();
             let idx = map.xy_idx(e.x, e.y);
-            if map.blocked[idx] || map.water[idx] {
+            if map.blocked[idx] || map.deep_water[idx] {
                 continue;
             }
         }

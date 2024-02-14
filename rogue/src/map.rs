@@ -60,7 +60,8 @@ pub struct Map {
     // Is the tile currently occupied by steam?
     pub steam: Vec<bool>,
     // Is the tile currently occuped by water?
-    pub water: Vec<bool>,
+    pub shallow_water: Vec<bool>,
+    pub deep_water: Vec<bool>,
     // IS the tile currently occupied by grass? (Long grass counts.)
     pub grass: Vec<bool>,
 
@@ -92,7 +93,8 @@ impl Map {
             fire: vec![false; MAP_SIZE],
             chill: vec![false; MAP_SIZE],
             steam: vec![false; MAP_SIZE],
-            water: vec![false; MAP_SIZE],
+            shallow_water: vec![false; MAP_SIZE],
+            deep_water: vec![false; MAP_SIZE],
             grass: vec![false; MAP_SIZE],
             tile_content : vec![Vec::new(); MAP_SIZE],
             ok_to_spawn: vec![true; MAP_SIZE],
@@ -394,10 +396,13 @@ impl RoutingMap {
                 let idx = map.xy_idx(x, y);
                 route.avoid[idx] =
                     map.tiles[idx] == TileType::Wall
+                    // Avoids.
                     || (avoids.blocked && map.blocked[idx])
                     || (avoids.fire && map.fire[idx])
                     || (avoids.chill && map.chill[idx])
-                    || (avoids.water && map.water[idx])
+                    || (avoids.deep_water && map.deep_water[idx])
+                    // Bounds.
+                    || (bounds.water && !map.shallow_water[idx] && !map.deep_water[idx])
                     || (bounds.grass && !map.grass[idx]);
             }
         }

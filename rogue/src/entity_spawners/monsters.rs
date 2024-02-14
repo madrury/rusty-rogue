@@ -17,11 +17,12 @@ const BASIC_ROUTING_AVOIDS: MovementRoutingAvoids = MovementRoutingAvoids {
     blocked: true,
     fire: true,
     chill: true,
-    water: true,
+    deep_water: true,
     steam: true,
 };
 const BASIC_ROUTING_BOUNDS: MovementRoutingBounds = MovementRoutingBounds {
     grass: false,
+    water: false
 };
 
 //----------------------------------------------------------------------------
@@ -143,7 +144,7 @@ pub fn bat(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             ..BAT_BASIC_AI
         })
         .with(MovementRoutingAvoids {
-            water: false,
+            deep_water: false,
             ..BASIC_ROUTING_AVOIDS
         })
         .with(MovementRoutingBounds {
@@ -236,6 +237,77 @@ pub fn snake(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let idx = map.xy_idx(x, y);
     map.blocked[idx] = true;
     Some(snake)
+}
+
+//----------------------------------------------------------------------------
+// Piranha.
+//
+// Waterbound and invisible in deep water.
+//----------------------------------------------------------------------------
+const PIRANHA_VIEW_RANGE: i32 = 20;
+const PIRANHA_BASE_HP: i32 = 10;
+const PIRANHA_BASE_DEFENSE: i32 = 0;
+const PIRANHA_BASE_POWER: i32 = 4;
+
+const PIRANHA_BASIC_AI: MonsterBasicAI = MonsterBasicAI {
+    only_follow_within_viewshed: true,
+    no_visibility_wander: true,
+    chance_to_move_to_random_adjacent_tile: 0,
+    escape_when_at_low_health: false,
+    lost_visibility_keep_following_turns_max: 20,
+    lost_visibility_keep_following_turns_remaining: 20,
+};
+
+pub fn piranha(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
+    let piranha = ecs.create_entity()
+        .with(Position {
+            x: x,
+            y: y
+        })
+        .with(Monster {})
+        .with(Renderable {
+            glyph: rltk::to_cp437('p'),
+            fg: RGB::named(rltk::SILVER),
+            bg: RGB::named(rltk::BLACK),
+            order: 1,
+            visible_out_of_fov: false
+        })
+        .with( InvisibleWhenEncroachingEntityKind {
+            kind: EntitySpawnKind::DeepWater
+        })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: PIRANHA_VIEW_RANGE,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Piranha".to_string(),
+        })
+        .with(MonsterBasicAI {
+            ..PIRANHA_BASIC_AI
+        })
+        .with(MovementRoutingAvoids {
+            deep_water: false,
+            ..BASIC_ROUTING_AVOIDS
+        })
+        .with(MovementRoutingBounds {
+            water: true,
+            ..BASIC_ROUTING_BOUNDS
+        })
+        .with(CombatStats {
+            max_hp: PIRANHA_BASE_HP,
+            hp: PIRANHA_BASE_HP,
+            power: PIRANHA_BASE_POWER,
+            defense: PIRANHA_BASE_DEFENSE
+        })
+        .with(BlocksTile {})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
+    let mut map = ecs.fetch_mut::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.blocked[idx] = true;
+    Some(piranha)
 }
 
 //----------------------------------------------------------------------------

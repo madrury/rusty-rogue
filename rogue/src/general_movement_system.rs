@@ -171,13 +171,14 @@ fn ok_to_move_to_position(
             !map.blocked[idx]
                 && !(routing.fire && map.fire[idx])
                 && !(routing.chill && map.chill[idx])
-                && !(routing.water && map.water[idx])
+                && !(routing.deep_water && map.deep_water[idx])
         }
     };
     let ok_according_to_bounds = match bounds {
         None => true,
-        Some(bounds) => {
-            !bounds.grass || map.grass[idx]
+        Some(routing) => {
+            (!routing.water || map.shallow_water[idx] || map.deep_water[idx])
+            && (!routing.grass || map.grass[idx])
         }
     };
     ok_according_to_avoids && ok_according_to_bounds
