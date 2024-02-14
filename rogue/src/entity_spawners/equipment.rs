@@ -40,7 +40,7 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             until_blocked: true
         })
         .with(WeaponSpecial {
-            regen_time: 10,
+            regen_time: 25,
             time: 0,
             kind: WeaponSpecialKind::ThrowWithoutExpending
         })
@@ -56,7 +56,7 @@ pub fn leather_armor(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437(']'),
-            fg: RGB::named(rltk::YELLOW),
+            fg: RGB::named(rltk::BROWN1),
             bg: RGB::named(rltk::BLACK),
             order: 2,
             visible_out_of_fov: false

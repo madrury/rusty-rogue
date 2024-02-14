@@ -6,7 +6,7 @@ use super::{
 };
 
 //----------------------------------------------------------------------------
-// Tick all status effect counteres and removee any that have expired.
+// Tick equipped weapon specials, and notify the player when fully charged.
 //----------------------------------------------------------------------------
 pub struct WeaponSpecialTickSystem {}
 
@@ -65,11 +65,6 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
                     on.name, wn.name
                 ));
             }
-            // if recharged {
-            //     if let (Some(nm), Some(pos)) = (ownername, ownerposition) {
-            //         println!("{:?}'s weapon recharged.", nm.name);
-            //     }
-            // }
         }
     }
 }
