@@ -29,6 +29,14 @@ pub enum AnimationRequest {
         bg: RGB,
         glyph: rltk::FontCharType,
     },
+    WeaponSpecialRecharge {
+        x: i32,
+        y: i32,
+        fg: RGB,
+        bg: RGB,
+        owner_glyph: rltk::FontCharType,
+        weapon_glyph: rltk::FontCharType
+    },
     AreaOfEffect {
         x: i32,
         y: i32,
@@ -96,6 +104,8 @@ impl<'a> System<'a> for AnimationInitSystem {
                     bg,
                     glyph,
                 } => make_healing_animation(*x, *y, *fg, *bg, *glyph),
+                AnimationRequest::WeaponSpecialRecharge { x, y, fg, bg, owner_glyph, weapon_glyph }
+                    => make_weapon_special_recharge_animation(*x, *y, *fg, *bg, *owner_glyph, *weapon_glyph),
                 AnimationRequest::AreaOfEffect {
                     x,
                     y,
@@ -154,6 +164,32 @@ fn make_melee_animation(
             // snappyer.
             lifetime: 35.0, // ms
             delay: 35.0 * (i as f32),
+        })
+    }
+    particles
+}
+
+// The weapon special has recharged.
+fn make_weapon_special_recharge_animation(
+    x: i32,
+    y: i32,
+    fg: RGB,
+    bg: RGB,
+    owner_glyph: rltk::FontCharType,
+    weapon_glyph: rltk::FontCharType,
+) -> Vec<ParticleRequest> {
+    let mut particles = Vec::new();
+    let color_cycle = [rltk::RGB::named(rltk::GREEN), fg, rltk::RGB::named(rltk::GREEN)];
+    let glyph_cycle = [weapon_glyph, owner_glyph, weapon_glyph];
+    for (i, (color, glyph)) in color_cycle.iter().zip(glyph_cycle.iter()).enumerate() {
+        particles.push(ParticleRequest {
+            x: x,
+            y: y,
+            fg: *color,
+            bg: bg,
+            glyph: *glyph,
+            lifetime: 50.0, // ms
+            delay: 50.0 * (i as f32),
         })
     }
     particles

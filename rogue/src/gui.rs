@@ -1,3 +1,5 @@
+use crate::WeaponSpecial;
+
 use super::{
     get_status_indicators, BlessingOrbBag, Castable, CombatStats, Equipped,
     GameLog, HungerClock, HungerState, InBackpack, InSpellBook, Map, Name,
@@ -474,6 +476,7 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
     let names = ecs.read_storage::<Name>();
     let inbackpacks = ecs.read_storage::<InBackpack>();
     let equipped = ecs.read_storage::<Equipped>();
+    let special = ecs.read_storage::<WeaponSpecial>();
     let doables = ecs.read_storage::<T>();
     let renderables = ecs.read_storage::<Renderable>();
     let entities = ecs.entities();
@@ -544,12 +547,14 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
             RGB::named(rltk::BLACK),
             rltk::to_cp437(')'),
         );
+
         // Draw the item glyph if one exists.
+        let is_charged = special.get(item).map_or(false, |e| e.is_charged());
         match render {
             Some(render) => ctx.set(
                 MODAL_MENU_X_POSITION + 4,
                 y,
-                render.fg,
+                if is_charged { RGB::named(rltk::GREEN) } else { render.fg },
                 RGB::named(rltk::BLACK),
                 render.glyph,
             ),
@@ -565,15 +570,10 @@ pub fn show_inventory<T: Component>(ecs: &mut World, ctx: &mut Rltk, typestr: &s
         // Render the item name, with a color indicating if the item is
         // equipped.
         let is_equipped = equipped.get(item).map_or(false, |e| e.owner == *player);
-        let text_fg = if is_equipped {
-            RGB::named(rltk::GREEN)
-        } else {
-            RGB::named(rltk::WHITE)
-        };
         ctx.print_color(
             MODAL_MENU_X_POSITION + 6,
             y,
-            text_fg,
+            if is_equipped { RGB::named(rltk::GREEN) } else { RGB::named(rltk::WHITE) },
             RGB::named(rltk::BLACK),
             &name.name.to_string(),
         );

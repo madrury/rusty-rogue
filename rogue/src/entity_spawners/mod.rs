@@ -26,7 +26,8 @@ use super::{
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
     StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
     SpawnEntityWhenKilled, DissipateWhenBurning,
-    InvisibleWhenEncroachingEntityKind, MAP_WIDTH, random_table
+    InvisibleWhenEncroachingEntityKind, WeaponSpecial, WeaponSpecialKind,
+    MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
