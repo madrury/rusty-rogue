@@ -203,6 +203,12 @@ impl NoiseMaps {
         buffer.iter().map(|(pt, _)| *pt).collect()
     }
 
+    pub fn waterbound_monster_spawn_position_buffer(&self) -> Vec<Point> {
+        let mut buffer = self.water.clone();
+        buffer.sort_by(|a, b| a.1.0.partial_cmp(&b.1.0).unwrap());
+        buffer.iter().map(|(pt, _)| *pt).collect()
+    }
+
     fn deep_water_noise_threshold(&self) -> f32 {
         match self.water_geometry {
             WaterGeometry::None => f32::MAX,

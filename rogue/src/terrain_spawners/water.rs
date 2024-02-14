@@ -52,6 +52,7 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
         .with(SetsBgColor {order: 2})
         .with(Name {name: "Shallow Water".to_string()})
         .with(Hazard {})
+        .with(IsEntityKind {kind: EntitySpawnKind::ShallowWater})
         .with(ChanceToSpawnEntityWhenBurning {
             kind: EntitySpawnKind::Steam {
                 spread_chance: 75,
@@ -66,6 +67,9 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
+    let mut map = ecs.write_resource::<Map>();
+    let idx = map.xy_idx(x, y);
+    map.shallow_water[idx] = true;
     Some(entity)
 }
 
@@ -82,7 +86,7 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .with(SetsBgColor {order: 2})
         .with(Name {name: "Deep Water".to_string()})
         .with(Hazard {})
-        .with(IsEntityKind {kind: EntitySpawnKind::Water})
+        .with(IsEntityKind {kind: EntitySpawnKind::DeepWater})
         .with(RemoveBurningWhenEncroachedUpon {})
         .with(RemoveBurningOnUpkeep {})
         .with(DissipateFireWhenEncroachedUpon {})
@@ -92,7 +96,6 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
         .build();
     let mut map = ecs.write_resource::<Map>();
     let idx = map.xy_idx(x, y);
-    map.ok_to_spawn[idx] = false;
-    map.water[idx] = true;
+    map.deep_water[idx] = true;
     Some(entity)
 }

@@ -81,16 +81,16 @@ impl<'a> System<'a> for EncroachmentSystem {
             entity_kind
         } = data;
 
-        for (entity, pos) in (&entities, &positions).join() {
+        for (encroached, pos) in (&entities, &positions).join() {
 
             let idx = map.xy_idx(pos.x, pos.y);
 
-            for encroaching in map.tile_content[idx].iter().filter(|e| **e != entity) {
+            for encroaching in map.tile_content[idx].iter().filter(|e| **e != encroached) {
 
                 let encroaching_does_trample = tramples.get(*encroaching).is_some();
 
                 // Component: InflictsDamageWhenEncroachedUpon.
-                let dmg = damage_when_encroached.get(entity);
+                let dmg = damage_when_encroached.get(encroached);
                 if let Some(dmg) = dmg {
                     WantsToTakeDamage::new_damage(
                         &mut wants_damage,
@@ -101,7 +101,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                 }
 
                 // Component: InflictsBurningWhenEncroachedUpon.
-                let burning = burning_when_encroached.get(entity);
+                let burning = burning_when_encroached.get(encroached);
                 if let Some(burning) = burning {
                     let play_message = new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                         &mut is_burning,
@@ -111,7 +111,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                         true
                     );
                     if play_message {
-                        let burner_name = names.get(entity);
+                        let burner_name = names.get(encroached);
                         let target_name = names.get(*encroaching);
                         if let (Some(bnm), Some(tnm)) = (burner_name, target_name) {
                             log.entries.push(format!(
@@ -124,7 +124,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                 }
 
                 // Component: InflictsFreezingWhenEncroachedUpon.
-                let freezing = freezing_when_encroached.get(entity);
+                let freezing = freezing_when_encroached.get(encroached);
                 if let Some(freezing) = freezing {
                     let play_message = new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
                         &mut is_frozen,
@@ -134,7 +134,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                         true
                     );
                     if play_message {
-                        let freezer_name = names.get(entity);
+                        let freezer_name = names.get(encroached);
                         let target_name = names.get(*encroaching);
                         if let (Some(fnm), Some(tnm)) = (freezer_name, target_name) {
                             log.entries.push(format!(
@@ -147,21 +147,21 @@ impl<'a> System<'a> for EncroachmentSystem {
                 }
 
                 // Component: DissipatesWhenEncroachedUpon.
-                let dissipate = dissipate_when_encroached.get(entity).is_some();
+                let dissipate = dissipate_when_encroached.get(encroached).is_some();
                 if dissipate {
-                    wants_dissipate.insert(entity, WantsToDissipate {})
+                    wants_dissipate.insert(encroached, WantsToDissipate {})
                         .expect("Could not insert wants to dissipate upon encroachement.");
                 }
 
                 // Component: DissipatesWhenTrampledUpon.
-                let dissipate = dissipate_when_trampled.get(entity).is_some();
+                let dissipate = dissipate_when_trampled.get(encroached).is_some();
                 if dissipate && encroaching_does_trample {
-                    wants_dissipate.insert(entity, WantsToDissipate {})
+                    wants_dissipate.insert(encroached, WantsToDissipate {})
                         .expect("Could not insert wants to dissipate upon encroachement.");
                 }
 
                 // Component: SpawnEntityWhenEncroachedUpon.
-                let spawn = spawn_when_encroached.get(entity);
+                let spawn = spawn_when_encroached.get(encroached);
                 if let Some(spawn) = spawn {
                     spawn_buffer.request(EntitySpawnRequest {
                         x: pos.x,
@@ -171,7 +171,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                 }
 
                 // Component: SpawnEntityWhenTrampledUpon.
-                let spawn = spawn_when_trampled.get(entity);
+                let spawn = spawn_when_trampled.get(encroached);
                 if let Some(spawn) = spawn {
                     if encroaching_does_trample {
                         spawn_buffer.request(EntitySpawnRequest {
@@ -183,7 +183,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                 }
 
                 // RemoveBurningWhenEncroachedUpon.
-                let removes_burning = remove_burning_when_encroached.get(entity);
+                let removes_burning = remove_burning_when_encroached.get(encroached);
                 if let Some(_) = removes_burning {
                     remove_status::<StatusIsBurning>(
                         &mut is_burning,
@@ -192,7 +192,7 @@ impl<'a> System<'a> for EncroachmentSystem {
                 }
 
                 // DissipateFireWhenEncroachedUpon.
-                let dissipates_fire = dissipate_fire_when_encroached.get(entity).is_some();
+                let dissipates_fire = dissipate_fire_when_encroached.get(encroached).is_some();
                 let encroaching_is_fire = entity_kind.get(*encroaching)
                     .map_or(false, |k| matches!(k.kind, EntitySpawnKind::Fire {..}));
                 if encroaching_is_fire && dissipates_fire {
@@ -201,13 +201,25 @@ impl<'a> System<'a> for EncroachmentSystem {
                 }
 
                 // InvisibleWhenEncroachingEntityKind
-                let is_tall_grass = entity_kind.get(entity)
+                let encroached_is_tall_grass = entity_kind.get(encroached)
                     .map_or(false, |k| matches!(k.kind, EntitySpawnKind::TallGrass {..}));
-                let encroaching_is_hidden = invisible_when_encroaching.get(*encroaching).is_some();
-                if is_tall_grass && encroaching_is_hidden {
-                    new_status::<StatusInvisibleToPlayer>(&mut status_invisible, *encroaching, 1, false);
+                let encroached_is_deep_water = entity_kind.get(encroached)
+                    .map_or(false, |k| matches!(k.kind, EntitySpawnKind::DeepWater));
+                let encroaching_gets_hidden_kind = invisible_when_encroaching.get(*encroaching).map(|i| i.kind);
+                match encroaching_gets_hidden_kind {
+                    None => {},
+                    Some(EntitySpawnKind::TallGrass {..}) => {
+                        if encroached_is_tall_grass {
+                            new_status::<StatusInvisibleToPlayer>(&mut status_invisible, *encroaching, 0, false);
+                        }
+                    },
+                    Some(EntitySpawnKind::DeepWater) => {
+                        if encroached_is_deep_water {
+                            new_status::<StatusInvisibleToPlayer>(&mut status_invisible, *encroaching, 0, false);
+                        }
+                    },
+                    _ => {},
                 }
-
             } // for encroaching
         } // for (entity, pos)
     }

@@ -31,7 +31,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
         let map = ecs.fetch::<Map>();
         idx = map.xy_idx(x, y);
         can_spawn = !map.fire[idx]
-            && !map.water[idx]
+            && !map.deep_water[idx]
             && map.tiles[idx] != TileType::Wall;
     }
     let entity;

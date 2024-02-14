@@ -184,6 +184,7 @@ enum MonsterType {
     Rat,
     Bat,
     Snake,
+    Piranha,
     GoblinBasic,
     GoblinCleric,
     GoblinEnchanter,
@@ -198,7 +199,8 @@ enum MonsterType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum MonsterSpawnBound {
     None,
-    Grass
+    Grass,
+    Water
 }
 
 // Data container for parameters describing a monster's behaviour relative to
@@ -248,6 +250,7 @@ fn get_monster_spawn_table() -> HashMap<MonsterType, MonsterSpawnParameters> {
     spawn_table.insert(MonsterType::Rat,               MonsterSpawnParameters::new(1, 1, 4, 25, MonsterSpawnBound::None));
     spawn_table.insert(MonsterType::Bat,               MonsterSpawnParameters::new(1, 1, 4, 25, MonsterSpawnBound::None));
     spawn_table.insert(MonsterType::Snake,             MonsterSpawnParameters::new(1, 1, 4, 25, MonsterSpawnBound::Grass));
+    spawn_table.insert(MonsterType::Piranha,           MonsterSpawnParameters::new(1, 1, 6, 25, MonsterSpawnBound::Water));
     spawn_table.insert(MonsterType::GoblinBasic,       MonsterSpawnParameters::new(2, 1, 6, 25, MonsterSpawnBound::None));
     spawn_table.insert(MonsterType::GoblinCleric,      MonsterSpawnParameters::new(2, 2, 8, 20, MonsterSpawnBound::None));
     spawn_table.insert(MonsterType::GoblinEnchanter,   MonsterSpawnParameters::new(2, 2, 8, 20, MonsterSpawnBound::None));
@@ -279,6 +282,7 @@ fn insert_monster(ecs: &mut World, monster: MonsterType, x: i32, y: i32) {
         MonsterType::Rat => monsters::rat(ecs, x, y),
         MonsterType::Bat => monsters::bat(ecs, x, y),
         MonsterType::Snake => monsters::snake(ecs, x, y),
+        MonsterType::Piranha => monsters::piranha(ecs, x, y),
         MonsterType::GoblinBasic => monsters::goblin_basic(ecs, x, y),
         MonsterType::GoblinCleric => monsters::goblin_cleric(ecs, x, y),
         MonsterType::GoblinEnchanter => monsters::goblin_enchanter(ecs, x, y),
@@ -326,6 +330,13 @@ fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType,
                     _ => true,
                 }
             }
+            MonsterSpawnBound::Water => {
+                let noisemaps = ecs.fetch::<NoiseMaps>();
+                match noisemaps.water_geometry {
+                    WaterGeometry::None => false,
+                    _ => true,
+                }
+            }
         };
         if ok_to_spawn_by_depth && ok_to_spawn_by_bound {
             rtable = rtable.insert((*monster_type, spawn_parameters.bound), spawn_parameters.chance);
@@ -348,10 +359,12 @@ fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType,
 
     let mut base_monster_spawn_locations: Vec<Point>;
     let mut grass_monster_spawn_locations: Vec<Point>;
+    let mut water_monster_spawn_locations: Vec<Point>;
     {
         let noisemaps = ecs.fetch::<NoiseMaps>();
         base_monster_spawn_locations = noisemaps.general_monster_spawn_position_buffer();
         grass_monster_spawn_locations = noisemaps.grassbound_monster_spawn_position_buffer();
+        water_monster_spawn_locations = noisemaps.waterbound_monster_spawn_position_buffer();
     }
 
     let mut monsters_with_locations: Vec<(MonsterType, Point)> = Vec::new();
@@ -364,7 +377,7 @@ fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType,
                     loc = base_monster_spawn_locations.pop()
                         .expect("Failed to pop spawn location.");
                     idx = map.xy_idx(loc.x, loc.y);
-                    if map.ok_to_spawn[idx] { break; }
+                    if map.ok_to_spawn[idx] && !map.deep_water[idx] { break; }
                 }
             }
             MonsterSpawnBound::Grass => {
@@ -372,7 +385,22 @@ fn sample_monster_spawn_vector(ecs: &mut World, depth: i32) -> Vec<(MonsterType,
                     loc = grass_monster_spawn_locations.pop()
                         .expect("Failed to pop spawn location.");
                     idx = map.xy_idx(loc.x, loc.y);
-                    if map.ok_to_spawn[idx] || !map.grass[idx] { break; }
+                    let ok_to_spawn =
+                        map.ok_to_spawn[idx]
+                        && map.grass[idx]
+                        && !map.deep_water[idx];
+                    if ok_to_spawn { break; }
+                }
+            }
+            MonsterSpawnBound::Water => {
+                loop {
+                    loc = water_monster_spawn_locations.pop()
+                        .expect("Failed to pop spawn location.");
+                    idx = map.xy_idx(loc.x, loc.y);
+                    let ok_to_spawn =
+                        map.ok_to_spawn[idx]
+                        && (map.shallow_water[idx] || map.deep_water[idx]);
+                    if ok_to_spawn { break; }
                 }
             }
         }
