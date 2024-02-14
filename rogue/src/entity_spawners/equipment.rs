@@ -56,7 +56,7 @@ pub fn leather_armor(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437(']'),
-            fg: RGB::named(rltk::BROWN1),
+            fg: RGB::named(rltk::SADDLEBROWN),
             bg: RGB::named(rltk::BLACK),
             order: 2,
             visible_out_of_fov: false
