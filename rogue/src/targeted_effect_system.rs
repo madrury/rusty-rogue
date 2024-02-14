@@ -345,13 +345,14 @@ impl<'a> System<'a> for TargetedSystem {
             // sometimes give a free throw of a consumable thrown weapon.
             let consumable = consumables.get(want_target.thing).is_some();
             let freethrow = specials.get(want_target.thing)
-                .map(|s| matches!(s.kind, WeaponSpecialKind::ThrowWithoutExpending))
+                .map(|s| matches!(s.kind, WeaponSpecialKind::ThrowWithoutExpending) && s.is_charged())
                 .map_or(false, |b| b);
             if freethrow {
                 let special = specials.get_mut(want_target.thing);
                 special.expect("Failure attempting to clear weapon special charge.").expend();
             }
             if consumable && !freethrow {
+                println!("Not free throw.");
                 entities.delete(want_target.thing).expect("Consumable delete failed.");
             }
 
