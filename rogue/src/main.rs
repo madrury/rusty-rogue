@@ -278,6 +278,10 @@ impl State {
         specials.run_now(&self.ecs);
         let mut charges = SpellChargeSystem{};
         charges.run_now(&self.ecs);
+        let mut new_animations = AnimationInitSystem{};
+        new_animations.run_now(&self.ecs);
+        let mut new_particles = ParticleInitSystem{};
+        new_particles.run_now(&self.ecs);
         self.ecs.maintain();
     }
 

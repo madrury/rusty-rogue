@@ -39,21 +39,31 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
         } = data;
 
         for (weapon, special, equipped) in (&entities, &mut specials, &equipped).join() {
-            let owner = equipped.owner;
-            let ownerposition = positions.get(owner);
-            let ownerrender = renderables.get(owner);
             let recharged = special.tick();
-
             if !recharged { continue; }
 
-            if let(Some(pos), Some(render)) = (ownerposition, ownerrender) {
+            let owner = equipped.owner;
+            let ownername = names.get(owner);
+            let weaponname = names.get(weapon);
+            let ownerrender = renderables.get(owner);
+            let weaponrender = renderables.get(weapon);
+            let ownerposition = positions.get(owner);
+
+            if let(Some(pos), Some(orender), Some(wrender)) = (ownerposition, ownerrender, weaponrender) {
                 animation_buffer.request(AnimationRequest::WeaponSpecialRecharge {
                     x: pos.x,
                     y: pos.y,
-                    fg: render.fg,
-                    bg: render.bg,
-                    glyph: render.glyph,
+                    fg: orender.fg,
+                    bg: orender.bg,
+                    owner_glyph: orender.glyph,
+                    weapon_glyph: wrender.glyph
                 })
+            }
+            if let (Some(on), Some(wn)) = (ownername, weaponname) {
+                log.entries.push(format!(
+                    "{}'s {} glints menacingly.",
+                    on.name, wn.name
+                ));
             }
             // if recharged {
             //     if let (Some(nm), Some(pos)) = (ownername, ownerposition) {

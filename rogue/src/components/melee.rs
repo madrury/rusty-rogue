@@ -52,4 +52,7 @@ impl WeaponSpecial {
         self.time = i32::min(self.time + 1, self.regen_time);
         return self.time == self.regen_time
     }
+    pub fn is_charged(&self) -> bool {
+        return self.time == self.regen_time
+    }
 }
