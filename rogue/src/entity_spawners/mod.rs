@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::map_builders::{GrassGeometry, NoiseMaps};
+use crate::map_builders::{GrassGeometry, WaterGeometry, NoiseMaps};
 
 use super::{
     Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
