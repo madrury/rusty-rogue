@@ -81,7 +81,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
             let attack_buff_factor: i32 = is_melee_buffs.get(attack.source)
                 .map_or(1, |_b| 2);
             let damage = i32::max(0, attack_buff_factor * (sstats.power + weapon_attack_bonus));
-            println!("Damage {:?}", damage);
 
             // Actually push the damage :D
             WantsToTakeDamage::new_damage(

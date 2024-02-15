@@ -3,10 +3,10 @@ use specs::prelude::*;
 use super::{
     Viewshed, Monster, CombatStats, CanAct, CanNotAct, MovementRoutingAvoids,
     MovementRoutingBounds, MonsterBasicAI, MonsterAttackSpellcasterAI,
-    MonsterSupportSpellcasterAI, Position, Map, RoutingMap, WantsToMeleeAttack,
-    WantsToUseTargeted, WantsToMoveToPosition, StatusIsFrozen, InSpellBook,
-    Castable, SpellCharges, SupportSpellcasterKind, StatusIsMeleeAttackBuffed,
-    StatusIsPhysicalDefenseBuffed
+    MonsterSupportSpellcasterAI, Position, Map, RoutingMap, WantsToUseTargeted,
+    WantsToMoveToPosition, StatusIsFrozen, InSpellBook, Castable, SpellCharges,
+    SupportSpellcasterKind, StatusIsMeleeAttackBuffed,
+    StatusIsPhysicalDefenseBuffed, MeeleAttackRequestBuffer, MeeleAttackRequest
 };
 use rltk::{Point, RandomNumberGenerator};
 
@@ -60,6 +60,7 @@ pub struct MonsterBasicAISystemData<'a> {
     entities: Entities<'a>,
     map: WriteExpect<'a, Map>,
     rng: WriteExpect<'a, RandomNumberGenerator>,
+    meele_buffer: WriteExpect<'a, MeeleAttackRequestBuffer>,
     ppos: ReadExpect<'a, Point>,
     player: ReadExpect<'a, Entity>,
     monsters: ReadStorage<'a, Monster>,
@@ -70,7 +71,6 @@ pub struct MonsterBasicAISystemData<'a> {
     bounds: ReadStorage<'a, MovementRoutingBounds>,
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
-    wants_melee_attack: WriteStorage<'a, WantsToMeleeAttack>,
     wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
 }
 
@@ -83,6 +83,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             entities,
             map,
             mut rng,
+            mut meele_buffer,
             ppos,
             player,
             monsters,
@@ -93,7 +94,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             bounds,
             mut can_acts,
             mut positions,
-            mut wants_melee_attack,
+            // mut wants_melee_attack,
             mut wants_to_move,
         } = data;
 
@@ -157,9 +158,10 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             // Monster next to player branch:
             //   If we're already next to player, we enter into melee combat.
             } else if next_to_player {
-                wants_melee_attack
-                    .insert(entity, WantsToMeleeAttack {target: *player})
-                    .expect("Failed to insert player as melee target.");
+                meele_buffer.request(MeeleAttackRequest {
+                    source: entity,
+                    target: *player
+                })
             // Monster seeking player branch:
             //   This branch is taken if the monster is currently seeking the
             //   player, i.e., the monster is currently attempting to move towards
@@ -219,6 +221,7 @@ pub struct MonsterAttackSpellcasterAISystemData<'a> {
     map: WriteExpect<'a, Map>,
     ppos: ReadExpect<'a, Point>,
     player: ReadExpect<'a, Entity>,
+    meele_buffer: WriteExpect<'a, MeeleAttackRequestBuffer>,
     monsters: ReadStorage<'a, Monster>,
     viewsheds: WriteStorage<'a, Viewshed>,
     attack_spellcaster_ais: WriteStorage<'a, MonsterAttackSpellcasterAI>,
@@ -227,7 +230,6 @@ pub struct MonsterAttackSpellcasterAISystemData<'a> {
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
-    wants_to_melee: WriteStorage<'a, WantsToMeleeAttack>,
     wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
     in_spellbooks: ReadStorage<'a, InSpellBook>,
     castables: ReadStorage<'a, Castable>,
@@ -244,6 +246,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             map,
             ppos,
             player,
+            mut meele_buffer,
             monsters,
             mut viewsheds,
             mut attack_spellcaster_ais,
@@ -252,7 +255,6 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             mut can_acts,
             mut positions,
             mut wants_to_target,
-            mut wants_to_melee,
             mut wants_to_move,
             in_spellbooks,
             castables,
@@ -306,9 +308,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             // If we're next to the player, and have no spell to cast, we'll
             // resort to melee attacks.
             } else if next_to_player {
-                wants_to_melee
-                    .insert(entity, WantsToMeleeAttack {target: *player})
-                    .expect("Failed to insert player as melee target.");
+                meele_buffer.request(MeeleAttackRequest { source: entity, target: *player });
             // Monster can see player but has no spell to cast.
             // The monster will try to keep a fixed distance from the player
             // (within spell range) until their spell recharges.
@@ -358,6 +358,7 @@ pub struct MonsterSupportSpellcasterAISystemData<'a> {
     map: WriteExpect<'a, Map>,
     ppos: ReadExpect<'a, Point>,
     player: ReadExpect<'a, Entity>,
+    meele_buffer: WriteExpect<'a, MeeleAttackRequestBuffer>,
     monsters: ReadStorage<'a, Monster>,
     stats: ReadStorage<'a, CombatStats>,
     viewsheds: WriteStorage<'a, Viewshed>,
@@ -367,7 +368,6 @@ pub struct MonsterSupportSpellcasterAISystemData<'a> {
     can_acts: WriteStorage<'a, CanAct>,
     positions: WriteStorage<'a, Position>,
     wants_to_target: WriteStorage<'a, WantsToUseTargeted>,
-    wants_to_melee: WriteStorage<'a, WantsToMeleeAttack>,
     wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
     in_spellbooks: ReadStorage<'a, InSpellBook>,
     castables: ReadStorage<'a, Castable>,
@@ -386,6 +386,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             map,
             ppos,
             player,
+            mut meele_buffer,
             monsters,
             stats,
             mut viewsheds,
@@ -395,7 +396,6 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             mut can_acts,
             mut positions,
             mut wants_to_target,
-            mut wants_to_melee,
             mut wants_to_move,
             in_spellbooks,
             castables,
@@ -445,16 +445,6 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
                 .filter(|e| *e != entity);
             let any_monsters_within_viewshed = monsters_within_viewshed.next().is_some();
 
-            // We want to heal any monsters we can see that are below half health.
-            // TODO: Generalize this one.
-            // let mut monsters_to_heal_within_viewshed = (&entities, &monsters, &stats, &positions).join()
-            //     .filter(|(_e, _m, _s, pos)| viewshed.visible_tiles.contains(&pos.to_point()))
-            //     .filter(|(_e, _m, stat, _p)| stat.hp < stat.max_hp / 2)
-            //     .map(|(e, _m, _s, _p)| e)
-            //     .filter(|e| *e != entity);
-            // // TODO: Take the closest monster, smrt.
-            // let monster_to_heal = monsters_to_heal_within_viewshed.next();
-
             let monster_to_target = get_monster_to_target(
                 &entity,
                 ai.support_kind,
@@ -485,9 +475,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             // If we're next to the player, and have no spell to cast, we'll
             // resort to melee attacks.
             } else if next_to_player {
-                wants_to_melee
-                    .insert(entity, WantsToMeleeAttack {target: *player})
-                    .expect("Failed to insert player as melee target.");
+                meele_buffer.request(MeeleAttackRequest { source: entity, target: *player })
             // Monster can see other potential targets branch.
             // The monster can see potential targets, but they are not in a
             // state where it is benificial to cast the spell (so in this case,
