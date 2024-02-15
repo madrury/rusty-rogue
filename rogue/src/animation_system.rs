@@ -145,7 +145,7 @@ impl<'a> System<'a> for AnimationInitSystem {
                     *until_blocked
                 ),
                 AnimationRequest::SpinAttack { x, y, fg, glyph }
-                    => make_spin_attack_animation(&*map, *x, *y, *fg, *glyph),
+                    => make_spin_attack_animation(*x, *y, *fg, *glyph),
                 AnimationRequest::Teleportation {x, y, bg}
                     => make_teleportation_animation(*x, *y, *bg),
             })
@@ -315,19 +315,20 @@ fn make_teleportation_animation(
 
 // Spin attack, like in Link to the Past.
 fn make_spin_attack_animation(
-    map: &Map,
     x: i32,
     y: i32,
     fg: RGB,
     glyph: rltk::FontCharType,
 ) -> Vec<ParticleRequest> {
     let mut particles = Vec::new();
-    let circle = map.get_l_infinity_circle_around(Point {x, y}, 1);
-    for (i, pt) in circle.iter().enumerate() {
+    let drs = vec![
+        (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0)
+    ];
+    for (i, dr) in drs.iter().enumerate() {
         particles.push(ParticleRequest {
-            x: pt.x,
-            y: pt.y,
-            fg: rltk::RGB::named(rltk::SILVER),
+            x: x + dr.0,
+            y: y + dr.1,
+            fg: fg,
             // TODO: It's difficult at the moment to determine the correct
             // background color for a tile. We default to BLACK here, but in the
             // future, this should likely be stored explicitly on the map, and
