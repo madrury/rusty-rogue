@@ -1,9 +1,9 @@
-use crate::{Equipped, MeeleAttackRequest, MeeleAttackRequestBuffer, MAP_HEIGHT, MAP_WIDTH};
-
 use super::{
-    CombatStats, GameLog, PickUpable, Map, Player, Monster, Position,
-    RunState, State, HungerClock, HungerState, Viewshed, WantsToMeleeAttack,
-    WantsToPickupItem, StatusIsFrozen, TileType, WeaponSpecial, WeaponSpecialKind
+    CombatStats, GameLog, PickUpable, Map, Player, Monster, Position, RunState,
+    Renderable, Equipped, State, HungerClock, HungerState, Viewshed,
+    MeeleAttackRequestBuffer, MeeleAttackRequest, AnimationRequestBuffer,
+    AnimationRequest, WantsToPickupItem, StatusIsFrozen, TileType,
+    WeaponSpecial, WeaponSpecialKind, MAP_HEIGHT, MAP_WIDTH
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
@@ -345,25 +345,28 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
 }
 
 fn skip_turn(ecs: &mut World) -> RunState {
+    let entities = ecs.entities();
     let player = ecs.fetch::<Entity>();
     let ppos = ecs.read_resource::<Point>();
     let viewsheds = ecs.read_storage::<Viewshed>();
+    let renderables = ecs.read_storage::<Renderable>();
     let monsters = ecs.read_storage::<Monster>();
     let hunger = ecs.read_storage::<HungerClock>();
     let equipped = ecs.read_storage::<Equipped>();
     let mut specials = ecs.write_storage::<WeaponSpecial>();
-    let combat_stats = ecs.read_storage::<CombatStats>();
+    let mut combat_stats = ecs.write_storage::<CombatStats>();
     let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
+    let mut animation_buffer = ecs.write_resource::<AnimationRequestBuffer>();
     let map = ecs.fetch::<Map>();
 
     // Passing the turn with anjacent monsters cstarts a spin attack when a
     // sword's special is charged. Like in Link to the Past.
-    let ws = (&equipped, &mut specials).join()
-        .filter(|(eq, _)| eq.owner == *player)
-        .filter(|(_, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
+    let ws = (&entities, &equipped, &renderables, &mut specials).join()
+        .filter(|(_, eq, _, _)| eq.owner == *player)
+        .filter(|(_, _, _, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
         .next();
     let mut any_meele: bool = false;
-    if let Some((_, special)) = ws {
+    if let Some((weapon, _, render, special)) = ws {
         let adjacent: Vec<&Entity> = map.get_l_infinity_circle_around(*ppos, 1)
             .iter()
             .map(|pt| map.xy_idx(pt.x, pt.y))
@@ -382,7 +385,9 @@ fn skip_turn(ecs: &mut World) -> RunState {
         }
         if any_meele {
             special.expend();
-            // TODO: Add an animation.
+            animation_buffer.request(AnimationRequest::SpinAttack {
+                x: ppos.x, y: ppos.y, fg: render.fg, glyph: render.glyph
+            });
             return RunState::PlayerTurn
         }
     }
@@ -405,8 +410,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
         );
 
     if can_heal {
-        let mut stats = ecs.write_storage::<CombatStats>();
-        let pstats = stats.get_mut(*player).unwrap(); // The player always has stats.
+        let pstats = combat_stats.get_mut(*player).unwrap(); // The player always has stats.
         pstats.heal_amount(WAIT_HEAL_AMOUNT);
     }
     return RunState::PlayerTurn

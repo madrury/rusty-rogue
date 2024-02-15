@@ -55,11 +55,17 @@ pub enum AnimationRequest {
         glyph: rltk::FontCharType,
         until_blocked: bool
     },
+    SpinAttack {
+        x: i32,
+        y: i32,
+        fg: RGB,
+        glyph: rltk::FontCharType,
+    },
     Teleportation {
         x: i32,
         y: i32,
         bg: RGB,
-    }
+    },
 }
 
 //  A buffer for holding current animation requests. Added to the ECS as a
@@ -104,8 +110,14 @@ impl<'a> System<'a> for AnimationInitSystem {
                     bg,
                     glyph,
                 } => make_healing_animation(*x, *y, *fg, *bg, *glyph),
-                AnimationRequest::WeaponSpecialRecharge { x, y, fg, bg, owner_glyph, weapon_glyph }
-                    => make_weapon_special_recharge_animation(*x, *y, *fg, *bg, *owner_glyph, *weapon_glyph),
+                AnimationRequest::WeaponSpecialRecharge {
+                    x,
+                    y,
+                    fg,
+                    bg,
+                    owner_glyph,
+                    weapon_glyph
+                } => make_weapon_special_recharge_animation(*x, *y, *fg, *bg, *owner_glyph, *weapon_glyph),
                 AnimationRequest::AreaOfEffect {
                     x,
                     y,
@@ -132,6 +144,8 @@ impl<'a> System<'a> for AnimationInitSystem {
                     *glyph,
                     *until_blocked
                 ),
+                AnimationRequest::SpinAttack { x, y, fg, glyph }
+                    => make_spin_attack_animation(&*map, *x, *y, *fg, *glyph),
                 AnimationRequest::Teleportation {x, y, bg}
                     => make_teleportation_animation(*x, *y, *bg),
             })
@@ -294,6 +308,37 @@ fn make_teleportation_animation(
             glyph: *glyph,
             lifetime: 100.0, // ms
             delay: 100.0 * (i as f32),
+        })
+    }
+    particles
+}
+
+// Spin attack, like in Link to the Past.
+fn make_spin_attack_animation(
+    map: &Map,
+    x: i32,
+    y: i32,
+    fg: RGB,
+    glyph: rltk::FontCharType,
+) -> Vec<ParticleRequest> {
+    let mut particles = Vec::new();
+    let circle = map.get_l_infinity_circle_around(Point {x, y}, 1);
+    for (i, pt) in circle.iter().enumerate() {
+        particles.push(ParticleRequest {
+            x: pt.x,
+            y: pt.y,
+            fg: rltk::RGB::named(rltk::SILVER),
+            // TODO: It's difficult at the moment to determine the correct
+            // background color for a tile. We default to BLACK here, but in the
+            // future, this should likely be stored explicitly on the map, and
+            // updated each turn in the MapIndexingSystem.
+            // There are likely other places this is relevent, so an audit would
+            // be needed to determine where we are already using a worse
+            // solution to this.
+            bg: rltk::RGB::named(rltk::BLACK),
+            glyph: glyph,
+            lifetime: 20.0, // ms
+            delay: 20.0 * (i as f32),
         })
     }
     particles
