@@ -32,9 +32,39 @@ impl CombatStats {
 }
 
 
+#[derive(Clone)]
+pub struct MeeleAttackRequest {
+    pub source: Entity,
+    pub target: Entity,
+    // pub target: 'a>&Entity
+}
+
+// A buffer for storing entity spawn requests.
+pub struct MeeleAttackRequestBuffer {
+    requests: Vec<MeeleAttackRequest>,
+}
+impl MeeleAttackRequestBuffer {
+    pub fn new() -> MeeleAttackRequestBuffer {
+        MeeleAttackRequestBuffer {
+            requests: Vec::new(),
+        }
+    }
+    pub fn request(&mut self, request: MeeleAttackRequest) {
+        self.requests.push(request)
+    }
+    pub fn is_empty(&mut self) -> bool {
+        self.requests.is_empty()
+    }
+    pub fn pop(&mut self) -> Option<MeeleAttackRequest> {
+        self.requests.pop()
+    }
+}
+
+
 #[derive(Clone, Serialize, Deserialize)]
 pub enum WeaponSpecialKind {
-    ThrowWithoutExpending
+    SpinAttack,
+    ThrowWithoutExpending,
 }
 
 #[derive(Component, ConvertSaveload, Clone)]
@@ -59,3 +89,4 @@ impl WeaponSpecial {
         self.time = 0;
     }
 }
+

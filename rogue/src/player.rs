@@ -1,7 +1,9 @@
+use crate::{Equipped, MeeleAttackRequest, MeeleAttackRequestBuffer, MAP_HEIGHT, MAP_WIDTH};
+
 use super::{
     CombatStats, GameLog, PickUpable, Map, Player, Monster, Position,
     RunState, State, HungerClock, HungerState, Viewshed, WantsToMeleeAttack,
-    WantsToPickupItem, StatusIsFrozen, TileType
+    WantsToPickupItem, StatusIsFrozen, TileType, WeaponSpecial, WeaponSpecialKind
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
@@ -136,7 +138,6 @@ impl KeyboundCommand for PickupItemCommand {
         DETAILS_PICKUP
     }
 }
-
 
 struct DescendCommand {}
 impl KeyboundCommand for DescendCommand {
@@ -281,57 +282,110 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
 }
 
 fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
-    let mut players = ecs.write_storage::<Player>();
-    let mut positions = ecs.write_storage::<Position>();
+    let player = ecs.fetch::<Entity>();
+    let mut pt = ecs.write_resource::<Point>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
-    let mut wants_to_melee = ecs.write_storage::<WantsToMeleeAttack>();
+    let mut positions = ecs.write_storage::<Position>();
+    // let mut wants_to_melee = ecs.write_storage::<WantsToMeleeAttack>();
+    let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
     let combat_stats = ecs.read_storage::<CombatStats>();
-    let mut ppos = ecs.write_resource::<Point>();
-    let entities = ecs.entities();
-    let map = ecs.fetch::<Map>();
+    // let entities = ecs.entities();
+    let mut map = ecs.fetch_mut::<Map>();
 
-    for (entity, _player, pos, vs) in
-        (&entities, &mut players, &mut positions, &mut viewsheds).join()
-    {
-        let destination_idx = map.xy_idx(pos.x + dx, pos.y + dy);
-        // Initiate a melee attack if the requested position is blocked.
-        for potential_target in map.tile_content[destination_idx].iter() {
-            let target = combat_stats.get(*potential_target);
-            match target {
-                None => {}
-                Some(_t) => {
-                    wants_to_melee.insert(
-                        entity, WantsToMeleeAttack {
-                            target: *potential_target,
-                        },
-                    ).expect("Insert of WantsToMelee into ECS failed.");
-                    return RunState::PlayerTurn; // Do not move after attacking.
-                }
-            }
-        }
-        // Move the player if the destination is not blocked.
-        if !map.blocked[destination_idx] {
-            // The blocked array updates in the map_indexing_system. We don't
-            // need to update it now, since no other entities are moving at the
-            // moment.
-            pos.x = min(79, max(0, pos.x + dx));
-            pos.y = min(79, max(0, pos.y + dy));
-            vs.dirty = true;
-        }
+    let source_idx = map.xy_idx(pt.x, pt.y);
+    let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
+    let destination_is_blocked = map.blocked[destination_idx];
+
+    // If the destination tile is unblocked, we can move the player and pass the
+    // turn.
+    if !destination_is_blocked {
+        pt.x = min(MAP_WIDTH - 1,  max(1, pt.x + dx));
+        pt.y = min(MAP_HEIGHT - 1, max(1, pt.y + dy));
+        // The player moved so we need to recompute their viewshed.
+        let viewshed = viewsheds.get_mut(*player);
+        if let Some(vs) = viewshed { vs.dirty = true; }
         // IMPORTANT: Keeps the players Position component synchronized with
-        // their position as a resource in the ECS.
-        ppos.x = pos.x;
-        ppos.y = pos.y;
+        // their position as a <Point> resource in the ECS.
+        let position = positions.get_mut(*player);
+        if let Some(pos) = position {
+            pos.x = pt.x;
+            pos.y = pt.y;
+        }
+        // The source tile is now unblocked, the desintiation is blocked.
+        map.blocked[source_idx] = false;
+        map.blocked[destination_idx] = true;
+        return RunState::PlayerTurn;
     }
-    return RunState::PlayerTurn;
+
+    let mut any_meele: bool = false;
+    for target in map.tile_content[destination_idx].iter() {
+        // MAYBE: Maybe we should explicitly tag entities that can me meele
+        // attacked, we may have need for some that do not have combat stats in
+        // the future.
+        let targetstats = combat_stats.get(*target);
+        if let Some(_) = targetstats {
+            any_meele = true;
+            meele_buffer.request(MeeleAttackRequest {
+                source: *player,
+                target: *target
+            })
+        }
+    }
+    if any_meele {
+        return RunState::PlayerTurn;
+    }
+
+    // If the desination tile is blocked, yet no meele happened, then you're
+    // trying to move against a wall or something and we give you a freebie,
+    // don't pass the turn.
+    if destination_is_blocked {
+        return RunState::AwaitingInput;
+    }
+    RunState::AwaitingInput
 }
 
 fn skip_turn(ecs: &mut World) -> RunState {
     let player = ecs.fetch::<Entity>();
+    let ppos = ecs.read_resource::<Point>();
     let viewsheds = ecs.read_storage::<Viewshed>();
     let monsters = ecs.read_storage::<Monster>();
     let hunger = ecs.read_storage::<HungerClock>();
+    let equipped = ecs.read_storage::<Equipped>();
+    let mut specials = ecs.write_storage::<WeaponSpecial>();
+    let combat_stats = ecs.read_storage::<CombatStats>();
+    let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
     let map = ecs.fetch::<Map>();
+
+    // Passing the turn with anjacent monsters cstarts a spin attack when a
+    // sword's special is charged. Like in Link to the Past.
+    let ws = (&equipped, &mut specials).join()
+        .filter(|(eq, _)| eq.owner == *player)
+        .filter(|(_, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
+        .next();
+    let mut any_meele: bool = false;
+    if let Some((_, special)) = ws {
+        let adjacent: Vec<&Entity> = map.get_l_infinity_circle_around(*ppos, 1)
+            .iter()
+            .map(|pt| map.xy_idx(pt.x, pt.y))
+            .map(|idx| map.tile_content[idx].iter())
+            .flatten()
+            .collect();
+        for &e in adjacent {
+            let targetstats = combat_stats.get(e);
+            if let Some(_) = targetstats {
+                any_meele = true;
+                meele_buffer.request(MeeleAttackRequest {
+                    source: *player,
+                    target: e
+                })
+            }
+        }
+        if any_meele {
+            special.expend();
+            // TODO: Add an animation.
+            return RunState::PlayerTurn
+        }
+    }
 
     // Check for monsters nearby, we can't heal if there are any.
     let mut can_heal = true;
