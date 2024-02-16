@@ -1,3 +1,4 @@
+use rltk::Point;
 use specs::prelude::*;
 use specs_derive::*;
 use specs::saveload::{ConvertSaveload, Marker};
@@ -52,6 +53,15 @@ impl MeeleAttackRequestBuffer {
     pub fn request(&mut self, request: MeeleAttackRequest) {
         self.requests.push(request)
     }
+    pub fn request_many(&mut self, source: Entity, targets: &Vec<Entity>, critical: bool) {
+        for target in targets {
+            self.request(MeeleAttackRequest {
+                source: source,
+                target: *target,
+                critical: critical
+            })
+        }
+    }
     pub fn is_empty(&mut self) -> bool {
         self.requests.is_empty()
     }
@@ -61,8 +71,36 @@ impl MeeleAttackRequestBuffer {
 }
 
 
+#[derive(Copy, Clone, Serialize, Deserialize)]
+pub enum MeeleAttackFormation {
+    Basic,
+    Dash,
+}
+// impl MeeleAttackFormation {
+//     pub fn tiles(&self, x:i32, y: i32, dx: i32, dy: i32) -> Vec<Point> {
+//         match self {
+//             MeeleAttackFormation::Basic => {
+//                 Point {x: x + dx, y: y + dy}
+//             },
+//             MeeleAttackFormation::Dash => {
+
+//             }
+//         }
+//     }
+// }
+
+
+// Component for effects that grant a MeleeAttackBonus
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct MeeleAttackWepon {
+    pub bonus: i32,
+    pub formation: MeeleAttackFormation
+}
+
+
 #[derive(Clone, Serialize, Deserialize)]
 pub enum WeaponSpecialKind {
+    Dash,
     SpinAttack,
     ThrowWithoutExpending,
 }

@@ -3,7 +3,7 @@ use crate::MeeleAttackRequestBuffer;
 
 use super::{
     Map, Point, TileType, CombatStats, WantsToTakeDamage, Renderable, Position,
-    AnimationRequestBuffer, AnimationRequest, Equipped, GrantsMeleeAttackBonus,
+    AnimationRequestBuffer, AnimationRequest, Equipped, MeeleAttackWepon,
     StatusIsMeleeAttackBuffed, ElementalDamageKind,
     SpawnEntityWhenMeleeAttacked, EntitySpawnKind, EntitySpawnRequestBuffer,
     EntitySpawnRequest
@@ -31,7 +31,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         WriteStorage<'a, Position>,
         ReadStorage<'a, Renderable>,
         ReadStorage<'a, Equipped>,
-        ReadStorage<'a, GrantsMeleeAttackBonus>,
+        ReadStorage<'a, MeeleAttackWepon>,
         ReadStorage<'a, StatusIsMeleeAttackBuffed>,
         // WriteStorage<'a, WantsToMeleeAttack>,
         WriteStorage<'a, WantsToTakeDamage>,

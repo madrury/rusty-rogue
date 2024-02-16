@@ -1,3 +1,5 @@
+use crate::{MeeleAttackFormation, MeeleAttackWepon};
+
 use super::{
     CombatStats, GameLog, PickUpable, Map, Monster, Position, RunState,
     Renderable, Equipped, State, HungerClock, HungerState, Viewshed,
@@ -283,19 +285,41 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
 }
 
 fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
+    let entities = ecs.entities();
     let player = ecs.fetch::<Entity>();
+    let mut map = ecs.fetch_mut::<Map>();
     let mut pt = ecs.write_resource::<Point>();
+    let equipped = ecs.read_storage::<Equipped>();
+    let combat_stats = ecs.read_storage::<CombatStats>();
+    let weapons = ecs.read_storage::<MeeleAttackWepon>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
     let mut positions = ecs.write_storage::<Position>();
-    // let mut wants_to_melee = ecs.write_storage::<WantsToMeleeAttack>();
     let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
-    let combat_stats = ecs.read_storage::<CombatStats>();
-    // let entities = ecs.entities();
-    let mut map = ecs.fetch_mut::<Map>();
 
+    let formation = (&weapons, &equipped).join()
+        .filter(|(_, eq,)| eq.owner == *player)
+        .map(|(w, _)| w.formation)
+        .next()
+        .unwrap_or(MeeleAttackFormation::Basic);
     let source_idx = map.xy_idx(pt.x, pt.y);
     let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
     let destination_is_blocked = map.blocked[destination_idx];
+
+    let any_meele = match formation {
+        MeeleAttackFormation::Basic => {
+            let targets = get_meele_targets_in_tile(&*map, destination_idx, &combat_stats);
+            meele_buffer.request_many(*player, &targets, false);
+            !targets.is_empty()
+        }
+        MeeleAttackFormation::Dash => {
+            let targets = get_meele_targets_in_tile(&*map, destination_idx, &combat_stats);
+            meele_buffer.request_many(*player, &targets, false);
+            !targets.is_empty()
+        }
+    };
+    if any_meele {
+        return RunState::PlayerTurn;
+    }
 
     // If the destination tile is unblocked, we can move the player into it, and
     // then pass the turn.
@@ -315,27 +339,6 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         // The source tile is now unblocked, the desintiation is blocked.
         map.blocked[source_idx] = false;
         map.blocked[destination_idx] = true;
-        return RunState::PlayerTurn;
-    }
-
-    // If the destination tile is blocked, we check if its by anything animate
-    // and monstrous, if so, we attack it.
-    let mut any_meele: bool = false;
-    for target in map.tile_content[destination_idx].iter() {
-        // MAYBE: Maybe we should explicitly tag entities that can me meele
-        // attacked, we may have need for some that do not have combat stats in
-        // the future.
-        let targetstats = combat_stats.get(*target);
-        if let Some(_) = targetstats {
-            any_meele = true;
-            meele_buffer.request(MeeleAttackRequest {
-                source: *player,
-                target: *target,
-                critical: false
-            })
-        }
-    }
-    if any_meele {
         return RunState::PlayerTurn;
     }
 
@@ -467,4 +470,18 @@ fn pickup_item(ecs: &mut World) -> RunState {
             RunState::PlayerTurn
         }
     }
+}
+
+fn get_meele_targets_in_tile(map: &Map, idx: usize, combat_stats: &ReadStorage<CombatStats>) -> Vec<Entity> {
+    let mut targets: Vec<Entity> = Vec::new();
+    for target in map.tile_content[idx].iter() {
+        // MAYBE: Maybe we should explicitly tag entities that can me meele
+        // attacked, we may have need for some that do not have combat stats in
+        // the future.
+        let targetstats = combat_stats.get(*target);
+        if let Some(_) = targetstats {
+            targets.push(*target);
+        }
+    }
+    targets
 }
