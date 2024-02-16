@@ -44,7 +44,7 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             until_blocked: true
         })
         .with(WeaponSpecial {
-            regen_time: 50,
+            regen_time: 10,
             time: 0,
             kind: WeaponSpecialKind::ThrowWithoutExpending
         })
@@ -90,7 +90,7 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             until_blocked: true
         })
         .with(WeaponSpecial {
-            regen_time: 100,
+            regen_time: 10,
             time: 0,
             kind: WeaponSpecialKind::SpinAttack
         })
@@ -137,7 +137,7 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             until_blocked: true
         })
         .with(WeaponSpecial {
-            regen_time: 100,
+            regen_time: 10,
             time: 0,
             kind: WeaponSpecialKind::Dash
         })

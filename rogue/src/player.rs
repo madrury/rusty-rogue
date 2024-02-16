@@ -305,25 +305,35 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
     let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
     let destination_is_blocked = map.blocked[destination_idx];
 
-    let any_meele = match formation {
+    let do_move_to_destination = match formation {
         MeeleAttackFormation::Basic => {
             let targets = get_meele_targets_in_tile(&*map, destination_idx, &combat_stats);
             meele_buffer.request_many(*player, &targets, false);
-            !targets.is_empty()
+            if !targets.is_empty() {
+                return RunState::PlayerTurn
+            }
+            !destination_is_blocked
         }
         MeeleAttackFormation::Dash => {
-            let targets = get_meele_targets_in_tile(&*map, destination_idx, &combat_stats);
-            meele_buffer.request_many(*player, &targets, false);
-            !targets.is_empty()
+            let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
+            let dash_idx = map.xy_idx(pt.x + 2*dx, pt.y + 2*dy);
+            let destination_targets = get_meele_targets_in_tile(&*map, destination_idx, &combat_stats);
+            let dash_targets = get_meele_targets_in_tile(&*map, dash_idx, &combat_stats);
+            if !destination_targets.is_empty() {
+                meele_buffer.request_many(*player, &destination_targets, false);
+                return RunState::PlayerTurn
+            } else if !destination_is_blocked && !dash_targets.is_empty() {
+                meele_buffer.request_many(*player, &dash_targets, false);
+                !destination_is_blocked
+            } else {
+                !destination_is_blocked
+            }
         }
     };
-    if any_meele {
-        return RunState::PlayerTurn;
-    }
 
     // If the destination tile is unblocked, we can move the player into it, and
     // then pass the turn.
-    if !destination_is_blocked {
+    if do_move_to_destination && !destination_is_blocked {
         pt.x = min(MAP_WIDTH - 1,  max(1, pt.x + dx));
         pt.y = min(MAP_HEIGHT - 1, max(1, pt.y + dy));
         // The player moved so we need to recompute their viewshed.
@@ -362,7 +372,6 @@ fn skip_turn(ecs: &mut World) -> RunState {
     let hunger = ecs.read_storage::<HungerClock>();
     let equipped = ecs.read_storage::<Equipped>();
     let mut specials = ecs.write_storage::<WeaponSpecial>();
-    let mut combat_stats = ecs.write_storage::<CombatStats>();
     let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
     let mut animation_buffer = ecs.write_resource::<AnimationRequestBuffer>();
     let map = ecs.fetch::<Map>();
@@ -374,26 +383,16 @@ fn skip_turn(ecs: &mut World) -> RunState {
         .filter(|(_, eq, _, _)| eq.owner == *player)
         .filter(|(_, _, _, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
         .next();
-    let mut any_meele: bool = false;
     if let Some((_, _, render, special)) = ws {
-        let adjacent: Vec<&Entity> = map.get_l_infinity_circle_around(*ppos, 1)
+        let combat_stats = ecs.read_storage::<CombatStats>();
+        let adjacent: Vec<Entity> = map.get_l_infinity_circle_around(*ppos, 1)
             .iter()
             .map(|pt| map.xy_idx(pt.x, pt.y))
-            .map(|idx| map.tile_content[idx].iter())
+            .map(|idx| get_meele_targets_in_tile(&*map, idx, &combat_stats))
             .flatten()
             .collect();
-        for &e in adjacent {
-            let targetstats = combat_stats.get(e);
-            if let Some(_) = targetstats {
-                any_meele = true;
-                meele_buffer.request(MeeleAttackRequest {
-                    source: *player,
-                    target: e,
-                    critical: true
-                })
-            }
-        }
-        if any_meele {
+        meele_buffer.request_many(*player, &adjacent, true);
+        if !adjacent.is_empty() {
             special.expend();
             animation_buffer.request(AnimationRequest::SpinAttack {
                 x: ppos.x, y: ppos.y, fg: render.fg, glyph: render.glyph
@@ -421,6 +420,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
         );
 
     if can_heal {
+        let mut combat_stats = ecs.write_storage::<CombatStats>();
         let pstats = combat_stats.get_mut(*player)
             .expect("Failed to obtain combat stats for player when wail healing.");
         pstats.heal_amount(WAIT_HEAL_AMOUNT);
