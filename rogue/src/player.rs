@@ -429,7 +429,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         moves.insert(
             *player,
             WantsToMoveToPosition {pt: Point{x: pt.x + dx, y: pt.y + dy}, force: false}
-        ).expect("Failed to insert player meele attack move.");;
+        ).expect("Failed to insert player meele attack move.");
         return RunState::PlayerTurn;
     }
 
