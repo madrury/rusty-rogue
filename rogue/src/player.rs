@@ -353,8 +353,8 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                 animation_buffer.request(AnimationRequest::AlongRay {
                     source_x: pt.x,
                     source_y: pt.y,
-                    target_x: pt.x + 2*dx,
-                    target_y: pt.y + 2*dy,
+                    target_x: pt.x + dx,
+                    target_y: pt.y + dy,
                     fg: RGB::named(rltk::PURPLE),
                     bg: playerrender.bg,
                     glyph: playerrender.glyph,
@@ -408,8 +408,8 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                 animation_buffer.request(AnimationRequest::AlongRay {
                     source_x: pt.x,
                     source_y: pt.y,
-                    target_x: searchpt.x,
-                     target_y: searchpt.y,
+                    target_x: searchpt.x - dx,
+                     target_y: searchpt.y - dy,
                      fg: RGB::named(rltk::PURPLE),
                      bg: playerrender.bg,
                      glyph: playerrender.glyph,
