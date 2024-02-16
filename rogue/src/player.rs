@@ -9,7 +9,7 @@ use super::{
     MAP_WIDTH
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
-use specs::prelude::*;
+use specs::{prelude::*, storage::GenericReadStorage};
 use std::cmp::{max, min};
 
 
@@ -286,8 +286,8 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
 
 fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
     let player = ecs.fetch::<Entity>();
-    let mut map = ecs.fetch_mut::<Map>();
-    let mut pt = ecs.write_resource::<Point>();
+    let map = ecs.fetch_mut::<Map>();
+    let pt = ecs.write_resource::<Point>();
     let equipped = ecs.read_storage::<Equipped>();
     let combat_stats = ecs.read_storage::<CombatStats>();
     let weapons = ecs.read_storage::<MeeleAttackWepon>();
@@ -333,26 +333,39 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         }
     };
 
-
+    // Dash special
+    let ds = (&equipped, &mut specials).join()
+        .filter(|(eq, _)| eq.owner == *player)
+        .filter(|(_, s)| matches!(s.kind, WeaponSpecialKind::Dash) && s.is_charged())
+        .next();
+    if let Some((eq, special)) = ds {
+        let vs = viewsheds.get(*player).expect("Failed to get players viewshed.");
+        let mut searchpt = Point{x: pt.x + dx, y: pt.y + dy};
+        loop {
+            let search_idx = map.xy_idx(searchpt.x, searchpt.y);
+            let tile_not_visible =  !vs.visible_tiles.contains(&searchpt);
+            let is_blocked = map.blocked[search_idx];
+            let dash_targets = get_meele_targets_in_tile(&*map, search_idx, &combat_stats);
+            if tile_not_visible {
+                break;
+            } else if dash_targets.is_empty() && is_blocked {
+                break
+            } else if !dash_targets.is_empty() {
+                special.expend();
+                meele_buffer.request_many(*player, &dash_targets, false);
+                moves.insert(
+                    *player,
+                    WantsToMoveToPosition {pt: Point{x: searchpt.x - dx, y: searchpt.y - dy}, force: false}
+                ).expect("Failed to insert dash meele attack move.");
+                return RunState::PlayerTurn
+            }
+            searchpt = Point {x: searchpt.x + dx, y: searchpt.y + dy};
+        }
+    }
 
     // If the destination tile is unblocked, we can move the player into it, and
     // then pass the turn.
     if !destination_is_blocked {
-        // pt.x = min(MAP_WIDTH - 1,  max(1, pt.x + dx));
-        // pt.y = min(MAP_HEIGHT - 1, max(1, pt.y + dy));
-        // // The player moved so we need to recompute their viewshed.
-        // let viewshed = viewsheds.get_mut(*player);
-        // if let Some(vs) = viewshed { vs.dirty = true; }
-        // // IMPORTANT: Keeps the players Position component synchronized with
-        // // their position as a <Point> resource in the ECS.
-        // let position = positions.get_mut(*player);
-        // if let Some(pos) = position {
-        //     pos.x = pt.x;
-        //     pos.y = pt.y;
-        // }
-        // // The source tile is now unblocked, the desintiation is blocked.
-        // map.blocked[source_idx] = false;
-        // map.blocked[destination_idx] = true;
         moves.insert(
             *player,
             WantsToMoveToPosition {pt: Point{x: pt.x + dx, y: pt.y + dy}, force: false}

@@ -89,7 +89,7 @@ pub struct PositionMovementSystemData<'a> {
     entities: Entities<'a>,
     map: WriteExpect<'a, Map>,
     player: ReadExpect<'a, Entity>,
-    player_pos: WriteExpect<'a, Point>,
+    player_pt: WriteExpect<'a, Point>,
     avoids: ReadStorage<'a, MovementRoutingAvoids>,
     bounds: ReadStorage<'a, MovementRoutingBounds>,
     positions: WriteStorage<'a, Position>,
@@ -108,7 +108,7 @@ impl<'a> System<'a> for PositionMovementSystem {
             entities,
             mut map,
             player,
-            mut player_pos,
+            mut player_pt,
             mut positions,
             avoids,
             bounds,
@@ -130,7 +130,7 @@ impl<'a> System<'a> for PositionMovementSystem {
             let ebounds = bounds.get(entity);
 
             let new_pos_is_player_pos =
-                new_pos.x == player_pos.x && new_pos.y == player_pos.y;
+                new_pos.x == player_pt.x && new_pos.y == player_pt.y;
             let ok_to_move =
                 wants_to_move.force || ok_to_move_to_position(&map, eavoids, ebounds, new_idx);
 
@@ -141,8 +141,8 @@ impl<'a> System<'a> for PositionMovementSystem {
             pos.x = new_pos.x;
             pos.y = new_pos.y;
             if is_player {
-                player_pos.x = new_pos.x;
-                player_pos.y = new_pos.y;
+                player_pt.x = new_pos.x;
+                player_pt.y = new_pos.y;
             }
             if is_blocking {
                 map.blocked[old_idx] = false;
