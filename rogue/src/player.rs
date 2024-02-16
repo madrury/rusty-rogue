@@ -1,4 +1,4 @@
-use crate::{MeeleAttackFormation, MeeleAttackWepon};
+use crate::{MeeleAttackFormation, MeeleAttackWepon, WantsToMoveToPosition};
 
 use super::{
     CombatStats, GameLog, PickUpable, Map, Monster, Position, RunState,
@@ -285,7 +285,6 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
 }
 
 fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
-    let entities = ecs.entities();
     let player = ecs.fetch::<Entity>();
     let mut map = ecs.fetch_mut::<Map>();
     let mut pt = ecs.write_resource::<Point>();
@@ -294,25 +293,26 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
     let weapons = ecs.read_storage::<MeeleAttackWepon>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
     let mut positions = ecs.write_storage::<Position>();
+    let mut specials = ecs.write_storage::<WeaponSpecial>();
+    let mut moves = ecs.write_storage::<WantsToMoveToPosition>();
     let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
 
+    let source_idx = map.xy_idx(pt.x, pt.y);
+    let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
+    let destination_is_blocked = map.blocked[destination_idx];
     let formation = (&weapons, &equipped).join()
         .filter(|(_, eq,)| eq.owner == *player)
         .map(|(w, _)| w.formation)
         .next()
         .unwrap_or(MeeleAttackFormation::Basic);
-    let source_idx = map.xy_idx(pt.x, pt.y);
-    let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
-    let destination_is_blocked = map.blocked[destination_idx];
 
-    let do_move_to_destination = match formation {
+    match formation {
         MeeleAttackFormation::Basic => {
             let targets = get_meele_targets_in_tile(&*map, destination_idx, &combat_stats);
             meele_buffer.request_many(*player, &targets, false);
             if !targets.is_empty() {
                 return RunState::PlayerTurn
             }
-            !destination_is_blocked
         }
         MeeleAttackFormation::Dash => {
             let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
@@ -324,31 +324,39 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                 return RunState::PlayerTurn
             } else if !destination_is_blocked && !dash_targets.is_empty() {
                 meele_buffer.request_many(*player, &dash_targets, false);
-                !destination_is_blocked
-            } else {
-                !destination_is_blocked
+                moves.insert(
+                    *player,
+                    WantsToMoveToPosition {pt: Point{x: pt.x + dx, y: pt.y + dy}, force: false}
+                ).expect("Failed to insert dash meele attack move.");
+                return RunState::PlayerTurn
             }
         }
     };
 
+
+
     // If the destination tile is unblocked, we can move the player into it, and
     // then pass the turn.
-    if do_move_to_destination && !destination_is_blocked {
-        pt.x = min(MAP_WIDTH - 1,  max(1, pt.x + dx));
-        pt.y = min(MAP_HEIGHT - 1, max(1, pt.y + dy));
-        // The player moved so we need to recompute their viewshed.
-        let viewshed = viewsheds.get_mut(*player);
-        if let Some(vs) = viewshed { vs.dirty = true; }
-        // IMPORTANT: Keeps the players Position component synchronized with
-        // their position as a <Point> resource in the ECS.
-        let position = positions.get_mut(*player);
-        if let Some(pos) = position {
-            pos.x = pt.x;
-            pos.y = pt.y;
-        }
-        // The source tile is now unblocked, the desintiation is blocked.
-        map.blocked[source_idx] = false;
-        map.blocked[destination_idx] = true;
+    if !destination_is_blocked {
+        // pt.x = min(MAP_WIDTH - 1,  max(1, pt.x + dx));
+        // pt.y = min(MAP_HEIGHT - 1, max(1, pt.y + dy));
+        // // The player moved so we need to recompute their viewshed.
+        // let viewshed = viewsheds.get_mut(*player);
+        // if let Some(vs) = viewshed { vs.dirty = true; }
+        // // IMPORTANT: Keeps the players Position component synchronized with
+        // // their position as a <Point> resource in the ECS.
+        // let position = positions.get_mut(*player);
+        // if let Some(pos) = position {
+        //     pos.x = pt.x;
+        //     pos.y = pt.y;
+        // }
+        // // The source tile is now unblocked, the desintiation is blocked.
+        // map.blocked[source_idx] = false;
+        // map.blocked[destination_idx] = true;
+        moves.insert(
+            *player,
+            WantsToMoveToPosition {pt: Point{x: pt.x + dx, y: pt.y + dy}, force: false}
+        ).expect("Failed to insert player meele attack move.");;
         return RunState::PlayerTurn;
     }
 
@@ -362,7 +370,6 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
 }
 
 fn skip_turn(ecs: &mut World) -> RunState {
-    let entities = ecs.entities();
     let player = ecs.fetch::<Entity>();
     let ppos = ecs.read_resource::<Point>();
     let viewsheds = ecs.read_storage::<Viewshed>();
@@ -379,11 +386,11 @@ fn skip_turn(ecs: &mut World) -> RunState {
     // Passing the turn with anjacent monsters starts a spin attack when a
     // sword's special is charged. Meele attacks all adjacent monsters, with a
     // free critical hit. Like in Link to the Past.
-    let ws = (&entities, &equipped, &renderables, &mut specials).join()
-        .filter(|(_, eq, _, _)| eq.owner == *player)
-        .filter(|(_, _, _, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
+    let ws = (&equipped, &renderables, &mut specials).join()
+        .filter(|(eq, _, _)| eq.owner == *player)
+        .filter(|(_, _, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
         .next();
-    if let Some((_, _, render, special)) = ws {
+    if let Some((_, render, special)) = ws {
         let combat_stats = ecs.read_storage::<CombatStats>();
         let adjacent: Vec<Entity> = map.get_l_infinity_circle_around(*ppos, 1)
             .iter()
@@ -485,3 +492,22 @@ fn get_meele_targets_in_tile(map: &Map, idx: usize, combat_stats: &ReadStorage<C
     }
     targets
 }
+
+// fn do_move_player_to_position(player: &Entity, pt: &mut Point, map: &mut Map, pos: &WriteStorage<Position>, vs: &WriteStorage<Viewshed>) {
+//     pt.x = min(MAP_WIDTH - 1,  max(1, pt.x + dx));
+//     pt.y = min(MAP_HEIGHT - 1, max(1, pt.y + dy));
+//     // The player moved so we need to recompute their viewshed.
+//     let viewshed = vs.get_mut(*player);
+//     if let Some(vs) = viewshed { vs.dirty = true; }
+//     // IMPORTANT: Keeps the players Position component synchronized with
+//     // their position as a <Point> resource in the ECS.
+//     let position = pds.get_mut(*player);
+//     if let Some(pos) = position {
+//         pos.x = pt.x;
+//         pos.y = pt.y;
+//     }
+//     // The source tile is now unblocked, the desintiation is blocked.
+//     map.blocked[source_idx] = false;
+//     map.blocked[destination_idx] = true;
+//     return RunState::PlayerTurn;
+// }

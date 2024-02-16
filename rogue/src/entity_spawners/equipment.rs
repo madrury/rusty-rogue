@@ -101,7 +101,6 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         Some(entity)
 }
 
-
 pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})

@@ -1,4 +1,3 @@
-use rltk::Point;
 use specs::prelude::*;
 use specs_derive::*;
 use specs::saveload::{ConvertSaveload, Marker};
@@ -76,20 +75,6 @@ pub enum MeeleAttackFormation {
     Basic,
     Dash,
 }
-// impl MeeleAttackFormation {
-//     pub fn tiles(&self, x:i32, y: i32, dx: i32, dy: i32) -> Vec<Point> {
-//         match self {
-//             MeeleAttackFormation::Basic => {
-//                 Point {x: x + dx, y: y + dy}
-//             },
-//             MeeleAttackFormation::Dash => {
-
-//             }
-//         }
-//     }
-// }
-
-
 // Component for effects that grant a MeleeAttackBonus
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MeeleAttackWepon {
