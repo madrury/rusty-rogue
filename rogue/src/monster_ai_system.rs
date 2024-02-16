@@ -160,7 +160,8 @@ impl<'a> System<'a> for MonsterBasicAISystem {
             } else if next_to_player {
                 meele_buffer.request(MeeleAttackRequest {
                     source: entity,
-                    target: *player
+                    target: *player,
+                    critical: false,
                 })
             // Monster seeking player branch:
             //   This branch is taken if the monster is currently seeking the
@@ -308,7 +309,11 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             // If we're next to the player, and have no spell to cast, we'll
             // resort to melee attacks.
             } else if next_to_player {
-                meele_buffer.request(MeeleAttackRequest { source: entity, target: *player });
+                meele_buffer.request(MeeleAttackRequest {
+                    source: entity,
+                    target: *player,
+                    critical: false
+                });
             // Monster can see player but has no spell to cast.
             // The monster will try to keep a fixed distance from the player
             // (within spell range) until their spell recharges.
@@ -475,7 +480,11 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
             // If we're next to the player, and have no spell to cast, we'll
             // resort to melee attacks.
             } else if next_to_player {
-                meele_buffer.request(MeeleAttackRequest { source: entity, target: *player })
+                meele_buffer.request(MeeleAttackRequest {
+                    source: entity,
+                    target: *player,
+                    critical: false
+                })
             // Monster can see other potential targets branch.
             // The monster can see potential targets, but they are not in a
             // state where it is benificial to cast the spell (so in this case,

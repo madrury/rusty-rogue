@@ -1,9 +1,10 @@
 use super::{
-    CombatStats, GameLog, PickUpable, Map, Player, Monster, Position, RunState,
+    CombatStats, GameLog, PickUpable, Map, Monster, Position, RunState,
     Renderable, Equipped, State, HungerClock, HungerState, Viewshed,
     MeeleAttackRequestBuffer, MeeleAttackRequest, AnimationRequestBuffer,
     AnimationRequest, WantsToPickupItem, StatusIsFrozen, TileType,
-    WeaponSpecial, WeaponSpecialKind, MAP_HEIGHT, MAP_WIDTH
+    WeaponSpecial, WeaponSpecialKind, StatusInvisibleToPlayer, MAP_HEIGHT,
+    MAP_WIDTH
 };
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
@@ -274,7 +275,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
                 if try_next_level(&mut gs.ecs) {
                     return RunState::NextLevel
                 }
-                return RunState::PlayerTurn
+                return RunState::AwaitingInput
             }
             _ => RunState::AwaitingInput
         },
@@ -296,8 +297,8 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
     let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
     let destination_is_blocked = map.blocked[destination_idx];
 
-    // If the destination tile is unblocked, we can move the player and pass the
-    // turn.
+    // If the destination tile is unblocked, we can move the player into it, and
+    // then pass the turn.
     if !destination_is_blocked {
         pt.x = min(MAP_WIDTH - 1,  max(1, pt.x + dx));
         pt.y = min(MAP_HEIGHT - 1, max(1, pt.y + dy));
@@ -317,6 +318,8 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         return RunState::PlayerTurn;
     }
 
+    // If the destination tile is blocked, we check if its by anything animate
+    // and monstrous, if so, we attack it.
     let mut any_meele: bool = false;
     for target in map.tile_content[destination_idx].iter() {
         // MAYBE: Maybe we should explicitly tag entities that can me meele
@@ -327,7 +330,8 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
             any_meele = true;
             meele_buffer.request(MeeleAttackRequest {
                 source: *player,
-                target: *target
+                target: *target,
+                critical: false
             })
         }
     }
@@ -350,6 +354,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
     let ppos = ecs.read_resource::<Point>();
     let viewsheds = ecs.read_storage::<Viewshed>();
     let renderables = ecs.read_storage::<Renderable>();
+    let invisibles = ecs.read_storage::<StatusInvisibleToPlayer>();
     let monsters = ecs.read_storage::<Monster>();
     let hunger = ecs.read_storage::<HungerClock>();
     let equipped = ecs.read_storage::<Equipped>();
@@ -359,14 +364,15 @@ fn skip_turn(ecs: &mut World) -> RunState {
     let mut animation_buffer = ecs.write_resource::<AnimationRequestBuffer>();
     let map = ecs.fetch::<Map>();
 
-    // Passing the turn with anjacent monsters cstarts a spin attack when a
-    // sword's special is charged. Like in Link to the Past.
+    // Passing the turn with anjacent monsters starts a spin attack when a
+    // sword's special is charged. Meele attacks all adjacent monsters, with a
+    // free critical hit. Like in Link to the Past.
     let ws = (&entities, &equipped, &renderables, &mut specials).join()
         .filter(|(_, eq, _, _)| eq.owner == *player)
         .filter(|(_, _, _, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
         .next();
     let mut any_meele: bool = false;
-    if let Some((weapon, _, render, special)) = ws {
+    if let Some((_, _, render, special)) = ws {
         let adjacent: Vec<&Entity> = map.get_l_infinity_circle_around(*ppos, 1)
             .iter()
             .map(|pt| map.xy_idx(pt.x, pt.y))
@@ -379,7 +385,8 @@ fn skip_turn(ecs: &mut World) -> RunState {
                 any_meele = true;
                 meele_buffer.request(MeeleAttackRequest {
                     source: *player,
-                    target: e
+                    target: e,
+                    critical: true
                 })
             }
         }
@@ -392,25 +399,27 @@ fn skip_turn(ecs: &mut World) -> RunState {
         }
     }
 
-    // Check for monsters nearby, we can't heal if there are any.
+    // Check for monsters nearby, we can't wait heal if we know there are any.
     let mut can_heal = true;
-    let pviewshed = viewsheds.get(*player).unwrap(); // The player always has a viewshed.
+    let pviewshed = viewsheds.get(*player).expect("Failed to obtain player viewshed.");
     for tile in pviewshed.visible_tiles.iter() {
         let idx = map.xy_idx(tile.x, tile.y);
         for entity in map.tile_content[idx].iter() {
-            can_heal &= monsters.get(*entity).is_none();
+            let is_monster = monsters.get(*entity).is_some();
+            let is_invisible = invisibles.get(*entity).is_some();
+            can_heal &= !is_monster || is_invisible;
         }
     }
     // If we're hungry or starving, we also cannot heal.
-    can_heal &= hunger
-        .get(*player)
+    can_heal &= hunger.get(*player)
         .map_or(
             true,
             |h| h.state == HungerState::WellFed || h.state == HungerState::Normal
         );
 
     if can_heal {
-        let pstats = combat_stats.get_mut(*player).unwrap(); // The player always has stats.
+        let pstats = combat_stats.get_mut(*player)
+            .expect("Failed to obtain combat stats for player when wail healing.");
         pstats.heal_amount(WAIT_HEAL_AMOUNT);
     }
     return RunState::PlayerTurn
@@ -446,14 +455,16 @@ fn pickup_item(ecs: &mut World) -> RunState {
     }
 
     match target_item {
-        None => log.entries.push("There is nothing here to pickup.".to_string()),
+        None => {
+            log.entries.push("There is nothing here to pickup.".to_string());
+            RunState::AwaitingInput
+        },
         Some(item) => {
             let mut pickup = ecs.write_storage::<WantsToPickupItem>();
             pickup
                 .insert(*player, WantsToPickupItem{by: *player, item: item})
                 .expect("Unable to pickup item.");
+            RunState::PlayerTurn
         }
     }
-
-    return RunState::PlayerTurn
 }

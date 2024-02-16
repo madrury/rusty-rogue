@@ -1,7 +1,5 @@
 use specs::prelude::*;
 
-use crate::StatusEffect;
-
 use super::{
     Map, Name, GameLog, Position, Tramples, EntitySpawnRequest,
     EntitySpawnRequestBuffer, InflictsDamageWhenEncroachedUpon,

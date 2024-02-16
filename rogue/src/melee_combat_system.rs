@@ -2,11 +2,11 @@ use specs::prelude::*;
 use crate::MeeleAttackRequestBuffer;
 
 use super::{
-    Map, Point, TileType, CombatStats, WantsToMeleeAttack, Name, WantsToTakeDamage,
-    GameLog, Renderable, Position, AnimationRequestBuffer, AnimationRequest,
-    Equipped, GrantsMeleeAttackBonus, StatusIsMeleeAttackBuffed,
-    ElementalDamageKind, SpawnEntityWhenMeleeAttacked, EntitySpawnKind,
-    EntitySpawnRequestBuffer, EntitySpawnRequest
+    Map, Point, TileType, CombatStats, WantsToTakeDamage, Renderable, Position,
+    AnimationRequestBuffer, AnimationRequest, Equipped, GrantsMeleeAttackBonus,
+    StatusIsMeleeAttackBuffed, ElementalDamageKind,
+    SpawnEntityWhenMeleeAttacked, EntitySpawnKind, EntitySpawnRequestBuffer,
+    EntitySpawnRequest
 };
 
 pub struct MeleeCombatSystem {}
@@ -80,7 +80,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 .sum();
             let attack_buff_factor: i32 = is_melee_buffs.get(attack.source)
                 .map_or(1, |_b| 2);
-            let damage = i32::max(0, attack_buff_factor * (sstats.power + weapon_attack_bonus));
+            let critical_hit_factor: i32 = if attack.critical {2} else {1};
+            let damage = i32::max(0, critical_hit_factor * attack_buff_factor * (sstats.power + weapon_attack_bonus));
 
             // Actually push the damage :D
             WantsToTakeDamage::new_damage(

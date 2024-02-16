@@ -36,7 +36,7 @@ impl CombatStats {
 pub struct MeeleAttackRequest {
     pub source: Entity,
     pub target: Entity,
-    // pub target: 'a>&Entity
+    pub critical: bool
 }
 
 // A buffer for storing entity spawn requests.
