@@ -8,7 +8,7 @@ use super::{
     WeaponSpecial, WeaponSpecialKind, StatusInvisibleToPlayer, MAP_HEIGHT,
     MAP_WIDTH
 };
-use rltk::{Point, Rltk, VirtualKeyCode};
+use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::{prelude::*, storage::GenericReadStorage};
 use std::cmp::{max, min};
 
@@ -288,18 +288,21 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
     let player = ecs.fetch::<Entity>();
     let map = ecs.fetch_mut::<Map>();
     let pt = ecs.write_resource::<Point>();
+    let renderables = ecs.read_storage::<Renderable>();
     let equipped = ecs.read_storage::<Equipped>();
     let combat_stats = ecs.read_storage::<CombatStats>();
     let weapons = ecs.read_storage::<MeeleAttackWepon>();
-    let mut viewsheds = ecs.write_storage::<Viewshed>();
-    let mut positions = ecs.write_storage::<Position>();
+    let viewsheds = ecs.read_storage::<Viewshed>();
+    let invisibles = ecs.read_storage::<StatusInvisibleToPlayer>();
     let mut specials = ecs.write_storage::<WeaponSpecial>();
     let mut moves = ecs.write_storage::<WantsToMoveToPosition>();
     let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
+    let mut animation_buffer = ecs.write_resource::<AnimationRequestBuffer>();
 
-    let source_idx = map.xy_idx(pt.x, pt.y);
     let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
     let destination_is_blocked = map.blocked[destination_idx];
+    let playerrender = renderables.get(*player)
+        .expect("Failed to get Renderable component for player.");
     let formation = (&weapons, &equipped).join()
         .filter(|(_, eq,)| eq.owner == *player)
         .map(|(w, _)| w.formation)
@@ -307,18 +310,34 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         .unwrap_or(MeeleAttackFormation::Basic);
 
     match formation {
+        // The basic meele formation attacks only the tile in the direction of
+        // movement.
         MeeleAttackFormation::Basic => {
-            let targets = get_meele_targets_in_tile(&*map, destination_idx, &combat_stats);
+            let targets = get_meele_targets_in_tile(
+                &*map, destination_idx, &combat_stats, &invisibles, true
+            );
             meele_buffer.request_many(*player, &targets, false);
             if !targets.is_empty() {
                 return RunState::PlayerTurn
             }
         }
+        // This meele attack formation, shamelessly ripped off from Brogue,
+        // allows both moving and attacking in a single turn. If a monster is
+        // located exactly one tile away (but not adjacent) to the player in the
+        // direction of movement, we will both step into the open tile, and
+        // attack the monster.
         MeeleAttackFormation::Dash => {
             let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
             let dash_idx = map.xy_idx(pt.x + 2*dx, pt.y + 2*dy);
-            let destination_targets = get_meele_targets_in_tile(&*map, destination_idx, &combat_stats);
-            let dash_targets = get_meele_targets_in_tile(&*map, dash_idx, &combat_stats);
+            // We still want to meele attack anything immeidately adjacent to
+            // us, but *dont* trigger the dash if there is an invisible in the
+            // dash target tile.
+            let destination_targets = get_meele_targets_in_tile(
+                &*map, destination_idx, &combat_stats, &invisibles, true
+            );
+            let dash_targets = get_meele_targets_in_tile(
+                &*map, dash_idx, &combat_stats, &invisibles, false
+            );
             if !destination_targets.is_empty() {
                 meele_buffer.request_many(*player, &destination_targets, false);
                 return RunState::PlayerTurn
@@ -326,37 +345,76 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                 meele_buffer.request_many(*player, &dash_targets, false);
                 moves.insert(
                     *player,
-                    WantsToMoveToPosition {pt: Point{x: pt.x + dx, y: pt.y + dy}, force: false}
+                    WantsToMoveToPosition {
+                        pt: Point{x: pt.x + dx, y: pt.y + dy},
+                        force: false
+                    }
                 ).expect("Failed to insert dash meele attack move.");
+                animation_buffer.request(AnimationRequest::AlongRay {
+                    source_x: pt.x,
+                    source_y: pt.y,
+                    target_x: pt.x + 2*dx,
+                    target_y: pt.y + 2*dy,
+                    fg: RGB::named(rltk::PURPLE),
+                    bg: playerrender.bg,
+                    glyph: playerrender.glyph,
+                    until_blocked: true
+                });
                 return RunState::PlayerTurn
             }
         }
     };
 
-    // Dash special
+    // Dash Weapon Special Attack.
+    // An extended dash attack along the ray from the player in the direction of
+    // movement.
     let ds = (&equipped, &mut specials).join()
         .filter(|(eq, _)| eq.owner == *player)
         .filter(|(_, s)| matches!(s.kind, WeaponSpecialKind::Dash) && s.is_charged())
         .next();
-    if let Some((eq, special)) = ds {
+    if let Some((_, special)) = ds {
         let vs = viewsheds.get(*player).expect("Failed to get players viewshed.");
         let mut searchpt = Point{x: pt.x + dx, y: pt.y + dy};
+        // Search along the ray from the player position in the direction of
+        // movement for any meele target. We stop the search as soon as we find:
+        //   - A tile outside the player's view.
+        //   - Any blocked tile that is not meele attackable.
+        //   - A meele attack target.
+        // In the final case, we *know* the prevous search tile is unblocked,
+        // because we encountered it in the seatch.
         loop {
             let search_idx = map.xy_idx(searchpt.x, searchpt.y);
             let tile_not_visible =  !vs.visible_tiles.contains(&searchpt);
             let is_blocked = map.blocked[search_idx];
-            let dash_targets = get_meele_targets_in_tile(&*map, search_idx, &combat_stats);
+            // Again, don't count invisible meele targets in the dash tile.
+            let dash_targets = get_meele_targets_in_tile(
+                &*map, search_idx, &combat_stats, &invisibles, false
+            );
             if tile_not_visible {
                 break;
             } else if dash_targets.is_empty() && is_blocked {
                 break
+            // Found a target: DASH!
             } else if !dash_targets.is_empty() {
                 special.expend();
-                meele_buffer.request_many(*player, &dash_targets, false);
+                meele_buffer.request_many(*player, &dash_targets, true);
                 moves.insert(
                     *player,
-                    WantsToMoveToPosition {pt: Point{x: searchpt.x - dx, y: searchpt.y - dy}, force: false}
+                    WantsToMoveToPosition {
+                        pt: Point{x: searchpt.x - dx, y: searchpt.y - dy},
+                        force: false
+                    }
                 ).expect("Failed to insert dash meele attack move.");
+                animation_buffer.request(AnimationRequest::AlongRay {
+                    source_x: pt.x,
+                    source_y: pt.y,
+                    target_x: searchpt.x,
+                     target_y: searchpt.y,
+                     fg: RGB::named(rltk::PURPLE),
+                     bg: playerrender.bg,
+                     glyph: playerrender.glyph,
+                     until_blocked: true
+                });
                 return RunState::PlayerTurn
             }
             searchpt = Point {x: searchpt.x + dx, y: searchpt.y + dy};
@@ -408,7 +466,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
         let adjacent: Vec<Entity> = map.get_l_infinity_circle_around(*ppos, 1)
             .iter()
             .map(|pt| map.xy_idx(pt.x, pt.y))
-            .map(|idx| get_meele_targets_in_tile(&*map, idx, &combat_stats))
+            .map(|idx| get_meele_targets_in_tile(&*map, idx, &combat_stats, &invisibles, true))
             .flatten()
             .collect();
         meele_buffer.request_many(*player, &adjacent, true);
@@ -492,35 +550,20 @@ fn pickup_item(ecs: &mut World) -> RunState {
     }
 }
 
-fn get_meele_targets_in_tile(map: &Map, idx: usize, combat_stats: &ReadStorage<CombatStats>) -> Vec<Entity> {
+fn get_meele_targets_in_tile(
+    map: &Map,
+    idx: usize,
+    combat_stats: &ReadStorage<CombatStats>,
+    invisible: &ReadStorage<StatusInvisibleToPlayer>,
+    include_invisible: bool
+) -> Vec<Entity> {
     let mut targets: Vec<Entity> = Vec::new();
     for target in map.tile_content[idx].iter() {
-        // MAYBE: Maybe we should explicitly tag entities that can me meele
-        // attacked, we may have need for some that do not have combat stats in
-        // the future.
-        let targetstats = combat_stats.get(*target);
-        if let Some(_) = targetstats {
+        let target_has_stats = combat_stats.get(*target).is_some();
+        let target_is_visible = invisible.get(*target).is_none();
+        if target_has_stats && (include_invisible || target_is_visible) {
             targets.push(*target);
         }
     }
     targets
 }
-
-// fn do_move_player_to_position(player: &Entity, pt: &mut Point, map: &mut Map, pos: &WriteStorage<Position>, vs: &WriteStorage<Viewshed>) {
-//     pt.x = min(MAP_WIDTH - 1,  max(1, pt.x + dx));
-//     pt.y = min(MAP_HEIGHT - 1, max(1, pt.y + dy));
-//     // The player moved so we need to recompute their viewshed.
-//     let viewshed = vs.get_mut(*player);
-//     if let Some(vs) = viewshed { vs.dirty = true; }
-//     // IMPORTANT: Keeps the players Position component synchronized with
-//     // their position as a <Point> resource in the ECS.
-//     let position = pds.get_mut(*player);
-//     if let Some(pos) = position {
-//         pos.x = pt.x;
-//         pos.y = pt.y;
-//     }
-//     // The source tile is now unblocked, the desintiation is blocked.
-//     map.blocked[source_idx] = false;
-//     map.blocked[destination_idx] = true;
-//     return RunState::PlayerTurn;
-// }
