@@ -3,14 +3,12 @@ use crate::{MeeleAttackFormation, MeeleAttackWepon, WantsToMoveToPosition};
 use super::{
     CombatStats, GameLog, PickUpable, Map, Monster, Position, RunState,
     Renderable, Equipped, State, HungerClock, HungerState, Viewshed,
-    MeeleAttackRequestBuffer, MeeleAttackRequest, AnimationRequestBuffer,
+    MeeleAttackRequestBuffer, AnimationRequestBuffer,
     AnimationRequest, WantsToPickupItem, StatusIsFrozen, TileType,
-    WeaponSpecial, WeaponSpecialKind, StatusInvisibleToPlayer, MAP_HEIGHT,
-    MAP_WIDTH
+    WeaponSpecial, WeaponSpecialKind, StatusInvisibleToPlayer
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
-use specs::{prelude::*, storage::GenericReadStorage};
-use std::cmp::{max, min};
+use specs::prelude::*;
 
 
 const WAIT_HEAL_AMOUNT: i32 = 1;
@@ -309,6 +307,9 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         .next()
         .unwrap_or(MeeleAttackFormation::Basic);
 
+    // We first check for any meele attack targets. If we find any we queue
+    // meele attacks and pass the turn. If not, we drop through to the next set
+    // of movement checks.
     match formation {
         // The basic meele formation attacks only the tile in the direction of
         // movement.
@@ -367,7 +368,8 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
 
     // Dash Weapon Special Attack.
     // An extended dash attack along the ray from the player in the direction of
-    // movement.
+    // movement. Only triggers if a target is found, otherwise we drop through
+    // to the basic movement check.
     let ds = (&equipped, &mut specials).join()
         .filter(|(eq, _)| eq.owner == *player)
         .filter(|(_, s)| matches!(s.kind, WeaponSpecialKind::Dash) && s.is_charged())
