@@ -1,4 +1,4 @@
-use rltk::{BLUE, DARKGREEN, GREEN, LIGHTBLUE, MEDIUMBLUE, ORANGE, RED, RGB, SANDY_BROWN, SILVER, SKYBLUE, SLATEBLUE, WHITE, YELLOW};
+use rltk::{BLUE, DARKGREEN, GREEN, LIGHTBLUE, LIGHT_GREY, MEDIUMBLUE, ORANGE, RED, RGB, SANDY_BROWN, SILVER, SKYBLUE, SLATEBLUE, WHITE, YELLOW};
 use serde::{Serialize, Deserialize};
 
 use super::{NoiseMaps, Map};
@@ -118,9 +118,9 @@ pub fn fire_bg_from_noise(f: f32) -> RGB {
 
 pub fn chill_fg_from_noise(f: f32) -> RGB {
     RGB::from_u8(
-        (f * (WHITE.0 as f32)) as u8 + ((1.0 - f) * (SILVER.0 as f32)) as u8,
-        (f * (WHITE.1 as f32)) as u8 + ((1.0 - f) * (SILVER.1 as f32)) as u8,
-        (f * (WHITE.2 as f32)) as u8 + ((1.0 - f) * (SILVER.2 as f32)) as u8
+        (f * (LIGHT_GREY.0 as f32)) as u8 + ((1.0 - f) * (SILVER.0 as f32)) as u8,
+        (f * (LIGHT_GREY.1 as f32)) as u8 + ((1.0 - f) * (SILVER.1 as f32)) as u8,
+        (f * (LIGHT_GREY.2 as f32)) as u8 + ((1.0 - f) * (SILVER.2 as f32)) as u8
     )
 }
 
