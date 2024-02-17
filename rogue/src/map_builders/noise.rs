@@ -192,7 +192,7 @@ impl NoiseMaps {
             spawning: monster_spawn_noisemap(rng, map),
             grass: grass_noisemap(rng, map),
             water: water_noisemap(rng, map, watervfreq),
-            fire: fire_noisemap(rng, map),
+            fire: value_white_noisemap(rng, map),
             statue: statue_noisemap(rng, map),
         }
     }
@@ -257,48 +257,37 @@ impl NoiseMaps {
         water_spawn_table
     }
 
-    pub fn to_shallow_water_fg_colormap(&self, map: &Map) -> Vec<RGB> {
+    pub fn to_colormap(
+        &self,
+        map: &Map,
+        noise: &Vec<(Point, (f32, f32))>,
+        coefs: [f32; 3],
+        color_from_noise: fn(f32) -> RGB
+    ) -> Vec<RGB> {
         let mut colormap: Vec<RGB> =
             vec![RGB::named(rltk::WHITE); (map.width * map.height) as usize];
-        for (pt, (vnoise, _)) in self.water.iter() {
+        for (pt, (vnoise, wnoise)) in noise.iter() {
             let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = vnoise + 0.4;
-            colormap[idx] = colormaps::water_fg_from_noise(colorseed);
+            let colorseed = vnoise * coefs[0] + wnoise * coefs[1] + coefs[2];
+            colormap[idx] = color_from_noise(colorseed);
         }
         colormap
+    }
+
+    pub fn to_shallow_water_fg_colormap(&self, map: &Map) -> Vec<RGB> {
+        self.to_colormap(map, &self.water, [1.0, 0.0, 0.4], colormaps::water_fg_from_noise)
     }
 
     pub fn to_shallow_water_bg_colormap(&self, map: &Map) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::LIGHTBLUE); (map.width * map.height) as usize];
-        for (pt, (vnoise, wnoise)) in self.water.iter() {
-            let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = 0.5 * vnoise + 0.1 * wnoise + 0.4;
-            colormap[idx] = colormaps::shallow_water_bg_from_noise(colorseed);
-        }
-        colormap
+        self.to_colormap(map, &self.water, [0.5, 0.1, 0.4], colormaps::shallow_water_bg_from_noise)
     }
 
     pub fn to_deep_water_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::WHITE); (map.width * map.height) as usize];
-        for (pt, (vnoise, _)) in self.water.iter() {
-            let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = vnoise + 0.6;
-            colormap[idx] = colormaps::water_fg_from_noise(colorseed);
-        }
-        colormap
+        self.to_colormap(map, &self.water, [1.0, 0.0, 0.6], colormaps::water_fg_from_noise)
     }
 
     pub fn to_deep_water_bg_colormap(&self, map: &Map) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::DARKBLUE); (map.width * map.height) as usize];
-        for (pt, (vnoise, wnoise)) in self.water.iter() {
-            let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = 0.7 * vnoise + 0.2 * wnoise + 0.4;
-            colormap[idx] = colormaps::water_bg_from_noise(colorseed);
-        }
-        colormap
+        self.to_colormap(map, &self.water, [0.7, 0.2, 0.4], colormaps::water_bg_from_noise)
     }
 
     fn short_grass_noise_threshold(&self) -> f32 {
@@ -345,47 +334,19 @@ impl NoiseMaps {
     }
 
     pub fn to_short_grass_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::GREEN); (map.width * map.height) as usize];
-        for (pt, (vnoise, wnoise)) in self.grass.iter() {
-            let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = vnoise + 0.3 * wnoise + 0.6;
-            colormap[idx] = colormaps::grass_green_from_noise(colorseed);
-        }
-        colormap
+        self.to_colormap(map, &self.grass, [1.0, 0.3, 0.6], colormaps::grass_green_from_noise)
     }
 
     pub fn to_long_grass_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::DARKGREEN); (map.width * map.height) as usize];
-        for (pt, (vnoise, wnoise)) in self.grass.iter() {
-            let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = vnoise + 0.3 * wnoise;
-            colormap[idx] = colormaps::grass_green_from_noise(colorseed);
-        }
-        colormap
+        self.to_colormap(map, &self.grass, [1.0, 0.3, 0.0], colormaps::grass_green_from_noise)
     }
 
     pub fn to_fire_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::GREEN); (map.width * map.height) as usize];
-        for (pt, (vnoise, wnoise)) in self.fire.iter() {
-            let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = vnoise + 0.3 * wnoise + 0.6;
-            colormap[idx] = colormaps::fire_fg_from_noise(colorseed);
-        }
-        colormap
+        self.to_colormap(map, &self.fire, [1.0, 0.6, 0.3], colormaps::fire_fg_from_noise)
     }
 
     pub fn to_fire_bg_colormap(&self, map: &Map) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::GREEN); (map.width * map.height) as usize];
-        for (pt, (vnoise, wnoise)) in self.fire.iter() {
-            let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = vnoise + 0.6 * wnoise + 0.3;
-            colormap[idx] = colormaps::fire_bg_from_noise(colorseed);
-        }
-        colormap
+        self.to_colormap(map, &self.fire, [1.0, 0.3, 0.6], colormaps::fire_bg_from_noise)
     }
 
     pub fn to_statue_spawn_table(&self, map: &Map) -> Vec<StatueSpawnData> {
@@ -423,7 +384,7 @@ fn grass_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f3
     noisemap
 }
 
-fn fire_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f32, f32))> {
+fn value_white_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f32, f32))> {
     let mut valuenoise = FastNoise::seeded(rng.next_u64());
     valuenoise.set_noise_type(NoiseType::ValueFractal);
     valuenoise.set_frequency(0.5);
