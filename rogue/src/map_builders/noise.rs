@@ -1,5 +1,5 @@
 use rltk::{RandomNumberGenerator, FastNoise, NoiseType, Point, RGB};
-use super::{Map, TileType, color};
+use super::{color, colormaps, Map, TileType};
 
 
 const LARGE_LAKES_SHALLOW_WATER_THRESHOLD: f32 = 0.4;
@@ -20,7 +20,8 @@ pub enum WaterGeometry { None, LargeLakes, SmallLakes }
 impl WaterGeometry {
     pub fn random(rng: &mut RandomNumberGenerator) -> Self {
         match rng.roll_dice(1, 3) {
-            1 => WaterGeometry::None,
+            // 1 => WaterGeometry::None,
+            1 => WaterGeometry::LargeLakes,
             2 => WaterGeometry::LargeLakes,
             3 => WaterGeometry::SmallLakes,
             _ => panic!("Rolled too high on water spawning.")
@@ -234,27 +235,71 @@ impl NoiseMaps {
                 .map(|t| Point::from_tuple(*t))
                 .collect();
         }
-        for (pt, (vnoise, wnoise)) in self.water.iter() {
+        for (pt, (vnoise, _)) in self.water.iter() {
             let idx = map.xy_idx(pt.x, pt.y);
             if map.is_edge_tile(pt.x, pt.y) {continue;}
             if map.tiles[idx] == TileType::DownStairs {continue;}
             if *vnoise > self.deep_water_noise_threshold() || blessing_adjacent_tiles.contains(pt) {
-                let colorseeds = (vnoise + 0.6, 0.7 * vnoise + 0.2 * wnoise + 0.4);
-                let fgcolor = color::water_fg_from_noise(colorseeds.0);
-                let bgcolor = color::water_bg_from_noise(colorseeds.1);
+                // let colorseeds = (vnoise + 0.6, 0.7 * vnoise + 0.2 * wnoise + 0.4);
+                // let fgcolor = colormaps::water_fg_from_noise(colorseeds.0);
+                // let bgcolor = colormaps::water_bg_from_noise(colorseeds.1);
                 water_spawn_table.deep.push(WaterSpawnData {
-                    x: pt.x, y: pt.y, fgcolor: fgcolor, bgcolor: bgcolor
+                    x: pt.x, y: pt.y, fgcolor: RGB::named(rltk::WHITE), bgcolor: RGB::named(rltk::BLUE)
                 })
             } else if *vnoise > self.shallow_water_noise_threshold() {
-                let colorseeds = (vnoise + 0.4, 0.5 * vnoise + 0.1 * wnoise + 0.4);
-                let fgcolor = color::water_fg_from_noise(colorseeds.0);
-                let bgcolor = color::shallow_water_bg_from_noise(colorseeds.1);
+                // let colorseeds = (vnoise + 0.4, 0.5 * vnoise + 0.1 * wnoise + 0.4);
+                // let fgcolor = colormaps::water_fg_from_noise(colorseeds.0);
+                // let bgcolor = colormaps::shallow_water_bg_from_noise(colorseeds.1);
                 water_spawn_table.shallow.push(WaterSpawnData {
-                    x: pt.x, y: pt.y, fgcolor: fgcolor, bgcolor: bgcolor
+                    x: pt.x, y: pt.y, fgcolor: RGB::named(rltk::WHITE), bgcolor: RGB::named(rltk::LIGHTBLUE)
                 })
             }
         }
         water_spawn_table
+    }
+
+    pub fn to_shallow_water_fg_colormap(&self, map: &Map) -> Vec<RGB> {
+        let mut colormap: Vec<RGB> =
+            vec![RGB::named(rltk::WHITE); (map.width * map.height) as usize];
+        for (pt, (vnoise, _)) in self.water.iter() {
+            let idx = map.xy_idx(pt.x, pt.y);
+            let colorseed = vnoise + 0.4;
+            colormap[idx] = colormaps::water_fg_from_noise(colorseed);
+        }
+        colormap
+    }
+
+    pub fn to_shallow_water_bg_colormap(&self, map: &Map) -> Vec<RGB> {
+        let mut colormap: Vec<RGB> =
+            vec![RGB::named(rltk::LIGHTBLUE); (map.width * map.height) as usize];
+        for (pt, (vnoise, wnoise)) in self.water.iter() {
+            let idx = map.xy_idx(pt.x, pt.y);
+            let colorseed = 0.5 * vnoise + 0.1 * wnoise + 0.4;
+            colormap[idx] = colormaps::shallow_water_bg_from_noise(colorseed);
+        }
+        colormap
+    }
+
+    pub fn to_deep_water_fg_colormap(&self, map: &Map) -> Vec<RGB> {
+        let mut colormap: Vec<RGB> =
+            vec![RGB::named(rltk::WHITE); (map.width * map.height) as usize];
+        for (pt, (vnoise, _)) in self.water.iter() {
+            let idx = map.xy_idx(pt.x, pt.y);
+            let colorseed = vnoise + 0.6;
+            colormap[idx] = colormaps::water_fg_from_noise(colorseed);
+        }
+        colormap
+    }
+
+    pub fn to_deep_water_bg_colormap(&self, map: &Map) -> Vec<RGB> {
+        let mut colormap: Vec<RGB> =
+            vec![RGB::named(rltk::DARKBLUE); (map.width * map.height) as usize];
+        for (pt, (vnoise, wnoise)) in self.water.iter() {
+            let idx = map.xy_idx(pt.x, pt.y);
+            let colorseed = 0.7 * vnoise + 0.2 * wnoise + 0.4;
+            colormap[idx] = colormaps::water_bg_from_noise(colorseed);
+        }
+        colormap
     }
 
     fn short_grass_noise_threshold(&self) -> f32 {
@@ -277,22 +322,53 @@ impl NoiseMaps {
             if map.is_edge_tile(pt.x, pt.y) {continue;}
             if map.tiles[idx] == TileType::DownStairs {continue;}
             if *vnoise > self.short_grass_noise_threshold() && map.ok_to_spawn[idx] {
-                let long_grass_noise = match self.grass_geometry {
+                // Distinguish the two noise geometries:
+                //  - Sporadic tall grass spawns when white noise exceeds a
+                //  threshold.
+                //  - Groves of tall grass spawn when the smooth noise exceeds a
+                //  threshold.
+                let long_grass_spawn_noise = match self.grass_geometry {
                     GrassGeometry::SporadicTall => wnoise,
                     _ => vnoise
                 };
-                if *long_grass_noise > self.long_grass_noise_threshold() {
-                    let colorseed = vnoise + 0.3 * wnoise;
-                    let gcolor = color::grass_green_from_noise(colorseed);
-                    grass_spawn_table.long.push(GrassSpawnData {x: pt.x, y: pt.y, fgcolor: gcolor})
+                if *long_grass_spawn_noise > self.long_grass_noise_threshold() {
+                    // let colorseed = vnoise + 0.3 * wnoise;
+                    // let gcolor = colormaps::grass_green_from_noise(colorseed);
+                    grass_spawn_table.long.push(
+                        GrassSpawnData {x: pt.x, y: pt.y, fgcolor: RGB::named(rltk::GREEN)}
+                    )
                 } else {
-                    let colorseed = vnoise + 0.3 * wnoise + 0.6;
-                    let gcolor = color::grass_green_from_noise(colorseed);
-                    grass_spawn_table.short.push(GrassSpawnData {x: pt.x, y: pt.y, fgcolor: gcolor})
+                    // let colorseed = vnoise + 0.3 * wnoise + 0.6;
+                    // let gcolor = colormaps::grass_green_from_noise(colorseed);
+                    grass_spawn_table.short.push(
+                        GrassSpawnData {x: pt.x, y: pt.y, fgcolor: RGB::named(rltk::GREEN)}
+                    )
                 }
             }
         }
         grass_spawn_table
+    }
+
+    pub fn to_short_grass_fg_colormap(&self, map: &Map) -> Vec<RGB> {
+        let mut colormap: Vec<RGB> =
+            vec![RGB::named(rltk::GREEN); (map.width * map.height) as usize];
+        for (pt, (vnoise, wnoise)) in self.grass.iter() {
+            let idx = map.xy_idx(pt.x, pt.y);
+            let colorseed = vnoise + 0.3 * wnoise + 0.6;
+            colormap[idx] = colormaps::grass_green_from_noise(colorseed);
+        }
+        colormap
+    }
+
+    pub fn to_long_grass_fg_colormap(&self, map: &Map) -> Vec<RGB> {
+        let mut colormap: Vec<RGB> =
+            vec![RGB::named(rltk::DARKGREEN); (map.width * map.height) as usize];
+        for (pt, (vnoise, wnoise)) in self.grass.iter() {
+            let idx = map.xy_idx(pt.x, pt.y);
+            let colorseed = vnoise + 0.3 * wnoise;
+            colormap[idx] = colormaps::grass_green_from_noise(colorseed);
+        }
+        colormap
     }
 
     pub fn to_statue_spawn_table(&self, map: &Map) -> Vec<StatueSpawnData> {

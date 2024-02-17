@@ -2,9 +2,11 @@ use std::collections::HashMap;
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
 
-use super::{carve_out_water_spawn_table, enumerate_connected_components, fill_all_but_largest_component, GrassSpawnTable, MapBuilder, StatueSpawnData, WaterSpawnTable};
 use super::{
-    Map, Point, TileType, NoiseMaps,entity_spawners, terrain_spawners, get_stairs_position,
+    Map, Point, TileType, NoiseMaps,entity_spawners, terrain_spawners,
+    get_stairs_position, carve_out_water_spawn_table,
+    enumerate_connected_components, fill_all_but_largest_component,
+    GrassSpawnTable, MapBuilder, StatueSpawnData, WaterSpawnTable, ColorMaps,
     DEBUG_VISUALIZE_MAPGEN
 };
 
@@ -43,7 +45,7 @@ impl MapBuilder for CellularAutomataBuilder {
         self.history.clone()
     }
 
-    fn build_map(&mut self) -> NoiseMaps {
+    fn build_map(&mut self) -> (NoiseMaps, ColorMaps) {
         let mut rng = RandomNumberGenerator::new();
         self.ititialize(&mut rng);
         self.take_snapshot();
@@ -86,7 +88,8 @@ impl MapBuilder for CellularAutomataBuilder {
         self.map.synchronize_opaque();
         self.map.synchronize_ok_to_spawn();
 
-        noisemaps
+        let colormaps = ColorMaps::from_noisemap(&noisemaps, &self.map);
+        (noisemaps, colormaps)
     }
 
     fn spawn_blessing_tile(&mut self, ecs: &mut World) {
