@@ -122,8 +122,8 @@ pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
 // map.chill array.
 const CHILL_ENCROACHMENT_DAMAGE: i32 = 2;
 const CHILL_FROZEN_TURNS: i32 = 4;
-const CHILL_SPAWN_DISSIPATE_CHANCE_CHANGE: i32 = 20;
-const CHILL_SPAWN_SPREAD_CHANCE_CHANGE: i32 = 20;
+const CHILL_SPAWN_DISSIPATE_CHANCE_CHANGE: i32 = 10;
+const CHILL_SPAWN_SPREAD_CHANCE_CHANGE: i32 = 10;
 
 pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
     let can_spawn: bool;
@@ -144,6 +144,8 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
                 order: 2,
                 visible_out_of_fov: false
             })
+            .with(UseFgColorMap {cmap: FgColorMap::Chill})
+            .with(UseBgColorMap {cmap: BgColorMap::Chill})
             .with(SetsBgColor {order: 0})
             .with(Name {name: "Chill".to_string()})
             .with(Hazard {})

@@ -197,6 +197,23 @@ impl NoiseMaps {
         }
     }
 
+    pub fn to_colormap(
+        &self,
+        map: &Map,
+        noise: &Vec<(Point, (f32, f32))>,
+        coefs: [f32; 3],
+        color_from_noise: fn(f32) -> RGB
+    ) -> Vec<RGB> {
+        let mut colormap: Vec<RGB> =
+            vec![RGB::named(rltk::WHITE); (map.width * map.height) as usize];
+        for (pt, (vnoise, wnoise)) in noise.iter() {
+            let idx = map.xy_idx(pt.x, pt.y);
+            let colorseed = vnoise * coefs[0] + wnoise * coefs[1] + coefs[2];
+            colormap[idx] = color_from_noise(colorseed);
+        }
+        colormap
+    }
+
     pub fn general_monster_spawn_position_buffer(&self) -> Vec<Point> {
         let mut buffer = self.spawning.clone();
         buffer.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
@@ -255,23 +272,6 @@ impl NoiseMaps {
             }
         }
         water_spawn_table
-    }
-
-    pub fn to_colormap(
-        &self,
-        map: &Map,
-        noise: &Vec<(Point, (f32, f32))>,
-        coefs: [f32; 3],
-        color_from_noise: fn(f32) -> RGB
-    ) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::WHITE); (map.width * map.height) as usize];
-        for (pt, (vnoise, wnoise)) in noise.iter() {
-            let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = vnoise * coefs[0] + wnoise * coefs[1] + coefs[2];
-            colormap[idx] = color_from_noise(colorseed);
-        }
-        colormap
     }
 
     pub fn to_shallow_water_fg_colormap(&self, map: &Map) -> Vec<RGB> {
@@ -347,6 +347,14 @@ impl NoiseMaps {
 
     pub fn to_fire_bg_colormap(&self, map: &Map) -> Vec<RGB> {
         self.to_colormap(map, &self.fire, [1.0, 0.3, 0.6], colormaps::fire_bg_from_noise)
+    }
+
+    pub fn to_chill_fg_colormap(&self, map: &Map) -> Vec<RGB> {
+        self.to_colormap(map, &self.fire, [1.0, 0.0, 0.6], colormaps::chill_fg_from_noise)
+    }
+
+    pub fn to_chill_bg_colormap(&self, map: &Map) -> Vec<RGB> {
+        self.to_colormap(map, &self.fire, [0.5, 1.0, 0.3], colormaps::chill_bg_from_noise)
     }
 
     pub fn to_statue_spawn_table(&self, map: &Map) -> Vec<StatueSpawnData> {

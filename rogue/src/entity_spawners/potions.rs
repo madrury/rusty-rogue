@@ -169,11 +169,11 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
 //   - If Thrown: Deals AOE chill damage, and spawns chill entities within the AOE.
 //----------------------------------------------------------------------------
 const CHILL_POTION_AOE_RADIUS: f32 = 2.5;
-const CHILL_POTION_SPAWN_RADIUS: i32 = 1;
+const CHILL_POTION_SPAWN_RADIUS: i32 = 2;
 const CHILL_POTION_DAMAGE: i32 = 10;
 const CHILL_POTION_FREEZING_TURNS: i32 = 5;
-const CHILL_POTION_SPAWN_SPREAD_CHANCE: i32 = 30;
-const CHILL_POTION_SPAWN_DISSIPATE_CHANCE: i32 = 60;
+const CHILL_POTION_SPAWN_SPREAD_CHANCE: i32 = 60;
+const CHILL_POTION_SPAWN_DISSIPATE_CHANCE: i32 = 30;
 const CHILL_POTION_IMMUNITY_TURNS: i32 = 50;
 
 pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {

@@ -1,16 +1,16 @@
-use rltk::{BLUE, DARKGREEN, GREEN, MEDIUMBLUE, ORANGE, RED, RGB, SANDY_BROWN, WHITE, YELLOW};
+use rltk::{BLUE, DARKGREEN, GREEN, LIGHTBLUE, MEDIUMBLUE, ORANGE, RED, RGB, SANDY_BROWN, SILVER, SKYBLUE, SLATEBLUE, WHITE, YELLOW};
 use serde::{Serialize, Deserialize};
 
 use super::{NoiseMaps, Map};
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum FgColorMap {
-    None, ShortGrass, LongGrass, ShallowWater, DeepWater, Fire
+    None, ShortGrass, LongGrass, ShallowWater, DeepWater, Fire, Chill
 }
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum BgColorMap {
-    None, ShallowWater, DeepWater, Fire
+    None, ShallowWater, DeepWater, Fire, Chill
 }
 
 pub struct ColorMaps {
@@ -22,6 +22,8 @@ pub struct ColorMaps {
     deep_water_bg: Vec<RGB>,
     fire_fg: Vec<RGB>,
     fire_bg: Vec<RGB>,
+    chill_fg: Vec<RGB>,
+    chill_bg: Vec<RGB>,
 }
 impl ColorMaps {
     pub fn from_noisemap(nm: &NoiseMaps, map: &Map) -> Self {
@@ -34,6 +36,8 @@ impl ColorMaps {
             deep_water_bg: nm.to_deep_water_bg_colormap(map),
             fire_fg: nm.to_fire_fg_colormap(map),
             fire_bg: nm.to_fire_bg_colormap(map),
+            chill_fg: nm.to_chill_fg_colormap(map),
+            chill_bg: nm.to_chill_bg_colormap(map),
         }
     }
 
@@ -44,6 +48,7 @@ impl ColorMaps {
             FgColorMap::ShallowWater => self.shallow_water_fg[idx],
             FgColorMap::DeepWater => self.deep_water_fg[idx],
             FgColorMap::Fire => self.fire_fg[idx],
+            FgColorMap::Chill => self.chill_fg[idx],
             // This should never be reached. We pick a color that likely makes
             // it obvious.
             FgColorMap::None => RGB::named(rltk::HOTPINK)
@@ -55,6 +60,7 @@ impl ColorMaps {
             BgColorMap::ShallowWater => self.shallow_water_bg[idx],
             BgColorMap::DeepWater => self.deep_water_bg[idx],
             BgColorMap::Fire => self.fire_bg[idx],
+            BgColorMap::Chill => self.chill_bg[idx],
             // This should never be reached. We pick a color that likely makes
             // it obvious.
             BgColorMap::None => RGB::named(rltk::HOTPINK)
@@ -107,5 +113,21 @@ pub fn fire_bg_from_noise(f: f32) -> RGB {
         (f * (ORANGE.0 as f32)) as u8 + ((1.0 - f) * (RED.0 as f32)) as u8,
         (f * (ORANGE.1 as f32)) as u8 + ((1.0 - f) * (RED.1 as f32)) as u8,
         (f * (ORANGE.2 as f32)) as u8 + ((1.0 - f) * (RED.2 as f32)) as u8
+    )
+}
+
+pub fn chill_fg_from_noise(f: f32) -> RGB {
+    RGB::from_u8(
+        (f * (WHITE.0 as f32)) as u8 + ((1.0 - f) * (SILVER.0 as f32)) as u8,
+        (f * (WHITE.1 as f32)) as u8 + ((1.0 - f) * (SILVER.1 as f32)) as u8,
+        (f * (WHITE.2 as f32)) as u8 + ((1.0 - f) * (SILVER.2 as f32)) as u8
+    )
+}
+
+pub fn chill_bg_from_noise(f: f32) -> RGB {
+    RGB::from_u8(
+        (f * (LIGHTBLUE.0 as f32)) as u8 + ((1.0 - f) * (WHITE.0 as f32)) as u8,
+        (f * (LIGHTBLUE.1 as f32)) as u8 + ((1.0 - f) * (WHITE.1 as f32)) as u8,
+        (f * (LIGHTBLUE.2 as f32)) as u8 + ((1.0 - f) * (WHITE.2 as f32)) as u8
     )
 }
