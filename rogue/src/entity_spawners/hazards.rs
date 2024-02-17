@@ -8,7 +8,7 @@ use super::{
     ChanceToSpawnAdjacentEntity, ChanceToDissipate,
     ChanceToInflictBurningOnAdjacentEntities,
     SkipRandomDissipationForOneTurn, SimpleMarker, SerializeMe,
-    MarkedBuilder, ElementalDamageKind
+    MarkedBuilder, ElementalDamageKind, FgColorMap, BgColorMap, UseFgColorMap, UseBgColorMap
 };
 use rltk::RGB;
 use specs::prelude::*;
@@ -45,6 +45,8 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
                 order: 2,
                 visible_out_of_fov: false
             })
+            .with(UseFgColorMap {cmap: FgColorMap::Fire})
+            .with(UseBgColorMap {cmap: BgColorMap::Fire})
             .with(SetsBgColor {order: 1})
             .with(Name {name: "Fire".to_string()})
             .with(Hazard {})
