@@ -1,4 +1,7 @@
-use rltk::{BLUE, DARKGREEN, GREEN, LIGHTBLUE, LIGHT_GREY, MEDIUMBLUE, ORANGE, RED, RGB, SANDY_BROWN, SILVER, SKYBLUE, SLATEBLUE, WHITE, YELLOW};
+use rltk::{
+    RGB, BLUE, DARKGREEN, GREEN, LIGHTBLUE, LIGHT_GREY, MEDIUMBLUE, ORANGE, RED,
+    SANDY_BROWN, SILVER, WHITE, YELLOW
+};
 use serde::{Serialize, Deserialize};
 
 use super::{NoiseMaps, Map};
@@ -28,16 +31,26 @@ pub struct ColorMaps {
 impl ColorMaps {
     pub fn from_noisemap(nm: &NoiseMaps, map: &Map) -> Self {
         return ColorMaps {
-            short_grass_fg: nm.to_short_grass_fg_colormap(map),
-            long_grass_fg: nm.to_long_grass_fg_colormap(map),
-            shallow_water_fg: nm.to_shallow_water_fg_colormap(map),
-            shallow_water_bg: nm.to_shallow_water_bg_colormap(map),
-            deep_water_fg: nm.to_deep_water_fg_colormap(map),
-            deep_water_bg: nm.to_deep_water_bg_colormap(map),
-            fire_fg: nm.to_fire_fg_colormap(map),
-            fire_bg: nm.to_fire_bg_colormap(map),
-            chill_fg: nm.to_chill_fg_colormap(map),
-            chill_bg: nm.to_chill_bg_colormap(map),
+            short_grass_fg: nm.to_short_grass_fg_colormap(map)
+                .into_iter().map(grass_green_from_noise).collect(),
+            long_grass_fg: nm.to_long_grass_fg_colormap(map)
+                .into_iter().map(grass_green_from_noise).collect(),
+            shallow_water_fg: nm.to_shallow_water_fg_colormap(map)
+                .into_iter().map(water_fg_from_noise).collect(),
+            shallow_water_bg: nm.to_shallow_water_bg_colormap(map)
+                .into_iter().map(shallow_water_bg_from_noise).collect(),
+            deep_water_fg: nm.to_deep_water_fg_colormap(map)
+                .into_iter().map(water_fg_from_noise).collect(),
+            deep_water_bg: nm.to_deep_water_bg_colormap(map)
+                .into_iter().map(water_bg_from_noise).collect(),
+            fire_fg: nm.to_fire_fg_colormap(map)
+                .into_iter().map(fire_fg_from_noise).collect(),
+            fire_bg: nm.to_fire_bg_colormap(map)
+                .into_iter().map(fire_bg_from_noise).collect(),
+            chill_fg: nm.to_chill_fg_colormap(map)
+                .into_iter().map(chill_fg_from_noise).collect(),
+            chill_bg: nm.to_chill_bg_colormap(map)
+                .into_iter().map(chill_bg_from_noise).collect(),
         }
     }
 

@@ -126,10 +126,11 @@ pub struct StatueSpawnData {
 pub struct NoiseMaps {
     // Noisemap for sampling monster spawn positions.
     // Spawn locations are determined by sorting this vector by noise value, and
-    // poping off the points with the largest noise values. The noise value is a
-    // sum of smooth and white noise, the smooth allows them to cluster and the
-    // white noise breaks up the clusters a little.
-    spawning: Vec<(Point, f32)>,
+    // poping off the points with the largest noise values. The noise used for
+    // monster spawning is a sum of sthe mooth and white noise, the smooth
+    // allows them to cluster and the white noise breaks up the clusters a
+    // little.
+    spawning: Vec<(Point, (f32, f32))>,
     // The geometric structure of grass spawned on the map.
     pub grass_geometry: GrassGeometry,
     // Noisemap for sampling grass spawn positions and colorization.
@@ -152,15 +153,13 @@ pub struct NoiseMaps {
     // The noise value is a pair (smooth, white) noise. Color is determined by
     // a linear combination of the two components.
     fire: Vec<(Point, (f32, f32))>,
+    chill: Vec<(Point, (f32, f32))>,
     // The geometric structure of statues spawned on the map.
     pub statue_geometry: StatueGeometry,
     // Noisemap for sampling statue spawn locations.
-    // The noise value is a pair (smooth, white) noise. Water spawn positions
-    // are determined by thresholding the smooth component, a larger threshold
-    // produces deep water, and slighly lesser threshold produces shallower;
-    // this tends to produce pools of deep water ringed by shallow. Colorization
-    // is determined as a linear combination of the two components.
-    statue: Vec<(Point, f32)>,
+    // The noise value is a pair (smooth, white) noise.
+    // ...
+    statue: Vec<(Point, (f32, f32))>,
     // The possition of the blessing tile.
     pub blessing: Option<Point>,
 }
@@ -189,34 +188,40 @@ impl NoiseMaps {
             statue_geometry: statuegeom,
             blessing: blessingpt,
             // Sample the noisemaps.
-            spawning: monster_spawn_noisemap(rng, map),
-            grass: grass_noisemap(rng, map),
-            water: water_noisemap(rng, map, watervfreq),
-            fire: value_white_noisemap(rng, map),
-            statue: statue_noisemap(rng, map),
+            grass: value_white_noisemap(rng, map, 0.1, 0.1),
+            water: value_white_noisemap(rng, map, watervfreq, 0.7),
+            fire: value_white_noisemap(rng, map, 0.25, 0.5),
+            chill: value_white_noisemap(rng, map, 0.25, 0.5),
+            // Only white noise component is used for sampling statue locations.
+            statue: value_white_noisemap(rng, map, 0.5, 0.5),
+            // The sum of the value and white noise component is used for
+            // monster spawning locations.
+            spawning: value_white_noisemap(rng, map, 0.25, 0.5),
         }
     }
 
-    pub fn to_colormap(
+    pub fn to_color_noise(
         &self,
         map: &Map,
         noise: &Vec<(Point, (f32, f32))>,
         coefs: [f32; 3],
-        color_from_noise: fn(f32) -> RGB
-    ) -> Vec<RGB> {
-        let mut colormap: Vec<RGB> =
-            vec![RGB::named(rltk::WHITE); (map.width * map.height) as usize];
+        // color_from_noise: fn(f32) -> RGB
+    ) -> Vec<f32> {
+        let mut colormap: Vec<f32> =
+            vec![0.0; (map.width * map.height) as usize];
         for (pt, (vnoise, wnoise)) in noise.iter() {
             let idx = map.xy_idx(pt.x, pt.y);
-            let colorseed = vnoise * coefs[0] + wnoise * coefs[1] + coefs[2];
-            colormap[idx] = color_from_noise(colorseed);
+            colormap[idx] = vnoise * coefs[0] + wnoise * coefs[1] + coefs[2];
+            // colormap[idx] = color_from_noise(colorseed);
         }
         colormap
     }
 
     pub fn general_monster_spawn_position_buffer(&self) -> Vec<Point> {
-        let mut buffer = self.spawning.clone();
-        buffer.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        let buffer = self.spawning.clone();
+        let mut mappedbuffer = buffer.iter().map(|(pt, (v, w))| (*pt, v + w))
+            .collect::<Vec<(Point, f32)>>();
+        mappedbuffer.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
         buffer.iter().map(|(pt, _)| *pt).collect()
     }
 
@@ -274,20 +279,20 @@ impl NoiseMaps {
         water_spawn_table
     }
 
-    pub fn to_shallow_water_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.water, [1.0, 0.0, 0.4], colormaps::water_fg_from_noise)
+    pub fn to_shallow_water_fg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.water, [1.0, 0.0, 0.4])//, colormaps::water_fg_from_noise)
     }
 
-    pub fn to_shallow_water_bg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.water, [0.5, 0.1, 0.4], colormaps::shallow_water_bg_from_noise)
+    pub fn to_shallow_water_bg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.water, [0.5, 0.1, 0.4])//, colormaps::shallow_water_bg_from_noise)
     }
 
-    pub fn to_deep_water_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.water, [1.0, 0.0, 0.6], colormaps::water_fg_from_noise)
+    pub fn to_deep_water_fg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.water, [1.0, 0.0, 0.6])//, colormaps::water_fg_from_noise)
     }
 
-    pub fn to_deep_water_bg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.water, [0.7, 0.2, 0.4], colormaps::water_bg_from_noise)
+    pub fn to_deep_water_bg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.water, [0.7, 0.2, 0.4])//, colormaps::water_bg_from_noise)
     }
 
     fn short_grass_noise_threshold(&self) -> f32 {
@@ -333,33 +338,33 @@ impl NoiseMaps {
         grass_spawn_table
     }
 
-    pub fn to_short_grass_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.grass, [1.0, 0.3, 0.6], colormaps::grass_green_from_noise)
+    pub fn to_short_grass_fg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.grass, [1.0, 0.3, 0.6])//, colormaps::grass_green_from_noise)
     }
 
-    pub fn to_long_grass_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.grass, [1.0, 0.3, 0.0], colormaps::grass_green_from_noise)
+    pub fn to_long_grass_fg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.grass, [1.0, 0.3, 0.0])//, colormaps::grass_green_from_noise)
     }
 
-    pub fn to_fire_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.fire, [1.0, 0.6, 0.3], colormaps::fire_fg_from_noise)
+    pub fn to_fire_fg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.fire, [1.0, 0.6, 0.3])//, colormaps::fire_fg_from_noise)
     }
 
-    pub fn to_fire_bg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.fire, [1.0, 0.3, 0.6], colormaps::fire_bg_from_noise)
+    pub fn to_fire_bg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.fire, [1.0, 0.3, 0.6])//, colormaps::fire_bg_from_noise)
     }
 
-    pub fn to_chill_fg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.fire, [1.0, 0.0, 0.6], colormaps::chill_fg_from_noise)
+    pub fn to_chill_fg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.chill, [1.0, 0.0, 0.6])//, colormaps::chill_fg_from_noise)
     }
 
-    pub fn to_chill_bg_colormap(&self, map: &Map) -> Vec<RGB> {
-        self.to_colormap(map, &self.fire, [0.5, 1.0, 0.3], colormaps::chill_bg_from_noise)
+    pub fn to_chill_bg_colormap(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.chill, [0.5, 1.0, 0.3])//, colormaps::chill_bg_from_noise)
     }
 
     pub fn to_statue_spawn_table(&self, map: &Map) -> Vec<StatueSpawnData> {
         let mut statue_spawn_table = Vec::<StatueSpawnData>::new();
-        for (pt, wnoise) in self.statue.iter() {
+        for (pt, (_, wnoise)) in self.statue.iter() {
             let idx = map.xy_idx(pt.x, pt.y);
             if map.is_edge_tile(pt.x, pt.y) {continue;}
             if map.tiles[idx] == TileType::DownStairs {continue;}
@@ -372,54 +377,20 @@ impl NoiseMaps {
 }
 
 
-fn grass_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f32, f32))> {
-    let mut valuenoise = FastNoise::seeded(rng.next_u64());
-    valuenoise.set_noise_type(NoiseType::ValueFractal);
-    valuenoise.set_frequency(0.1);
 
-    let mut whitenoise = FastNoise::seeded(rng.next_u64());
-    whitenoise.set_noise_type(NoiseType::WhiteNoise);
-    whitenoise.set_frequency(0.1);
-
-    let mut noisemap: Vec<(Point, (f32, f32))> = Vec::new();
-    for y in 0..map.height {
-        for x in 0..map.width {
-            let vn = valuenoise.get_noise(x as f32, y as f32);
-            let wn = whitenoise.get_noise(x as f32, y as f32);
-            noisemap.push((Point {x, y}, (vn, wn)))
-        }
-    }
-    noisemap
-}
-
-fn value_white_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f32, f32))> {
-    let mut valuenoise = FastNoise::seeded(rng.next_u64());
-    valuenoise.set_noise_type(NoiseType::ValueFractal);
-    valuenoise.set_frequency(0.5);
-
-    let mut whitenoise = FastNoise::seeded(rng.next_u64());
-    whitenoise.set_noise_type(NoiseType::WhiteNoise);
-    whitenoise.set_frequency(5.0);
-
-    let mut noisemap: Vec<(Point, (f32, f32))> = Vec::new();
-    for y in 0..map.height {
-        for x in 0..map.width {
-            let vn = valuenoise.get_noise(x as f32, y as f32);
-            let wn = whitenoise.get_noise(x as f32, y as f32);
-            noisemap.push((Point {x, y}, (vn, wn)))
-        }
-    }
-    noisemap
-}
-
-fn water_noisemap(rng: &mut RandomNumberGenerator, map: &Map, vfreq: f32) -> Vec<(Point, (f32, f32))> {
+fn value_white_noisemap(
+    rng: &mut RandomNumberGenerator,
+    map: &Map,
+    vfreq: f32,
+    wfreq: f32
+) -> Vec<(Point, (f32, f32))> {
     let mut valuenoise = FastNoise::seeded(rng.next_u64());
     valuenoise.set_noise_type(NoiseType::Value);
     valuenoise.set_frequency(vfreq);
 
     let mut whitenoise = FastNoise::seeded(rng.next_u64());
     whitenoise.set_noise_type(NoiseType::WhiteNoise);
-    whitenoise.set_frequency(0.7);
+    whitenoise.set_frequency(wfreq);
 
     let mut noisemap: Vec<(Point, (f32, f32))> = Vec::new();
     for y in 0..map.height {
@@ -432,37 +403,78 @@ fn water_noisemap(rng: &mut RandomNumberGenerator, map: &Map, vfreq: f32) -> Vec
     noisemap
 }
 
-fn statue_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, f32)> {
-    let mut whitenoise = FastNoise::seeded(rng.next_u64());
-    whitenoise.set_noise_type(NoiseType::WhiteNoise);
-    whitenoise.set_frequency(0.5);
+// fn grass_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f32, f32))> {
+//     let mut valuenoise = FastNoise::seeded(rng.next_u64());
+//     valuenoise.set_noise_type(NoiseType::ValueFractal);
+//     valuenoise.set_frequency(0.1);
 
-    let mut noisemap: Vec<(Point, f32)> = Vec::new();
-    for y in 0..map.height {
-        for x in 0..map.width {
-            let wn = whitenoise.get_noise(x as f32, y as f32);
-            noisemap.push((Point {x, y}, wn));
-        }
-    }
-    noisemap
-}
+//     let mut whitenoise = FastNoise::seeded(rng.next_u64());
+//     whitenoise.set_noise_type(NoiseType::WhiteNoise);
+//     whitenoise.set_frequency(0.1);
 
-fn monster_spawn_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec::<(Point, f32)> {
-    let mut valuenoise = FastNoise::seeded(rng.next_u64());
-    valuenoise.set_noise_type(NoiseType::Value);
-    valuenoise.set_frequency(0.25);
+//     let mut noisemap: Vec<(Point, (f32, f32))> = Vec::new();
+//     for y in 0..map.height {
+//         for x in 0..map.width {
+//             let vn = valuenoise.get_noise(x as f32, y as f32);
+//             let wn = whitenoise.get_noise(x as f32, y as f32);
+//             noisemap.push((Point {x, y}, (vn, wn)))
+//         }
+//     }
+//     noisemap
+// }
 
-    let mut whitenoise = FastNoise::seeded(rng.next_u64());
-    whitenoise.set_noise_type(NoiseType::WhiteNoise);
-    whitenoise.set_frequency(0.5);
 
-    let mut noisemap: Vec::<(Point, f32)> = Vec::new();
-    for y in 0..map.height {
-        for x in 0..map.width {
-            let wn = whitenoise.get_noise(x as f32, y as f32);
-            let vn = valuenoise.get_noise(x as f32, y as f32);
-            noisemap.push((Point {x, y}, wn + vn));
-        }
-    }
-    noisemap
-}
+// fn water_noisemap(rng: &mut RandomNumberGenerator, map: &Map, vfreq: f32) -> Vec<(Point, (f32, f32))> {
+//     let mut valuenoise = FastNoise::seeded(rng.next_u64());
+//     valuenoise.set_noise_type(NoiseType::Value);
+//     valuenoise.set_frequency(vfreq);
+
+//     let mut whitenoise = FastNoise::seeded(rng.next_u64());
+//     whitenoise.set_noise_type(NoiseType::WhiteNoise);
+//     whitenoise.set_frequency(0.7);
+
+//     let mut noisemap: Vec<(Point, (f32, f32))> = Vec::new();
+//     for y in 0..map.height {
+//         for x in 0..map.width {
+//             let vn = valuenoise.get_noise(x as f32, y as f32);
+//             let wn = whitenoise.get_noise(x as f32, y as f32);
+//             noisemap.push((Point {x, y}, (vn, wn)))
+//         }
+//     }
+//     noisemap
+// }
+
+// fn statue_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, f32)> {
+//     let mut whitenoise = FastNoise::seeded(rng.next_u64());
+//     whitenoise.set_noise_type(NoiseType::WhiteNoise);
+//     whitenoise.set_frequency(0.5);
+
+//     let mut noisemap: Vec<(Point, f32)> = Vec::new();
+//     for y in 0..map.height {
+//         for x in 0..map.width {
+//             let wn = whitenoise.get_noise(x as f32, y as f32);
+//             noisemap.push((Point {x, y}, wn));
+//         }
+//     }
+//     noisemap
+// }
+
+// fn monster_spawn_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec::<(Point, f32)> {
+//     let mut valuenoise = FastNoise::seeded(rng.next_u64());
+//     valuenoise.set_noise_type(NoiseType::Value);
+//     valuenoise.set_frequency(0.25);
+
+//     let mut whitenoise = FastNoise::seeded(rng.next_u64());
+//     whitenoise.set_noise_type(NoiseType::WhiteNoise);
+//     whitenoise.set_frequency(0.5);
+
+//     let mut noisemap: Vec::<(Point, f32)> = Vec::new();
+//     for y in 0..map.height {
+//         for x in 0..map.width {
+//             let wn = whitenoise.get_noise(x as f32, y as f32);
+//             let vn = valuenoise.get_noise(x as f32, y as f32);
+//             noisemap.push((Point {x, y}, wn + vn));
+//         }
+//     }
+//     noisemap
+// }
