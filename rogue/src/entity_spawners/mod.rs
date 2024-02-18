@@ -94,6 +94,7 @@ enum ItemType {
     FirePotion,
     FreezingPotion,
     Dagger,
+    Sword,
     LeatherArmor,
     MagicMissileScroll,
     BlinkScroll,
@@ -117,6 +118,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::FirePotion, depth)
             .insert(ItemType::FreezingPotion, depth)
             .insert(ItemType::Dagger, 1 + depth)
+            .insert(ItemType::Sword, 1 + depth)
             .insert(ItemType::LeatherArmor, 1 + depth)
             .insert(ItemType::MagicMissileScroll, 1 + depth)
             .insert(ItemType::BlinkScroll, depth)
@@ -136,6 +138,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::FirePotion) => potions::fire(ecs, x, y),
         Some(ItemType::FreezingPotion) => potions::freezing(ecs, x, y),
         Some(ItemType::Dagger) => equipment::dagger(ecs, x, y),
+        Some(ItemType::Sword) => equipment::sword(ecs, x, y),
         Some(ItemType::LeatherArmor) => equipment::leather_armor(ecs, x, y),
         Some(ItemType::MagicMissileScroll) => spells::magic_missile(ecs, x, y, 10, 5),
         Some(ItemType::BlinkScroll) => spells::blink(ecs, x, y),

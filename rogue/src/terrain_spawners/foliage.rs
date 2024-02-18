@@ -1,9 +1,9 @@
 use crate::{DissipateWhenTrampledUpon, IsEntityKind, SpawnEntityWhenTrampledUpon, UseFgColorMap};
 
 use super::{
-    Map, Position, Renderable, Name, SimpleMarker, SerializeMe, MarkedBuilder,
-    DissipateWhenBurning, ChanceToSpawnEntityWhenBurning, EntitySpawnKind,
-    StatusIsImmuneToChill, Hazard, UseFgColorMapWhenBloodied, Opaque
+    Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
+    MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
+    EntitySpawnKind, StatusIsImmuneToChill, Hazard, Opaque, UseFgColorMapWhenBloodied
 };
 use crate::map_builders::{GrassSpawnTable, FgColorMap};
 use rltk::RGB;

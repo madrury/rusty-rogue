@@ -1,7 +1,6 @@
 use super::{
     Map, Position, Renderable, BlocksTile, SetsBgColor, Name, SimpleMarker,
     SerializeMe, MarkedBuilder, DissipateWhenBurning,
-    DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     ChanceToSpawnEntityWhenBurning, RemoveBurningWhenEncroachedUpon,
     DissipateFireWhenEncroachedUpon, RemoveBurningOnUpkeep, EntitySpawnKind,
     StatusIsImmuneToChill, StatusIsImmuneToFire, IsEntityKind, Hazard, Opaque,

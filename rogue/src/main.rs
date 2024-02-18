@@ -1131,12 +1131,14 @@ fn main() -> rltk::BError {
     gs.ecs.insert(Map::new(1));
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     gs.ecs.insert(GameLog::new());
+
     // Buffers for accumulating requests for ECS changes throughout a turn.
     // Think like it's a database, we queue operations, then commit the changes
-    // all at once.
+    // in batch.
     gs.ecs.insert(AnimationRequestBuffer::new());
     gs.ecs.insert(ParticleRequestBuffer::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
+    gs.ecs.insert(MeeleAttackRequestBuffer::new());
 
     // Create the player entity. Note that we're not computing the correct
     // position to place the player here, since that needs to happen after we've
