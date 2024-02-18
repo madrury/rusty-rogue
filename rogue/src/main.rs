@@ -48,8 +48,8 @@ mod targeted_effect_system;
 use targeted_effect_system::*;
 mod untargeted_effect_system;
 use untargeted_effect_system::*;
-mod map_indexing_system;
-use map_indexing_system::*;
+mod synchronization_systems;
+use synchronization_systems::*;
 mod particle_system;
 use particle_system::*;
 mod animation_system;
@@ -76,8 +76,8 @@ use gamelog::GameLog;
 //--------------------------------------------------------------------
 // Debug flags.
 //--------------------------------------------------------------------
-const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_DRAW_ALL_MAP: bool = true;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
@@ -298,9 +298,11 @@ impl State {
         }
     }
 
-    fn run_map_indexing_system(&mut self) {
-        let mut mis = MapIndexingSystem{};
-        mis.run_now(&self.ecs);
+    fn run_synchronization_systems(&mut self) {
+        let mut mss = MapSynchronizationSystem{};
+        mss.run_now(&self.ecs);
+        let mut css = ColorSynchronizationSystem{};
+        css.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
@@ -718,7 +720,7 @@ impl GameState for State {
             }
             RunState::PreGame => {
                 self.run_pregame_systems();
-                self.run_map_indexing_system();
+                self.run_synchronization_systems();
                 newrunstate = RunState::HazardTurn;
             }
             RunState::AwaitingInput => {
@@ -729,7 +731,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                    self.run_map_indexing_system();
+                    self.run_synchronization_systems();
                     let next_state = self.next_state
                         .expect("Returning from animation, but no next_state to return to.");
                     newrunstate = next_state;
@@ -742,7 +744,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                    self.run_map_indexing_system();
+                    self.run_synchronization_systems();
                     newrunstate = RunState::MonsterTurn;
                 }
             }
@@ -761,7 +763,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                    self.run_map_indexing_system();
+                    self.run_synchronization_systems();
                     newrunstate = nextstate;
                 }
             }
@@ -772,13 +774,13 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                    self.run_map_indexing_system();
+                    self.run_synchronization_systems();
                     newrunstate = RunState::UpkeepTrun
                 }
             }
             RunState::UpkeepTrun => {
                 self.run_upkeep_turn_systems();
-                self.run_map_indexing_system();
+                self.run_synchronization_systems();
                 newrunstate = RunState::HazardTurn;
             }
             RunState::ShowBlessingSelectionMenu => {
@@ -1012,6 +1014,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<UseFgColorMap>();
+    gs.ecs.register::<UseFgColorMapWhenBloodied>();
     gs.ecs.register::<UseBgColorMap>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<SetsBgColor>();
@@ -1024,6 +1027,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<Opaque>();
     gs.ecs.register::<Tramples>();
+    gs.ecs.register::<Bloodied>();
     gs.ecs.register::<Equippable>();
     gs.ecs.register::<Castable>();
     gs.ecs.register::<Targeted>();

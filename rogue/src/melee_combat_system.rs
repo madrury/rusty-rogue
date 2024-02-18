@@ -4,7 +4,7 @@ use super::{
     GameLog, Renderable, Position, AnimationRequestBuffer, AnimationRequest,
     Equipped, GrantsMeleeAttackBonus, StatusIsMeleeAttackBuffed,
     ElementalDamageKind, SpawnEntityWhenMeleeAttacked, EntitySpawnKind,
-    EntitySpawnRequestBuffer, EntitySpawnRequest
+    EntitySpawnRequestBuffer, EntitySpawnRequest, Bloodied
 };
 
 pub struct MeleeCombatSystem {}
@@ -34,6 +34,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, StatusIsMeleeAttackBuffed>,
         WriteStorage<'a, WantsToMeleeAttack>,
         WriteStorage<'a, WantsToTakeDamage>,
+        WriteStorage<'a, Bloodied>,
         ReadStorage<'a, SpawnEntityWhenMeleeAttacked>,
         WriteExpect<'a, EntitySpawnRequestBuffer>
     );
@@ -54,6 +55,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             is_melee_buffs,
             mut melee_attacks,
             mut damagees,
+            mut bloodieds,
             spawn_when_melee,
             mut entity_spawn_buffer
         ) = data;
@@ -167,6 +169,11 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     let idx = map.xy_idx(pos.x, pos.y);
                     if map.tiles[idx] != TileType::DownStairs {
                         map.tiles[idx] = TileType::BloodStain
+                    }
+                    for &e in map.tile_content[idx].iter() {
+                        // TODO: Maybe actually learn how to handle errors man.
+                        bloodieds.insert(e, Bloodied {})
+                            .expect("Failed to insert Bloodied component.");
                     }
                 }
             }

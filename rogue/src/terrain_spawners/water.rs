@@ -6,7 +6,7 @@ use super::{
     DissipateFireWhenEncroachedUpon, EntitySpawnKind, StatusIsImmuneToChill,
     IsEntityKind, UseFgColorMap, UseBgColorMap
 };
-use crate::map_builders::{WaterSpawnTable, FgColorMap, BgColorMap};
+use crate::{map_builders::{BgColorMap, FgColorMap, WaterSpawnTable}, UseFgColorMapWhenBloodied};
 
 use rltk::RGB;
 use specs::prelude::*;
@@ -50,6 +50,7 @@ pub fn shallow_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB
             visible_out_of_fov: true
         })
         .with(UseFgColorMap {cmap: FgColorMap::ShallowWater})
+        .with(UseFgColorMapWhenBloodied {cmap: FgColorMap::Blood})
         .with(UseBgColorMap {cmap: BgColorMap::ShallowWater})
         .with(SetsBgColor {order: 2})
         .with(Name {name: "Shallow Water".to_string()})
@@ -86,6 +87,7 @@ pub fn deep_water(ecs: &mut World, x: i32, y: i32, fgcolor: RGB, bgcolor: RGB) -
             visible_out_of_fov: true
         })
         .with(UseFgColorMap {cmap: FgColorMap::DeepWater})
+        .with(UseFgColorMapWhenBloodied {cmap: FgColorMap::Blood})
         .with(UseBgColorMap {cmap: BgColorMap::DeepWater})
         .with(SetsBgColor {order: 2})
         .with(Name {name: "Deep Water".to_string()})

@@ -5,7 +5,8 @@ use super::{
     ChanceToSpawnEntityWhenBurning, RemoveBurningWhenEncroachedUpon,
     DissipateFireWhenEncroachedUpon, RemoveBurningOnUpkeep, EntitySpawnKind,
     StatusIsImmuneToChill, StatusIsImmuneToFire, IsEntityKind, Hazard, Opaque,
-    BlessingSelectionTile, TileType, UseFgColorMap, UseBgColorMap
+    BlessingSelectionTile, TileType, UseFgColorMap, UseBgColorMap, Bloodied,
+    UseFgColorMapWhenBloodied
 };
 
 pub mod foliage;

@@ -27,8 +27,8 @@ use super::{
     StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
     SpawnEntityWhenKilled, DissipateWhenBurning,
     InvisibleWhenEncroachingEntityKind, WeaponSpecial, WeaponSpecialKind,
-    UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap, MAP_WIDTH,
-    random_table
+    UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap, Bloodied,
+    UseFgColorMapWhenBloodied, MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;

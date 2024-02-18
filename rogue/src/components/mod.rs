@@ -89,6 +89,9 @@ pub struct Opaque {}
 pub struct Tramples {}
 
 
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Bloodied {}
+
 //------------------------------------------------------------------
 // Core Data Components:
 // These components have some data associated with them core to gameplay.
@@ -133,6 +136,16 @@ pub struct Renderable {
 // Sets a colormap used to lookup fg colors for entity..
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct UseFgColorMap {
+    pub cmap: FgColorMap
+}
+impl UseFgColorMap {
+    pub fn set(&mut self, cmap: FgColorMap) {
+        self.cmap = cmap
+    }
+}
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct UseFgColorMapWhenBloodied {
     pub cmap: FgColorMap
 }
 
