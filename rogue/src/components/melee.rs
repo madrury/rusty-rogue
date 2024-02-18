@@ -39,7 +39,7 @@ pub struct MeeleAttackRequest {
     pub critical: bool
 }
 
-// A buffer for storing entity spawn requests.
+// A buffer for storing entity attack requests.
 pub struct MeeleAttackRequestBuffer {
     requests: Vec<MeeleAttackRequest>,
 }
