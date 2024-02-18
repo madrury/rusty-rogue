@@ -3,7 +3,6 @@ use crate::{DissipateWhenTrampledUpon, IsEntityKind, SpawnEntityWhenTrampledUpon
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    DissipateWhenEnchroachedUpon, SpawnEntityWhenEncroachedUpon,
     EntitySpawnKind, StatusIsImmuneToChill, Hazard, Opaque
 };
 use crate::map_builders::GrassSpawnTable;
