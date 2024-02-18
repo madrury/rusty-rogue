@@ -76,8 +76,8 @@ use gamelog::GameLog;
 //--------------------------------------------------------------------
 // Debug flags.
 //--------------------------------------------------------------------
-const DEBUG_DRAW_ALL_MAP: bool = true;
-const DEBUG_RENDER_ALL: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
@@ -85,6 +85,7 @@ const DEBUG_HIGHLIGHT_FIRE: bool = false;
 const DEBUG_HIGHLIGHT_DEEP_WATER: bool = false;
 const DEBUG_HIGHLIGHT_SHALLOW_WATER: bool = false;
 const DEBUG_HIGHLIGHT_GRASS: bool = false;
+const DEBUG_HIGHLIGHT_BLOOD: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 100.0;
 
@@ -295,6 +296,9 @@ impl State {
         }
         if DEBUG_HIGHLIGHT_FLOOR {
             self.debug_highlight_floor(ctx);
+        }
+        if DEBUG_HIGHLIGHT_BLOOD {
+            self.debug_highlight_blood(ctx);
         }
     }
 
@@ -640,6 +644,19 @@ impl State {
                 let idx = map.xy_idx(x, y);
                 if map.grass[idx] {
                     ctx.set_bg(x, y, RGB::named(rltk::GREEN));
+                }
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    fn debug_highlight_blood(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.blood[idx] {
+                    ctx.set_bg(x, y, RGB::named(rltk::RED));
                 }
             }
         }

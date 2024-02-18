@@ -84,7 +84,7 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entit
             order: 3,
             visible_out_of_fov: true
         })
-        .with(UseFgColorMap {cmap: FgColorMap::Blood})
+        .with(UseFgColorMap {cmap: FgColorMap::LongGrass})
         .with(UseFgColorMapWhenBloodied {cmap: FgColorMap::Blood})
         .with(Name {name: "Tall Grass".to_string()})
         .with(IsEntityKind {

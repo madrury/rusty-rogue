@@ -62,8 +62,10 @@ pub struct Map {
     // Is the tile currently occuped by water?
     pub shallow_water: Vec<bool>,
     pub deep_water: Vec<bool>,
-    // IS the tile currently occupied by grass? (Long grass counts.)
+    // Is the tile currently occupied by grass? (Long grass counts.)
     pub grass: Vec<bool>,
+    // Has blood been spilled from meele combat in the tile?
+    pub blood: Vec<bool>,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -96,6 +98,7 @@ impl Map {
             shallow_water: vec![false; MAP_SIZE],
             deep_water: vec![false; MAP_SIZE],
             grass: vec![false; MAP_SIZE],
+            blood: vec![false; MAP_SIZE],
             tile_content : vec![Vec::new(); MAP_SIZE],
             ok_to_spawn: vec![true; MAP_SIZE],
         }

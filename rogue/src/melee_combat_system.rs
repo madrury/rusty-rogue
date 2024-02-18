@@ -167,6 +167,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 // Create a bloodstain where the damage was inflicted.
                 if let Some(pos) = pos {
                     let idx = map.xy_idx(pos.x, pos.y);
+                    map.blood[idx] = true;
                     if map.tiles[idx] != TileType::DownStairs {
                         map.tiles[idx] = TileType::BloodStain
                     }
