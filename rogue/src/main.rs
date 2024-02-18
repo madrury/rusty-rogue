@@ -1033,6 +1033,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<UseFgColorMap>();
     gs.ecs.register::<UseFgColorMapWhenBloodied>();
     gs.ecs.register::<UseBgColorMap>();
+    gs.ecs.register::<UseBgColorMapWhenBloodied>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<SetsBgColor>();
     gs.ecs.register::<CombatStats>();

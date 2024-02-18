@@ -2,7 +2,8 @@ use std::matches;
 use specs::prelude::*;
 use super::{
     Map, Position, BlocksTile, Opaque, IsEntityKind, EntitySpawnKind, Bloodied,
-    UseFgColorMap, UseFgColorMapWhenBloodied, FgColorMap
+    UseFgColorMap, UseFgColorMapWhenBloodied, FgColorMap, UseBgColorMap,
+    UseBgColorMapWhenBloodied, BgColorMap
 };
 
 pub struct MapSynchronizationSystem {}
@@ -68,23 +69,31 @@ impl<'a> System<'a> for MapSynchronizationSystem {
 pub struct ColorSynchronizationSystem {}
 
 //----------------------------------------------------------------------------
-// Updates/sychronizes tile classification vectors on the map.
-//   This system runs each turn and synchronizes various attributes of Map with
-//   the positions of entities currently in the ECS. These vectors are used when
-//   computing routing for movement.
+// Updates/sychronizes colormaps.
 //----------------------------------------------------------------------------
 impl<'a> System<'a> for ColorSynchronizationSystem {
     type SystemData = (
         ReadStorage<'a, Bloodied>,
         ReadStorage<'a, UseFgColorMapWhenBloodied>,
+        ReadStorage<'a, UseBgColorMapWhenBloodied>,
         WriteStorage<'a, UseFgColorMap>,
+        WriteStorage<'a, UseBgColorMap>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (bloodieds, use_fg_when_bloodieds, mut use_fg_cmap) = data;
+        let (
+            bloodieds,
+            use_fg_when_bloodieds,
+            use_bg_when_bloodieds,
+            mut use_fg_cmap,
+            mut use_bg_cmap
+        ) = data;
 
         for (_, _, fg_cmap) in (&bloodieds, &use_fg_when_bloodieds, &mut use_fg_cmap).join() {
             fg_cmap.set(FgColorMap::Blood)
+        }
+        for (_, _, bg_cmap) in (&bloodieds, &use_bg_when_bloodieds, &mut use_bg_cmap).join() {
+            bg_cmap.set(BgColorMap::Blood)
         }
     }
 }
