@@ -33,7 +33,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Equipped>,
         ReadStorage<'a, GrantsMeleeAttackBonus>,
         ReadStorage<'a, StatusIsMeleeAttackBuffed>,
-        // WriteStorage<'a, WantsToMeleeAttack>,
         WriteStorage<'a, WantsToTakeDamage>,
         ReadStorage<'a, SpawnEntityWhenMeleeAttacked>,
         WriteExpect<'a, EntitySpawnRequestBuffer>
