@@ -1,5 +1,5 @@
 
-use crate::{StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
+use crate::{map_builders::ColorMaps, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
 
 use super::{
     Map, TileType, EntitySpawnKind, Hazard, IsEntityKind, Name, Position,
@@ -232,12 +232,12 @@ pub fn steam(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
             .with(Position {x, y})
             .with(Renderable {
                 fg: RGB::named(rltk::WHITE),
-                bg: RGB::named(rltk::GRAY),
-                glyph: rltk::to_cp437('░'),
-                order: 2,
+                bg: RGB::named(rltk::BLACK),
+                glyph: 255,
+                order: 3,
                 visible_out_of_fov: false
             })
-            .with(SetsBgColor {order: 0})
+            .with(UseFgColorMap {cmap: FgColorMap::Steam})
             .with(Name {name: "Steam".to_string()})
             .with(Hazard {})
             .with(IsEntityKind {

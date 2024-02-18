@@ -32,6 +32,10 @@ const CHILL_WHITE_NOISE_FREQUENCY: f32 = 0.5;
 const CHILL_FG_COEFFICIENTS: [f32; 3] = [1.0, 0.0, 0.6];
 const CHILL_BG_COEFFICIENTS: [f32; 3] = [0.5, 1.0, 0.3];
 
+const STEAM_VALUE_NOISE_FREQUENCY: f32 = 0.25;
+const STEAM_WHITE_NOISE_FREQUENCY: f32 = 0.5;
+const STEAM_FG_COEFFICIENTS: [f32; 3] = [1.0, 0.5, 0.3];
+
 const STATUES_VALUE_NOISE_FREQUENCY: f32 = 0.5;
 const STATUES_WHITE_NOISE_FREQUENCY: f32 = 0.5;
 const STATUE_NOISE_THRESHOLD: f32 = 0.98;
@@ -182,6 +186,7 @@ pub struct NoiseMaps {
     // according to a linear function of the two components.
     fire: Vec<(Point, (f32, f32))>,
     chill: Vec<(Point, (f32, f32))>,
+    steam: Vec<(Point, (f32, f32))>,
     // The geometric layout of statues spawned on the map.
     pub statue_geometry: StatueGeometry,
     // Noisemap for sampling statue spawn locations.
@@ -227,6 +232,9 @@ impl NoiseMaps {
             chill: value_white_noisemap(
                 rng, map, CHILL_VALUE_NOISE_FREQUENCY, CHILL_WHITE_NOISE_FREQUENCY, NoiseType::ValueFractal
             ),
+            steam: value_white_noisemap(
+                rng, map, STEAM_VALUE_NOISE_FREQUENCY, STEAM_WHITE_NOISE_FREQUENCY, NoiseType::ValueFractal
+            ),
             // Only white noise component is used for sampling statue locations.
             statue: value_white_noisemap(
                 rng, map, STATUES_VALUE_NOISE_FREQUENCY, STATUES_WHITE_NOISE_FREQUENCY, NoiseType::WhiteNoise
@@ -266,7 +274,7 @@ impl NoiseMaps {
         let mut mappedbuffer = buffer.iter().map(|(pt, (v, w))| (*pt, v + w))
             .collect::<Vec<(Point, f32)>>();
         mappedbuffer.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-        buffer.iter().map(|(pt, _)| *pt).collect()
+        mappedbuffer.iter().map(|(pt, _)| *pt).collect()
     }
 
     pub fn grassbound_monster_spawn_position_buffer(&self) -> Vec<Point> {
@@ -404,6 +412,10 @@ impl NoiseMaps {
 
     pub fn to_chill_bg_color_noise(&self, map: &Map) -> Vec<f32> {
         self.to_color_noise(map, &self.chill, CHILL_BG_COEFFICIENTS)
+    }
+
+    pub fn to_steam_fg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.chill, STEAM_FG_COEFFICIENTS)
     }
 
     pub fn to_statue_spawn_table(&self, map: &Map) -> Vec<StatueSpawnData> {
