@@ -5,16 +5,39 @@ use super::{color, colormaps, Map, TileType};
 const LARGE_LAKES_SHALLOW_WATER_THRESHOLD: f32 = 0.4;
 const LARGE_LAKES_DEEP_WATER_THRESHOLD: f32 = 0.6;
 const LARGE_LAKES_NOISE_FREQUENCY: f32 = 0.1;
-
 const SMALL_LAKES_SHALLOW_WATER_THRESHOLD: f32 = 0.6;
 const SMALL_LAKES_DEEP_WATER_THRESHOLD: f32 = 0.7;
 const SMALL_LAKES_NOISE_FREQUENCY: f32 = 0.25;
+const WATER_WHITE_NOISE_FREQUENCY: f32 = 0.7;
+const SHALLOW_WATER_FG_COEFFICIENTS: [f32; 3] = [1.0, 0.0, 0.4];
+const SHALLOW_WATER_BG_COEFFICIENTS: [f32; 3] = [0.5, 0.1, 0.4];
+const DEEP_WATER_FG_COEFFICIENTS: [f32; 3] = [1.0, 0.0, 0.6];
+const DEEP_WATER_BG_COEFFICIENTS: [f32; 3] = [0.7, 0.2, 0.4];
 
 const SHORT_GRASS_NOISE_THRESHOLD: f32 = 0.0;
 const SPORADIC_TALL_GRASS_NOISE_THRESHOLD: f32 = 0.8;
 const GROVE_TALL_GRASS_NOISE_THRESHOLD: f32 = 0.4;
+const GRASS_VALUE_NOISE_FREQUENCY: f32 = 0.1;
+const GRASS_WHITE_NOISE_FREQUENCY: f32 = 0.1;
+const SHORT_GRASS_FG_COEFFICIENTS: [f32; 3] = [1.0, 0.3, 0.6];
+const LONG_GRASS_FG_COEFFICIENTS: [f32; 3] = [1.0, 0.3, 0.0];
 
+const FIRE_VALUE_NOISE_FREQUENCY: f32 = 0.25;
+const FIRE_WHITE_NOISE_FREQUENCY: f32 = 0.5;
+const FIRE_FG_COEFFICIENTS: [f32; 3] = [1.0, 0.6, 0.3];
+const FIRE_BG_COEFFICIENTS: [f32; 3] = [1.0, 0.3, 0.6];
+
+const CHILL_VALUE_NOISE_FREQUENCY: f32 = 0.25;
+const CHILL_WHITE_NOISE_FREQUENCY: f32 = 0.5;
+const CHILL_FG_COEFFICIENTS: [f32; 3] = [1.0, 0.0, 0.6];
+const CHILL_BG_COEFFICIENTS: [f32; 3] = [0.5, 1.0, 0.3];
+
+const STATUES_VALUE_NOISE_FREQUENCY: f32 = 0.5;
+const STATUES_WHITE_NOISE_FREQUENCY: f32 = 0.5;
 const STATUE_NOISE_THRESHOLD: f32 = 0.98;
+
+const MONSTER_SPAWN_VALUE_NOISE_FREQUENCY: f32 = 0.25;
+const MONSTER_SPAWN_WHITE_NOISE_FREQUENCY: f32 = 0.5;
 
 pub enum WaterGeometry { None, LargeLakes, SmallLakes }
 impl WaterGeometry {
@@ -109,13 +132,18 @@ pub struct StatueSpawnData {
 // combat experiences.
 //----------------------------------------------------------------------------
 // Public API:
-// There are two types of functions eposed in the public NoiseMaps AIP.
+// These types of functions eposed in the public NoiseMaps API:
 //
 // - to_<terraintype>_spawn_table:
 // Returns a SpawnTable type obejct for terraintype (GrassSpawnTable,
 // WaterSpawnTable, ... for example). These encapsulate a sequence of
 // instructions for spawning the required entities into the ECS to construct
 // terrain of the given type.
+//
+// - to_<terraintype>_<fg|bg>_color_noise:
+// Returns a vector of floating point numbers, constructed as a linear function
+// of (value, white) noise, that is used in ColorMaps to construct colorization
+// maps for various dungeon features.
 //
 // - <monstertype>_monster_spawn_buffer
 // Returns a Vec<Point>, sorted in order that we should attempt to spawn a
@@ -150,17 +178,16 @@ pub struct NoiseMaps {
     // is determined as a linear combination of the two components.
     water: Vec<(Point, (f32, f32))>,
     // Noisemap for fire colorization.
-    // The noise value is a pair (smooth, white) noise. Color is determined by
-    // a linear combination of the two components.
+    // The noise value is a pair (smooth, white) noise. Color is determined
+    // according to a linear function of the two components.
     fire: Vec<(Point, (f32, f32))>,
     chill: Vec<(Point, (f32, f32))>,
-    // The geometric structure of statues spawned on the map.
+    // The geometric layout of statues spawned on the map.
     pub statue_geometry: StatueGeometry,
     // Noisemap for sampling statue spawn locations.
     // The noise value is a pair (smooth, white) noise.
-    // ...
     statue: Vec<(Point, (f32, f32))>,
-    // The possition of the blessing tile.
+    // The position of the blessing tile.
     pub blessing: Option<Point>,
 }
 
@@ -188,31 +215,48 @@ impl NoiseMaps {
             statue_geometry: statuegeom,
             blessing: blessingpt,
             // Sample the noisemaps.
-            grass: value_white_noisemap(rng, map, 0.1, 0.1),
-            water: value_white_noisemap(rng, map, watervfreq, 0.7),
-            fire: value_white_noisemap(rng, map, 0.25, 0.5),
-            chill: value_white_noisemap(rng, map, 0.25, 0.5),
+            grass: value_white_noisemap(
+                rng, map, GRASS_VALUE_NOISE_FREQUENCY, GRASS_WHITE_NOISE_FREQUENCY, NoiseType::PerlinFractal
+            ),
+            water: value_white_noisemap(
+                rng, map, watervfreq, WATER_WHITE_NOISE_FREQUENCY, NoiseType::Value
+            ),
+            fire: value_white_noisemap(
+                rng, map, FIRE_VALUE_NOISE_FREQUENCY, FIRE_WHITE_NOISE_FREQUENCY, NoiseType::WhiteNoise
+            ),
+            chill: value_white_noisemap(
+                rng, map, CHILL_VALUE_NOISE_FREQUENCY, CHILL_WHITE_NOISE_FREQUENCY, NoiseType::ValueFractal
+            ),
             // Only white noise component is used for sampling statue locations.
-            statue: value_white_noisemap(rng, map, 0.5, 0.5),
+            statue: value_white_noisemap(
+                rng, map, STATUES_VALUE_NOISE_FREQUENCY, STATUES_WHITE_NOISE_FREQUENCY, NoiseType::WhiteNoise
+            ),
             // The sum of the value and white noise component is used for
             // monster spawning locations.
-            spawning: value_white_noisemap(rng, map, 0.25, 0.5),
+            spawning: value_white_noisemap(
+                rng, map, MONSTER_SPAWN_VALUE_NOISE_FREQUENCY, MONSTER_SPAWN_WHITE_NOISE_FREQUENCY, NoiseType::Value
+            ),
         }
     }
 
+    // Generic function used to transform raw noisemaps (in the sense of (value
+    // noise, white noise) pairs) into single floating point values used to
+    // index a color space. The idea here is that to smoothly color a scene with
+    // some pleasing random variation, we index into a linear colorspace (so
+    // interpolate between two colors) using a convex combination with the
+    // convex coefficient depending on a linear function of value and white
+    // noise. Whew.
     pub fn to_color_noise(
         &self,
         map: &Map,
         noise: &Vec<(Point, (f32, f32))>,
         coefs: [f32; 3],
-        // color_from_noise: fn(f32) -> RGB
     ) -> Vec<f32> {
         let mut colormap: Vec<f32> =
             vec![0.0; (map.width * map.height) as usize];
         for (pt, (vnoise, wnoise)) in noise.iter() {
             let idx = map.xy_idx(pt.x, pt.y);
             colormap[idx] = vnoise * coefs[0] + wnoise * coefs[1] + coefs[2];
-            // colormap[idx] = color_from_noise(colorseed);
         }
         colormap
     }
@@ -279,20 +323,20 @@ impl NoiseMaps {
         water_spawn_table
     }
 
-    pub fn to_shallow_water_fg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.water, [1.0, 0.0, 0.4])//, colormaps::water_fg_from_noise)
+    pub fn to_shallow_water_fg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.water, SHALLOW_WATER_FG_COEFFICIENTS)
     }
 
-    pub fn to_shallow_water_bg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.water, [0.5, 0.1, 0.4])//, colormaps::shallow_water_bg_from_noise)
+    pub fn to_shallow_water_bg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.water, SHALLOW_WATER_BG_COEFFICIENTS)
     }
 
-    pub fn to_deep_water_fg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.water, [1.0, 0.0, 0.6])//, colormaps::water_fg_from_noise)
+    pub fn to_deep_water_fg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.water, DEEP_WATER_FG_COEFFICIENTS)
     }
 
-    pub fn to_deep_water_bg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.water, [0.7, 0.2, 0.4])//, colormaps::water_bg_from_noise)
+    pub fn to_deep_water_bg_color_noise(&self, map: &Map) -> Vec<f32> {
+       self.to_color_noise(map, &self.water, DEEP_WATER_BG_COEFFICIENTS)
     }
 
     fn short_grass_noise_threshold(&self) -> f32 {
@@ -338,28 +382,28 @@ impl NoiseMaps {
         grass_spawn_table
     }
 
-    pub fn to_short_grass_fg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.grass, [1.0, 0.3, 0.6])//, colormaps::grass_green_from_noise)
+    pub fn to_short_grass_fg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.grass, SHORT_GRASS_FG_COEFFICIENTS)
     }
 
-    pub fn to_long_grass_fg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.grass, [1.0, 0.3, 0.0])//, colormaps::grass_green_from_noise)
+    pub fn to_long_grass_fg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.grass, LONG_GRASS_FG_COEFFICIENTS)
     }
 
-    pub fn to_fire_fg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.fire, [1.0, 0.6, 0.3])//, colormaps::fire_fg_from_noise)
+    pub fn to_fire_fg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.fire, FIRE_FG_COEFFICIENTS)
     }
 
-    pub fn to_fire_bg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.fire, [1.0, 0.3, 0.6])//, colormaps::fire_bg_from_noise)
+    pub fn to_fire_bg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.fire, FIRE_BG_COEFFICIENTS)
     }
 
-    pub fn to_chill_fg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.chill, [1.0, 0.0, 0.6])//, colormaps::chill_fg_from_noise)
+    pub fn to_chill_fg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.chill, CHILL_FG_COEFFICIENTS)
     }
 
-    pub fn to_chill_bg_colormap(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.chill, [0.5, 1.0, 0.3])//, colormaps::chill_bg_from_noise)
+    pub fn to_chill_bg_color_noise(&self, map: &Map) -> Vec<f32> {
+        self.to_color_noise(map, &self.chill, CHILL_BG_COEFFICIENTS)
     }
 
     pub fn to_statue_spawn_table(&self, map: &Map) -> Vec<StatueSpawnData> {
@@ -376,16 +420,19 @@ impl NoiseMaps {
     }
 }
 
-
-
+// Sample a vector of (f32, f32) pairs, where the first of the pair is sampled
+// according to some specified geometric noise type, and the second of the pair
+// is white noise. The noise type of the first in the pair is modified to
+// achieve different visual effects for different sorts of terrain.
 fn value_white_noisemap(
     rng: &mut RandomNumberGenerator,
     map: &Map,
     vfreq: f32,
-    wfreq: f32
+    wfreq: f32,
+    vnoisetype: NoiseType
 ) -> Vec<(Point, (f32, f32))> {
     let mut valuenoise = FastNoise::seeded(rng.next_u64());
-    valuenoise.set_noise_type(NoiseType::Value);
+    valuenoise.set_noise_type(vnoisetype);
     valuenoise.set_frequency(vfreq);
 
     let mut whitenoise = FastNoise::seeded(rng.next_u64());
@@ -402,79 +449,3 @@ fn value_white_noisemap(
     }
     noisemap
 }
-
-// fn grass_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, (f32, f32))> {
-//     let mut valuenoise = FastNoise::seeded(rng.next_u64());
-//     valuenoise.set_noise_type(NoiseType::ValueFractal);
-//     valuenoise.set_frequency(0.1);
-
-//     let mut whitenoise = FastNoise::seeded(rng.next_u64());
-//     whitenoise.set_noise_type(NoiseType::WhiteNoise);
-//     whitenoise.set_frequency(0.1);
-
-//     let mut noisemap: Vec<(Point, (f32, f32))> = Vec::new();
-//     for y in 0..map.height {
-//         for x in 0..map.width {
-//             let vn = valuenoise.get_noise(x as f32, y as f32);
-//             let wn = whitenoise.get_noise(x as f32, y as f32);
-//             noisemap.push((Point {x, y}, (vn, wn)))
-//         }
-//     }
-//     noisemap
-// }
-
-
-// fn water_noisemap(rng: &mut RandomNumberGenerator, map: &Map, vfreq: f32) -> Vec<(Point, (f32, f32))> {
-//     let mut valuenoise = FastNoise::seeded(rng.next_u64());
-//     valuenoise.set_noise_type(NoiseType::Value);
-//     valuenoise.set_frequency(vfreq);
-
-//     let mut whitenoise = FastNoise::seeded(rng.next_u64());
-//     whitenoise.set_noise_type(NoiseType::WhiteNoise);
-//     whitenoise.set_frequency(0.7);
-
-//     let mut noisemap: Vec<(Point, (f32, f32))> = Vec::new();
-//     for y in 0..map.height {
-//         for x in 0..map.width {
-//             let vn = valuenoise.get_noise(x as f32, y as f32);
-//             let wn = whitenoise.get_noise(x as f32, y as f32);
-//             noisemap.push((Point {x, y}, (vn, wn)))
-//         }
-//     }
-//     noisemap
-// }
-
-// fn statue_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec<(Point, f32)> {
-//     let mut whitenoise = FastNoise::seeded(rng.next_u64());
-//     whitenoise.set_noise_type(NoiseType::WhiteNoise);
-//     whitenoise.set_frequency(0.5);
-
-//     let mut noisemap: Vec<(Point, f32)> = Vec::new();
-//     for y in 0..map.height {
-//         for x in 0..map.width {
-//             let wn = whitenoise.get_noise(x as f32, y as f32);
-//             noisemap.push((Point {x, y}, wn));
-//         }
-//     }
-//     noisemap
-// }
-
-// fn monster_spawn_noisemap(rng: &mut RandomNumberGenerator, map: &Map) -> Vec::<(Point, f32)> {
-//     let mut valuenoise = FastNoise::seeded(rng.next_u64());
-//     valuenoise.set_noise_type(NoiseType::Value);
-//     valuenoise.set_frequency(0.25);
-
-//     let mut whitenoise = FastNoise::seeded(rng.next_u64());
-//     whitenoise.set_noise_type(NoiseType::WhiteNoise);
-//     whitenoise.set_frequency(0.5);
-
-//     let mut noisemap: Vec::<(Point, f32)> = Vec::new();
-//     for y in 0..map.height {
-//         for x in 0..map.width {
-//             let wn = whitenoise.get_noise(x as f32, y as f32);
-//             let vn = valuenoise.get_noise(x as f32, y as f32);
-//             noisemap.push((Point {x, y}, wn + vn));
-//         }
-//     }
-//     noisemap
-// }
