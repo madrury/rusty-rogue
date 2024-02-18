@@ -1,6 +1,6 @@
 use super::{
     World, Map, TileType, Point, entity_spawners, terrain_spawners,
-    DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE, color
+    DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
 mod noise;
 pub use noise::*;

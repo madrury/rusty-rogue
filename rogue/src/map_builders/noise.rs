@@ -1,5 +1,5 @@
 use rltk::{RandomNumberGenerator, FastNoise, NoiseType, Point, RGB};
-use super::{color, colormaps, Map, TileType};
+use super::{Map, TileType};
 
 
 const LARGE_LAKES_SHALLOW_WATER_THRESHOLD: f32 = 0.4;
@@ -415,7 +415,7 @@ impl NoiseMaps {
     }
 
     pub fn to_steam_fg_color_noise(&self, map: &Map) -> Vec<f32> {
-        self.to_color_noise(map, &self.chill, STEAM_FG_COEFFICIENTS)
+        self.to_color_noise(map, &self.steam, STEAM_FG_COEFFICIENTS)
     }
 
     pub fn to_statue_spawn_table(&self, map: &Map) -> Vec<StatueSpawnData> {

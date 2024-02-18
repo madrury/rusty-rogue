@@ -18,7 +18,6 @@ use components::melee::*;
 
 pub mod entity_spawners;
 pub mod terrain_spawners;
-pub mod color;
 mod save_load;
 mod random_table;
 
