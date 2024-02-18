@@ -6,7 +6,7 @@ use super::{
     AnimationRequestBuffer, AnimationRequest, Equipped, GrantsMeleeAttackBonus,
     StatusIsMeleeAttackBuffed, ElementalDamageKind,
     SpawnEntityWhenMeleeAttacked, EntitySpawnKind, EntitySpawnRequestBuffer,
-    EntitySpawnRequest
+    EntitySpawnRequest, Bloodied
 };
 
 pub struct MeleeCombatSystem {}
@@ -92,19 +92,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 ElementalDamageKind::Physical
             );
 
-            // 🩸
-            for &e in map.tile_content[idx].iter() {
-                // TODO: Maybe actually learn how to handle errors man.
-                bloodieds.insert(e, Bloodied {})
-                    .expect("Failed to insert Bloodied component.");
-            }
 
             // Animate the damage with a flash
             // TODO: Same here. This should be created after damage is actually created.
             // to avoid triggering animations when all damage is nullified.
-            let pos = positions.get(attack.target);
-            let render = renderables.get(attack.target);
-            if let(Some(pos), Some(render)) = (pos, render) {
+            let targetpos = positions.get(attack.target);
+            let targetrender = renderables.get(attack.target);
+            if let(Some(pos), Some(render)) = (targetpos, targetrender) {
                 animation_buffer.request(
                     AnimationRequest::MeleeAttack {
                         x: pos.x,
@@ -115,10 +109,20 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 );
             }
 
+            // 🩸 🩸 🩸 🩸
+            if let Some(pos) = targetpos {
+                let idx = map.xy_idx(pos.x, pos.y);
+                for &e in map.tile_content[idx].iter() {
+                    // TODO: Maybe actually learn how to handle errors man.
+                    bloodieds.insert(e, Bloodied {})
+                        .expect("Failed to insert Bloodied component.");
+                }
+            }
+
             // If entity splits or spawn on a melee attack, send the signal
             // to spawn a new entity. We're probably smacking a jelly here.
             let spawns = spawn_when_melee.get(attack.target);
-            if let (Some(spawns), Some(pos)) = (spawns, pos) {
+            if let (Some(spawns), Some(pos)) = (spawns, targetpos) {
                 let spawn_position = map.random_adjacent_point(pos.x, pos.y);
                 let mut can_spawn: bool = false;
                 if let Some(spawn_position) = spawn_position {
