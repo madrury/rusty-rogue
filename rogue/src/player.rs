@@ -7,7 +7,7 @@ use super::{
     AnimationRequest, WantsToPickupItem, StatusIsFrozen, TileType,
     WeaponSpecial, WeaponSpecialKind, StatusInvisibleToPlayer
 };
-use rltk::{Point, Rltk, VirtualKeyCode, RGB};
+use rltk::{Algorithm2D, Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
 
@@ -307,6 +307,12 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         .next()
         .unwrap_or(MeeleAttackFormation::Basic);
 
+    // We bail early if we're attempting to move into an edge tile, this is
+    // always impossible and results in no action.
+    if map.is_edge_tile(pt.x + dx, pt.y + dy) {
+        return RunState::AwaitingInput
+    }
+
     // We first check for any meele attack targets. If we find any we queue
     // meele attacks and pass the turn. If not, we drop through to the next set
     // of movement checks.
@@ -328,21 +334,29 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         // direction of movement, we will both step into the open tile, and
         // attack the monster.
         MeeleAttackFormation::Dash => {
+            // We firt trigger a basic meele attack, this is the same logic as
+            // the MeeleAttackForamtion::Basic branch.
             let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
-            let dash_idx = map.xy_idx(pt.x + 2*dx, pt.y + 2*dy);
-            // We still want to meele attack anything immeidately adjacent to
-            // us, but *dont* trigger the dash if there is an invisible in the
-            // dash target tile.
             let destination_targets = get_meele_targets_in_tile(
                 &*map, destination_idx, &combat_stats, &invisibles, true
-            );
-            let dash_targets = get_meele_targets_in_tile(
-                &*map, dash_idx, &combat_stats, &invisibles, false
             );
             if !destination_targets.is_empty() {
                 meele_buffer.request_many(*player, &destination_targets, false);
                 return RunState::PlayerTurn
-            } else if !destination_is_blocked && !dash_targets.is_empty() {
+            }
+
+            // We now attempt the dash attack, which involves checking the tile
+            // one space away for any entities. This first dash_idx calculation
+            // is a little suspect, since it seems possible that it may be
+            // outside the map, triggering a panic. But, we will have returned
+            // if (x + dx, y + dy) is an edge tile, so if this point is reached,
+            // (x + 2dx, y + 2dy) is at worst an edge tile, and cannot lie
+            // outside the map bounds.
+            let dash_idx = map.xy_idx(pt.x + 2*dx, pt.y + 2*dy);
+            let dash_targets = get_meele_targets_in_tile(
+                &*map, dash_idx, &combat_stats, &invisibles, false
+            );
+            if !destination_is_blocked && !dash_targets.is_empty() {
                 meele_buffer.request_many(*player, &dash_targets, false);
                 moves.insert(
                     *player,
