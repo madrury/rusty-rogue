@@ -112,6 +112,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             // 🩸 🩸 🩸 🩸
             if let Some(pos) = targetpos {
                 let idx = map.xy_idx(pos.x, pos.y);
+                map.tiles[idx] = TileType::BloodStain;
                 for &e in map.tile_content[idx].iter() {
                     // TODO: Maybe actually learn how to handle errors man.
                     bloodieds.insert(e, Bloodied {})
