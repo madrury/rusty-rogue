@@ -80,6 +80,7 @@ const DEBUG_DRAW_ALL_MAP: bool = false;
 const DEBUG_RENDER_ALL: bool = false;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
+const DEBUG_HIGHLIGHT_BLOCKED: bool = false;
 const DEBUG_HIGHLIGHT_FLOOR: bool = false;
 const DEBUG_HIGHLIGHT_FIRE: bool = false;
 const DEBUG_HIGHLIGHT_DEEP_WATER: bool = false;
@@ -281,6 +282,9 @@ impl State {
         // flags.
         if DEBUG_HIGHLIGHT_STAIRS {
             self.debug_highlight_stairs(ctx);
+        }
+        if DEBUG_HIGHLIGHT_BLOCKED {
+            self.debug_highlight_blocked(ctx);
         }
         if DEBUG_HIGHLIGHT_FIRE {
             self.debug_highlight_fire(ctx);
@@ -579,6 +583,19 @@ impl State {
                 let idx = map.xy_idx(x, y);
                 if map.tiles[idx] == TileType::DownStairs {
                     ctx.set_bg(x, y, RGB::named(rltk::PINK));
+                }
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    fn debug_highlight_blocked(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.blocked[idx] {
+                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
                 }
             }
         }
@@ -1112,7 +1129,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ChanceToInflictBurningOnAdjacentEntities>();
     gs.ecs.register::<ChanceToDissipate>();
     gs.ecs.register::<SkipRandomDissipationForOneTurn>();
-    gs.ecs.register::<GrantsMeleeAttackBonus>();
+    gs.ecs.register::<MeeleAttackWepon>();
     gs.ecs.register::<GrantsMeleeDefenseBonus>();
     gs.ecs.register::<StatusIsFrozen>();
     gs.ecs.register::<StatusIsBurning>();

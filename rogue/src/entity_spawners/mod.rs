@@ -2,25 +2,24 @@ use std::collections::HashMap;
 use crate::map_builders::{GrassGeometry, WaterGeometry, NoiseMaps};
 
 use super::{
-    Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats,
-    SwimStamina, HungerClock, HungerState, Monster, Hazard, IsEntityKind,
+    Point, Map, TileType, EntitySpawnKind, BlocksTile, CombatStats, SwimStamina,
+    HungerClock, HungerState, Monster, Hazard, IsEntityKind,
     MovementRoutingAvoids, MovementRoutingBounds, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
-    SupportSpellcasterKind, Name, Player, Position,
-    Renderable, SetsBgColor, Viewshed, PickUpable, Useable, Castable,
-    SpellCharges, Equippable, EquipmentSlot, Throwable, Targeted,
-    TargetingKind, Untargeted, Consumable, ProvidesFullHealing,
-    ProvidesFullFood, IncreasesMaxHpWhenUsed, InflictsDamageWhenTargeted,
-    InflictsDamageWhenEncroachedUpon, InflictsFreezingWhenTargeted,
-    InflictsBurningWhenTargeted, BuffsMeleeAttackWhenTargeted,
-    BuffsPhysicalDefenseWhenTargeted, InflictsBurningWhenEncroachedUpon,
-    InflictsFreezingWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
-    AlongRayAnimationWhenTargeted, MovesToRandomPosition,
-    MoveToPositionWhenTargeted, SpawnEntityWhenMeleeAttacked,
-    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
-    ChanceToDissipate, SkipRandomDissipationForOneTurn,
-    ChanceToInflictBurningOnAdjacentEntities, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
+    SupportSpellcasterKind, Name, Player, Position, Renderable, SetsBgColor,
+    Viewshed, PickUpable, Useable, Castable, SpellCharges, Equippable,
+    EquipmentSlot, Throwable, Targeted, TargetingKind, Untargeted, Consumable,
+    ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
+    InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
+    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
+    BuffsMeleeAttackWhenTargeted, BuffsPhysicalDefenseWhenTargeted,
+    InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
+    AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
+    MovesToRandomPosition, MoveToPositionWhenTargeted,
+    SpawnEntityWhenMeleeAttacked, SpawnsEntityInAreaWhenTargeted,
+    ChanceToSpawnAdjacentEntity, ChanceToDissipate,
+    SkipRandomDissipationForOneTurn, ChanceToInflictBurningOnAdjacentEntities,
+    MeeleAttackWepon, GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
     ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
     DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
@@ -28,7 +27,7 @@ use super::{
     SpawnEntityWhenKilled, DissipateWhenBurning,
     InvisibleWhenEncroachingEntityKind, WeaponSpecial, WeaponSpecialKind,
     UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap, Bloodied,
-    UseFgColorMapWhenBloodied, MAP_WIDTH, random_table
+    UseFgColorMapWhenBloodied, MeeleAttackFormation, MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
@@ -95,6 +94,7 @@ enum ItemType {
     FreezingPotion,
     Dagger,
     Sword,
+    Raiper,
     LeatherArmor,
     MagicMissileScroll,
     BlinkScroll,
@@ -110,22 +110,23 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         // TODO: Make this table in a less stupid place.
         item = random_table::RandomTable::new()
-            .insert(ItemType::Turnip, 4 + depth)
+            .insert(ItemType::Turnip, 8 + depth)
             .insert(ItemType::Pomegranate, depth)
             .insert(ItemType::HealthPotion, 4 + depth)
             .insert(ItemType::RechargingPotion, depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, depth)
             .insert(ItemType::FreezingPotion, depth)
-            .insert(ItemType::Dagger, 1 + depth)
+            .insert(ItemType::Dagger, 2 + depth)
             .insert(ItemType::Sword, 1 + depth)
+            .insert(ItemType::Raiper, 500)//depth)
             .insert(ItemType::LeatherArmor, 1 + depth)
-            .insert(ItemType::MagicMissileScroll, 1 + depth)
+            // .insert(ItemType::MagicMissileScroll, 1 + depth)
             .insert(ItemType::BlinkScroll, depth)
             .insert(ItemType::FireblastScroll, depth)
-            .insert(ItemType::FireballScroll, depth)
+            // .insert(ItemType::FireballScroll, depth)
             .insert(ItemType::IceblastScroll, depth)
-            .insert(ItemType::IcespikeScroll, depth)
+            // .insert(ItemType::IcespikeScroll, depth)
             .insert(ItemType::None, 75)
             .roll(&mut rng);
     }
@@ -139,6 +140,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::FreezingPotion) => potions::freezing(ecs, x, y),
         Some(ItemType::Dagger) => equipment::dagger(ecs, x, y),
         Some(ItemType::Sword) => equipment::sword(ecs, x, y),
+        Some(ItemType::Raiper) => equipment::rapier(ecs, x, y),
         Some(ItemType::LeatherArmor) => equipment::leather_armor(ecs, x, y),
         Some(ItemType::MagicMissileScroll) => spells::magic_missile(ecs, x, y, 10, 5),
         Some(ItemType::BlinkScroll) => spells::blink(ecs, x, y),
