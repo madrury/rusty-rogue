@@ -32,9 +32,62 @@ impl CombatStats {
 }
 
 
+#[derive(Clone)]
+pub struct MeeleAttackRequest {
+    pub source: Entity,
+    pub target: Entity,
+    pub critical: bool
+}
+
+// A buffer for storing entity attack requests.
+pub struct MeeleAttackRequestBuffer {
+    requests: Vec<MeeleAttackRequest>,
+}
+impl MeeleAttackRequestBuffer {
+    pub fn new() -> MeeleAttackRequestBuffer {
+        MeeleAttackRequestBuffer {
+            requests: Vec::new(),
+        }
+    }
+    pub fn request(&mut self, request: MeeleAttackRequest) {
+        self.requests.push(request)
+    }
+    pub fn request_many(&mut self, source: Entity, targets: &Vec<Entity>, critical: bool) {
+        for target in targets {
+            self.request(MeeleAttackRequest {
+                source: source,
+                target: *target,
+                critical: critical
+            })
+        }
+    }
+    pub fn is_empty(&mut self) -> bool {
+        self.requests.is_empty()
+    }
+    pub fn pop(&mut self) -> Option<MeeleAttackRequest> {
+        self.requests.pop()
+    }
+}
+
+
+#[derive(Copy, Clone, Serialize, Deserialize)]
+pub enum MeeleAttackFormation {
+    Basic,
+    Dash,
+}
+// Component for effects that grant a MeleeAttackBonus
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct MeeleAttackWepon {
+    pub bonus: i32,
+    pub formation: MeeleAttackFormation
+}
+
+
 #[derive(Clone, Serialize, Deserialize)]
 pub enum WeaponSpecialKind {
-    ThrowWithoutExpending
+    Dash,
+    SpinAttack,
+    ThrowWithoutExpending,
 }
 
 #[derive(Component, ConvertSaveload, Clone)]
@@ -59,3 +112,4 @@ impl WeaponSpecial {
         self.time = 0;
     }
 }
+

@@ -4,7 +4,7 @@ use super::{
     StatusIsImmuneToFire
 };
 use crate::map_builders::StatueSpawnData;
-use rltk::{Point, RGB};
+use rltk::RGB;
 use specs::prelude::*;
 
 pub fn spawn_statues_from_table(

@@ -1,8 +1,8 @@
 
-use specs::{prelude::*};
+use specs::prelude::*;
 use super::{
     GameLog, Name, Position, WeaponSpecial, Equipped, Renderable,
-    WeaponSpecialKind, AnimationRequestBuffer, AnimationRequest
+    AnimationRequestBuffer, AnimationRequest
 };
 
 //----------------------------------------------------------------------------
