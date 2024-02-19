@@ -879,7 +879,7 @@ impl GameState for State {
                     MenuResult::Selected {thing} => {
                         // We need the area of effect radius of the item to draw
                         // the targeting system.
-                        let targeted = self.ecs.read_storage::<Targeted>();
+                        let targeted = self.ecs.read_storage::<TargetedWhenThrown>();
                         let (range, kind) = targeted.get(thing)
                             .map(|x| (x.range, x.kind))
                             .expect("Attempted to throw item without Targeted components.");
@@ -898,7 +898,7 @@ impl GameState for State {
                     MenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     MenuResult::NoResponse => {},
                     MenuResult::Selected {thing} => {
-                        let targeted = self.ecs.read_storage::<Targeted>();
+                        let targeted = self.ecs.read_storage::<TargetedWhenCast>();
                         let is_targeted = targeted.get(thing).is_some();
                         if is_targeted {
                             let (range, kind) = targeted.get(thing)
@@ -1043,7 +1043,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Tramples>();
     gs.ecs.register::<Equippable>();
     gs.ecs.register::<Castable>();
-    gs.ecs.register::<Targeted>();
+    gs.ecs.register::<TargetedWhenThrown>();
+    gs.ecs.register::<TargetedWhenCast>();
     gs.ecs.register::<Untargeted>();
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<InSpellBook>();

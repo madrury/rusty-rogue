@@ -1,6 +1,6 @@
 use super::{
     EntitySpawnKind, Name, Position, Renderable, PickUpable, Useable,
-    Throwable, Targeted, TargetingKind, Untargeted, Consumable,
+    Throwable, TargetedWhenThrown, TargetingKind, Untargeted, Consumable,
     ProvidesFullHealing, IncreasesMaxHpWhenUsed, InflictsDamageWhenTargeted,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
@@ -121,7 +121,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Throwable {})
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::AreaOfEffect {
@@ -191,7 +191,7 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Throwable {})
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::AreaOfEffect {
@@ -249,7 +249,7 @@ pub fn teleportation(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Useable {})
         .with(Untargeted{ verb: "drinks".to_string()})
         .with(Throwable {})
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::Simple

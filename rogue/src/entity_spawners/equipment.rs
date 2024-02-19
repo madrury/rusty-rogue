@@ -1,6 +1,6 @@
 use super::{
     Name, Position, Renderable, PickUpable, Equippable, EquipmentSlot,
-    Throwable, Targeted, TargetingKind, Consumable, InflictsDamageWhenTargeted,
+    Throwable, TargetedWhenThrown, TargetingKind, Consumable, InflictsDamageWhenTargeted,
     MeeleAttackWepon, GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, AlongRayAnimationWhenTargeted,
     StatusIsImmuneToChill, StatusIsImmuneToFire, WeaponSpecial,
@@ -28,7 +28,7 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             bonus: 2,
             formation: MeeleAttackFormation::Basic
         })
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: 6.5,
             kind: TargetingKind::Simple
@@ -74,7 +74,7 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             bonus: 5,
             formation: MeeleAttackFormation::Basic
         })
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: 6.5,
             kind: TargetingKind::Simple
@@ -120,7 +120,7 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             bonus: 4,
             formation: MeeleAttackFormation::Dash
         })
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: 6.5,
             kind: TargetingKind::Simple

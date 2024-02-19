@@ -1,8 +1,9 @@
+use log::{info, warn};
 use super::{
     Map, Point, CombatStats, GameLog, AnimationRequestBuffer, AnimationRequest,
-    EntitySpawnRequestBuffer, EntitySpawnRequest, Name, Renderable,
-    Consumable, SpellCharges, Position, WantsToUseTargeted, Targeted,
-    TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
+    EntitySpawnRequestBuffer, EntitySpawnRequest, Name, Renderable, Consumable,
+    SpellCharges, Position, WantsToUseTargeted, TargetedWhenThrown,
+    TargetedWhenCast, TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
     InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
     InflictsBurningWhenTargeted, MoveToPositionWhenTargeted,
     BuffsMeleeAttackWhenTargeted, BuffsPhysicalDefenseWhenTargeted,
@@ -33,7 +34,8 @@ pub struct TargetedSystemData<'a> {
         consumables: ReadStorage<'a, Consumable>,
         spell_charges: WriteStorage<'a, SpellCharges>,
         specials: WriteStorage<'a, WeaponSpecial>,
-        targeteds: ReadStorage<'a, Targeted>,
+        targeted_when_thrown: ReadStorage<'a, TargetedWhenThrown>,
+        targeted_when_cast: ReadStorage<'a, TargetedWhenCast>,
         wants_target: WriteStorage<'a, WantsToUseTargeted>,
         combat_stats: WriteStorage<'a, CombatStats>,
         healing: ReadStorage<'a, ProvidesFullHealing>,
@@ -75,7 +77,8 @@ impl<'a> System<'a> for TargetedSystem {
             consumables,
             mut spell_charges,
             mut specials,
-            targeteds,
+            targeted_when_thrown,
+            targeted_when_cast,
             mut wants_target,
             mut combat_stats,
             healing,
@@ -115,9 +118,13 @@ impl<'a> System<'a> for TargetedSystem {
             // Stuff needed to construct log messages.
             let thing_name = names.get(want_target.thing);
             let default_verb = "target".to_string();
-            let verb = targeteds
+            let throw_verb = targeted_when_thrown
                 .get(want_target.thing)
-                .map(|t| t.verb.clone())
+                .map(|t| t.verb.clone());
+            let cast_verb = targeted_when_cast
+                .get(want_target.thing)
+                .map(|t| t.verb.clone());
+            let verb = throw_verb.or(cast_verb)
                 .unwrap_or(default_verb);
 
             // Gather up all the entities that are either at the targeted
@@ -125,11 +132,26 @@ impl<'a> System<'a> for TargetedSystem {
             let user_position = positions.get(user).unwrap_or(&Position {x: 0, y: 0});
             let user_point = Point {x: user_position.x, y: user_position.y};
             let target_point = want_target.target;
-            let targeting_kind = targeteds
+            let throw_targeting_kind = targeted_when_thrown
                 .get(want_target.thing)
-                .map(|t| t.kind.clone())
-                .expect("Tried to target but no Targeted component.");
-            let targets: Vec<(&Entity, Point)> = find_targets(&*map, user_point, target_point, targeting_kind)
+                .map(|t| t.kind.clone());
+            let cast_targeting_kind = targeted_when_cast
+                .get(want_target.thing)
+                .map(|t| t.kind.clone());
+            let targeting_kind = throw_targeting_kind
+                .or(cast_targeting_kind);
+
+            if targeting_kind.is_none() {
+                info!("Failed to find targeting kind.");
+                continue
+            }
+
+            let targets: Vec<(&Entity, Point)> = find_targets(
+                &*map,
+                user_point,
+                target_point,
+                targeting_kind.unwrap() // Safe because of earlier guard.
+            )
                 .into_iter()
                 .filter(|(&e, _pt)| e != user)
                 .collect();

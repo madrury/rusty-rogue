@@ -58,7 +58,14 @@ pub enum TargetingKind {
     AlongRay {until_blocked: bool}
 }
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct Targeted {
+pub struct TargetedWhenThrown {
+    pub verb: String,
+    pub range: f32,
+    pub kind: TargetingKind
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct TargetedWhenCast {
     pub verb: String,
     pub range: f32,
     pub kind: TargetingKind

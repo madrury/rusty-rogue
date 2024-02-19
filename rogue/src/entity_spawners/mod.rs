@@ -8,25 +8,26 @@ use super::{
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
     SupportSpellcasterKind, Name, Player, Position, Renderable, SetsBgColor,
     Viewshed, PickUpable, Useable, Castable, SpellCharges, Equippable,
-    EquipmentSlot, Throwable, Targeted, TargetingKind, Untargeted, Consumable,
-    ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
-    InflictsDamageWhenTargeted, InflictsDamageWhenEncroachedUpon,
-    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    BuffsMeleeAttackWhenTargeted, BuffsPhysicalDefenseWhenTargeted,
-    InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
-    AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
-    MovesToRandomPosition, MoveToPositionWhenTargeted,
-    SpawnEntityWhenMeleeAttacked, SpawnsEntityInAreaWhenTargeted,
-    ChanceToSpawnAdjacentEntity, ChanceToDissipate,
-    SkipRandomDissipationForOneTurn, ChanceToInflictBurningOnAdjacentEntities,
-    MeeleAttackWepon, GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
+    EquipmentSlot, Throwable, TargetedWhenThrown, TargetedWhenCast,
+    TargetingKind, Untargeted, Consumable, ProvidesFullHealing,
+    ProvidesFullFood, IncreasesMaxHpWhenUsed, InflictsDamageWhenTargeted,
+    InflictsDamageWhenEncroachedUpon, InflictsFreezingWhenTargeted,
+    InflictsBurningWhenTargeted, BuffsMeleeAttackWhenTargeted,
+    BuffsPhysicalDefenseWhenTargeted, InflictsBurningWhenEncroachedUpon,
+    InflictsFreezingWhenEncroachedUpon, AreaOfEffectAnimationWhenTargeted,
+    AlongRayAnimationWhenTargeted, MovesToRandomPosition,
+    MoveToPositionWhenTargeted, SpawnEntityWhenMeleeAttacked,
+    SpawnsEntityInAreaWhenTargeted, ChanceToSpawnAdjacentEntity,
+    ChanceToDissipate, SkipRandomDissipationForOneTurn,
+    ChanceToInflictBurningOnAdjacentEntities, MeeleAttackWepon,
+    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
     ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
     DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
     MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
     StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
     SpawnEntityWhenKilled, DissipateWhenBurning,
     InvisibleWhenEncroachingEntityKind, WeaponSpecial, WeaponSpecialKind,
-    UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap, MAP_WIDTH,
+    UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap,
     MeeleAttackFormation, MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
@@ -119,9 +120,9 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::FreezingPotion, depth)
             .insert(ItemType::Dagger, 2 + depth)
             .insert(ItemType::Sword, 1 + depth)
-            .insert(ItemType::Raiper, 500)//depth)
+            .insert(ItemType::Raiper, depth)
             .insert(ItemType::LeatherArmor, 1 + depth)
-            // .insert(ItemType::MagicMissileScroll, 1 + depth)
+            .insert(ItemType::MagicMissileScroll, 500)
             .insert(ItemType::BlinkScroll, depth)
             .insert(ItemType::FireblastScroll, depth)
             // .insert(ItemType::FireballScroll, depth)

@@ -3,7 +3,7 @@ use crate::DissipateWhenBurning;
 
 use super::{
     EntitySpawnKind, Name, Position, Renderable, PickUpable, Castable,
-    SpellCharges, Targeted, TargetingKind, InflictsDamageWhenTargeted,
+    SpellCharges, TargetedWhenCast, TargetingKind, InflictsDamageWhenTargeted,
     InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
     BuffsMeleeAttackWhenTargeted, BuffsPhysicalDefenseWhenTargeted,
     AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
@@ -38,7 +38,7 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             regen_time: 100,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
@@ -85,7 +85,7 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             regen_time: 200,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AreaOfEffect {radius: 2.5}
@@ -142,7 +142,7 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             regen_time: 100,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
@@ -188,7 +188,7 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             regen_time: 200,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AreaOfEffect {radius: 2.5}
@@ -240,7 +240,7 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
             regen_time: 50,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
@@ -286,7 +286,7 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             regen_time: 100,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 8.5,
             kind: TargetingKind::AlongRay {until_blocked: false}
@@ -326,7 +326,7 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
             regen_time: 100,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
@@ -366,7 +366,7 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
             regen_time: 100,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
@@ -406,7 +406,7 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
             regen_time: 100,
             time: 0
         })
-        .with(Targeted {
+        .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
