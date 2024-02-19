@@ -115,12 +115,6 @@ pub struct InflictsFreezingWhenEncroachedUpon {
 
 // Component for effects that grant a MeleeAttackBonus
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct GrantsMeleeAttackBonus {
-    pub bonus: i32
-}
-
-// Component for effects that grant a MeleeAttackBonus
-#[derive(Component, ConvertSaveload, Clone)]
 pub struct GrantsMeleeDefenseBonus {
     pub bonus: i32
 }

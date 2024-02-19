@@ -284,8 +284,8 @@ fn make_along_ray_animation(
             fg: fg,
             bg: bg,
             glyph: glyph,
-            lifetime: 50.0,
-            delay: 50.0 * (i as f32)
+            lifetime: 40.0,
+            delay: 20.0 * (i as f32)
         })
     }
     particles
@@ -338,7 +338,7 @@ fn make_spin_attack_animation(
             // solution to this.
             bg: rltk::RGB::named(rltk::BLACK),
             glyph: glyph,
-            lifetime: 20.0, // ms
+            lifetime: 40.0, // ms
             delay: 20.0 * (i as f32),
         })
     }

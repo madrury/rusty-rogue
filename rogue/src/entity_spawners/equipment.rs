@@ -1,9 +1,10 @@
 use super::{
     Name, Position, Renderable, PickUpable, Equippable, EquipmentSlot,
-    Throwable, Targeted, TargetingKind, Consumable,
-    InflictsDamageWhenTargeted, GrantsMeleeAttackBonus,
-    GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, AlongRayAnimationWhenTargeted, StatusIsImmuneToChill, StatusIsImmuneToFire, WeaponSpecial, WeaponSpecialKind
+    Throwable, Targeted, TargetingKind, Consumable, InflictsDamageWhenTargeted,
+    MeeleAttackWepon, GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe,
+    MarkedBuilder, ElementalDamageKind, AlongRayAnimationWhenTargeted,
+    StatusIsImmuneToChill, StatusIsImmuneToFire, WeaponSpecial,
+    WeaponSpecialKind, MeeleAttackFormation
 };
 use rltk::RGB;
 use specs::prelude::*;
@@ -23,7 +24,10 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .with(Consumable {})
         .with(Name {name : "Dagger".to_string()})
         .with(Equippable {slot: EquipmentSlot::Melee})
-        .with(GrantsMeleeAttackBonus {bonus: 2})
+        .with(MeeleAttackWepon {
+            bonus: 2,
+            formation: MeeleAttackFormation::Basic
+        })
         .with(Targeted {
             verb: "throws".to_string(),
             range: 6.5,
@@ -40,7 +44,7 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             until_blocked: true
         })
         .with(WeaponSpecial {
-            regen_time: 50,
+            regen_time: 100,
             time: 0,
             kind: WeaponSpecialKind::ThrowWithoutExpending
         })
@@ -66,7 +70,10 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .with(Consumable {})
         .with(Name {name : "Sword".to_string()})
         .with(Equippable {slot: EquipmentSlot::Melee})
-        .with(GrantsMeleeAttackBonus {bonus: 4})
+        .with(MeeleAttackWepon {
+            bonus: 5,
+            formation: MeeleAttackFormation::Basic
+        })
         .with(Targeted {
             verb: "throws".to_string(),
             range: 6.5,
@@ -93,6 +100,53 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .build();
         Some(entity)
 }
+
+pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
+    let entity = ecs.create_entity()
+        .with(Position {x, y})
+        .with(Renderable {
+            glyph: rltk::to_cp437('↑'),
+            fg: RGB::named(rltk::SILVER),
+            bg: RGB::named(rltk::BLACK),
+            order: 2,
+            visible_out_of_fov: false
+        })
+        .with(PickUpable {})
+        .with(Throwable {})
+        .with(Consumable {})
+        .with(Name {name : "Rapier".to_string()})
+        .with(Equippable {slot: EquipmentSlot::Melee})
+        .with(MeeleAttackWepon {
+            bonus: 4,
+            formation: MeeleAttackFormation::Dash
+        })
+        .with(Targeted {
+            verb: "throws".to_string(),
+            range: 6.5,
+            kind: TargetingKind::Simple
+        })
+        .with(InflictsDamageWhenTargeted {
+            damage: 25,
+            kind: ElementalDamageKind::Physical
+        })
+        .with(AlongRayAnimationWhenTargeted {
+            fg: RGB::named(rltk::SILVER),
+            bg: RGB::named(rltk::BLACK),
+            glyph: rltk::to_cp437('↑'),
+            until_blocked: true
+        })
+        .with(WeaponSpecial {
+            regen_time: 10,
+            time: 0,
+            kind: WeaponSpecialKind::Dash
+        })
+        .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
+        .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+        Some(entity)
+}
+
 
 pub fn leather_armor(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     let entity = ecs.create_entity()
