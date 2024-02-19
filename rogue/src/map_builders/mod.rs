@@ -1,6 +1,6 @@
 use super::{
     World, Map, TileType, Point, entity_spawners, terrain_spawners,
-    DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE, color
+    DEBUG_VISUALIZE_MAPGEN, MAP_WIDTH, MAP_HEIGHT, MAP_SIZE
 };
 mod noise;
 pub use noise::*;
@@ -12,11 +12,13 @@ mod common;
 use common::*;
 mod components;
 use components::*;
+mod colormaps;
+pub use colormaps::{ColorMaps, FgColorMap, BgColorMap};
 
 
 pub trait MapBuilder {
     fn map(&self) -> Map;
-    fn build_map(&mut self) -> NoiseMaps;
+    fn build_map(&mut self) -> (NoiseMaps, ColorMaps);
     fn spawn_blessing_tile(&mut self, ecs: &mut World);
     fn spawn_water(&mut self, ecs: &mut World);
     fn spawn_terrain(&mut self, ecs: &mut World);

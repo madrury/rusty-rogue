@@ -1,5 +1,5 @@
 
-use crate::{StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
+use crate::{map_builders::ColorMaps, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
 
 use super::{
     Map, TileType, EntitySpawnKind, Hazard, IsEntityKind, Name, Position,
@@ -8,7 +8,7 @@ use super::{
     ChanceToSpawnAdjacentEntity, ChanceToDissipate,
     ChanceToInflictBurningOnAdjacentEntities,
     SkipRandomDissipationForOneTurn, SimpleMarker, SerializeMe,
-    MarkedBuilder, ElementalDamageKind
+    MarkedBuilder, ElementalDamageKind, FgColorMap, BgColorMap, UseFgColorMap, UseBgColorMap
 };
 use rltk::RGB;
 use specs::prelude::*;
@@ -45,6 +45,8 @@ pub fn fire(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chanc
                 order: 2,
                 visible_out_of_fov: false
             })
+            .with(UseFgColorMap {cmap: FgColorMap::Fire})
+            .with(UseBgColorMap {cmap: BgColorMap::Fire})
             .with(SetsBgColor {order: 1})
             .with(Name {name: "Fire".to_string()})
             .with(Hazard {})
@@ -120,8 +122,8 @@ pub fn destroy_fire(ecs: &mut World, entity: &Entity) {
 // map.chill array.
 const CHILL_ENCROACHMENT_DAMAGE: i32 = 2;
 const CHILL_FROZEN_TURNS: i32 = 4;
-const CHILL_SPAWN_DISSIPATE_CHANCE_CHANGE: i32 = 20;
-const CHILL_SPAWN_SPREAD_CHANCE_CHANGE: i32 = 20;
+const CHILL_SPAWN_DISSIPATE_CHANCE_CHANGE: i32 = 10;
+const CHILL_SPAWN_SPREAD_CHANCE_CHANGE: i32 = 10;
 
 pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chance: i32) -> Option<Entity> {
     let can_spawn: bool;
@@ -142,6 +144,8 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
                 order: 2,
                 visible_out_of_fov: false
             })
+            .with(UseFgColorMap {cmap: FgColorMap::Chill})
+            .with(UseBgColorMap {cmap: BgColorMap::Chill})
             .with(SetsBgColor {order: 0})
             .with(Name {name: "Chill".to_string()})
             .with(Hazard {})
@@ -228,12 +232,12 @@ pub fn steam(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
             .with(Position {x, y})
             .with(Renderable {
                 fg: RGB::named(rltk::WHITE),
-                bg: RGB::named(rltk::GRAY),
-                glyph: rltk::to_cp437('░'),
-                order: 2,
+                bg: RGB::named(rltk::BLACK),
+                glyph: 255,
+                order: 3,
                 visible_out_of_fov: false
             })
-            .with(SetsBgColor {order: 0})
+            .with(UseFgColorMap {cmap: FgColorMap::Steam})
             .with(Name {name: "Steam".to_string()})
             .with(Hazard {})
             .with(IsEntityKind {

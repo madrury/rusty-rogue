@@ -4,6 +4,9 @@ use specs::saveload::{ConvertSaveload, Marker};
 use specs::error::NoError;
 use serde::{Serialize, Deserialize};
 use rltk::{RGB, Point};
+
+use crate::map_builders::{BgColorMap, FgColorMap};
+
 use super::{GameLog};
 
 pub mod animation;
@@ -126,6 +129,19 @@ pub struct Renderable {
     pub order: i32,
     pub visible_out_of_fov: bool,
 }
+
+// Sets a colormap used to lookup fg colors for entity..
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct UseFgColorMap {
+    pub cmap: FgColorMap
+}
+
+// Sets a colormap used to lookup bg colors for entity.
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct UseBgColorMap {
+    pub cmap: BgColorMap
+}
+
 // An entity with this component sets the bg-color for their tile. It has no
 // gameplay application, it's only a visual effect.
 #[derive(Component, ConvertSaveload, Clone)]

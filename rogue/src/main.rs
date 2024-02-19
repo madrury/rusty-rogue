@@ -18,11 +18,11 @@ use components::melee::*;
 
 pub mod entity_spawners;
 pub mod terrain_spawners;
-pub mod color;
 mod save_load;
 mod random_table;
 
 pub mod map_builders;
+use map_builders::{ColorMaps, FgColorMap, BgColorMap};
 
 mod map;
 pub use map::*;
@@ -218,20 +218,39 @@ impl State {
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
         let invisibles = self.ecs.read_storage::<StatusInvisibleToPlayer>();
+        let fg_colormaps = self.ecs.read_storage::<UseFgColorMap>();
+        let bg_colormaps = self.ecs.read_storage::<UseBgColorMap>();
         let sets_bg = self.ecs.read_storage::<SetsBgColor>();
         let map = self.ecs.fetch::<Map>();
+        let cmaps = self.ecs.fetch::<ColorMaps>();
         // First loop through the entities in reverse render order and draw them
-        // all. Later calls to ctx.set overwrite previous writes.
+        // all. Later calls to ctx.set overwrite previous writes, we'll use this
+        // to make a second pass and update background colors as needed.
         let mut render_data = (&entities, &positions, &renderables).join().collect::<Vec<_>>();
         render_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
         for (e, pos, render) in render_data {
+            // Bail out early if the entity is invisible.
             let invisible = invisibles.get(e).is_some();
             if invisible { continue; }
+            // Lookup the colors for the entity. There are two sourced, the
+            // colormaps or a fallback to a fixed color in the entities
+            // Renderable component.
             let idx = map.xy_idx(pos.x, pos.y);
+            let fgcmap = fg_colormaps.get(e).map_or(FgColorMap::None, |fg| fg.cmap);
+            let fg = match fgcmap {
+                FgColorMap::None => render.fg,
+                _ => cmaps.get_fg_color(idx, fgcmap)
+            };
+            let bgcmap = bg_colormaps.get(e).map_or(BgColorMap::None, |bg| bg.cmap);
+            let bg = match bgcmap {
+                BgColorMap::None => render.bg,
+                _ => cmaps.get_bg_color(idx, bgcmap)
+            };
+            // Draw the glyphs on the console.
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
-                ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
+                ctx.set(pos.x, pos.y, fg, bg, render.glyph);
             } else if map.revealed_tiles[idx] && render.visible_out_of_fov {
-                ctx.set(pos.x, pos.y, render.fg.to_greyscale(), render.bg.to_greyscale(), render.glyph);
+                ctx.set(pos.x, pos.y, fg.to_greyscale(), bg.to_greyscale(), render.glyph);
             }
         }
         // Loop through the enetities that override bg colors, and fill in the
@@ -240,15 +259,24 @@ impl State {
         let mut bg_data = (&entities, &positions, &renderables, &sets_bg).join().collect::<Vec<_>>();
         bg_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
         for (e, pos, render, _bg) in bg_data {
+            // Bail out early if the entity is invisible.
             let invisible = invisibles.get(e).is_some();
             if invisible { continue; }
+            // Render.
+            let idx = map.xy_idx(pos.x, pos.y);
+            let bgcmap = bg_colormaps.get(e).map_or(BgColorMap::None, |bg| bg.cmap);
+            let bg = match bgcmap {
+                BgColorMap::None => render.bg,
+                _ => cmaps.get_bg_color(idx, bgcmap)
+            };
             let idx = map.xy_idx(pos.x, pos.y);
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
-                ctx.set_bg(pos.x, pos.y, render.bg);
+                ctx.set_bg(pos.x, pos.y, bg);
             } else if map.revealed_tiles[idx] && render.visible_out_of_fov {
-                ctx.set_bg(pos.x, pos.y, render.bg.to_greyscale());
+                ctx.set_bg(pos.x, pos.y, bg.to_greyscale());
             }
         }
+
         // DEBUG FLAGS: Highlight entities of various types according to debug
         // flags.
         if DEBUG_HIGHLIGHT_STAIRS {
@@ -417,8 +445,14 @@ impl State {
         // Build the floor layout, and update the dubug map build animation.
         self.mapgen.reset();
         let mut builder = map_builders::random_builder(depth);
-        let noisemap = builder.build_map();
+        let (noisemap, colormap) = builder.build_map();
+
+        // Insert the noisemap and the colormap into he ECS as resources.
+        // The noisemap is used for random data needed when spawning entities.
+        // The colormap is used durning frame rendering to determine fg and bg
+        // colors for some entities.
         self.ecs.insert(noisemap);
+        self.ecs.insert(colormap);
 
         self.mapgen.history = builder.snapshot_history();
 
@@ -993,6 +1027,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Name>();
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<BlocksTile>();
+    gs.ecs.register::<Renderable>();
+    gs.ecs.register::<UseFgColorMap>();
+    gs.ecs.register::<UseBgColorMap>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<SetsBgColor>();
     gs.ecs.register::<CombatStats>();

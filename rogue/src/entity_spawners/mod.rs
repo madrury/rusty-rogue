@@ -26,6 +26,7 @@ use super::{
     StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
     SpawnEntityWhenKilled, DissipateWhenBurning,
     InvisibleWhenEncroachingEntityKind, WeaponSpecial, WeaponSpecialKind,
+    UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap, MAP_WIDTH,
     MeeleAttackFormation, MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;

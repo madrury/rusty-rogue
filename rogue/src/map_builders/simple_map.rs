@@ -1,6 +1,7 @@
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
 
+use super::colormaps::ColorMaps;
 use super::{MapBuilder, NoiseMaps};
 use super::{
     Map, TileType, Point, Rectangle, MAP_WIDTH, MAP_HEIGHT,
@@ -30,7 +31,7 @@ impl MapBuilder for SimpleMapBuilder {
         self.map.clone()
     }
 
-    fn build_map(&mut self) -> NoiseMaps {
+    fn build_map(&mut self) -> (NoiseMaps, ColorMaps) {
         self.carve_out_rooms_and_corridors();
         self.map.synchronize_blocked();
 
@@ -49,7 +50,8 @@ impl MapBuilder for SimpleMapBuilder {
         self.map.synchronize_opaque();
         self.map.synchronize_ok_to_spawn();
 
-        noisemaps
+        let colormaps = ColorMaps::from_noisemap(&noisemaps, &self.map);
+        (noisemaps, colormaps)
     }
 
     fn spawn_blessing_tile(&mut self, ecs: &mut World) {
