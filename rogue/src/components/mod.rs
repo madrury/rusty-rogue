@@ -88,6 +88,9 @@ pub struct Opaque {}
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Tramples {}
 
+// Component tags an entity as bloodies. Has various visual and game effects.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Bloodied {}
 
 //------------------------------------------------------------------
 // Core Data Components:
@@ -135,10 +138,30 @@ pub struct Renderable {
 pub struct UseFgColorMap {
     pub cmap: FgColorMap
 }
+impl UseFgColorMap {
+    pub fn set(&mut self, cmap: FgColorMap) {
+        self.cmap = cmap
+    }
+}
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct UseFgColorMapWhenBloodied {
+    pub cmap: FgColorMap
+}
 
 // Sets a colormap used to lookup bg colors for entity.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct UseBgColorMap {
+    pub cmap: BgColorMap
+}
+impl UseBgColorMap {
+    pub fn set(&mut self, cmap: BgColorMap) {
+        self.cmap = cmap
+    }
+}
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct UseBgColorMapWhenBloodied {
     pub cmap: BgColorMap
 }
 

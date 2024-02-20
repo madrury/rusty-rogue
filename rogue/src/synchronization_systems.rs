@@ -1,8 +1,12 @@
 use std::matches;
 use specs::prelude::*;
-use super::{Map, Position, BlocksTile, Opaque, IsEntityKind, EntitySpawnKind};
+use super::{
+    Map, Position, BlocksTile, Opaque, IsEntityKind, EntitySpawnKind, Bloodied,
+    UseFgColorMap, UseFgColorMapWhenBloodied, FgColorMap, UseBgColorMap,
+    UseBgColorMapWhenBloodied, BgColorMap
+};
 
-pub struct MapIndexingSystem {}
+pub struct MapSynchronizationSystem {}
 
 //----------------------------------------------------------------------------
 // Updates/sychronizes tile classification vectors on the map.
@@ -10,7 +14,7 @@ pub struct MapIndexingSystem {}
 //   the positions of entities currently in the ECS. These vectors are used when
 //   computing routing for movement.
 //----------------------------------------------------------------------------
-impl<'a> System<'a> for MapIndexingSystem {
+impl<'a> System<'a> for MapSynchronizationSystem {
     type SystemData = (
         WriteExpect<'a, Map>,
         ReadStorage<'a, Position>,
@@ -28,6 +32,7 @@ impl<'a> System<'a> for MapIndexingSystem {
         map.synchronize_opaque();
         for e in map.fire.iter_mut() {*e = false}
         for e in map.chill.iter_mut() {*e = false}
+        for e in map.shallow_water.iter_mut() {*e = false}
         for e in map.deep_water.iter_mut() {*e = false}
         for e in map.steam.iter_mut() {*e = false}
         for e in map.grass.iter_mut() {*e = false}
@@ -57,6 +62,38 @@ impl<'a> System<'a> for MapIndexingSystem {
             map.grass[idx] |= is_grass;
             // Update tile content.
             map.tile_content[idx].push(entity);
+        }
+    }
+}
+
+pub struct ColorSynchronizationSystem {}
+
+//----------------------------------------------------------------------------
+// Updates/sychronizes colormaps.
+//----------------------------------------------------------------------------
+impl<'a> System<'a> for ColorSynchronizationSystem {
+    type SystemData = (
+        ReadStorage<'a, Bloodied>,
+        ReadStorage<'a, UseFgColorMapWhenBloodied>,
+        ReadStorage<'a, UseBgColorMapWhenBloodied>,
+        WriteStorage<'a, UseFgColorMap>,
+        WriteStorage<'a, UseBgColorMap>,
+    );
+
+    fn run(&mut self, data: Self::SystemData) {
+        let (
+            bloodieds,
+            use_fg_when_bloodieds,
+            use_bg_when_bloodieds,
+            mut use_fg_cmap,
+            mut use_bg_cmap
+        ) = data;
+
+        for (_, _, fg_cmap) in (&bloodieds, &use_fg_when_bloodieds, &mut use_fg_cmap).join() {
+            fg_cmap.set(FgColorMap::Blood)
+        }
+        for (_, _, bg_cmap) in (&bloodieds, &use_bg_when_bloodieds, &mut use_bg_cmap).join() {
+            bg_cmap.set(BgColorMap::Blood)
         }
     }
 }

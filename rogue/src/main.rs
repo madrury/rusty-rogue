@@ -48,8 +48,8 @@ mod targeted_effect_system;
 use targeted_effect_system::*;
 mod untargeted_effect_system;
 use untargeted_effect_system::*;
-mod map_indexing_system;
-use map_indexing_system::*;
+mod synchronization_systems;
+use synchronization_systems::*;
 mod particle_system;
 use particle_system::*;
 mod animation_system;
@@ -86,6 +86,7 @@ const DEBUG_HIGHLIGHT_FIRE: bool = false;
 const DEBUG_HIGHLIGHT_DEEP_WATER: bool = false;
 const DEBUG_HIGHLIGHT_SHALLOW_WATER: bool = false;
 const DEBUG_HIGHLIGHT_GRASS: bool = false;
+const DEBUG_HIGHLIGHT_BLOOD: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 100.0;
 
@@ -300,11 +301,16 @@ impl State {
         if DEBUG_HIGHLIGHT_FLOOR {
             self.debug_highlight_floor(ctx);
         }
+        if DEBUG_HIGHLIGHT_BLOOD {
+            self.debug_highlight_blood(ctx);
+        }
     }
 
-    fn run_map_indexing_system(&mut self) {
-        let mut mis = MapIndexingSystem{};
-        mis.run_now(&self.ecs);
+    fn run_synchronization_systems(&mut self) {
+        let mut mss = MapSynchronizationSystem{};
+        mss.run_now(&self.ecs);
+        let mut css = ColorSynchronizationSystem{};
+        css.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
@@ -660,6 +666,19 @@ impl State {
         }
     }
 
+    #[allow(dead_code)]
+    fn debug_highlight_blood(&self, ctx: &mut Rltk) {
+        let map = self.ecs.fetch::<Map>();
+        for x in 0..map.width {
+            for y in 0..map.height {
+                let idx = map.xy_idx(x, y);
+                if map.blood[idx] {
+                    ctx.set_bg(x, y, RGB::named(rltk::RED));
+                }
+            }
+        }
+    }
+
 }
 
 impl GameState for State {
@@ -735,7 +754,7 @@ impl GameState for State {
             }
             RunState::PreGame => {
                 self.run_pregame_systems();
-                self.run_map_indexing_system();
+                self.run_synchronization_systems();
                 newrunstate = RunState::HazardTurn;
             }
             RunState::AwaitingInput => {
@@ -746,7 +765,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                    self.run_map_indexing_system();
+                    self.run_synchronization_systems();
                     let next_state = self.next_state
                         .expect("Returning from animation, but no next_state to return to.");
                     newrunstate = next_state;
@@ -759,7 +778,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                    self.run_map_indexing_system();
+                    self.run_synchronization_systems();
                     newrunstate = RunState::MonsterTurn;
                 }
             }
@@ -778,7 +797,7 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                    self.run_map_indexing_system();
+                    self.run_synchronization_systems();
                     newrunstate = nextstate;
                 }
             }
@@ -789,13 +808,13 @@ impl GameState for State {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
                     self.run_cleanup_systems();
-                    self.run_map_indexing_system();
+                    self.run_synchronization_systems();
                     newrunstate = RunState::UpkeepTrun
                 }
             }
             RunState::UpkeepTrun => {
                 self.run_upkeep_turn_systems();
-                self.run_map_indexing_system();
+                self.run_synchronization_systems();
                 newrunstate = RunState::HazardTurn;
             }
             RunState::ShowBlessingSelectionMenu => {
@@ -1029,7 +1048,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<UseFgColorMap>();
+    gs.ecs.register::<UseFgColorMapWhenBloodied>();
     gs.ecs.register::<UseBgColorMap>();
+    gs.ecs.register::<UseBgColorMapWhenBloodied>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<SetsBgColor>();
     gs.ecs.register::<CombatStats>();
@@ -1041,6 +1062,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<Opaque>();
     gs.ecs.register::<Tramples>();
+    gs.ecs.register::<Bloodied>();
     gs.ecs.register::<Equippable>();
     gs.ecs.register::<Castable>();
     gs.ecs.register::<Targeted>();

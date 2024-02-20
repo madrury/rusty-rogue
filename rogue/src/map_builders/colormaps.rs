@@ -1,29 +1,28 @@
 use rltk::{
-    BLUE, DARKGRAY, DARKGREEN, GREEN, LIGHTBLUE, LIGHTGRAY, MEDIUMBLUE, ORANGE,
-    RED, RGB, SANDY_BROWN, SILVER, WHITE, YELLOW
+    BLUE, BROWN1, CRIMSON, DARKGRAY, DARKGREEN, GREEN, LIGHTBLUE, LIGHTGRAY, MEDIUMBLUE, ORANGE, RED, RED1, RED2, RED4, RGB, ROSY_BROWN, SANDY_BROWN, SILVER, TOMATO, WHITE, YELLOW
 };
 use serde::{Serialize, Deserialize};
 use super::{NoiseMaps, Map};
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum FgColorMap {
-    None, ShortGrass, LongGrass, ShallowWater, DeepWater, Fire, Chill, Steam
+    None, ShortGrass, LongGrass, ShallowWater, DeepWater, Fire, Chill, Steam, Blood
 }
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum BgColorMap {
-    None, ShallowWater, DeepWater, Fire, Chill
+    None, ShallowWater, DeepWater, Fire, Chill, Blood
 }
 
 //----------------------------------------------------------------------------
 // ColorMaps.
 //----------------------------------------------------------------------------
-// Encapsulates smoothly varying random colors used by during rendering to
-// display entities with the UseFgColorMap or UseBgColorMap components during
-// rendering. When entities have one of these compoenents, we dynamically look
-// up the value in one of the consituent colormaps for the tile that they
-// occupy, and color the entity accordingly. This is most useful for immobile
-// entities whose display is modified by certain effects.
+// Encapsulates smoothly varying random colors used during rendering to display
+// entities with the UseFgColorMap or UseBgColorMap components during rendering.
+// When entities have one of these compoenents, we dynamically look up the value
+// in one of the consituent colormaps for the tile that they occupy, and color
+// the entity accordingly. This is most useful for immobile entities whose
+// display is modified by certain effects.
 //----------------------------------------------------------------------------
 pub struct ColorMaps {
     short_grass_fg: Vec<RGB>,
@@ -36,7 +35,9 @@ pub struct ColorMaps {
     fire_bg: Vec<RGB>,
     chill_fg: Vec<RGB>,
     chill_bg: Vec<RGB>,
-    steam_fg: Vec<RGB>
+    steam_fg: Vec<RGB>,
+    blood_fg: Vec<RGB>,
+    blood_bg: Vec<RGB>,
 }
 impl ColorMaps {
     pub fn from_noisemap(nm: &NoiseMaps, map: &Map) -> Self {
@@ -63,6 +64,10 @@ impl ColorMaps {
                 .into_iter().map(chill_bg_from_noise).collect(),
             steam_fg: nm.to_steam_fg_color_noise(map)
                 .into_iter().map(steam_fg_from_noise).collect(),
+            blood_fg: nm.to_blood_fg_color_noise(map)
+                .into_iter().map(blood_fg_from_noise).collect(),
+            blood_bg: nm.to_blood_bg_color_noise(map)
+                .into_iter().map(blood_bg_from_noise).collect(),
         }
     }
 
@@ -75,6 +80,7 @@ impl ColorMaps {
             FgColorMap::Fire => self.fire_fg[idx],
             FgColorMap::Chill => self.chill_fg[idx],
             FgColorMap::Steam => self.steam_fg[idx],
+            FgColorMap::Blood => self.blood_fg[idx],
             // This should never be reached. We pick a color that likely makes
             // it obvious.
             FgColorMap::None => RGB::named(rltk::HOTPINK)
@@ -87,6 +93,7 @@ impl ColorMaps {
             BgColorMap::DeepWater => self.deep_water_bg[idx],
             BgColorMap::Fire => self.fire_bg[idx],
             BgColorMap::Chill => self.chill_bg[idx],
+            BgColorMap::Blood => self.blood_bg[idx],
             // This should never be reached. We pick a color that likely makes
             // it obvious.
             BgColorMap::None => RGB::named(rltk::HOTPINK)
@@ -136,4 +143,12 @@ pub fn chill_bg_from_noise(f: f32) -> RGB {
 
 pub fn steam_fg_from_noise(f: f32) -> RGB {
     interpolate_colors(f, WHITE, DARKGRAY)
+}
+
+pub fn blood_fg_from_noise(f: f32) -> RGB {
+    interpolate_colors(f, RED, DARKGREEN)
+}
+
+pub fn blood_bg_from_noise(f: f32) -> RGB {
+    interpolate_colors(f, RED4, BLUE)
 }

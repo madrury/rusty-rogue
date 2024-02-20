@@ -3,7 +3,7 @@ use crate::{DissipateWhenTrampledUpon, IsEntityKind, SpawnEntityWhenTrampledUpon
 use super::{
     Map, Position, Renderable, Name, SimpleMarker, SerializeMe,
     MarkedBuilder, DissipateWhenBurning, ChanceToSpawnEntityWhenBurning,
-    EntitySpawnKind, StatusIsImmuneToChill, Hazard, Opaque
+    EntitySpawnKind, StatusIsImmuneToChill, Hazard, Opaque, UseFgColorMapWhenBloodied
 };
 use crate::map_builders::{GrassSpawnTable, FgColorMap};
 use rltk::RGB;
@@ -47,6 +47,7 @@ pub fn grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entity> {
             visible_out_of_fov: true
         })
         .with(UseFgColorMap {cmap: FgColorMap::ShortGrass})
+        .with(UseFgColorMapWhenBloodied {cmap: FgColorMap::Blood})
         .with(Name {name: "Grass".to_string()})
         .with(IsEntityKind {
             kind: EntitySpawnKind::ShortGrass { fg: fgcolor }
@@ -84,6 +85,7 @@ pub fn tall_grass(ecs: &mut World, x: i32, y: i32, fgcolor: RGB) -> Option<Entit
             visible_out_of_fov: true
         })
         .with(UseFgColorMap {cmap: FgColorMap::LongGrass})
+        .with(UseFgColorMapWhenBloodied {cmap: FgColorMap::Blood})
         .with(Name {name: "Tall Grass".to_string()})
         .with(IsEntityKind {
             kind: EntitySpawnKind::TallGrass { fg: fgcolor }
