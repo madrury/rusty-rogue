@@ -1,16 +1,15 @@
-use super::{
-    EntitySpawnKind, Name, Position, Renderable, PickUpable, Useable,
-    Throwable, TargetedWhenThrown, TargetingKind, Untargeted, Consumable,
-    ProvidesFullHealing, IncreasesMaxHpWhenUsed, InflictsDamageWhenTargeted,
-    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    AreaOfEffectAnimationWhenTargeted, MovesToRandomPosition,
-    SpawnsEntityInAreaWhenTargeted, ProvidesFireImmunityWhenUsed,
-    ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
-    DecreasesSpellRechargeWhenUsed, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, StatusIsImmuneToFire, StatusIsImmuneToChill
-};
-use rltk::{RGB};
+use crate::components::*;
+use crate::components::animation::*;
+use crate::components::game_effects::*;
+use crate::components::signaling::*;
+use crate::components::status_effects::*;
+use crate::components::spawn_despawn::*;
+use crate::components::targeting::*;
+
+use rltk::RGB;
 use specs::prelude::*;
+use specs::saveload::{SimpleMarker, MarkedBuilder};
+
 
 const POTION_THROW_RANGE: f32 = 8.5;
 const POTION_RENDER_ORDER: i32 = 2;
@@ -37,13 +36,6 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(PickUpable {})
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
-        // TODO: Restore this after we've added allies.
-        // .with(Throwable {})
-        // .with(Targeted {
-        //     verb: "throws".to_string(),
-        //     range: POTION_THROW_RANGE,
-        //     kind: TargetingKind::Simple
-        // })
         .with(Consumable {})
         .with(ProvidesFullHealing {})
         .with(IncreasesMaxHpWhenUsed {amount: HEALTH_POTION_MAX_HP_INCREASE})
@@ -132,28 +124,35 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(ProvidesFireImmunityWhenUsed {
             turns: FIRE_POTION_IMMUNITY_TURNS
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: FIRE_POTION_DAMAGE,
-            kind: ElementalDamageKind::Fire
-        })
-        .with(InflictsBurningWhenTargeted {
-            turns: FIRE_POTION_BURNING_TURNS,
-            tick_damage: FIRE_POTION_BURNING_TICK_DAMAGE
-        })
-        .with(SpawnsEntityInAreaWhenTargeted {
-            radius: FIRE_POTION_SPAWN_RADIUS,
-            kind: EntitySpawnKind::Fire {
-                spread_chance: FIRE_POTION_SPAWN_SPREAD_CHANCE,
-                dissipate_chance: FIRE_POTION_SPAWN_DISSIPATE_CHANCE,
+        .with(InflictsDamageWhenThrown(
+            InflictsDamageData {
+                damage: FIRE_POTION_DAMAGE,
+                kind: ElementalDamageKind::Fire
             }
-        })
-        .with(AreaOfEffectAnimationWhenTargeted {
-            // TODO: This field should probably just be f32.
-            radius: FIRE_POTION_AOE_RADIUS as i32,
-            fg: RGB::named(rltk::ORANGE),
-            bg: RGB::named(rltk::RED),
-            glyph: rltk::to_cp437('^')
-        })
+        ))
+        .with(InflictsBurningWhenThrown (
+            InflictsBurningData {
+                turns: FIRE_POTION_BURNING_TURNS,
+                tick_damage: FIRE_POTION_BURNING_TICK_DAMAGE
+            }
+        ))
+        .with(SpawnsEntityInAreaWhenThrown (
+            SpawnsEntityInAreaData {
+                radius: FIRE_POTION_SPAWN_RADIUS,
+                kind: EntitySpawnKind::Fire {
+                    spread_chance: FIRE_POTION_SPAWN_SPREAD_CHANCE,
+                    dissipate_chance: FIRE_POTION_SPAWN_DISSIPATE_CHANCE,
+                }
+            }
+        ))
+        .with(AreaOfEffectAnimationWhenThrown (
+            AreaOfEffectAnimationData {
+                radius: FIRE_POTION_AOE_RADIUS as i32,
+                fg: RGB::named(rltk::ORANGE),
+                bg: RGB::named(rltk::RED),
+                glyph: rltk::to_cp437('^')
+            }
+        ))
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -202,26 +201,34 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(ProvidesChillImmunityWhenUsed {
             turns: CHILL_POTION_IMMUNITY_TURNS
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: CHILL_POTION_DAMAGE,
-            kind: ElementalDamageKind::Chill
-        })
-        .with(InflictsFreezingWhenTargeted {
-            turns: CHILL_POTION_FREEZING_TURNS
-        })
-        .with(SpawnsEntityInAreaWhenTargeted {
-            radius: CHILL_POTION_SPAWN_RADIUS,
-            kind: EntitySpawnKind::Chill {
-                spread_chance: CHILL_POTION_SPAWN_SPREAD_CHANCE,
-                dissipate_chance: CHILL_POTION_SPAWN_DISSIPATE_CHANCE,
+        .with(InflictsDamageWhenThrown (
+            InflictsDamageData {
+                damage: CHILL_POTION_DAMAGE,
+                kind: ElementalDamageKind::Chill
             }
-        })
-        .with(AreaOfEffectAnimationWhenTargeted {
-            radius: CHILL_POTION_AOE_RADIUS as i32,
-            fg: RGB::named(rltk::WHITE),
-            bg: RGB::named(rltk::LIGHT_BLUE),
-            glyph: rltk::to_cp437('*')
-        })
+        ))
+        .with(InflictsFreezingWhenThrown (
+            InflictsFreezingData {
+                turns: CHILL_POTION_FREEZING_TURNS
+            }
+        ))
+        .with(SpawnsEntityInAreaWhenThrown (
+            SpawnsEntityInAreaData {
+                radius: CHILL_POTION_SPAWN_RADIUS,
+                kind: EntitySpawnKind::Chill {
+                    spread_chance: CHILL_POTION_SPAWN_SPREAD_CHANCE,
+                    dissipate_chance: CHILL_POTION_SPAWN_DISSIPATE_CHANCE,
+                }
+            }
+        ))
+        .with(AreaOfEffectAnimationWhenThrown (
+            AreaOfEffectAnimationData {
+                radius: CHILL_POTION_AOE_RADIUS as i32,
+                fg: RGB::named(rltk::WHITE),
+                bg: RGB::named(rltk::LIGHT_BLUE),
+                glyph: rltk::to_cp437('*')
+            }
+        ))
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()

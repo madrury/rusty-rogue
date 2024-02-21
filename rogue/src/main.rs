@@ -14,6 +14,7 @@ use components::game_effects::*;
 use components::spawn_despawn::*;
 use components::status_effects::*;
 use components::signaling::*;
+use components::targeting::*;
 use components::melee::*;
 
 pub mod entity_spawners;
@@ -156,7 +157,7 @@ pub enum RunState {
     // charges.
     UpkeepTrun,
     // We're rendering the help menu.
-    ShowHelpMenu{details: Option<&'static str>},
+    ShowHelpMenu { details: Option<&'static str> },
     // We're rendering the blessing selection menu.
     ShowBlessingSelectionMenu,
     // We're rendering the use (untargeted) item menu.
@@ -172,13 +173,15 @@ pub enum RunState {
     ShowTargetingMouse {
         range: f32,
         kind: TargetingKind,
-        thing: Entity
+        verb: TargetingVerb,
+        thing: Entity,
     },
     // We're asking the player to select a target for a targeted effect using
     // the keyboard.
     ShowTargetingKeyboard {
         range: f32,
         kind: TargetingKind,
+        verb: TargetingVerb,
         thing: Entity,
         current: Option<Point>
     },
@@ -906,6 +909,7 @@ impl GameState for State {
                             range: range,
                             thing: thing,
                             kind: kind,
+                            verb: TargetingVerb::Thrown,
                             current: None
                         };
                     }
@@ -927,6 +931,7 @@ impl GameState for State {
                                 range: range,
                                 thing: thing,
                                 kind: kind,
+                                verb: TargetingVerb::Cast,
                                 current: None
                             };
                         }
@@ -943,43 +948,43 @@ impl GameState for State {
                     }
                 }
             }
-            RunState::ShowTargetingMouse {range, kind, thing} => {
+            RunState::ShowTargetingMouse {range, kind, verb, thing} => {
                 match gui::ranged_target_mouse(&mut self.ecs, ctx, range, kind) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
                     TargetingResult::SwitchModality => {
                         newrunstate = RunState::ShowTargetingKeyboard {
-                            range: range, thing: thing, kind: kind, current: None
+                            range, thing, kind, verb, current: None
                         }
                     }
                     TargetingResult::Selected {pos} => {
                         let mut intent = self.ecs.write_storage::<WantsToUseTargeted>();
                         intent.insert(
                             *self.ecs.fetch::<Entity>(), // Player.
-                            WantsToUseTargeted {thing: thing, target: pos}
+                            WantsToUseTargeted {thing: thing, target: pos, verb: verb}
                         ).expect("Unable to insert intent to throw item.");
                         newrunstate = RunState::PlayerTurn;
                     }
                     _ => {}
                 }
             }
-            RunState::ShowTargetingKeyboard {range, kind, thing, current} => {
+            RunState::ShowTargetingKeyboard {range, kind, verb, thing, current} => {
                 match gui::ranged_target_keyboard(&mut self.ecs, ctx, range, kind, current) {
                     TargetingResult::Cancel => newrunstate = RunState::AwaitingInput,
                     TargetingResult::SwitchModality => {
                         newrunstate = RunState::ShowTargetingMouse {
-                            range: range, thing: thing, kind: kind
+                            range, thing, kind, verb
                         }
                     },
                     TargetingResult::MoveCursor {pos} => {
                         newrunstate = RunState::ShowTargetingKeyboard {
-                            range: range, thing: thing, kind: kind, current: Some(pos)
+                            range, thing, kind, verb, current: Some(pos)
                         }
                     },
                     TargetingResult::Selected {pos} => {
                         let mut intent = self.ecs.write_storage::<WantsToUseTargeted>();
                         intent.insert(
                             *self.ecs.fetch::<Entity>(), // Player.
-                            WantsToUseTargeted {thing: thing, target: pos}
+                            WantsToUseTargeted {thing: thing, target: pos, verb: verb}
                         ).expect("Unable to insert intent to use targeted item.");
                         newrunstate = RunState::PlayerTurn;
                     },
@@ -1108,19 +1113,23 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ProvidesFireImmunityWhenUsed>();
     gs.ecs.register::<ProvidesChillImmunityWhenUsed>();
     gs.ecs.register::<MovesToRandomPosition>();
-    gs.ecs.register::<InflictsDamageWhenTargeted>();
+    gs.ecs.register::<InflictsDamageWhenThrown>();
+    gs.ecs.register::<InflictsDamageWhenCast>();
     gs.ecs.register::<InflictsDamageWhenEncroachedUpon>();
     gs.ecs.register::<RemoveBurningWhenEncroachedUpon>();
     gs.ecs.register::<DissipateFireWhenEncroachedUpon>();
     gs.ecs.register::<RemoveBurningOnUpkeep>();
-    gs.ecs.register::<InflictsFreezingWhenTargeted>();
-    gs.ecs.register::<InflictsBurningWhenTargeted>();
-    gs.ecs.register::<MoveToPositionWhenTargeted>();
-    gs.ecs.register::<BuffsMeleeAttackWhenTargeted>();
-    gs.ecs.register::<BuffsPhysicalDefenseWhenTargeted>();
+    gs.ecs.register::<InflictsFreezingWhenThrown>();
+    gs.ecs.register::<InflictsFreezingWhenCast>();
+    gs.ecs.register::<InflictsBurningWhenThrown>();
+    gs.ecs.register::<InflictsBurningWhenCast>();
+    gs.ecs.register::<MoveToPositionWhenCast>();
+    gs.ecs.register::<BuffsMeleeAttackWhenCast>();
+    gs.ecs.register::<BuffsPhysicalDefenseWhenCast>();
     gs.ecs.register::<InflictsBurningWhenEncroachedUpon>();
     gs.ecs.register::<InflictsFreezingWhenEncroachedUpon>();
-    gs.ecs.register::<SpawnsEntityInAreaWhenTargeted>();
+    gs.ecs.register::<SpawnsEntityInAreaWhenThrown>();
+    gs.ecs.register::<SpawnsEntityInAreaWhenCast>();
     gs.ecs.register::<SpawnEntityWhenEncroachedUpon>();
     gs.ecs.register::<SpawnEntityWhenTrampledUpon>();
     gs.ecs.register::<SpawnEntityWhenMeleeAttacked>();
@@ -1141,8 +1150,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusInvisibleToPlayer>();
     gs.ecs.register::<InvisibleWhenEncroachingEntityKind>();
     gs.ecs.register::<GameAnimationParticle>();
-    gs.ecs.register::<AreaOfEffectAnimationWhenTargeted>();
-    gs.ecs.register::<AlongRayAnimationWhenTargeted>();
+    gs.ecs.register::<AreaOfEffectAnimationWhenThrown>();
+    gs.ecs.register::<AreaOfEffectAnimationWhenCast>();
+    gs.ecs.register::<AlongRayAnimationWhenThrown>();
+    gs.ecs.register::<AlongRayAnimationWhenCast>();
 
     // Placeholder values which we will replace upon map generation.
     gs.ecs.insert(Point::new(0, 0)); // Player position.

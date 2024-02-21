@@ -12,12 +12,15 @@ use super::signaling::{ElementalDamageKind};
 // various game contexts. Some of these fall into general classes:
 //
 //   - [...]WhenUsed components indicate effects of an item/spell when selected
-//     from the use item menu, i.e., when used as an untargeted effect.
-//   - [...]WhenTargeted components inficate effects of an item/spell when used as
-//     a targeted effect.
+//   from the use item menu, i.e., when used as an untargeted effect.
+//   - [...]WhenThrown components indicate effects of an item/spell when thrown
+//   (as from the throw menu, in the cast of the player).
+//   - [...]WhenCast components inficate effects of an item/spell when cast (as
+//   from the spell menu, in the cast of the player).
 //
 //  Note that some entities (for example, potions) have different effects when
-//  targeted vs. untargeted.
+//  thrown vs. untargeted. Some weapon specials allow the cast of two targeted
+//  effects, thrown and cast.
 //
 //   - [...]WhenEncroachedUpon indicate effects that an entity has on any other
 //     entity occupying the same tile.
@@ -34,45 +37,60 @@ pub struct DecreasesSpellRechargeWhenUsed {
     pub percentage: i32
 }
 
-// Component for effects that inflict damage when thrown or cast.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsDamageWhenTargeted {
+// Components for effects that inflict damage.
+#[derive(Clone, ConvertSaveload)]
+pub struct InflictsDamageData {
     pub damage: i32,
     pub kind: ElementalDamageKind
 }
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InflictsDamageWhenThrown (pub InflictsDamageData);
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InflictsDamageWhenCast (pub InflictsDamageData);
+
 
 // Component for entities that inflict damage on any other entity occupying the
-// same position.
+// same position. Examples are steam and chill.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsDamageWhenEncroachedUpon {
     pub damage: i32,
     pub kind: ElementalDamageKind
 }
 
-// Component for effects that inflict the frozen status.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsFreezingWhenTargeted {
+
+// Components for effects that inflict freezing and the chill status.
+#[derive(Clone, ConvertSaveload)]
+pub struct InflictsFreezingData {
     pub turns: i32
 }
-
-// Component for effects that inflict the burning status when used as a targeted
-// effect.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct InflictsBurningWhenTargeted {
+pub struct InflictsFreezingWhenCast (pub InflictsFreezingData);
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InflictsFreezingWhenThrown (pub InflictsFreezingData);
+
+
+// Components for effects that inflict the burning status.
+#[derive(Clone, ConvertSaveload)]
+pub struct InflictsBurningData {
     pub turns: i32,
     pub tick_damage: i32
 }
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InflictsBurningWhenThrown (pub InflictsBurningData);
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct InflictsBurningWhenCast (pub InflictsBurningData);
+
 
 // Component for effects that buff melee attack damage for a number of turns.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct BuffsMeleeAttackWhenTargeted {
+pub struct BuffsMeleeAttackWhenCast {
     pub turns: i32,
 }
 
 // Component for effects that buff melee physical defense for a number of
 // turns.
 #[derive(Component, ConvertSaveload, Clone)]
-pub struct BuffsPhysicalDefenseWhenTargeted {
+pub struct BuffsPhysicalDefenseWhenCast {
     pub turns: i32,
 }
 
@@ -151,4 +169,4 @@ pub struct MovesToRandomPosition {}
 
 // An eintity with this compoent move the using entity to a targeted position.
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct MoveToPositionWhenTargeted {}
+pub struct MoveToPositionWhenCast {}

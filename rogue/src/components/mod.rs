@@ -20,6 +20,7 @@ pub mod spawn_despawn;
 pub mod status_effects;
 pub mod signaling;
 pub mod melee;
+pub mod targeting;
 
 
 //----------------------------------------------------------------------------
@@ -49,27 +50,6 @@ pub struct Useable {}
 // An entity with this component can be thrown.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Throwable {}
-
-// An entity with this component can be used as a targeted effect.
-#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
-pub enum TargetingKind {
-    Simple,
-    AreaOfEffect {radius: f32},
-    AlongRay {until_blocked: bool}
-}
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct TargetedWhenThrown {
-    pub verb: String,
-    pub range: f32,
-    pub kind: TargetingKind
-}
-
-#[derive(Component, Serialize, Deserialize, Clone)]
-pub struct TargetedWhenCast {
-    pub verb: String,
-    pub range: f32,
-    pub kind: TargetingKind
-}
 
 // An entity with this component can be used as an untargeted effect.
 #[derive(Component, Serialize, Deserialize, Clone)]

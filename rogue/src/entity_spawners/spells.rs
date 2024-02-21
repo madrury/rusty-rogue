@@ -1,18 +1,15 @@
+use crate::components::*;
+use crate::components::animation::*;
+use crate::components::game_effects::*;
+use crate::components::magic::*;
+use crate::components::signaling::*;
+use crate::components::spawn_despawn::*;
+use crate::components::status_effects::*;
+use crate::components::targeting::*;
 
-use crate::DissipateWhenBurning;
-
-use super::{
-    EntitySpawnKind, Name, Position, Renderable, PickUpable, Castable,
-    SpellCharges, TargetedWhenCast, TargetingKind, InflictsDamageWhenTargeted,
-    InflictsFreezingWhenTargeted, InflictsBurningWhenTargeted,
-    BuffsMeleeAttackWhenTargeted, BuffsPhysicalDefenseWhenTargeted,
-    AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
-    ProvidesFullHealing, SpawnsEntityInAreaWhenTargeted,
-    MoveToPositionWhenTargeted, SimpleMarker, SerializeMe, MarkedBuilder,
-    ElementalDamageKind, BlessingSlot, StatusIsImmuneToChill
-};
-use rltk::{RGB};
+use rltk::RGB;
 use specs::prelude::*;
+use specs::saveload::{SimpleMarker, MarkedBuilder};
 
 //----------------------------------------------------------------------------
 // Fire elemental attack spells.
@@ -43,20 +40,26 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: 10,
-            kind: ElementalDamageKind::Fire
-        })
-        .with(InflictsBurningWhenTargeted {
-            turns: 4,
-            tick_damage: 4
-        })
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::ORANGE),
-            bg: RGB::named(rltk::RED),
-            glyph: rltk::to_cp437('^'),
-            until_blocked: true
-        })
+        .with(InflictsDamageWhenCast (
+            InflictsDamageData {
+                damage: 10,
+                kind: ElementalDamageKind::Fire
+            }
+        ))
+        .with(InflictsBurningWhenCast (
+            InflictsBurningData {
+                turns: 4,
+                tick_damage: 4
+            }
+        ))
+        .with(AlongRayAnimationWhenCast (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::ORANGE),
+                bg: RGB::named(rltk::RED),
+                glyph: rltk::to_cp437('^'),
+                until_blocked: true
+            }
+        ))
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -90,27 +93,35 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             range: 6.5,
             kind: TargetingKind::AreaOfEffect {radius: 2.5}
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: 10,
-            kind: ElementalDamageKind::Fire
-        })
-        .with(InflictsBurningWhenTargeted {
-            turns: 4,
-            tick_damage: 4
-        })
-        .with(SpawnsEntityInAreaWhenTargeted {
-            radius: 1,
-            kind: EntitySpawnKind::Fire {
-                spread_chance: 50,
-                dissipate_chance: 50,
+        .with(InflictsDamageWhenCast(
+            InflictsDamageData {
+                damage: 10,
+                kind: ElementalDamageKind::Fire
             }
-        })
-        .with(AreaOfEffectAnimationWhenTargeted {
-            radius: 2,
-            fg: RGB::named(rltk::ORANGE),
-            bg: RGB::named(rltk::RED),
-            glyph: rltk::to_cp437('^')
-        })
+        ))
+        .with(InflictsBurningWhenCast (
+            InflictsBurningData {
+                turns: 4,
+                tick_damage: 4
+            }
+        ))
+        .with(SpawnsEntityInAreaWhenCast (
+            SpawnsEntityInAreaData {
+                radius: 1,
+                kind: EntitySpawnKind::Fire {
+                    spread_chance: 50,
+                    dissipate_chance: 50,
+                }
+            }
+        ))
+        .with(AreaOfEffectAnimationWhenCast (
+            AreaOfEffectAnimationData {
+                radius: 2,
+                fg: RGB::named(rltk::ORANGE),
+                bg: RGB::named(rltk::RED),
+                glyph: rltk::to_cp437('^')
+            }
+        ))
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -147,19 +158,23 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: 10,
-            kind: ElementalDamageKind::Chill
-        })
-        .with(InflictsFreezingWhenTargeted {
-            turns: 6,
-        })
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::WHITE),
-            bg: RGB::named(rltk::LIGHT_BLUE),
-            glyph: rltk::to_cp437('*'),
-            until_blocked: true
-        })
+        .with(InflictsDamageWhenCast (
+            InflictsDamageData {
+                damage: 10,
+                kind: ElementalDamageKind::Chill
+            }
+        ))
+        .with(InflictsFreezingWhenCast (
+            InflictsFreezingData { turns: 6 }
+        ))
+        .with(AlongRayAnimationWhenCast (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::WHITE),
+                bg: RGB::named(rltk::LIGHT_BLUE),
+                glyph: rltk::to_cp437('*'),
+                until_blocked: true
+            }
+        ))
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -193,24 +208,32 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             range: 6.5,
             kind: TargetingKind::AreaOfEffect {radius: 2.5}
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: 10,
-            kind: ElementalDamageKind::Chill
-        })
-        .with(InflictsFreezingWhenTargeted {turns: 8})
-        .with(SpawnsEntityInAreaWhenTargeted {
-            radius: 1,
-            kind: EntitySpawnKind::Chill {
-                spread_chance: 20,
-                dissipate_chance: 60,
+        .with(InflictsDamageWhenCast (
+            InflictsDamageData {
+                damage: 10,
+                kind: ElementalDamageKind::Chill
             }
-        })
-        .with(AreaOfEffectAnimationWhenTargeted {
-            radius: 2,
-            fg: RGB::named(rltk::WHITE),
-            bg: RGB::named(rltk::LIGHT_BLUE),
-            glyph: rltk::to_cp437('*')
-        })
+        ))
+        .with(InflictsFreezingWhenCast(
+            InflictsFreezingData { turns: 8 })
+        )
+        .with(SpawnsEntityInAreaWhenCast (
+            SpawnsEntityInAreaData {
+                radius: 1,
+                kind: EntitySpawnKind::Chill {
+                    spread_chance: 20,
+                    dissipate_chance: 60,
+                }
+            }
+        ))
+        .with(AreaOfEffectAnimationWhenCast (
+            AreaOfEffectAnimationData {
+                radius: 2,
+                fg: RGB::named(rltk::WHITE),
+                bg: RGB::named(rltk::LIGHT_BLUE),
+                glyph: rltk::to_cp437('*')
+            }
+        ))
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -245,16 +268,20 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: 10,
-            kind: ElementalDamageKind::Physical
-        })
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::SILVER),
-            bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('.'),
-            until_blocked: true
-        })
+        .with(InflictsDamageWhenCast (
+            InflictsDamageData {
+                damage: 10,
+                kind: ElementalDamageKind::Physical
+            }
+        ))
+        .with(AlongRayAnimationWhenCast (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::SILVER),
+                bg: RGB::named(rltk::BLACK),
+                glyph: rltk::to_cp437('.'),
+                until_blocked: true
+            }
+        ))
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -291,13 +318,15 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             range: 8.5,
             kind: TargetingKind::AlongRay {until_blocked: false}
         })
-        .with(MoveToPositionWhenTargeted {})
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::PURPLE),
-            bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('@'),
-            until_blocked: false
-        })
+        .with(MoveToPositionWhenCast {})
+        .with(AlongRayAnimationWhenCast (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::PURPLE),
+                bg: RGB::named(rltk::BLACK),
+                glyph: rltk::to_cp437('@'),
+                until_blocked: false
+            }
+        ))
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -332,12 +361,14 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(ProvidesFullHealing {})
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('♥'),
-            until_blocked: true
-        })
+        .with(AlongRayAnimationWhenCast (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::RED),
+                bg: RGB::named(rltk::BLACK),
+                glyph: rltk::to_cp437('♥'),
+                until_blocked: true
+            }
+        ))
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -371,13 +402,15 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
-        .with(BuffsMeleeAttackWhenTargeted {turns: 10})
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('▲'),
-            until_blocked: true
-        })
+        .with(BuffsMeleeAttackWhenCast {turns: 10})
+        .with(AlongRayAnimationWhenCast (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::RED),
+                bg: RGB::named(rltk::BLACK),
+                glyph: rltk::to_cp437('▲'),
+                until_blocked: true
+            }
+        ))
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -411,13 +444,15 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
-        .with(BuffsPhysicalDefenseWhenTargeted {turns: 10})
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::BLUE),
-            bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('▲'),
-            until_blocked: true
-        })
+        .with(BuffsPhysicalDefenseWhenCast {turns: 10})
+        .with(AlongRayAnimationWhenCast (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::BLUE),
+                bg: RGB::named(rltk::BLACK),
+                glyph: rltk::to_cp437('▲'),
+                until_blocked: true
+            }
+        ))
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()

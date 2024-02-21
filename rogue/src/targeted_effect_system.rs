@@ -4,16 +4,21 @@ use super::{
     EntitySpawnRequestBuffer, EntitySpawnRequest, Name, Renderable, Consumable,
     SpellCharges, Position, WantsToUseTargeted, TargetedWhenThrown,
     TargetedWhenCast, TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
-    InflictsDamageWhenTargeted, InflictsFreezingWhenTargeted,
-    InflictsBurningWhenTargeted, MoveToPositionWhenTargeted,
-    BuffsMeleeAttackWhenTargeted, BuffsPhysicalDefenseWhenTargeted,
-    AreaOfEffectAnimationWhenTargeted, AlongRayAnimationWhenTargeted,
     WantsToTakeDamage, WantsToMoveToPosition, WantsToMoveToRandomPosition,
-    StatusIsFrozen, StatusIsBurning, SpawnsEntityInAreaWhenTargeted,
+    StatusIsFrozen, StatusIsBurning,
     StatusIsImmuneToFire, StatusIsImmuneToChill, StatusIsMeleeAttackBuffed,
     StatusIsPhysicalDefenseBuffed, WeaponSpecial, WeaponSpecialKind,
     new_status_with_immunity, new_combat_stats_status
 };
+use crate::components::targeting::*;
+use crate::components::game_effects::*;
+use crate::AlongRayAnimationWhenCast;
+use crate::AlongRayAnimationWhenThrown;
+use crate::AreaOfEffectAnimationWhenCast;
+use crate::AreaOfEffectAnimationWhenThrown;
+use crate::SpawnsEntityInAreaWhenCast;
+use crate::SpawnsEntityInAreaWhenThrown;
+
 use specs::prelude::*;
 
 pub struct TargetedSystem {}
@@ -34,20 +39,26 @@ pub struct TargetedSystemData<'a> {
         consumables: ReadStorage<'a, Consumable>,
         spell_charges: WriteStorage<'a, SpellCharges>,
         specials: WriteStorage<'a, WeaponSpecial>,
+        wants_target: WriteStorage<'a, WantsToUseTargeted>,
         targeted_when_thrown: ReadStorage<'a, TargetedWhenThrown>,
         targeted_when_cast: ReadStorage<'a, TargetedWhenCast>,
-        wants_target: WriteStorage<'a, WantsToUseTargeted>,
         combat_stats: WriteStorage<'a, CombatStats>,
         healing: ReadStorage<'a, ProvidesFullHealing>,
-        does_damage: ReadStorage<'a, InflictsDamageWhenTargeted>,
-        does_freeze: WriteStorage<'a, InflictsFreezingWhenTargeted>,
-        does_burn: WriteStorage<'a, InflictsBurningWhenTargeted>,
-        does_buff_attack: WriteStorage<'a, BuffsMeleeAttackWhenTargeted>,
-        does_buff_defense: WriteStorage<'a, BuffsPhysicalDefenseWhenTargeted>,
-        moves_to_position: ReadStorage<'a, MoveToPositionWhenTargeted>,
-        aoe_animations: ReadStorage<'a, AreaOfEffectAnimationWhenTargeted>,
-        along_ray_animations: ReadStorage<'a, AlongRayAnimationWhenTargeted>,
-        spawns_entity_in_area: ReadStorage<'a, SpawnsEntityInAreaWhenTargeted>,
+        damage_when_thrown: ReadStorage<'a, InflictsDamageWhenThrown>,
+        damage_when_cast: ReadStorage<'a, InflictsDamageWhenCast>,
+        freeze_when_thrown: WriteStorage<'a, InflictsFreezingWhenThrown>,
+        freeze_when_cast: WriteStorage<'a, InflictsFreezingWhenCast>,
+        burning_when_thrown: WriteStorage<'a, InflictsBurningWhenThrown>,
+        burning_when_cast: WriteStorage<'a, InflictsBurningWhenCast>,
+        buff_attack_when_cast: WriteStorage<'a, BuffsMeleeAttackWhenCast>,
+        buff_defense_when_cast: WriteStorage<'a, BuffsPhysicalDefenseWhenCast>,
+        move_to_position_when_cast: ReadStorage<'a, MoveToPositionWhenCast>,
+        aoe_animation_when_thrown: ReadStorage<'a, AreaOfEffectAnimationWhenThrown>,
+        aoe_animation_when_cast: ReadStorage<'a, AreaOfEffectAnimationWhenCast>,
+        along_ray_animation_when_thrown: ReadStorage<'a, AlongRayAnimationWhenThrown>,
+        along_ray_animation_when_cast: ReadStorage<'a, AlongRayAnimationWhenCast>,
+        spawns_entity_in_area_when_thrown: ReadStorage<'a, SpawnsEntityInAreaWhenThrown>,
+        spawns_entity_in_area_when_cast: ReadStorage<'a, SpawnsEntityInAreaWhenCast>,
         apply_damages: WriteStorage<'a, WantsToTakeDamage>,
         teleports: ReadStorage<'a, MovesToRandomPosition>,
         wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
@@ -82,21 +93,27 @@ impl<'a> System<'a> for TargetedSystem {
             mut wants_target,
             mut combat_stats,
             healing,
-            does_damage,
-            does_freeze,
-            does_burn,
-            does_buff_attack,
-            does_buff_defense,
-            moves_to_position,
-            aoe_animations,
-            along_ray_animations,
+            damage_when_thrown,
+            damage_when_cast,
+            freeze_when_thrown,
+            freeze_when_cast,
+            burning_when_thrown,
+            burning_when_cast,
+            buff_attack_when_cast,
+            buff_defense_when_cast,
+            move_to_position_when_cast,
+            aoe_animation_when_thrown,
+            aoe_animation_when_cast,
+            along_ray_animation_when_thrown,
+            along_ray_animation_when_cast,
+            spawns_entity_in_area_when_thrown,
+            spawns_entity_in_area_when_cast,
             mut apply_damages,
             teleports,
             mut wants_to_move,
             mut wants_to_teleport,
             mut is_frozen,
             mut is_burning,
-            spawns_entity_in_area,
             is_fire_immune,
             is_chill_immune,
             mut has_buffed_attack,
@@ -108,39 +125,35 @@ impl<'a> System<'a> for TargetedSystem {
         //--------------------------------------------------------------------
         for (user, want_target) in (&entities, &wants_target).join() {
 
+            // Determine if we a throwing an item or casting a spell.
+            let verb = want_target.verb;
+
             // In the case we are casting a spell, we guard against the case
             // that we have no spell charges left.
-            let proceed = spell_charges
+            let no_charges = spell_charges
                 .get(want_target.thing)
-                .map_or(true, |sc| sc.charges > 0);
-            if !proceed {continue}
+                .map_or(true, |sc| sc.charges <= 0);
+            if verb == TargetingVerb::Cast && no_charges  {
+                warn!("Attempted to cast a spell with no charges.");
+                continue
+            }
 
             // Stuff needed to construct log messages.
-            let thing_name = names.get(want_target.thing);
-            let default_verb = "target".to_string();
-            let throw_verb = targeted_when_thrown
-                .get(want_target.thing)
-                .map(|t| t.verb.clone());
-            let cast_verb = targeted_when_cast
-                .get(want_target.thing)
-                .map(|t| t.verb.clone());
-            let verb = throw_verb.or(cast_verb)
-                .unwrap_or(default_verb);
+            let log_thing_name = names.get(want_target.thing);
+            let log_verb = match verb {
+                TargetingVerb::Thrown => "throws",
+                TargetingVerb::Cast => "casts",
+            };
 
             // Gather up all the entities that are either at the targeted
             // position or within the area of effect.
             let user_position = positions.get(user).unwrap_or(&Position {x: 0, y: 0});
             let user_point = Point {x: user_position.x, y: user_position.y};
             let target_point = want_target.target;
-            let throw_targeting_kind = targeted_when_thrown
-                .get(want_target.thing)
-                .map(|t| t.kind.clone());
-            let cast_targeting_kind = targeted_when_cast
-                .get(want_target.thing)
-                .map(|t| t.kind.clone());
-            let targeting_kind = throw_targeting_kind
-                .or(cast_targeting_kind);
-
+            let targeting_kind = match verb {
+                TargetingVerb::Thrown => targeted_when_thrown.get(want_target.thing).map(|t| t.kind),
+                TargetingVerb::Cast => targeted_when_cast.get(want_target.thing).map(|t| t.kind),
+            };
             if targeting_kind.is_none() {
                 info!("Failed to find targeting kind.");
                 continue
@@ -157,20 +170,21 @@ impl<'a> System<'a> for TargetedSystem {
                 .collect();
 
             // Apply the effect to each target in turn. This is essentially a
-            // bit switch over the possible types of effects.
+            // big switch statement over the possible types of effects.
             for (target, target_point) in targets {
 
                 // Component: ProvidesHealing.
+                // Note: This component does not yet have a cast and thrown version.
                 let thing_heals = healing.get(want_target.thing);
                 let stats = combat_stats.get_mut(*target);
                 if let (Some(_), Some(stats)) = (thing_heals, stats) {
                     stats.full_heal();
                     let target_name = names.get(*target);
-                    if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
+                    if let (Some(log_thing_name), Some(target_name)) = (log_thing_name, target_name) {
                         log.entries.push(format!(
                             "You {} the {}, healing {}.",
-                            verb,
-                            thing_name.name,
+                            log_verb,
+                            log_thing_name.name,
                             target_name.name
                         ));
                     }
@@ -187,98 +201,60 @@ impl<'a> System<'a> for TargetedSystem {
                 }
 
                 // Compontnet: MovesToRandomPosition
+                // Note: This component does not yet have a cast and thrown version.
                 let thing_teleports = teleports.get(want_target.thing);
                 let target_pos = positions.get_mut(*target);
                 if let (Some(_), Some(_)) = (thing_teleports, target_pos) {
                     wants_to_teleport.insert(*target, WantsToMoveToRandomPosition {})
                         .expect("Failed to insert WantsToMoveToRandomPostion.");
-                    // TODO: These logs should not refer to the player with the subject "YOU".
-
-                    // let target_name = names.get(*target);
-                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                    //     log.entries.push(format!(
-                    //         "You {} the {}, and {} disappears.",
-                    //         verb,
-                    //         thing_name.name,
-                    //         target_name.name
-                    //     ));
-                    // }
                 }
 
-                // Component: InflictsDamageWhenTargeted
-                let stats = combat_stats.get_mut(*target);
-                let thing_damages = does_damage.get(want_target.thing);
-                if let (Some(thing_damages), Some(_stats)) = (thing_damages, stats) {
+                // Components: InflictsDamageWhen{Thrown|Cast}
+                let target_stats = combat_stats.get_mut(*target);
+                let damage_data = match verb {
+                    TargetingVerb::Thrown => damage_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Cast => damage_when_cast.get(want_target.thing).map(|d| &d.0),
+                };
+                if let (Some(dd), Some(_stats)) = (damage_data, target_stats) {
                     WantsToTakeDamage::new_damage(
                         &mut apply_damages,
-                        *target,
-                        thing_damages.damage,
-                        thing_damages.kind
+                        *target, dd.damage, dd.kind
                     );
-                    // let thing_name = names.get(want_target.thing);
-                    // let target_name = names.get(*target);
-                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                    //     log.entries.push(format!(
-                    //         "You {} the {}, dealing {} {} damage.",
-                    //         verb,
-                    //         thing_name.name,
-                    //         target_name.name,
-                    //         thing_damages.damage
-                    //     ))
-                    // }
                 }
 
-                // Component: InflictsFreezingWhenTargeted
-                let thing_freezes = does_freeze.get(want_target.thing);
-                if let Some(thing_freezes) = thing_freezes {
-                    let _play_message = new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
+                // Components: InflictsFreezingWhen{Thrown|Cast}
+                let freezing_data = match verb {
+                    TargetingVerb::Thrown => freeze_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Cast => freeze_when_cast.get(want_target.thing).map(|d| &d.0),
+                };
+                if let Some(fd) = freezing_data {
+                    new_status_with_immunity::<StatusIsFrozen, StatusIsImmuneToChill>(
                         &mut is_frozen,
                         &is_chill_immune,
                         *target,
-                        thing_freezes.turns,
+                        fd.turns,
                         true
                     );
-                    // let thing_name = names.get(want_target.thing);
-                    // let target_name = names.get(*target);
-                    // TODO: This should not refer to the player.
-                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                    //     if play_message {
-                    //         log.entries.push(format!(
-                    //             "You {} the {}, freezing {} in place.",
-                    //             verb,
-                    //             thing_name.name,
-                    //             target_name.name,
-                    //         ))
-                    //     }
-                    // }
                 }
 
-                // Component: InflictsBurningWhenTargeted
-                let thing_burns = does_burn.get(want_target.thing);
-                if let Some(thing_burns) = thing_burns {
+                // Components: InflictsBurningWhen{Thrown|Cast}
+                let burning_data = match verb {
+                    TargetingVerb::Thrown => burning_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Cast => burning_when_cast.get(want_target.thing).map(|d| &d.0),
+                };
+                if let Some(bd) = burning_data {
                     let _play_message = new_status_with_immunity::<StatusIsBurning, StatusIsImmuneToFire>(
                         &mut is_burning,
                         &is_fire_immune,
                         *target,
-                        thing_burns.turns,
+                        bd.turns,
                         true,
                     );
-                    // let thing_name = names.get(want_target.thing);
-                    // let target_name = names.get(*target);
-                    // if let (Some(thing_name), Some(target_name)) = (thing_name, target_name) {
-                    //     if play_message {
-                    //         log.entries.push(format!(
-                    //             "You {} the {}, stting {} ablaze.",
-                    //             verb,
-                    //             thing_name.name,
-                    //             target_name.name,
-                    //         ))
-                    //     }
-                    // }
                 }
 
-                // Component: BuffsMeleeAttackWhenTargeted
-                let thing_buffs_attack = does_buff_attack.get(want_target.thing);
+                // Component: BuffsMeleeAttackWhenCast
+                // Note: This component does not yet have both a thorwn and cast version.
+                let thing_buffs_attack = buff_attack_when_cast.get(want_target.thing);
                 if let Some(thing_buffs_attack) = thing_buffs_attack {
                     let _play_message = new_combat_stats_status::<StatusIsMeleeAttackBuffed>(
                         &mut has_buffed_attack,
@@ -287,11 +263,11 @@ impl<'a> System<'a> for TargetedSystem {
                         thing_buffs_attack.turns,
                         true
                     );
-                    // TODO: Add a game message here.
                 }
 
                 // Component: BuffsPhysicalDefenseWhenTargeted
-                let thing_buffs_defense = does_buff_defense.get(want_target.thing);
+                // Note: This component does not yet have both a thorwn and cast version.
+                let thing_buffs_defense = buff_defense_when_cast.get(want_target.thing);
                 if let Some(thing_buffs_defense) = thing_buffs_defense {
                     let _play_message = new_combat_stats_status::<StatusIsPhysicalDefenseBuffed>(
                         &mut has_buffed_defense,
@@ -304,9 +280,12 @@ impl<'a> System<'a> for TargetedSystem {
                 }
             }
 
-            // Component: SpawnsEntityInAreaWhenTargeted
-            let spawns_entities_when_targeted = spawns_entity_in_area.get(want_target.thing);
-            if let Some(spawns) = spawns_entities_when_targeted {
+            // Components: SpawnsEntityInAreaWhen{Thrown|Cast}
+            let spawning_data = match verb {
+                TargetingVerb::Thrown => spawns_entity_in_area_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Cast => spawns_entity_in_area_when_cast.get(want_target.thing).map(|d| &d.0),
+            };
+            if let Some(spawns) = spawning_data {
                 let points = rltk::field_of_view(target_point, spawns.radius, &*map);
                 for pt in points.iter() {
                     spawn_buffer.request(EntitySpawnRequest {
@@ -317,15 +296,14 @@ impl<'a> System<'a> for TargetedSystem {
                 }
             }
 
-            // Component: MoveToPositionWhenTargeted
-            let moves_to_point = moves_to_position.get(want_target.thing);
+            // Component: MoveToPositionWhenCast
+            let moves_to_point = move_to_position_when_cast.get(want_target.thing);
             if let Some(_) = moves_to_point {
                 wants_to_move.insert(user, WantsToMoveToPosition {
                     pt: target_point.clone(),
-                    // Not sure about this one.
-                    // Many years later: Yah, this lets you move into the same
-                    // tile as enemies. Probably not great.
-                    force: true
+                    // Maybe: Switching this to false. I dunno if this will have
+                    // a bad effect. We'll see.
+                    force: false
                 })
                 .expect("Could not insert WantsToMoveToPosition.");
             }
@@ -333,30 +311,38 @@ impl<'a> System<'a> for TargetedSystem {
             //----------------------------------------------------------------
             // Animations.
             //----------------------------------------------------------------
-            // Component: AreaOfEffectAnimationWhenTargeted
-            let has_aoe_animation = aoe_animations.get(want_target.thing);
-            if let Some(has_aoe_animation) = has_aoe_animation {
+            // Component: AreaOfEffectAnimationWhen{Thrown|Cast}
+            // let has_aoe_animation = aoe_animations.get(want_target.thing);
+            let aoe_animation_data = match verb {
+                TargetingVerb::Thrown => aoe_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Cast => aoe_animation_when_cast.get(want_target.thing).map(|d| &d.0),
+            };
+            if let Some(aoead) = aoe_animation_data {
                 animation_builder.request(AnimationRequest::AreaOfEffect {
                     x: target_point.x,
                     y: target_point.y,
-                    fg: has_aoe_animation.fg,
-                    bg: has_aoe_animation.bg,
-                    glyph: has_aoe_animation.glyph,
-                    radius: has_aoe_animation.radius
+                    fg: aoead.fg,
+                    bg: aoead.bg,
+                    glyph: aoead.glyph,
+                    radius: aoead.radius
                 })
             }
-            // Component: AlongRayAnimationWhenTargeted
-            let has_ray_animation = along_ray_animations.get(want_target.thing);
-            if let Some(has_ray_animation) = has_ray_animation {
+
+            // Component: AlongRayAnimationWhen{Thrown|Cast}
+            let ray_animation_data = match verb {
+                TargetingVerb::Thrown => along_ray_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Cast => along_ray_animation_when_cast.get(want_target.thing).map(|d| &d.0),
+            };
+            if let Some(rad) = ray_animation_data {
                 animation_builder.request(AnimationRequest::AlongRay {
                     source_x: user_point.x,
                     source_y: user_point.y,
                     target_x: target_point.x,
                     target_y: target_point.y,
-                    fg: has_ray_animation.fg,
-                    bg: has_ray_animation.bg,
-                    glyph: has_ray_animation.glyph,
-                    until_blocked: has_ray_animation.until_blocked
+                    fg: rad.fg,
+                    bg: rad.bg,
+                    glyph: rad.glyph,
+                    until_blocked: rad.until_blocked
                 })
             }
 

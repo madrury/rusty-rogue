@@ -17,7 +17,8 @@ use rltk::RGB;
 // and rendering.
 //------------------------------------------------------------------
 
-// Represents an atomic piece of game animation.
+// Represents an atomic piece of game animation. Rendered for an interval of
+// wall clock time after some delay. Has no game effect, only for pretty.
 #[derive(Component)]
 pub struct GameAnimationParticle {
     pub lifetime : f32,
@@ -35,20 +36,31 @@ pub struct GameAnimationParticle {
 
 // Component for effects that create an area of effect animation when
 // used as a targeted effect.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct AreaOfEffectAnimationWhenTargeted {
+#[derive(Clone, ConvertSaveload)]
+pub struct AreaOfEffectAnimationData {
     pub radius: i32,
     pub fg: RGB,
     pub bg: RGB,
     pub glyph: rltk::FontCharType
 }
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct AreaOfEffectAnimationWhenThrown (pub AreaOfEffectAnimationData);
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct AreaOfEffectAnimationWhenCast (pub AreaOfEffectAnimationData);
+
 
 // Component for effects that create an animation along a ray (so, say a
 // fireball) when used as a targeted effect.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct AlongRayAnimationWhenTargeted {
+#[derive(Clone, ConvertSaveload)]
+pub struct AlongRayAnimationData {
     pub fg: RGB,
     pub bg: RGB,
     pub glyph: rltk::FontCharType,
     pub until_blocked: bool
 }
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct AlongRayAnimationWhenThrown (pub AlongRayAnimationData);
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct AlongRayAnimationWhenCast (pub AlongRayAnimationData);
