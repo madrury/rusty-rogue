@@ -6,7 +6,7 @@ use super::{
     AnimationRequestBuffer, AnimationRequest, Equipped, MeeleAttackWepon,
     StatusIsMeleeAttackBuffed, ElementalDamageKind,
     SpawnEntityWhenMeleeAttacked, EntitySpawnKind, EntitySpawnRequestBuffer,
-    EntitySpawnRequest
+    EntitySpawnRequest, Bloodied
 };
 
 pub struct MeleeCombatSystem {}
@@ -34,6 +34,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, MeeleAttackWepon>,
         ReadStorage<'a, StatusIsMeleeAttackBuffed>,
         WriteStorage<'a, WantsToTakeDamage>,
+        WriteStorage<'a, Bloodied>,
         ReadStorage<'a, SpawnEntityWhenMeleeAttacked>,
         WriteExpect<'a, EntitySpawnRequestBuffer>
     );
@@ -52,6 +53,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             weapon_attack_bonuses,
             is_melee_buffs,
             mut damagees,
+            mut bloodieds,
             spawn_when_melee,
             mut entity_spawn_buffer
         ) = data;
@@ -90,12 +92,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 ElementalDamageKind::Physical
             );
 
+
             // Animate the damage with a flash
             // TODO: Same here. This should be created after damage is actually created.
             // to avoid triggering animations when all damage is nullified.
-            let pos = positions.get(attack.target);
-            let render = renderables.get(attack.target);
-            if let(Some(pos), Some(render)) = (pos, render) {
+            let targetpos = positions.get(attack.target);
+            let targetrender = renderables.get(attack.target);
+            if let(Some(pos), Some(render)) = (targetpos, targetrender) {
                 animation_buffer.request(
                     AnimationRequest::MeleeAttack {
                         x: pos.x,
@@ -106,10 +109,21 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 );
             }
 
+            // 🩸 🩸 🩸 🩸
+            if let Some(pos) = targetpos {
+                let idx = map.xy_idx(pos.x, pos.y);
+                map.tiles[idx] = TileType::BloodStain;
+                for &e in map.tile_content[idx].iter() {
+                    // TODO: Maybe actually learn how to handle errors man.
+                    bloodieds.insert(e, Bloodied {})
+                        .expect("Failed to insert Bloodied component.");
+                }
+            }
+
             // If entity splits or spawn on a melee attack, send the signal
             // to spawn a new entity. We're probably smacking a jelly here.
             let spawns = spawn_when_melee.get(attack.target);
-            if let (Some(spawns), Some(pos)) = (spawns, pos) {
+            if let (Some(spawns), Some(pos)) = (spawns, targetpos) {
                 let spawn_position = map.random_adjacent_point(pos.x, pos.y);
                 let mut can_spawn: bool = false;
                 if let Some(spawn_position) = spawn_position {
@@ -148,15 +162,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         }
                     }
                 }
-            }
-
-            // Create a bloodstain where the damage was inflicted.
-            if let Some(pos) = pos {
-                let idx = map.xy_idx(pos.x, pos.y);
-                if map.tiles[idx] != TileType::DownStairs {
-                    map.tiles[idx] = TileType::BloodStain
-                }
-            }
-        }
+            } // Swan Requests.
+        } // Meele Buffer.
     }
 }

@@ -27,8 +27,8 @@ use super::{
     StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
     SpawnEntityWhenKilled, DissipateWhenBurning,
     InvisibleWhenEncroachingEntityKind, WeaponSpecial, WeaponSpecialKind,
-    UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap,
-    MeeleAttackFormation, MAP_WIDTH, random_table
+    UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap, Bloodied,
+    UseFgColorMapWhenBloodied, MeeleAttackFormation, MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
@@ -118,17 +118,18 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, depth)
             .insert(ItemType::FreezingPotion, depth)
-            .insert(ItemType::Dagger, 2 + depth)
+            .insert(ItemType::Dagger, 3 + depth)
             .insert(ItemType::Sword, 1 + depth)
-            .insert(ItemType::Raiper, depth)
+            .insert(ItemType::Raiper, 1 + depth)
             .insert(ItemType::LeatherArmor, 1 + depth)
-            .insert(ItemType::MagicMissileScroll, 500)
             .insert(ItemType::BlinkScroll, depth)
             .insert(ItemType::FireblastScroll, depth)
-            // .insert(ItemType::FireballScroll, depth)
             .insert(ItemType::IceblastScroll, depth)
-            // .insert(ItemType::IcespikeScroll, depth)
             .insert(ItemType::None, 75)
+            // These are avalable at blessing statues.
+            // .insert(ItemType::MagicMissileScroll, depth)
+            // .insert(ItemType::FireballScroll, depth)
+            // .insert(ItemType::IcespikeScroll, depth)
             .roll(&mut rng);
     }
     match item {
