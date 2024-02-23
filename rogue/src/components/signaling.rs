@@ -5,7 +5,7 @@ use specs::error::NoError;
 use serde::{Serialize, Deserialize};
 use rltk::Point;
 
-use crate::TargetingVerb;
+use crate::{PickupDestination, TargetingVerb};
 
 //------------------------------------------------------------------
 // Signaling Components
@@ -26,7 +26,8 @@ pub struct WantsToMeleeAttack {
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToPickupItem {
     pub by: Entity,
-    pub item: Entity
+    pub item: Entity,
+    pub destination: PickupDestination,
 }
 
 // Signals that the owning entity wants to use an untargeted effect.
@@ -60,7 +61,7 @@ pub struct WantsToMoveToRandomPosition {}
 // Signals that the entity has damage queued, but not applied.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum ElementalDamageKind {
-    Physical, Fire, Chill, Hunger, Drowning
+    Physical, Fire, Freezing, Hunger, Drowning
 }
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToTakeDamage {

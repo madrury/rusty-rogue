@@ -1,4 +1,5 @@
-use crate::{StatusIsImmuneToChill, StatusIsImmuneToFire};
+use crate::components::*;
+use crate::components::status_effects::*;
 
 use super::{
     Name, Position, Renderable, PickUpable, SimpleMarker, SerializeMe,
@@ -22,7 +23,9 @@ pub fn blessing_orb(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Orb of Blessing".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::BlessingOrbBag
+        })
         .with(BlessingOrb {})
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})

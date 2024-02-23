@@ -1,5 +1,7 @@
-
 use specs::prelude::*;
+use crate::components::melee::*;
+use crate::components::magic::*;
+
 use super::{
     GameLog, Name, Position, WeaponSpecial, Equipped, Renderable,
     AnimationRequestBuffer, AnimationRequest
@@ -19,7 +21,9 @@ pub struct WeaponSpecialTickSystemData<'a> {
     positions: WriteStorage<'a, Position>,
     renderables: ReadStorage<'a, Renderable>,
     equipped: ReadStorage<'a, Equipped>,
-    specials: WriteStorage<'a, WeaponSpecial>
+    specials: WriteStorage<'a, WeaponSpecial>,
+    spellbooks: WriteStorage<'a, InSpellBook>,
+    singlecast: WriteStorage<'a, SingleCast>
 }
 
 impl<'a> System<'a> for WeaponSpecialTickSystem {
@@ -36,6 +40,8 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
             renderables,
             equipped,
             mut specials,
+            mut spellbooks,
+            mut singlecast,
         } = data;
 
         for (weapon, special, equipped) in (&entities, &mut specials, &equipped).join() {
@@ -48,6 +54,18 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
             let ownerrender = renderables.get(owner);
             let weaponrender = renderables.get(weapon);
             let ownerposition = positions.get(owner);
+
+            match special.kind {
+                WeaponSpecialKind::AddToSpellBook => {
+                    spellbooks.insert(weapon, InSpellBook {
+                        owner: owner,
+                        slot: BlessingSlot::None
+                    }).expect("Failed to insert InSpellBook component on special charge.");
+                    singlecast.insert(weapon, SingleCast {})
+                        .expect("Failed to insert SingleCast component upon special charge.");
+                }
+                _ => {}
+            }
 
             if let(Some(pos), Some(orender), Some(wrender)) = (ownerposition, ownerrender, weaponrender) {
                 animation_buffer.request(AnimationRequest::WeaponSpecialRecharge {

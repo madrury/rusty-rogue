@@ -10,9 +10,9 @@ pub enum TargetingKind {
     AlongRay {until_blocked: bool}
 }
 
-#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum TargetingVerb {
-    Thrown,
+    Throw,
     Cast
 }
 

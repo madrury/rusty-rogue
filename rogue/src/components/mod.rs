@@ -40,8 +40,14 @@ pub struct Monster {}
 pub struct Hazard {}
 
 // An entity with this component can be picked up.
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
+pub enum PickupDestination {
+    Backpack, Spellbook, BlessingOrbBag
+}
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct PickUpable {}
+pub struct PickUpable {
+    pub destination: PickupDestination
+}
 
 // An entity with this component can be used from the item menu.
 #[derive(Component, Serialize, Deserialize, Clone)]

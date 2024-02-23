@@ -40,6 +40,7 @@ pub struct OfferedBlessing {}
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum BlessingSlot {
+    None,
     Movement,
     Assist,
     NonElementalAttack,
@@ -98,3 +99,6 @@ impl SpellCharges {
         false
     }
 }
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct SingleCast {}

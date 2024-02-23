@@ -25,7 +25,9 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Fireball".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::FireAttackLevel1
         })
@@ -78,7 +80,9 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Fireblast".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::FireAttackLevel2
         })
@@ -143,7 +147,9 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Icespike".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::ChillAttackLevel1
         })
@@ -161,7 +167,7 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         .with(InflictsDamageWhenCast (
             InflictsDamageData {
                 damage: 10,
-                kind: ElementalDamageKind::Chill
+                kind: ElementalDamageKind::Freezing
             }
         ))
         .with(InflictsFreezingWhenCast (
@@ -193,7 +199,9 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Iceblast".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::ChillAttackLevel2
         })
@@ -211,7 +219,7 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(InflictsDamageWhenCast (
             InflictsDamageData {
                 damage: 10,
-                kind: ElementalDamageKind::Chill
+                kind: ElementalDamageKind::Freezing
             }
         ))
         .with(InflictsFreezingWhenCast(
@@ -253,7 +261,9 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Magic Missile".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::NonElementalAttack
         })
@@ -303,7 +313,9 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Blinking".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::Movement
         })
@@ -345,7 +357,9 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Healing".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::Assist
         })
@@ -387,7 +401,9 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Invigorate".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::Assist
         })
@@ -429,7 +445,9 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
             visible_out_of_fov: false
         })
         .with(Name {name: "Scroll of Protection".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Spellbook
+        })
         .with(Castable {
             slot: BlessingSlot::Assist
         })

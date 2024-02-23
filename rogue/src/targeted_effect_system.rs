@@ -16,6 +16,8 @@ use crate::AlongRayAnimationWhenCast;
 use crate::AlongRayAnimationWhenThrown;
 use crate::AreaOfEffectAnimationWhenCast;
 use crate::AreaOfEffectAnimationWhenThrown;
+use crate::InSpellBook;
+use crate::SingleCast;
 use crate::SpawnsEntityInAreaWhenCast;
 use crate::SpawnsEntityInAreaWhenThrown;
 
@@ -38,6 +40,8 @@ pub struct TargetedSystemData<'a> {
         positions: WriteStorage<'a, Position>,
         consumables: ReadStorage<'a, Consumable>,
         spell_charges: WriteStorage<'a, SpellCharges>,
+        single_casts: WriteStorage<'a, SingleCast>,
+        in_spellbooks: WriteStorage<'a, InSpellBook>,
         specials: WriteStorage<'a, WeaponSpecial>,
         wants_target: WriteStorage<'a, WantsToUseTargeted>,
         targeted_when_thrown: ReadStorage<'a, TargetedWhenThrown>,
@@ -87,6 +91,8 @@ impl<'a> System<'a> for TargetedSystem {
             mut positions,
             consumables,
             mut spell_charges,
+            mut single_casts,
+            mut in_spellbooks,
             mut specials,
             targeted_when_thrown,
             targeted_when_cast,
@@ -127,13 +133,15 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Determine if we a throwing an item or casting a spell.
             let verb = want_target.verb;
+            println!("Target selected. Verb {:?}", verb);
 
             // In the case we are casting a spell, we guard against the case
             // that we have no spell charges left.
-            let no_charges = spell_charges
+            let has_charges = spell_charges
                 .get(want_target.thing)
-                .map_or(true, |sc| sc.charges <= 0);
-            if verb == TargetingVerb::Cast && no_charges  {
+                .map_or(true, |sc| sc.charges > 0);
+            let is_single_cast = single_casts.get(want_target.thing).is_some();
+            if verb == TargetingVerb::Cast && !(has_charges || is_single_cast)  {
                 warn!("Attempted to cast a spell with no charges.");
                 continue
             }
@@ -141,7 +149,7 @@ impl<'a> System<'a> for TargetedSystem {
             // Stuff needed to construct log messages.
             let log_thing_name = names.get(want_target.thing);
             let log_verb = match verb {
-                TargetingVerb::Thrown => "throws",
+                TargetingVerb::Throw => "throws",
                 TargetingVerb::Cast => "casts",
             };
 
@@ -151,7 +159,7 @@ impl<'a> System<'a> for TargetedSystem {
             let user_point = Point {x: user_position.x, y: user_position.y};
             let target_point = want_target.target;
             let targeting_kind = match verb {
-                TargetingVerb::Thrown => targeted_when_thrown.get(want_target.thing).map(|t| t.kind),
+                TargetingVerb::Throw => targeted_when_thrown.get(want_target.thing).map(|t| t.kind),
                 TargetingVerb::Cast => targeted_when_cast.get(want_target.thing).map(|t| t.kind),
             };
             if targeting_kind.is_none() {
@@ -212,7 +220,7 @@ impl<'a> System<'a> for TargetedSystem {
                 // Components: InflictsDamageWhen{Thrown|Cast}
                 let target_stats = combat_stats.get_mut(*target);
                 let damage_data = match verb {
-                    TargetingVerb::Thrown => damage_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Throw => damage_when_thrown.get(want_target.thing).map(|d| &d.0),
                     TargetingVerb::Cast => damage_when_cast.get(want_target.thing).map(|d| &d.0),
                 };
                 if let (Some(dd), Some(_stats)) = (damage_data, target_stats) {
@@ -224,7 +232,7 @@ impl<'a> System<'a> for TargetedSystem {
 
                 // Components: InflictsFreezingWhen{Thrown|Cast}
                 let freezing_data = match verb {
-                    TargetingVerb::Thrown => freeze_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Throw => freeze_when_thrown.get(want_target.thing).map(|d| &d.0),
                     TargetingVerb::Cast => freeze_when_cast.get(want_target.thing).map(|d| &d.0),
                 };
                 if let Some(fd) = freezing_data {
@@ -239,7 +247,7 @@ impl<'a> System<'a> for TargetedSystem {
 
                 // Components: InflictsBurningWhen{Thrown|Cast}
                 let burning_data = match verb {
-                    TargetingVerb::Thrown => burning_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Throw => burning_when_thrown.get(want_target.thing).map(|d| &d.0),
                     TargetingVerb::Cast => burning_when_cast.get(want_target.thing).map(|d| &d.0),
                 };
                 if let Some(bd) = burning_data {
@@ -282,7 +290,7 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Components: SpawnsEntityInAreaWhen{Thrown|Cast}
             let spawning_data = match verb {
-                TargetingVerb::Thrown => spawns_entity_in_area_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Throw => spawns_entity_in_area_when_thrown.get(want_target.thing).map(|d| &d.0),
                 TargetingVerb::Cast => spawns_entity_in_area_when_cast.get(want_target.thing).map(|d| &d.0),
             };
             if let Some(spawns) = spawning_data {
@@ -314,7 +322,7 @@ impl<'a> System<'a> for TargetedSystem {
             // Component: AreaOfEffectAnimationWhen{Thrown|Cast}
             // let has_aoe_animation = aoe_animations.get(want_target.thing);
             let aoe_animation_data = match verb {
-                TargetingVerb::Thrown => aoe_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Throw => aoe_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
                 TargetingVerb::Cast => aoe_animation_when_cast.get(want_target.thing).map(|d| &d.0),
             };
             if let Some(aoead) = aoe_animation_data {
@@ -330,7 +338,7 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Component: AlongRayAnimationWhen{Thrown|Cast}
             let ray_animation_data = match verb {
-                TargetingVerb::Thrown => along_ray_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Throw => along_ray_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
                 TargetingVerb::Cast => along_ray_animation_when_cast.get(want_target.thing).map(|d| &d.0),
             };
             if let Some(rad) = ray_animation_data {
@@ -352,6 +360,7 @@ impl<'a> System<'a> for TargetedSystem {
             // If the thing was single use, clean it up. Weapon specials
             // sometimes give a free throw of a consumable thrown weapon.
             let consumable = consumables.get(want_target.thing).is_some();
+            let singlecast = single_casts.get(want_target.thing).is_some();
             let freethrow = specials.get(want_target.thing)
                 .map(|s| matches!(s.kind, WeaponSpecialKind::ThrowWithoutExpending) && s.is_charged())
                 .map_or(false, |b| b);
@@ -362,6 +371,12 @@ impl<'a> System<'a> for TargetedSystem {
             if consumable && !freethrow {
                 println!("Not free throw.");
                 entities.delete(want_target.thing).expect("Consumable delete failed.");
+            }
+            if singlecast {
+                in_spellbooks.remove(want_target.thing)
+                    .expect("Failed to remove weapon from spellbook on special resolution.");
+                single_casts.remove(want_target.thing)
+                    .expect("Failed to single cast compoenent on special resolution.");
             }
 
             // If the thing is a spell, we've used up one of the spell charges.

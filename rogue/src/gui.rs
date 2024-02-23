@@ -1,4 +1,4 @@
-use crate::WeaponSpecial;
+use crate::{SingleCast, WeaponSpecial};
 
 use super::{
     get_status_indicators, BlessingOrbBag, Castable, CombatStats, Equipped,
@@ -773,6 +773,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     let in_spellbook = ecs.read_storage::<InSpellBook>();
     let castables = ecs.read_storage::<Castable>();
     let charges = ecs.read_storage::<SpellCharges>();
+    let singlecasts = ecs.read_storage::<SingleCast>();
     let renderables = ecs.read_storage::<Renderable>();
     let entities = ecs.entities();
 
@@ -811,14 +812,14 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     // component and:
     //   - Draw an selection letter for that item: (a), (b), (c), etc...
     //   - Add the spell to a vector for later lookup upon selection.
-    let spellbook = (&entities, &in_spellbook, &names, &castables, &charges)
+    let spellbook = (&entities, &in_spellbook, &names, &castables)
         .join()
-        .filter(|(_e, inbook, _name, _do, _ch)| inbook.owner == *player)
+        .filter(|(_e, inbook, _name, _do)| inbook.owner == *player)
         .enumerate();
     // Vector to keep track of the positions of items in the inventory. When the
     // player selects an item, we need to retrieve that associated item entity.
     let mut useable: Vec<Entity> = Vec::new();
-    for (i, (spell, _sb, name, _cst, charge)) in spellbook {
+    for (i, (spell, _sb, name, _cst)) in spellbook {
         // Draw the selection information. (a), (b), (c) etc.
         let selection_char = 97 + i as rltk::FontCharType;
         ctx.set(
@@ -860,33 +861,47 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
                 rltk::to_cp437(' '),
             ),
         }
+
         // Display the spell charge information: n_charges/max_charges.
+        let spellcharges = charges.get(spell);
         let number_char = vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-        ctx.set(
-            MODAL_MENU_X_POSITION + 6,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            // I'm sure there's a better way to do this...
-            rltk::to_cp437(*number_char.get(charge.charges as usize).unwrap_or(&'9')),
-        );
-        ctx.set(
-            MODAL_MENU_X_POSITION + 7,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437('/'),
-        );
-        ctx.set(
-            MODAL_MENU_X_POSITION + 8,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437(*number_char.get(charge.max_charges as usize).unwrap_or(&'9')),
-        );
+        if let Some(sc) = spellcharges {
+            ctx.set(
+                MODAL_MENU_X_POSITION + 6,
+                y,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                // I'm sure there's a better way to do this...
+                rltk::to_cp437(*number_char.get(sc.charges as usize).unwrap_or(&'9')),
+            );
+            ctx.set(
+                MODAL_MENU_X_POSITION + 7,
+                y,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437('/'),
+            );
+            ctx.set(
+                MODAL_MENU_X_POSITION + 8,
+                y,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::BLACK),
+                rltk::to_cp437(*number_char.get(sc.max_charges as usize).unwrap_or(&'9')),
+            );
+            // Render the spell recharge bar.
+            ctx.draw_bar_horizontal(
+                MODAL_MENU_X_POSITION + 10,
+                y + 1,
+                MODAL_MENU_WIDTH - 11,
+                sc.time,
+                sc.regen_time,
+                RGB::named(rltk::GREEN),
+                RGB::named(rltk::BLACK),
+            );
+        }
 
         // Render the spell name, with dark text if it cannot currently be cast.
-        let can_cast = charge.charges > 0;
+        let can_cast = spellcharges.map_or(false, |sc| sc.charges > 0) || singlecasts.get(spell).is_some();
         if can_cast {
             ctx.print_color(
                 MODAL_MENU_X_POSITION + 10,
@@ -905,17 +920,6 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
             );
         }
 
-        // Render the spell recharge bar.
-        ctx.draw_bar_horizontal(
-            MODAL_MENU_X_POSITION + 10,
-            y + 1,
-            MODAL_MENU_WIDTH - 11,
-            charge.time,
-            charge.regen_time,
-            RGB::named(rltk::GREEN),
-            RGB::named(rltk::BLACK),
-        );
-
         useable.push(spell);
         y += 2;
     }
@@ -929,7 +933,9 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
                 let selection = rltk::letter_to_option(key);
                 if selection > -1 && selection < count as i32 {
                     let spell = useable[selection as usize];
-                    let can_cast = charges.get(spell).map_or(false, |c| c.charges > 0);
+                    let can_cast =
+                        charges.get(spell).map_or(false, |sc| sc.charges > 0)
+                        || singlecasts.get(spell).is_some();
                     if can_cast {
                         return MenuResult::Selected {
                             thing: useable[selection as usize],

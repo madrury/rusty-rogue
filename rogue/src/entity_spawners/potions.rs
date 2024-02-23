@@ -33,7 +33,9 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Healing".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Consumable {})
@@ -65,7 +67,9 @@ pub fn recharging(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Recharging".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Consumable {})
@@ -109,7 +113,9 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Fire".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Throwable {})
@@ -186,7 +192,9 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Freezing".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Throwable {})
@@ -204,7 +212,7 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(InflictsDamageWhenThrown (
             InflictsDamageData {
                 damage: CHILL_POTION_DAMAGE,
-                kind: ElementalDamageKind::Chill
+                kind: ElementalDamageKind::Freezing
             }
         ))
         .with(InflictsFreezingWhenThrown (
@@ -252,7 +260,9 @@ pub fn teleportation(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Teleportation".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted{ verb: "drinks".to_string()})
         .with(Throwable {})

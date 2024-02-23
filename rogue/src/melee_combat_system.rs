@@ -89,7 +89,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 &mut damagees,
                 attack.target,
                 damage,
-                ElementalDamageKind::Physical
+                attack.element
             );
 
 

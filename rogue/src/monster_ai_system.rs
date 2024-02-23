@@ -9,6 +9,7 @@ use super::{
     StatusIsPhysicalDefenseBuffed, MeeleAttackRequestBuffer, MeeleAttackRequest
 };
 use crate::components::targeting::*;
+use crate::components::signaling::*;
 use rltk::{Point, RandomNumberGenerator};
 
 //----------------------------------------------------------------------------
@@ -162,6 +163,7 @@ impl<'a> System<'a> for MonsterBasicAISystem {
                 meele_buffer.request(MeeleAttackRequest {
                     source: entity,
                     target: *player,
+                    element: ElementalDamageKind::Physical,
                     critical: false,
                 })
             // Monster seeking player branch:
@@ -313,6 +315,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
                 meele_buffer.request(MeeleAttackRequest {
                     source: entity,
                     target: *player,
+                    element: ElementalDamageKind::Physical,
                     critical: false
                 });
             // Monster can see player but has no spell to cast.
@@ -488,6 +491,7 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
                 meele_buffer.request(MeeleAttackRequest {
                     source: entity,
                     target: *player,
+                    element: ElementalDamageKind::Physical,
                     critical: false
                 })
             // Monster can see other potential targets branch.

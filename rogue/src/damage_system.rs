@@ -23,6 +23,7 @@ impl DamageSystem {
             let mut spawn_buffer = ecs.write_resource::<EntitySpawnRequestBuffer>();
             let mut log = ecs.write_resource::<GameLog>();
             let entities = ecs.entities();
+
             for (entity, stats) in (&entities, &combat_stats).join() {
                 if stats.hp <= 0 {
                     // We have different branches if the dead entity is the
@@ -130,7 +131,7 @@ impl<'a> System<'a> for DamageSystem {
                             stats.take_damage(*dmg);
                         }
                     }
-                    ElementalDamageKind::Chill => {
+                    ElementalDamageKind::Freezing => {
                         if !is_immune_to_chill {
                             stats.take_damage(*dmg);
                         }

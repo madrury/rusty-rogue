@@ -1,4 +1,4 @@
-use crate::{MeeleAttackFormation, MeeleAttackWepon, WantsToMoveToPosition};
+use crate::{ElementalDamageKind, MeeleAttackFormation, MeeleAttackWepon, PickupDestination, WantsToMoveToPosition};
 
 use super::{
     CombatStats, GameLog, PickUpable, Map, Monster, Position, RunState,
@@ -306,6 +306,11 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
         .map(|(w, _)| w.formation)
         .next()
         .unwrap_or(MeeleAttackFormation::Basic);
+    let element = (&weapons, &equipped).join()
+        .filter(|(_, eq,)| eq.owner == *player)
+        .map(|(w, _)| w.element)
+        .next()
+        .unwrap_or(ElementalDamageKind::Physical);
 
     // We bail early if we're attempting to move into an edge tile, this is
     // always impossible and results in no action.
@@ -323,7 +328,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
             let targets = get_meele_targets_in_tile(
                 &*map, destination_idx, &combat_stats, &invisibles, true
             );
-            meele_buffer.request_many(*player, &targets, false);
+            meele_buffer.request_many(*player, &targets, element, false);
             if !targets.is_empty() {
                 return RunState::PlayerTurn
             }
@@ -341,7 +346,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                 &*map, destination_idx, &combat_stats, &invisibles, true
             );
             if !destination_targets.is_empty() {
-                meele_buffer.request_many(*player, &destination_targets, false);
+                meele_buffer.request_many(*player, &destination_targets, element, false);
                 return RunState::PlayerTurn
             }
 
@@ -357,7 +362,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                 &*map, dash_idx, &combat_stats, &invisibles, false
             );
             if !destination_is_blocked && !dash_targets.is_empty() {
-                meele_buffer.request_many(*player, &dash_targets, false);
+                meele_buffer.request_many(*player, &dash_targets, element, false);
                 moves.insert(
                     *player,
                     WantsToMoveToPosition {
@@ -413,7 +418,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
             // Found a target: DASH!
             } else if !dash_targets.is_empty() {
                 special.expend();
-                meele_buffer.request_many(*player, &dash_targets, true);
+                meele_buffer.request_many(*player, &dash_targets, element, true);
                 moves.insert(
                     *player,
                     WantsToMoveToPosition {
@@ -465,6 +470,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
     let monsters = ecs.read_storage::<Monster>();
     let hunger = ecs.read_storage::<HungerClock>();
     let equipped = ecs.read_storage::<Equipped>();
+    let weapons = ecs.read_storage::<MeeleAttackWepon>();
     let mut specials = ecs.write_storage::<WeaponSpecial>();
     let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
     let mut animation_buffer = ecs.write_resource::<AnimationRequestBuffer>();
@@ -473,11 +479,11 @@ fn skip_turn(ecs: &mut World) -> RunState {
     // Passing the turn with anjacent monsters starts a spin attack when a
     // sword's special is charged. Meele attacks all adjacent monsters, with a
     // free critical hit. Like in Link to the Past.
-    let ws = (&equipped, &renderables, &mut specials).join()
-        .filter(|(eq, _, _)| eq.owner == *player)
-        .filter(|(_, _, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
+    let ws = (&equipped, &weapons, &renderables, &mut specials).join()
+        .filter(|(eq, _, _, _)| eq.owner == *player)
+        .filter(|(_, _, _, s)| matches!(s.kind, WeaponSpecialKind::SpinAttack) && s.is_charged())
         .next();
-    if let Some((_, render, special)) = ws {
+    if let Some((_, weapon, render, special)) = ws {
         let combat_stats = ecs.read_storage::<CombatStats>();
         let adjacent: Vec<Entity> = map.get_l_infinity_circle_around(*ppos, 1)
             .iter()
@@ -485,7 +491,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
             .map(|idx| get_meele_targets_in_tile(&*map, idx, &combat_stats, &invisibles, true))
             .flatten()
             .collect();
-        meele_buffer.request_many(*player, &adjacent, true);
+        meele_buffer.request_many(*player, &adjacent, weapon.element, true);
         if !adjacent.is_empty() {
             special.expend();
             animation_buffer.request(AnimationRequest::SpinAttack {
@@ -544,25 +550,24 @@ fn pickup_item(ecs: &mut World) -> RunState {
     let mut log = ecs.fetch_mut::<GameLog>();
 
     let mut target_item: Option<Entity> = None;
-    for (entity, _pu, pos) in (&entities, &pickupables, &positions).join() {
+    let mut destination: Option<PickupDestination> = None;
+    for (entity, pu, pos) in (&entities, &pickupables, &positions).join() {
         if pos.x == ppos.x && pos.y == ppos.y {
             target_item = Some(entity);
+            destination = Some(pu.destination);
             break;
         }
     }
 
-    match target_item {
-        None => {
-            log.entries.push("There is nothing here to pickup.".to_string());
-            RunState::AwaitingInput
-        },
-        Some(item) => {
-            let mut pickup = ecs.write_storage::<WantsToPickupItem>();
-            pickup
-                .insert(*player, WantsToPickupItem{by: *player, item: item})
-                .expect("Unable to pickup item.");
-            RunState::PlayerTurn
-        }
+    if let (Some(ti), Some(dest)) = (target_item, destination) {
+        let mut pickup = ecs.write_storage::<WantsToPickupItem>();
+        pickup
+            .insert(*player, WantsToPickupItem{by: *player, item: ti, destination: dest})
+            .expect("Unable to pickup item.");
+        RunState::PlayerTurn
+    } else {
+        log.entries.push("There is nothing here to pickup.".to_string());
+        RunState::AwaitingInput
     }
 }
 

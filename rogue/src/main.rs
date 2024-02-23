@@ -77,8 +77,8 @@ use gamelog::GameLog;
 //--------------------------------------------------------------------
 // Debug flags.
 //--------------------------------------------------------------------
-const DEBUG_DRAW_ALL_MAP: bool = false;
-const DEBUG_RENDER_ALL: bool = false;
+const DEBUG_DRAW_ALL_MAP: bool = true;
+const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
 const DEBUG_HIGHLIGHT_BLOCKED: bool = false;
@@ -909,7 +909,7 @@ impl GameState for State {
                             range: range,
                             thing: thing,
                             kind: kind,
-                            verb: TargetingVerb::Thrown,
+                            verb: TargetingVerb::Throw,
                             current: None
                         };
                     }
@@ -1091,6 +1091,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
     gs.ecs.register::<MonsterSupportSpellcasterAI>();
     gs.ecs.register::<SpellCharges>();
+    gs.ecs.register::<SingleCast>();
     gs.ecs.register::<WeaponSpecial>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();
