@@ -16,6 +16,8 @@ use crate::AlongRayAnimationWhenCast;
 use crate::AlongRayAnimationWhenThrown;
 use crate::AreaOfEffectAnimationWhenCast;
 use crate::AreaOfEffectAnimationWhenThrown;
+use crate::ExpendWeaponSpecialWhenCast;
+use crate::ExpendWeaponSpecialWhenThrown;
 use crate::InSpellBook;
 use crate::SingleCast;
 use crate::SpawnsEntityInAreaWhenCast;
@@ -43,6 +45,8 @@ pub struct TargetedSystemData<'a> {
         single_casts: WriteStorage<'a, SingleCast>,
         in_spellbooks: WriteStorage<'a, InSpellBook>,
         specials: WriteStorage<'a, WeaponSpecial>,
+        expend_special_when_thrown: ReadStorage<'a, ExpendWeaponSpecialWhenThrown>,
+        expend_special_when_cast: ReadStorage<'a, ExpendWeaponSpecialWhenCast>,
         wants_target: WriteStorage<'a, WantsToUseTargeted>,
         targeted_when_thrown: ReadStorage<'a, TargetedWhenThrown>,
         targeted_when_cast: ReadStorage<'a, TargetedWhenCast>,
@@ -94,6 +98,8 @@ impl<'a> System<'a> for TargetedSystem {
             mut single_casts,
             mut in_spellbooks,
             mut specials,
+            expend_special_when_thrown,
+            expend_special_when_cast,
             targeted_when_thrown,
             targeted_when_cast,
             mut wants_target,
@@ -133,7 +139,6 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Determine if we a throwing an item or casting a spell.
             let verb = want_target.verb;
-            println!("Target selected. Verb {:?}", verb);
 
             // In the case we are casting a spell, we guard against the case
             // that we have no spell charges left.
@@ -361,31 +366,40 @@ impl<'a> System<'a> for TargetedSystem {
             // sometimes give a free throw of a consumable thrown weapon.
             let consumable = consumables.get(want_target.thing).is_some();
             let singlecast = single_casts.get(want_target.thing).is_some();
-            let freethrow = specials.get(want_target.thing)
-                .map(|s| matches!(s.kind, WeaponSpecialKind::ThrowWithoutExpending) && s.is_charged())
-                .map_or(false, |b| b);
-            if freethrow {
-                let special = specials.get_mut(want_target.thing);
-                special.expect("Failure attempting to clear weapon special charge.").expend();
-            }
-            if consumable && !freethrow {
-                println!("Not free throw.");
-                entities.delete(want_target.thing).expect("Consumable delete failed.");
-            }
-            if singlecast {
-                in_spellbooks.remove(want_target.thing)
-                    .expect("Failed to remove weapon from spellbook on special resolution.");
-                single_casts.remove(want_target.thing)
-                    .expect("Failed to single cast compoenent on special resolution.");
+            let throwexpend = expend_special_when_thrown.get(want_target.thing).is_some();
+            let castexpend = expend_special_when_cast.get(want_target.thing).is_some();
+
+            match verb {
+                TargetingVerb::Throw => {
+                    let freethrow = specials.get(want_target.thing)
+                        .map(|s| matches!(s.kind, WeaponSpecialKind::ThrowWithoutExpending) && s.is_charged())
+                        .map_or(false, |b| b);
+                    if freethrow && throwexpend {
+                        let special = specials.get_mut(want_target.thing);
+                        special.expect("Failure attempting to clear weapon special charge.").expend();
+                    } else if consumable && !freethrow {
+                        entities.delete(want_target.thing)
+                            .expect("Failed to delete consumed entity when thrown.");
+                    };
+                }
+                TargetingVerb::Cast => {
+                    if singlecast {
+                        in_spellbooks.remove(want_target.thing)
+                            .expect("Failed to remove weapon from spellbook on special resolution.");
+                        single_casts.remove(want_target.thing)
+                            .expect("Failed to single cast compoenent on special resolution.");
+                    }
+                    if castexpend {
+                        let special = specials.get_mut(want_target.thing);
+                        special.expect("Failure attempting to clear weapon special charge.").expend();
+                    }
+                    let sc = spell_charges.get_mut(want_target.thing);
+                    if let Some(sc) = sc { sc.expend_charge() }
+                }
             }
 
-            // If the thing is a spell, we've used up one of the spell charges.
-            let sc = spell_charges.get_mut(want_target.thing);
-            if let Some(sc) = sc {
-                sc.expend_charge()
-            }
+        } // Loop over wants_targets.
 
-        }
         wants_target.clear();
     }
 }

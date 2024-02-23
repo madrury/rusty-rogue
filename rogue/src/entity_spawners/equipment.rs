@@ -58,6 +58,7 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             time: 0,
             kind: WeaponSpecialKind::ThrowWithoutExpending
         })
+        .with(ExpendWeaponSpecialWhenThrown {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -218,6 +219,7 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
             time: 0,
             kind: WeaponSpecialKind::AddToSpellBook
         })
+        .with(ExpendWeaponSpecialWhenCast {})
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
             range: 6.5,

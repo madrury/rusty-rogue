@@ -119,3 +119,9 @@ impl WeaponSpecial {
     }
 }
 
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ExpendWeaponSpecialWhenThrown {}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ExpendWeaponSpecialWhenCast {}
+

@@ -1093,6 +1093,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<SpellCharges>();
     gs.ecs.register::<SingleCast>();
     gs.ecs.register::<WeaponSpecial>();
+    gs.ecs.register::<ExpendWeaponSpecialWhenThrown>();
+    gs.ecs.register::<ExpendWeaponSpecialWhenCast>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();
     gs.ecs.register::<WantsToPickupItem>();
