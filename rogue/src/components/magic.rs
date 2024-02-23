@@ -58,14 +58,15 @@ pub struct Castable {
 }
 
 // Tags a spell component as in the spellbook of some other entity. I.e., the
-// referenced entity can cast the spell.
+// referenced entity can cast the spell, and the spell charges regenerate at a
+// base rate of one tick per turn.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InSpellBook {
     pub owner: Entity,
     pub slot: BlessingSlot
 }
 
-// Tracks teh number of charges of a spell that are available, and how far we
+// Tracks the number of charges of a spell that are available, and how far we
 // are into recharging a use of that spell.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct SpellCharges {
@@ -105,10 +106,14 @@ impl SpellCharges {
     }
 }
 
+// Component to attach to equippables that doubles the rate of spell recharges
+// for a given element.
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct IncresesSpellRechargeRate {
+pub struct IncresesSpellRechargeRateWhenEquipped {
     pub element: ElementalDamageKind
 }
 
+// Single cast spells. Useful for weapon specials on caster weapons like rods
+// and staffs.
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct SingleCast {}
+pub struct RemovedFromSpellBookWhenCast {}

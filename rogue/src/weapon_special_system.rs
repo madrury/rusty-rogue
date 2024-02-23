@@ -23,7 +23,7 @@ pub struct WeaponSpecialTickSystemData<'a> {
     equipped: ReadStorage<'a, Equipped>,
     specials: WriteStorage<'a, WeaponSpecial>,
     spellbooks: WriteStorage<'a, InSpellBook>,
-    singlecast: WriteStorage<'a, SingleCast>
+    singlecast: WriteStorage<'a, RemovedFromSpellBookWhenCast>
 }
 
 impl<'a> System<'a> for WeaponSpecialTickSystem {
@@ -46,7 +46,9 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
 
         for (weapon, special, equipped) in (&entities, &mut specials, &equipped).join() {
             let recharged = special.tick();
-            if !recharged { continue; }
+            if !recharged {
+                continue;
+            }
 
             let owner = equipped.owner;
             let ownername = names.get(owner);
@@ -61,7 +63,7 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
                         owner: owner,
                         slot: BlessingSlot::None
                     }).expect("Failed to insert InSpellBook component on special charge.");
-                    singlecast.insert(weapon, SingleCast {})
+                    singlecast.insert(weapon, RemovedFromSpellBookWhenCast {})
                         .expect("Failed to insert SingleCast component upon special charge.");
                 }
                 _ => {}

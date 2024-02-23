@@ -19,7 +19,7 @@ use crate::AreaOfEffectAnimationWhenThrown;
 use crate::ExpendWeaponSpecialWhenCast;
 use crate::ExpendWeaponSpecialWhenThrown;
 use crate::InSpellBook;
-use crate::SingleCast;
+use crate::RemovedFromSpellBookWhenCast;
 use crate::SpawnsEntityInAreaWhenCast;
 use crate::SpawnsEntityInAreaWhenThrown;
 
@@ -42,7 +42,7 @@ pub struct TargetedSystemData<'a> {
         positions: WriteStorage<'a, Position>,
         consumables: ReadStorage<'a, Consumable>,
         spell_charges: WriteStorage<'a, SpellCharges>,
-        single_casts: WriteStorage<'a, SingleCast>,
+        single_casts: WriteStorage<'a, RemovedFromSpellBookWhenCast>,
         in_spellbooks: WriteStorage<'a, InSpellBook>,
         specials: WriteStorage<'a, WeaponSpecial>,
         expend_special_when_thrown: ReadStorage<'a, ExpendWeaponSpecialWhenThrown>,

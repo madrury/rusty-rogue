@@ -1,6 +1,6 @@
 
 use specs::prelude::*;
-use crate::{ElementalDamageKind, IncresesSpellRechargeRate};
+use crate::{ElementalDamageKind, IncresesSpellRechargeRateWhenEquipped};
 
 use super::{GameLog, SpellCharges, Name, InSpellBook, Equipped};
 
@@ -16,7 +16,7 @@ pub struct SpellChargeSystemData<'a> {
     in_spellbooks: ReadStorage<'a, InSpellBook>,
     spell_charges: WriteStorage<'a, SpellCharges>,
     equipped: ReadStorage<'a, Equipped>,
-    increases_spell_recharge_rate: ReadStorage<'a, IncresesSpellRechargeRate>,
+    increases_spell_recharge_rate: ReadStorage<'a, IncresesSpellRechargeRateWhenEquipped>,
 }
 
 impl<'a> System<'a> for SpellChargeSystem {

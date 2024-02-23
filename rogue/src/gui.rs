@@ -1,4 +1,4 @@
-use crate::{SingleCast, WeaponSpecial};
+use crate::{RemovedFromSpellBookWhenCast, WeaponSpecial};
 
 use super::{
     get_status_indicators, BlessingOrbBag, Castable, CombatStats, Equipped,
@@ -773,7 +773,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     let in_spellbook = ecs.read_storage::<InSpellBook>();
     let castables = ecs.read_storage::<Castable>();
     let charges = ecs.read_storage::<SpellCharges>();
-    let singlecasts = ecs.read_storage::<SingleCast>();
+    let singlecasts = ecs.read_storage::<RemovedFromSpellBookWhenCast>();
     let renderables = ecs.read_storage::<Renderable>();
     let entities = ecs.entities();
 

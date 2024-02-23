@@ -1091,9 +1091,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
     gs.ecs.register::<MonsterSupportSpellcasterAI>();
     gs.ecs.register::<SpellCharges>();
-    gs.ecs.register::<SingleCast>();
-    gs.ecs.register::<IncresesSpellRechargeRate>();
-
+    gs.ecs.register::<RemovedFromSpellBookWhenCast>();
+    gs.ecs.register::<IncresesSpellRechargeRateWhenEquipped>();
     gs.ecs.register::<WeaponSpecial>();
     gs.ecs.register::<ExpendWeaponSpecialWhenThrown>();
     gs.ecs.register::<ExpendWeaponSpecialWhenCast>();
