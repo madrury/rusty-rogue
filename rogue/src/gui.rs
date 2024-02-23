@@ -900,8 +900,8 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
                 MODAL_MENU_X_POSITION + 10,
                 y + 1,
                 MODAL_MENU_WIDTH - 11,
-                sc.time,
-                sc.regen_time,
+                sc.ticks,
+                sc.regen_ticks,
                 RGB::named(rltk::GREEN),
                 RGB::named(rltk::BLACK),
             );

@@ -34,8 +34,9 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
-            regen_time: 100,
-            time: 0
+            regen_ticks: 100,
+            ticks: 0,
+            element: ElementalDamageKind::Fire
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
@@ -89,8 +90,9 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
-            regen_time: 200,
-            time: 0
+            regen_ticks: 200,
+            ticks: 0,
+            element: ElementalDamageKind::Fire
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
@@ -156,8 +158,9 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
-            regen_time: 100,
-            time: 0
+            regen_ticks: 100,
+            ticks: 0,
+            element: ElementalDamageKind::Freezing
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
@@ -208,8 +211,9 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
-            regen_time: 200,
-            time: 0
+            regen_ticks: 200,
+            ticks: 0,
+            element: ElementalDamageKind::Freezing
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
@@ -270,8 +274,9 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
-            regen_time: 50,
-            time: 0
+            regen_ticks: 50,
+            ticks: 0,
+            element: ElementalDamageKind::Physical
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
@@ -322,8 +327,9 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(SpellCharges {
             max_charges: 3,
             charges: 1,
-            regen_time: 100,
-            time: 0
+            regen_ticks: 100,
+            ticks: 0,
+            element: ElementalDamageKind::None
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
@@ -366,8 +372,9 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
-            regen_time: 100,
-            time: 0
+            regen_ticks: 100,
+            ticks: 0,
+            element: ElementalDamageKind::Healing
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
@@ -410,8 +417,9 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
-            regen_time: 100,
-            time: 0
+            regen_ticks: 100,
+            ticks: 0,
+            element: ElementalDamageKind::None
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
@@ -454,8 +462,9 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
         .with(SpellCharges {
             max_charges: max_charges,
             charges: charges,
-            regen_time: 100,
-            time: 0
+            regen_ticks: 100,
+            ticks: 0,
+            element: ElementalDamageKind::None
         })
         .with(TargetedWhenCast {
             verb: "casts".to_string(),

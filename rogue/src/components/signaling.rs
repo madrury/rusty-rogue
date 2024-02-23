@@ -58,11 +58,14 @@ pub struct WantsToMoveToPosition {
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct WantsToMoveToRandomPosition {}
 
-// Signals that the entity has damage queued, but not applied.
+// TODO: The elemental tagging needs a rethink. This enum is doing too much work
+// and is awkwardly named.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum ElementalDamageKind {
-    Physical, Fire, Freezing, Hunger, Drowning
+    None, Healing, Physical, Fire, Freezing, Hunger, Drowning
 }
+
+// Signals that the entity has damage queued, but not applied.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct WantsToTakeDamage {
     pub amounts: Vec<i32>,

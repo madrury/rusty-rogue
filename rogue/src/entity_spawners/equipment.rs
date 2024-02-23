@@ -195,6 +195,7 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
         .with(Equippable {slot: EquipmentSlot::Melee})
         .with(Castable { slot: BlessingSlot::None })
         .with(Name {name : "Rod".to_string()})
+        .with(IncresesSpellRechargeRate {element: element})
         .with(MeeleAttackWepon {
             bonus: 0,
             formation: MeeleAttackFormation::Basic,

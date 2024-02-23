@@ -1,3 +1,4 @@
+use log::warn;
 use specs::prelude::*;
 use super::{
     Position, CombatStats, WantsToTakeDamage, Player, Name, GameLog,
@@ -118,7 +119,9 @@ impl<'a> System<'a> for DamageSystem {
             for (dmg, kind) in damage.amounts.iter().zip(&damage.kinds) {
                 match *kind {
                     ElementalDamageKind::Physical => {
-                        stats.take_damage(i32::max(0, (dmg - melee_defense_bonus) / defense_buff_factor));
+                        stats.take_damage(
+                            i32::max(0, (dmg - melee_defense_bonus) / defense_buff_factor)
+                        );
                     }
                     ElementalDamageKind::Hunger => {
                         stats.take_damage(*dmg);
@@ -135,6 +138,9 @@ impl<'a> System<'a> for DamageSystem {
                         if !is_immune_to_chill {
                             stats.take_damage(*dmg);
                         }
+                    }
+                    _ => {
+                        warn!("Unnatural damage element: {:?}", kind);
                     }
                 }
             }
