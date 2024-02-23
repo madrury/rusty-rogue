@@ -764,8 +764,8 @@ pub fn show_help(_ecs: &mut World, ctx: &mut Rltk, details: Option<&'static str>
 
 //----------------------------------------------------------------------------
 // Spell Menu
-// We cannot re-use the code for the various item menus here, since we need to
-// display information on spell charges.
+// We cannot re-use the modal code for the various item menus here, since we
+// need to display information on spell charges.
 //----------------------------------------------------------------------------
 pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     let player = ecs.fetch::<Entity>();
@@ -780,16 +780,23 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     let spellbook = (&in_spellbook, &castables, &names)
         .join()
         .filter(|(spell, _use, _do)| spell.owner == *player);
-    let count = spellbook.count();
+    let n_spells = spellbook.count() as i32;
+    let n_single_cast = (&in_spellbook, &castables, &singlecasts)
+        .join()
+        .filter(|(spell, _use, _do)| spell.owner == *player)
+        .count() as i32;
 
-    let mut y = MODAL_MENU_Y_POSITION - count as i32;
+    let mut y = MODAL_MENU_Y_POSITION - n_spells as i32;
 
     // Draw the outline of the menu, and the helper text.
     ctx.draw_box(
         MODAL_MENU_X_POSITION,
         y - 2,
         MODAL_MENU_WIDTH,
-        (2 * count + 3) as i32,
+        // Two lines for every normal spell in our spellbook, one for the spell
+        // itself, one for the charge bar. One line for every single cast spell,
+        // since we do not render the charge bar.
+        2 * n_spells + 3 - n_single_cast,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),
     );
@@ -802,7 +809,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     );
     ctx.print_color(
         MODAL_MENU_X_POSITION + 3,
-        y + 2 * count as i32 + 1,
+        y + 2 * n_spells as i32 + 1,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         "Press ESC to cancel",
@@ -901,7 +908,9 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         }
 
         // Render the spell name, with dark text if it cannot currently be cast.
-        let can_cast = spellcharges.map_or(false, |sc| sc.charges > 0) || singlecasts.get(spell).is_some();
+        let can_cast =
+            spellcharges.map_or(false, |sc| sc.charges > 0)
+            || singlecasts.get(spell).is_some();
         if can_cast {
             ctx.print_color(
                 MODAL_MENU_X_POSITION + 10,
@@ -921,7 +930,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
         }
 
         useable.push(spell);
-        y += 2;
+        y += if spellcharges.is_some() {2} else {1};
     }
 
     // If we've got input, we can get to casting the spell.
@@ -931,7 +940,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
             VirtualKeyCode::Escape => MenuResult::Cancel,
             _ => {
                 let selection = rltk::letter_to_option(key);
-                if selection > -1 && selection < count as i32 {
+                if selection > -1 && selection < n_spells as i32 {
                     let spell = useable[selection as usize];
                     let can_cast =
                         charges.get(spell).map_or(false, |sc| sc.charges > 0)
@@ -1065,7 +1074,7 @@ pub fn show_blessings(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
 
 //----------------------------------------------------------------------------
 // Targeting system.
-// Allows the selection of a target with the mouse.
+// Allows the selection of a target with the mouse or keyboard.
 //----------------------------------------------------------------------------
 pub enum TargetingResult {
     Cancel,

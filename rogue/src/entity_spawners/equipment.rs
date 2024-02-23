@@ -173,11 +173,16 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
 }
 
 pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Option<Entity> {
+    let fg = match element {
+        ElementalDamageKind::Fire => RGB::named(rltk::ORANGE),
+        ElementalDamageKind::Freezing => RGB::named(rltk::LIGHTBLUE),
+        _ => RGB::named(rltk::SILVER)
+    };
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
             glyph: rltk::to_cp437('/'),
-            fg: RGB::named(rltk::SILVER),
+            fg: fg,
             bg: RGB::named(rltk::BLACK),
             order: 2,
             visible_out_of_fov: false
@@ -208,7 +213,7 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
         ))
         .with(AlongRayAnimationWhenThrown (
             AlongRayAnimationData {
-                fg: RGB::named(rltk::SILVER),
+                fg: fg,
                 bg: RGB::named(rltk::BLACK),
                 glyph: rltk::to_cp437('/'),
                 until_blocked: true
