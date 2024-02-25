@@ -1,10 +1,10 @@
-use super::{
-    GameLog, InBackpack, InSpellBook, Name, Position, WantsToPickupItem, WantsToEquipItem,
-    WantsToRemoveItem, Equipped, Castable, BlessingOrb, BlessingOrbBag
-};
-use crate::components::*;
-use crate::components::signaling::*;
 use specs::prelude::*;
+
+use crate::GameLog;
+use crate::components::*;
+use crate::components::equipment::*;
+use crate::components::magic::*;
+use crate::components::signaling::*;
 
 
 pub struct ItemCollectionSystem {}

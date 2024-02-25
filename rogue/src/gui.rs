@@ -809,7 +809,7 @@ pub fn show_spellbook(ecs: &mut World, ctx: &mut Rltk) -> MenuResult {
     );
     ctx.print_color(
         MODAL_MENU_X_POSITION + 3,
-        y + 2 * n_spells as i32 + 1,
+        y + 2 * n_spells as i32 + 1 - n_single_cast,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
         "Press ESC to cancel",

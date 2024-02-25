@@ -109,7 +109,7 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .with(Name {name : "Sword".to_string()})
         .with(Equippable {slot: EquipmentSlot::Melee})
         .with(MeeleAttackWepon {
-            bonus: 5,
+            bonus: SWORD_MEELE_ATTACK_POWER,
             formation: MeeleAttackFormation::Basic,
             element: ElementalDamageKind::Physical
         })

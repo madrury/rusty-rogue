@@ -4,7 +4,7 @@ use super::{
     ChanceToSpawnEntityWhenBurning, RemoveBurningWhenEncroachedUpon,
     DissipateFireWhenEncroachedUpon, RemoveBurningOnUpkeep, EntitySpawnKind,
     StatusIsImmuneToChill, StatusIsImmuneToFire, IsEntityKind, Hazard, Opaque,
-    BlessingSelectionTile, TileType, UseFgColorMap, UseBgColorMap, Bloodied,
+    BlessingSelectionTile, TileType, UseFgColorMap, UseBgColorMap,
     UseBgColorMapWhenBloodied, UseFgColorMapWhenBloodied
 };
 

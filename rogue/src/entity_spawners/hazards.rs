@@ -1,5 +1,5 @@
 
-use crate::{map_builders::ColorMaps, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
+use crate::{StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
 
 use super::{
     Map, TileType, EntitySpawnKind, Hazard, IsEntityKind, Name, Position,
