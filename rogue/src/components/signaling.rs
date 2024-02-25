@@ -5,6 +5,8 @@ use specs::error::NoError;
 use serde::{Serialize, Deserialize};
 use rltk::Point;
 
+use crate::TargetingVerb;
+
 //------------------------------------------------------------------
 // Signaling Components
 // These components are used when processing changes to game state to signal
@@ -38,6 +40,7 @@ pub struct WantsToUseUntargeted {
 pub struct WantsToUseTargeted {
     pub thing: Entity,
     pub target: Point,
+    pub verb: TargetingVerb,
 }
 
 // The entiity has requested to move to a specific map position.

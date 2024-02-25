@@ -35,12 +35,17 @@ pub struct IsEntityKind {
     pub kind: EntitySpawnKind
 }
 
-// Component indicates that a targeted effect spawns new entities when resolved.
-#[derive(Component, ConvertSaveload, Clone)]
-pub struct SpawnsEntityInAreaWhenTargeted {
+// Components to indicate that a effect effect spawns new entities when
+// resolved.
+#[derive(Clone, ConvertSaveload)]
+pub struct SpawnsEntityInAreaData {
     pub radius: i32,
     pub kind: EntitySpawnKind
 }
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnsEntityInAreaWhenThrown (pub SpawnsEntityInAreaData);
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct SpawnsEntityInAreaWhenCast (pub SpawnsEntityInAreaData);
 
 // Component indicates that the entity has a random chance to spawn entities in
 // an adjacent space.

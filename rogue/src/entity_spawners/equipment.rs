@@ -1,13 +1,15 @@
-use super::{
-    Name, Position, Renderable, PickUpable, Equippable, EquipmentSlot,
-    Throwable, Targeted, TargetingKind, Consumable, InflictsDamageWhenTargeted,
-    MeeleAttackWepon, GrantsMeleeDefenseBonus, SimpleMarker, SerializeMe,
-    MarkedBuilder, ElementalDamageKind, AlongRayAnimationWhenTargeted,
-    StatusIsImmuneToChill, StatusIsImmuneToFire, WeaponSpecial,
-    WeaponSpecialKind, MeeleAttackFormation
-};
+use crate::components::*;
+use crate::components::animation::*;
+use crate::components::game_effects::*;
+use crate::components::melee::*;
+use crate::components::equipment::*;
+use crate::components::signaling::*;
+use crate::components::status_effects::*;
+use crate::components::targeting::*;
+
 use rltk::RGB;
 use specs::prelude::*;
+use specs::saveload::{SimpleMarker, MarkedBuilder};
 
 pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
     let entity = ecs.create_entity()
@@ -28,21 +30,25 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             bonus: 2,
             formation: MeeleAttackFormation::Basic
         })
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: 6.5,
             kind: TargetingKind::Simple
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: 15,
-            kind: ElementalDamageKind::Physical
-        })
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::SILVER),
-            bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('↑'),
-            until_blocked: true
-        })
+        .with(InflictsDamageWhenThrown(
+            InflictsDamageData {
+                damage: 15,
+                kind: ElementalDamageKind::Physical
+            }
+        ))
+        .with(AlongRayAnimationWhenThrown (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::SILVER),
+                bg: RGB::named(rltk::BLACK),
+                glyph: rltk::to_cp437('↑'),
+                until_blocked: true
+            }
+        ))
         .with(WeaponSpecial {
             regen_time: 100,
             time: 0,
@@ -74,21 +80,25 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             bonus: 5,
             formation: MeeleAttackFormation::Basic
         })
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: 6.5,
             kind: TargetingKind::Simple
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: 30,
-            kind: ElementalDamageKind::Physical
-        })
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::SILVER),
-            bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('↑'),
-            until_blocked: true
-        })
+        .with(InflictsDamageWhenThrown(
+            InflictsDamageData {
+                damage: 30,
+                kind: ElementalDamageKind::Physical
+            }
+        ))
+        .with(AlongRayAnimationWhenThrown (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::SILVER),
+                bg: RGB::named(rltk::BLACK),
+                glyph: rltk::to_cp437('↑'),
+                until_blocked: true
+            }
+        ))
         .with(WeaponSpecial {
             regen_time: 100,
             time: 0,
@@ -120,21 +130,25 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             bonus: 4,
             formation: MeeleAttackFormation::Dash
         })
-        .with(Targeted {
+        .with(TargetedWhenThrown {
             verb: "throws".to_string(),
             range: 6.5,
             kind: TargetingKind::Simple
         })
-        .with(InflictsDamageWhenTargeted {
-            damage: 25,
-            kind: ElementalDamageKind::Physical
-        })
-        .with(AlongRayAnimationWhenTargeted {
-            fg: RGB::named(rltk::SILVER),
-            bg: RGB::named(rltk::BLACK),
-            glyph: rltk::to_cp437('↑'),
-            until_blocked: true
-        })
+        .with(InflictsDamageWhenThrown (
+            InflictsDamageData {
+                damage: 25,
+                kind: ElementalDamageKind::Physical
+            }
+        ))
+        .with(AlongRayAnimationWhenThrown (
+            AlongRayAnimationData {
+                fg: RGB::named(rltk::SILVER),
+                bg: RGB::named(rltk::BLACK),
+                glyph: rltk::to_cp437('↑'),
+                until_blocked: true
+            }
+        ))
         .with(WeaponSpecial {
             regen_time: 10,
             time: 0,

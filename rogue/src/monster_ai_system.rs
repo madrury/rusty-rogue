@@ -8,6 +8,7 @@ use super::{
     SupportSpellcasterKind, StatusIsMeleeAttackBuffed,
     StatusIsPhysicalDefenseBuffed, MeeleAttackRequestBuffer, MeeleAttackRequest
 };
+use crate::components::targeting::*;
 use rltk::{Point, RandomNumberGenerator};
 
 //----------------------------------------------------------------------------
@@ -302,7 +303,7 @@ impl<'a> System<'a> for MonsterAttackSpellcasterAISystem {
             if in_viewshed && has_spell_to_cast && l_infinity_distance_to_player <= ai.distance_to_keep_away{
                 if let Some(spell) = spell_to_cast {
                     wants_to_target
-                        .insert(entity, WantsToUseTargeted {thing: spell, target: *ppos})
+                        .insert(entity, WantsToUseTargeted {thing: spell, target: *ppos, verb: TargetingVerb::Cast})
                         .expect("Could not insert WantsToUseTargeted from Monster Spellcaster AI.");
                 }
             // Monster next to player branch.
@@ -474,7 +475,11 @@ impl<'a> System<'a> for MonsterSupportSpellcasterAISystem {
                 let mpos = positions.get(monster)
                     .expect("Monster to heal has no position.");
                 wants_to_target
-                    .insert(entity, WantsToUseTargeted {thing: spell, target: mpos.to_point()})
+                    .insert(entity, WantsToUseTargeted {
+                        thing: spell,
+                        target: mpos.to_point(),
+                        verb: TargetingVerb::Cast
+                    })
                     .expect("Could not insert WantsToUseTargeted from Monster Spellcaster AI.");
             // Monster next to player branch.
             // If we're next to the player, and have no spell to cast, we'll
