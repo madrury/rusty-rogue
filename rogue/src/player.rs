@@ -1,13 +1,15 @@
-use crate::{ElementalDamageKind, MeeleAttackFormation, MeeleAttackWepon, PickupDestination, WantsToMoveToPosition};
-
-use super::{
-    CombatStats, GameLog, PickUpable, Map, Monster, Position, RunState,
-    Renderable, Equipped, State, HungerClock, HungerState, Viewshed,
-    MeeleAttackRequestBuffer, AnimationRequestBuffer,
-    AnimationRequest, WantsToPickupItem, StatusIsFrozen, TileType,
-    WeaponSpecial, WeaponSpecialKind, StatusInvisibleToPlayer
+use crate::{
+    AnimationRequest, AnimationRequestBuffer, Map, GameLog, RunState, State,
+    TileType
 };
-use rltk::{Algorithm2D, Point, Rltk, VirtualKeyCode, RGB};
+use crate::components::*;
+use crate::components::equipment::*;
+use crate::components::hunger::*;
+use crate::components::melee::*;
+use crate::components::signaling::*;
+use crate::components::status_effects::*;
+
+use rltk::{Rltk, Point, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
 
@@ -301,12 +303,12 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
     let destination_is_blocked = map.blocked[destination_idx];
     let playerrender = renderables.get(*player)
         .expect("Failed to get Renderable component for player.");
-    let formation = (&weapons, &equipped).join()
+    let weapon_formation = (&weapons, &equipped).join()
         .filter(|(_, eq,)| eq.owner == *player)
         .map(|(w, _)| w.formation)
         .next()
         .unwrap_or(MeeleAttackFormation::Basic);
-    let element = (&weapons, &equipped).join()
+    let weapon_element = (&weapons, &equipped).join()
         .filter(|(_, eq,)| eq.owner == *player)
         .map(|(w, _)| w.element)
         .next()
@@ -321,14 +323,14 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
     // We first check for any meele attack targets. If we find any we queue
     // meele attacks and pass the turn. If not, we drop through to the next set
     // of movement checks.
-    match formation {
+    match weapon_formation {
         // The basic meele formation attacks only the tile in the direction of
         // movement.
         MeeleAttackFormation::Basic => {
             let targets = get_meele_targets_in_tile(
                 &*map, destination_idx, &combat_stats, &invisibles, true
             );
-            meele_buffer.request_many(*player, &targets, element, false);
+            meele_buffer.request_many(*player, &targets, weapon_element, false);
             if !targets.is_empty() {
                 return RunState::PlayerTurn
             }
@@ -346,7 +348,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                 &*map, destination_idx, &combat_stats, &invisibles, true
             );
             if !destination_targets.is_empty() {
-                meele_buffer.request_many(*player, &destination_targets, element, false);
+                meele_buffer.request_many(*player, &destination_targets, weapon_element, false);
                 return RunState::PlayerTurn
             }
 
@@ -362,7 +364,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                 &*map, dash_idx, &combat_stats, &invisibles, false
             );
             if !destination_is_blocked && !dash_targets.is_empty() {
-                meele_buffer.request_many(*player, &dash_targets, element, false);
+                meele_buffer.request_many(*player, &dash_targets, weapon_element, false);
                 moves.insert(
                     *player,
                     WantsToMoveToPosition {
@@ -418,7 +420,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
             // Found a target: DASH!
             } else if !dash_targets.is_empty() {
                 special.expend();
-                meele_buffer.request_many(*player, &dash_targets, element, true);
+                meele_buffer.request_many(*player, &dash_targets, weapon_element, true);
                 moves.insert(
                     *player,
                     WantsToMoveToPosition {

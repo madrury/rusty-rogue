@@ -6,17 +6,37 @@ use crate::components::melee::*;
 use crate::components::equipment::*;
 use crate::components::signaling::*;
 use crate::components::status_effects::*;
+use crate::components::spawn_despawn::*;
 use crate::components::targeting::*;
+use crate::entity_spawners::spells::{
+    FIREBALL_RANGE, FIREBALL_DAMAGE, FIREBALL_BURNING_TURNS,
+    FIREBALL_BURNING_TICK_DAMAGE, FIREBLAST_FIRE_DISSIPATE_CHANCE,
+    FIREBLAST_FIRE_SPREAD_CHANCE, ICESPIKE_DAMAGE, ICESPIKE_RANGE,
+    ICESPIKE_FREEZING_TURNS, ICEBLAST_CHILL_SPREAD_CHANCE,
+    ICEBLAST_CHILL_DISSIPATE_CHANCE
+};
 
 use rltk::RGB;
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, MarkedBuilder};
 
+
+const SWORD_GLYPH: u16 = 160;
+const ROD_GLYPH: u16 = 161;
+const DAGGER_GLYPH: u16 = 162;
+const SPEAR_GLYPH: u16 = 163;
+const RAPIER_GLYPH: u16 = 164;
+
+const DAGGER_MEELE_ATTACK_POWER: i32 = 2;
+const DAGGER_THROW_RANGE: f32 = 10.0;
+const DAGGER_THROW_DAMAGE: i32 = 15;
+const DAGGER_SPECIAL_REGEN_TURNS: i32 = 100;
+
 pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
-            glyph: rltk::to_cp437('↑'),
+            glyph: DAGGER_GLYPH,
             fg: RGB::named(rltk::SILVER),
             bg: RGB::named(rltk::BLACK),
             order: 2,
@@ -30,18 +50,18 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .with(Name {name : "Dagger".to_string()})
         .with(Equippable {slot: EquipmentSlot::Melee})
         .with(MeeleAttackWepon {
-            bonus: 2,
+            bonus: DAGGER_MEELE_ATTACK_POWER,
             formation: MeeleAttackFormation::Basic,
             element: ElementalDamageKind::Physical
         })
         .with(TargetedWhenThrown {
             verb: "throws".to_string(),
-            range: 6.5,
+            range: DAGGER_THROW_RANGE,
             kind: TargetingKind::Simple
         })
         .with(InflictsDamageWhenThrown(
             InflictsDamageData {
-                damage: 15,
+                damage: DAGGER_THROW_DAMAGE,
                 kind: ElementalDamageKind::Physical
             }
         ))
@@ -49,12 +69,12 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             AlongRayAnimationData {
                 fg: RGB::named(rltk::SILVER),
                 bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('↑'),
+                glyph: DAGGER_GLYPH,
                 until_blocked: true
             }
         ))
         .with(WeaponSpecial {
-            regen_time: 100,
+            regen_time: DAGGER_SPECIAL_REGEN_TURNS,
             time: 0,
             kind: WeaponSpecialKind::ThrowWithoutExpending
         })
@@ -66,11 +86,17 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         Some(entity)
 }
 
+
+const SWORD_MEELE_ATTACK_POWER: i32 = 5;
+const SWORD_THROW_RANGE: f32 = 6.5;
+const SWORD_THROW_DAMAGE: i32 = 30;
+const SWORD_SPECIAL_REGEN_TURNS: i32 = 200;
+
 pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
-            glyph: rltk::to_cp437('↑'),
+            glyph: SWORD_GLYPH,
             fg: RGB::named(rltk::SILVER),
             bg: RGB::named(rltk::BLACK),
             order: 2,
@@ -90,12 +116,12 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         })
         .with(TargetedWhenThrown {
             verb: "throws".to_string(),
-            range: 6.5,
+            range: SWORD_THROW_RANGE,
             kind: TargetingKind::Simple
         })
         .with(InflictsDamageWhenThrown(
             InflictsDamageData {
-                damage: 30,
+                damage: SWORD_THROW_DAMAGE,
                 kind: ElementalDamageKind::Physical
             }
         ))
@@ -103,12 +129,12 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             AlongRayAnimationData {
                 fg: RGB::named(rltk::SILVER),
                 bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('↑'),
+                glyph: SWORD_GLYPH,
                 until_blocked: true
             }
         ))
         .with(WeaponSpecial {
-            regen_time: 100,
+            regen_time: SWORD_SPECIAL_REGEN_TURNS,
             time: 0,
             kind: WeaponSpecialKind::SpinAttack
         })
@@ -119,11 +145,17 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         Some(entity)
 }
 
+
+const RAPIER_MEELE_ATTACK_POWER: i32 = 4;
+const RAPIER_THROW_RANGE: f32 = 6.5;
+const RAPIER_THROW_DAMAGE: i32 = 25;
+const RAPIER_SPECIAL_REGEN_TURNS: i32 = 150;
+
 pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
-            glyph: rltk::to_cp437('↑'),
+            glyph: RAPIER_GLYPH,
             fg: RGB::named(rltk::SILVER),
             bg: RGB::named(rltk::BLACK),
             order: 2,
@@ -137,18 +169,18 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         .with(Name {name : "Rapier".to_string()})
         .with(Equippable {slot: EquipmentSlot::Melee})
         .with(MeeleAttackWepon {
-            bonus: 4,
+            bonus: RAPIER_MEELE_ATTACK_POWER,
             formation: MeeleAttackFormation::Dash,
             element: ElementalDamageKind::Physical
         })
         .with(TargetedWhenThrown {
             verb: "throws".to_string(),
-            range: 6.5,
+            range: RAPIER_THROW_RANGE,
             kind: TargetingKind::Simple
         })
         .with(InflictsDamageWhenThrown (
             InflictsDamageData {
-                damage: 25,
+                damage: RAPIER_THROW_DAMAGE,
                 kind: ElementalDamageKind::Physical
             }
         ))
@@ -156,12 +188,12 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             AlongRayAnimationData {
                 fg: RGB::named(rltk::SILVER),
                 bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('↑'),
+                glyph: RAPIER_GLYPH,
                 until_blocked: true
             }
         ))
         .with(WeaponSpecial {
-            regen_time: 10,
+            regen_time: RAPIER_SPECIAL_REGEN_TURNS,
             time: 0,
             kind: WeaponSpecialKind::Dash
         })
@@ -172,16 +204,32 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
         Some(entity)
 }
 
+const ROD_MEELE_ATTACK_POWER: i32 = 0;
+const ROD_THROW_RANGE: f32 = 6.5;
+const ROD_THROW_AOE_RANGE: f32 = 1.0;
+const ROD_THROW_DAMAGE: i32 = 10;
+const ROD_SPECIAL_REGEN_TURNS: i32 = 150;
+
 pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Option<Entity> {
     let fg = match element {
         ElementalDamageKind::Fire => RGB::named(rltk::ORANGE),
         ElementalDamageKind::Freezing => RGB::named(rltk::LIGHTBLUE),
         _ => RGB::named(rltk::SILVER)
     };
+    let name = match element {
+        ElementalDamageKind::Fire => "Fire Rod".to_string(),
+        ElementalDamageKind::Freezing => "Freezing Rod".to_string(),
+        _ => "Rod".to_string()
+    };
+    let (cast_damage, cast_range) = match element {
+        ElementalDamageKind::Fire => (FIREBALL_DAMAGE, FIREBALL_RANGE),
+        ElementalDamageKind::Freezing => (ICESPIKE_DAMAGE, ICESPIKE_RANGE),
+        _ => (10, 10.0)
+    };
     let entity = ecs.create_entity()
         .with(Position {x, y})
         .with(Renderable {
-            glyph: rltk::to_cp437('/'),
+            glyph: ROD_GLYPH,
             fg: fg,
             bg: RGB::named(rltk::BLACK),
             order: 2,
@@ -194,21 +242,23 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
         .with(Consumable {})
         .with(Equippable {slot: EquipmentSlot::Melee})
         .with(Castable { slot: BlessingSlot::None })
-        .with(Name {name : "Rod".to_string()})
-        .with(IncresesSpellRechargeRateWhenEquipped {element: element})
+        .with(Name {name})
+        .with(IncresesSpellRechargeRateWhenEquipped {element})
         .with(MeeleAttackWepon {
-            bonus: 0,
+            bonus: ROD_MEELE_ATTACK_POWER,
             formation: MeeleAttackFormation::Basic,
             element: element
         })
         .with(TargetedWhenThrown {
             verb: "throws".to_string(),
-            range: 6.5,
-            kind: TargetingKind::Simple
+            range: ROD_THROW_RANGE,
+            kind: TargetingKind::AreaOfEffect {
+                radius: ROD_THROW_AOE_RANGE
+            }
         })
         .with(InflictsDamageWhenThrown(
             InflictsDamageData {
-                damage: 15,
+                damage: ROD_THROW_DAMAGE,
                 kind: element
             }
         ))
@@ -216,24 +266,24 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
             AlongRayAnimationData {
                 fg: fg,
                 bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('/'),
+                glyph: ROD_GLYPH,
                 until_blocked: true
             }
         ))
         .with(WeaponSpecial {
-            regen_time: 5,
+            regen_time: ROD_SPECIAL_REGEN_TURNS,
             time: 0,
             kind: WeaponSpecialKind::AddToSpellBook
         })
         .with(ExpendWeaponSpecialWhenCast {})
         .with(TargetedWhenCast {
             verb: "casts".to_string(),
-            range: 6.5,
+            range: cast_range,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(InflictsDamageWhenCast (
             InflictsDamageData {
-                damage: 10,
+                damage: cast_damage,
                 kind: element
             }
         ))
@@ -247,8 +297,8 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
             let mut burning = ecs.write_storage::<InflictsBurningWhenCast>();
             burning.insert(entity, InflictsBurningWhenCast (
                 InflictsBurningData {
-                    turns: 4,
-                    tick_damage: 4
+                    turns: FIREBALL_BURNING_TURNS,
+                    tick_damage: FIREBALL_BURNING_TICK_DAMAGE
                 }
             )).expect("Failed to insert burning component when creating rod.");
             let mut animation = ecs.write_storage::<AlongRayAnimationWhenCast>();
@@ -260,12 +310,29 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                     until_blocked: true
                 }
             )).expect("Falied to insert animation when creating rod.");
+            let mut burning = ecs.write_storage::<InflictsBurningWhenThrown>();
+            burning.insert(entity, InflictsBurningWhenThrown (
+                InflictsBurningData {
+                    turns: FIREBALL_BURNING_TURNS,
+                    tick_damage: FIREBALL_BURNING_TICK_DAMAGE
+                }
+            )).expect("Failed to insert burning status when creating rod.");
+            let mut spawner = ecs.write_storage::<SpawnsEntityInAreaWhenThrown>();
+            spawner.insert(entity, SpawnsEntityInAreaWhenThrown (
+                SpawnsEntityInAreaData {
+                    radius: ROD_THROW_AOE_RANGE,
+                    kind: EntitySpawnKind::Fire {
+                        spread_chance: FIREBLAST_FIRE_SPREAD_CHANCE,
+                        dissipate_chance: FIREBLAST_FIRE_DISSIPATE_CHANCE,
+                    }
+                }
+            )).expect("Failed to insert fire spawner when creating rod.");
         },
         ElementalDamageKind::Freezing => {
             let mut freezing = ecs.write_storage::<InflictsFreezingWhenCast>();
             freezing.insert(entity, InflictsFreezingWhenCast (
                 InflictsFreezingData {
-                    turns: 4,
+                    turns: ICESPIKE_FREEZING_TURNS,
                 }
             )).expect("Failed to insert freezing component when creating rod.");
             let mut animation = ecs.write_storage::<AlongRayAnimationWhenCast>();
@@ -277,6 +344,22 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                     until_blocked: true
                 }
             )).expect("Falied to insert animation when creating rod.");
+            let mut freezing = ecs.write_storage::<InflictsFreezingWhenThrown>();
+            freezing.insert(entity, InflictsFreezingWhenThrown (
+                InflictsFreezingData {
+                    turns: ICESPIKE_FREEZING_TURNS,
+                }
+            )).expect("Failed to insert freezing status when creating rod.");
+            let mut spawner = ecs.write_storage::<SpawnsEntityInAreaWhenThrown>();
+            spawner.insert(entity, SpawnsEntityInAreaWhenThrown (
+                SpawnsEntityInAreaData {
+                    radius: ROD_THROW_AOE_RANGE,
+                    kind: EntitySpawnKind::Chill {
+                        spread_chance: ICEBLAST_CHILL_SPREAD_CHANCE,
+                        dissipate_chance: ICEBLAST_CHILL_DISSIPATE_CHANCE,
+                    }
+                }
+            )).expect("Failed to insert clill spawner when creating rod.");
         },
         _ => panic!("Cannot create rod of element {:?}", element)
     }

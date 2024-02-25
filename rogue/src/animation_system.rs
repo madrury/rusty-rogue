@@ -43,7 +43,7 @@ pub enum AnimationRequest {
         fg: RGB,
         bg: RGB,
         glyph: rltk::FontCharType,
-        radius: i32,
+        radius: f32,
     },
     AlongRay {
         source_x: i32,
@@ -242,12 +242,12 @@ fn make_aoe_animation(
     fg: RGB,
     bg: RGB,
     glyph: rltk::FontCharType,
-    radius: i32,
+    radius: f32,
 ) -> Vec<ParticleRequest> {
     let mut particles = Vec::new();
     let fg_color_cycle = [fg, bg, fg];
     let bg_color_cycle = [bg, fg, bg];
-    let mut blast_tiles = rltk::field_of_view(Point { x, y }, radius, &*map);
+    let mut blast_tiles = rltk::field_of_view(Point { x, y }, radius.ceil() as i32, &*map);
     blast_tiles.retain(|p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1);
     for (i, (fg, bg)) in fg_color_cycle.iter().zip(bg_color_cycle.iter()).enumerate() {
         for tile in blast_tiles.iter() {

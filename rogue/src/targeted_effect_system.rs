@@ -1,29 +1,21 @@
 use log::{info, warn};
-use super::{
-    Map, Point, CombatStats, GameLog, AnimationRequestBuffer, AnimationRequest,
-    EntitySpawnRequestBuffer, EntitySpawnRequest, Name, Renderable, Consumable,
-    SpellCharges, Position, WantsToUseTargeted, TargetedWhenThrown,
-    TargetedWhenCast, TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
-    WantsToTakeDamage, WantsToMoveToPosition, WantsToMoveToRandomPosition,
-    StatusIsFrozen, StatusIsBurning,
-    StatusIsImmuneToFire, StatusIsImmuneToChill, StatusIsMeleeAttackBuffed,
-    StatusIsPhysicalDefenseBuffed, WeaponSpecial, WeaponSpecialKind,
-    new_status_with_immunity, new_combat_stats_status
-};
-use crate::components::targeting::*;
-use crate::components::game_effects::*;
-use crate::AlongRayAnimationWhenCast;
-use crate::AlongRayAnimationWhenThrown;
-use crate::AreaOfEffectAnimationWhenCast;
-use crate::AreaOfEffectAnimationWhenThrown;
-use crate::ExpendWeaponSpecialWhenCast;
-use crate::ExpendWeaponSpecialWhenThrown;
-use crate::InSpellBook;
-use crate::RemovedFromSpellBookWhenCast;
-use crate::SpawnsEntityInAreaWhenCast;
-use crate::SpawnsEntityInAreaWhenThrown;
-
 use specs::prelude::*;
+
+use crate::{
+    Map, Point, GameLog, AnimationRequestBuffer, AnimationRequest,
+    EntitySpawnRequestBuffer, EntitySpawnRequest, new_status_with_immunity,
+    new_combat_stats_status
+};
+use crate::components::*;
+use crate::components::animation::*;
+use crate::components::game_effects::*;
+use crate::components::magic::*;
+use crate::components::melee::*;
+use crate::components::spawn_despawn::*;
+use crate::components::signaling::*;
+use crate::components::status_effects::*;
+use crate::components::targeting::*;
+
 
 pub struct TargetedSystem {}
 
@@ -299,7 +291,7 @@ impl<'a> System<'a> for TargetedSystem {
                 TargetingVerb::Cast => spawns_entity_in_area_when_cast.get(want_target.thing).map(|d| &d.0),
             };
             if let Some(spawns) = spawning_data {
-                let points = rltk::field_of_view(target_point, spawns.radius, &*map);
+                let points = rltk::field_of_view(target_point, spawns.radius.ceil() as i32, &*map);
                 for pt in points.iter() {
                     spawn_buffer.request(EntitySpawnRequest {
                         x: pt.x,
