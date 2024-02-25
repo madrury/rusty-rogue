@@ -112,11 +112,11 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::Dagger, 1+ depth)
             .insert(ItemType::Sword, depth)
             .insert(ItemType::Raiper, depth)
-            .insert(ItemType::FireRod, depth)
+            .insert(ItemType::FireRod, 500)
             .insert(ItemType::FreezeRod, depth)
             .insert(ItemType::LeatherArmor, 1 + depth)
             .insert(ItemType::BlinkScroll, depth)
-            .insert(ItemType::FireblastScroll, depth)
+            .insert(ItemType::FireblastScroll, 500)
             .insert(ItemType::IceblastScroll, depth)
             .insert(ItemType::None, 75)
             // These are avalable at blessing statues.

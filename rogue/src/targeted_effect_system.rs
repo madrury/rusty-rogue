@@ -291,7 +291,7 @@ impl<'a> System<'a> for TargetedSystem {
                 TargetingVerb::Cast => spawns_entity_in_area_when_cast.get(want_target.thing).map(|d| &d.0),
             };
             if let Some(spawns) = spawning_data {
-                let points = rltk::field_of_view(target_point, spawns.radius.ceil() as i32, &*map);
+                let points = map.get_euclidean_disk_around(target_point, spawns.radius);
                 for pt in points.iter() {
                     spawn_buffer.request(EntitySpawnRequest {
                         x: pt.x,
@@ -413,7 +413,7 @@ fn find_targets<'a>(map: &'a Map, user_pos: Point, target_pos: Point, kind: Targ
             }
         }
         TargetingKind::AreaOfEffect {radius} => {
-            let mut blast_tiles = map.get_aoe_tiles(target_pos, radius);
+            let mut blast_tiles = map.get_euclidean_disk_around(target_pos, radius);
             blast_tiles.retain(
                 |p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1
             );

@@ -259,12 +259,12 @@ impl Map {
         }
     }
 
-    pub fn get_aoe_tiles(&self, pt: Point, radius: f32) -> Vec<Point> {
-        let in_viewshed = rltk::field_of_view(pt, f32::ceil(radius) as i32, self);
-        in_viewshed.into_iter()
-            .filter(|p| rltk::DistanceAlg::Pythagoras.distance2d(*p, pt) < radius)
-            .collect()
-    }
+    // pub fn get_aoe_tiles(&self, pt: Point, radius: f32) -> Vec<Point> {
+    //     let in_viewshed = rltk::field_of_view(pt, f32::ceil(radius) as i32, self);
+    //     in_viewshed.into_iter()
+    //         .filter(|p| rltk::DistanceAlg::Pythagoras.distance2d(*p, pt) < radius)
+    //         .collect()
+    // }
 
     pub fn get_ray_tiles(&self, source: Point, target: Point, take_until_blocked: bool) -> Vec<Point> {
         let mut tiles: Vec<Point> = Bresenham::new(source, target).collect();
@@ -294,6 +294,24 @@ impl Map {
         }
         circle.into_iter().filter(|pt| self.within_bounds(pt.x, pt.y)).collect()
     }
+
+    pub fn get_l_infinity_disk_around(&self, source: Point, radius: f32) -> Vec<Point> {
+        let R = radius.floor() as i32;
+        (0..=R).into_iter()
+            .map(|r| self.get_l_infinity_circle_around(source, r))
+            .flatten()
+            .filter(|pt| self.within_bounds(pt.x, pt.y))
+            .collect()
+    }
+
+    pub fn get_euclidean_disk_around(&self, source: Point, radius: f32) -> Vec<Point> {
+        // euclidean-norm(v) <= linf-norm(v)
+        self.get_l_infinity_disk_around(source, radius).into_iter()
+            .filter(|pt| rltk::DistanceAlg::Pythagoras.distance2d(*pt, source) <= radius)
+            .filter(|pt| self.within_bounds(pt.x, pt.y))
+            .collect()
+    }
+
 }
 
 impl BaseMap for Map {

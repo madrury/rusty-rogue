@@ -247,8 +247,7 @@ fn make_aoe_animation(
     let mut particles = Vec::new();
     let fg_color_cycle = [fg, bg, fg];
     let bg_color_cycle = [bg, fg, bg];
-    let mut blast_tiles = rltk::field_of_view(Point { x, y }, radius.ceil() as i32, &*map);
-    blast_tiles.retain(|p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1);
+    let blast_tiles = map.get_euclidean_disk_around(Point { x, y }, radius);
     for (i, (fg, bg)) in fg_color_cycle.iter().zip(bg_color_cycle.iter()).enumerate() {
         for tile in blast_tiles.iter() {
             particles.push(ParticleRequest {

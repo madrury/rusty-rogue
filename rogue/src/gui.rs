@@ -1247,7 +1247,7 @@ fn draw_targeting_system(
     // This is a safe unwrap, since the player *always* has a viewshed.
     let visible = viewsheds.get(*player).unwrap();
     // Iterate through the tiles available for targets and highlight them.
-    let mouse_within_range = rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *target) <= range;
+    let target_within_range = rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *target) <= range;
     for point in visible.visible_tiles.iter() {
         let dplayer = rltk::DistanceAlg::Pythagoras.distance2d(*ppos, *point);
         // The tile is within the throwable range.
@@ -1262,14 +1262,14 @@ fn draw_targeting_system(
         // effect and ray over and over.
         match kind {
             TargetingKind::AreaOfEffect { radius } => {
-                let blast = map.get_aoe_tiles(*target, radius);
-                if mouse_within_range && blast.contains(point) {
+                let blast = map.get_euclidean_disk_around(*target, radius);
+                if target_within_range && blast.contains(point) {
                     ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
                 }
             }
             TargetingKind::AlongRay { until_blocked } => {
                 let ray = map.get_ray_tiles(*ppos, *target, until_blocked);
-                if mouse_within_range && ray.contains(point) {
+                if target_within_range && ray.contains(point) {
                     ctx.set_bg(point.x, point.y, RGB::named(rltk::YELLOW));
                 }
             }
