@@ -85,8 +85,8 @@ impl<'a> System<'a> for EntitySpawnSystem {
                 let spawn_position = map.random_adjacent_point(pos.x, pos.y);
                 if let Some(spawn_position) = spawn_position {
                     request_buffer.request(EntitySpawnRequest{
-                        x: spawn_position.0,
-                        y: spawn_position.1,
+                        x: spawn_position.x,
+                        y: spawn_position.y,
                         kind: spawn_chance.kind
                     })
                 }

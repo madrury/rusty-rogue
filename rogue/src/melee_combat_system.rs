@@ -124,9 +124,9 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 let spawn_position = map.random_adjacent_point(pos.x, pos.y);
                 let mut can_spawn: bool = false;
                 if let Some(spawn_position) = spawn_position {
-                    let spawn_idx = map.xy_idx(spawn_position.0, spawn_position.1);
-                    let in_player_position = (spawn_position.0 == ppos.x)
-                        && (spawn_position.1 == ppos.y);
+                    let spawn_idx = map.xy_idx(spawn_position.x, spawn_position.y);
+                    let in_player_position = (spawn_position.x == ppos.x)
+                        && (spawn_position.y == ppos.y);
                     let spawn_request_kind = match spawns.kind {
                         EntitySpawnKind::PinkJelly {..} => {
                             can_spawn = !map.blocked[spawn_idx] && !in_player_position;
@@ -152,8 +152,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     if let Some(spawn_request_kind) = spawn_request_kind {
                         if can_spawn {
                             entity_spawn_buffer.request(EntitySpawnRequest {
-                                x: spawn_position.0,
-                                y: spawn_position.1,
+                                x: spawn_position.x,
+                                y: spawn_position.y,
                                 kind: spawn_request_kind
                             });
                         }
