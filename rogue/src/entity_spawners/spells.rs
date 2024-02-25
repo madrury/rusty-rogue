@@ -48,14 +48,13 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             element: ElementalDamageKind::Fire
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: FIREBALL_RANGE,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(InflictsDamageWhenCast (
             InflictsDamageData {
                 damage: FIREBALL_DAMAGE,
-                kind: ElementalDamageKind::Fire
+                element: ElementalDamageKind::Fire
             }
         ))
         .with(InflictsBurningWhenCast (
@@ -114,7 +113,6 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             element: ElementalDamageKind::Fire
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: FIREBLAST_RANGE,
             kind: TargetingKind::AreaOfEffect {
                 radius: FIREBLAST_AOE_RADIUS
@@ -123,7 +121,7 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(InflictsDamageWhenCast(
             InflictsDamageData {
                 damage: FIREBLAST_DAMAGE,
-                kind: ElementalDamageKind::Fire
+                element: ElementalDamageKind::Fire
             }
         ))
         .with(InflictsBurningWhenCast (
@@ -189,14 +187,13 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
             element: ElementalDamageKind::Freezing
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: ICESPIKE_RANGE,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(InflictsDamageWhenCast (
             InflictsDamageData {
                 damage: ICESPIKE_DAMAGE,
-                kind: ElementalDamageKind::Freezing
+                element: ElementalDamageKind::Freezing
             }
         ))
         .with(InflictsFreezingWhenCast (
@@ -252,7 +249,6 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             element: ElementalDamageKind::Freezing
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: ICEBLAST_RANGE,
             kind: TargetingKind::AreaOfEffect {
                 radius: ICEBLAST_AOE_RADIUS
@@ -261,7 +257,7 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(InflictsDamageWhenCast (
             InflictsDamageData {
                 damage: ICEBLAST_DAMAGE,
-                kind: ElementalDamageKind::Freezing
+                element: ElementalDamageKind::Freezing
             }
         ))
         .with(InflictsFreezingWhenCast(
@@ -319,14 +315,13 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
             element: ElementalDamageKind::Physical
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(InflictsDamageWhenCast (
             InflictsDamageData {
                 damage: 10,
-                kind: ElementalDamageKind::Physical
+                element: ElementalDamageKind::Physical
             }
         ))
         .with(AlongRayAnimationWhenCast (
@@ -372,7 +367,6 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             element: ElementalDamageKind::None
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: 8.5,
             kind: TargetingKind::AlongRay {until_blocked: false}
         })
@@ -417,7 +411,6 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
             element: ElementalDamageKind::Healing
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
@@ -462,7 +455,6 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
             element: ElementalDamageKind::None
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
@@ -507,7 +499,6 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
             element: ElementalDamageKind::None
         })
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: 6.5,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })

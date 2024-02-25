@@ -79,11 +79,19 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
                     weapon_glyph: wrender.glyph
                 })
             }
+
             if let (Some(on), Some(wn)) = (ownername, weaponname) {
-                log.entries.push(format!(
-                    "{}'s {} glints menacingly.",
-                    on.name, wn.name
-                ));
+                let logstr = match special.kind {
+                    WeaponSpecialKind::ThrowWithoutExpending =>
+                        format!("{}'s {} glints menacingly.", on.name, wn.name),
+                    WeaponSpecialKind::Dash =>
+                        format!("{}'s {} glints menacingly.", on.name, wn.name),
+                    WeaponSpecialKind::SpinAttack =>
+                        format!("{}'s {} glints menacingly.", on.name, wn.name),
+                    WeaponSpecialKind::AddToSpellBook =>
+                        format!("{}'s {} sparks with magical energy.", on.name, wn.name)
+                };
+                log.entries.push(logstr);
             }
         }
     }

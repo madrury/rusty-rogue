@@ -132,14 +132,14 @@ impl<'a> System<'a> for TargetedSystem {
             // Determine if we a throwing an item or casting a spell.
             let verb = want_target.verb;
 
-            // In the case we are casting a spell, we guard against the case
-            // that we have no spell charges left.
+            // In the case we are casting a spell, we check here that the spell
+            // is castable.
             let has_charges = spell_charges
                 .get(want_target.thing)
                 .map_or(true, |sc| sc.charges > 0);
             let is_single_cast = single_casts.get(want_target.thing).is_some();
             if verb == TargetingVerb::Cast && !(has_charges || is_single_cast)  {
-                warn!("Attempted to cast a spell with no charges.");
+                warn!("Attempted to cast an impossible spell.");
                 continue
             }
 
@@ -223,7 +223,7 @@ impl<'a> System<'a> for TargetedSystem {
                 if let (Some(dd), Some(_stats)) = (damage_data, target_stats) {
                     WantsToTakeDamage::new_damage(
                         &mut apply_damages,
-                        *target, dd.damage, dd.kind
+                        *target, dd.damage, dd.element
                     );
                 }
 

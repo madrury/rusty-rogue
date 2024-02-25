@@ -55,14 +55,13 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             element: ElementalDamageKind::Physical
         })
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: DAGGER_THROW_RANGE,
             kind: TargetingKind::Simple
         })
         .with(InflictsDamageWhenThrown(
             InflictsDamageData {
                 damage: DAGGER_THROW_DAMAGE,
-                kind: ElementalDamageKind::Physical
+                element: ElementalDamageKind::Physical
             }
         ))
         .with(AlongRayAnimationWhenThrown (
@@ -115,14 +114,13 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             element: ElementalDamageKind::Physical
         })
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: SWORD_THROW_RANGE,
             kind: TargetingKind::Simple
         })
         .with(InflictsDamageWhenThrown(
             InflictsDamageData {
                 damage: SWORD_THROW_DAMAGE,
-                kind: ElementalDamageKind::Physical
+                element: ElementalDamageKind::Physical
             }
         ))
         .with(AlongRayAnimationWhenThrown (
@@ -174,14 +172,13 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             element: ElementalDamageKind::Physical
         })
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: RAPIER_THROW_RANGE,
             kind: TargetingKind::Simple
         })
         .with(InflictsDamageWhenThrown (
             InflictsDamageData {
                 damage: RAPIER_THROW_DAMAGE,
-                kind: ElementalDamageKind::Physical
+                element: ElementalDamageKind::Physical
             }
         ))
         .with(AlongRayAnimationWhenThrown (
@@ -250,7 +247,6 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
             element: element
         })
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: ROD_THROW_RANGE,
             kind: TargetingKind::AreaOfEffect {
                 radius: ROD_THROW_AOE_RANGE
@@ -259,7 +255,7 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
         .with(InflictsDamageWhenThrown(
             InflictsDamageData {
                 damage: ROD_THROW_DAMAGE,
-                kind: element
+                element
             }
         ))
         .with(AlongRayAnimationWhenThrown (
@@ -277,14 +273,13 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
         })
         .with(ExpendWeaponSpecialWhenCast {})
         .with(TargetedWhenCast {
-            verb: "casts".to_string(),
             range: cast_range,
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(InflictsDamageWhenCast (
             InflictsDamageData {
                 damage: cast_damage,
-                kind: element
+                element
             }
         ))
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})

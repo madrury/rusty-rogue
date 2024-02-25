@@ -120,7 +120,6 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Throwable {})
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::AreaOfEffect {
                 radius: FIRE_POTION_AOE_RADIUS
@@ -133,7 +132,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(InflictsDamageWhenThrown(
             InflictsDamageData {
                 damage: FIRE_POTION_DAMAGE,
-                kind: ElementalDamageKind::Fire
+                element: ElementalDamageKind::Fire
             }
         ))
         .with(InflictsBurningWhenThrown (
@@ -199,7 +198,6 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Throwable {})
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::AreaOfEffect {
                 radius: CHILL_POTION_AOE_RADIUS
@@ -212,7 +210,7 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(InflictsDamageWhenThrown (
             InflictsDamageData {
                 damage: CHILL_POTION_DAMAGE,
-                kind: ElementalDamageKind::Freezing
+                element: ElementalDamageKind::Freezing
             }
         ))
         .with(InflictsFreezingWhenThrown (
@@ -267,7 +265,6 @@ pub fn teleportation(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Untargeted{ verb: "drinks".to_string()})
         .with(Throwable {})
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::Simple
         })
