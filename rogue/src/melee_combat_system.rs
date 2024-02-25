@@ -99,8 +99,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             if let(Some(pos), Some(render)) = (targetpos, targetrender) {
                 animation_buffer.request(
                     AnimationRequest::MeleeAttack {
-                        x: pos.x,
-                        y: pos.y,
+                        pt: pos.to_point(),
                         bg: render.bg,
                         glyph: render.glyph,
                     }

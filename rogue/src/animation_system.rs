@@ -17,53 +17,45 @@ use specs::prelude::*;
 // game animations.
 pub enum AnimationRequest {
     MeleeAttack {
-        x: i32,
-        y: i32,
+        pt: Point,
         bg: RGB,
         glyph: rltk::FontCharType,
     },
     Healing {
-        x: i32,
-        y: i32,
+        pt: Point,
         fg: RGB,
         bg: RGB,
         glyph: rltk::FontCharType,
     },
     WeaponSpecialRecharge {
-        x: i32,
-        y: i32,
+        pt: Point,
         fg: RGB,
         bg: RGB,
         owner_glyph: rltk::FontCharType,
         weapon_glyph: rltk::FontCharType
     },
     AreaOfEffect {
-        x: i32,
-        y: i32,
+        center: Point,
+        radius: f32,
         fg: RGB,
         bg: RGB,
         glyph: rltk::FontCharType,
-        radius: f32,
     },
     AlongRay {
-        source_x: i32,
-        source_y: i32,
-        target_x: i32,
-        target_y: i32,
+        source: Point,
+        target: Point,
         fg: RGB,
         bg: RGB,
         glyph: rltk::FontCharType,
         until_blocked: bool
     },
     SpinAttack {
-        x: i32,
-        y: i32,
+        pt: Point,
         fg: RGB,
         glyph: rltk::FontCharType,
     },
     Teleportation {
-        x: i32,
-        y: i32,
+        pt: Point,
         bg: RGB,
     },
 }
@@ -100,54 +92,35 @@ impl<'a> System<'a> for AnimationInitSystem {
         let (map, mut animation_builder, mut particle_request_buffer) = data;
         for request in animation_builder.requests.iter() {
             particle_request_buffer.request_many(match request {
-                AnimationRequest::MeleeAttack {x, y, bg, glyph} => {
-                    make_melee_animation(*x, *y, *bg, *glyph)
+                AnimationRequest::MeleeAttack {pt, bg, glyph} => {
+                    make_melee_animation(*pt, *bg, *glyph)
                 }
-                AnimationRequest::Healing {
-                    x,
-                    y,
-                    fg,
-                    bg,
-                    glyph,
-                } => make_healing_animation(*x, *y, *fg, *bg, *glyph),
-                AnimationRequest::WeaponSpecialRecharge {
-                    x,
-                    y,
-                    fg,
-                    bg,
-                    owner_glyph,
-                    weapon_glyph
-                } => make_weapon_special_recharge_animation(*x, *y, *fg, *bg, *owner_glyph, *weapon_glyph),
-                AnimationRequest::AreaOfEffect {
-                    x,
-                    y,
-                    fg,
-                    bg,
-                    glyph,
-                    radius,
-                } => make_aoe_animation(&*map, *x, *y, *fg, *bg, *glyph, *radius),
+                AnimationRequest::Healing { pt, fg, bg, glyph, } =>
+                    make_healing_animation(*pt, *fg, *bg, *glyph),
+                AnimationRequest::WeaponSpecialRecharge { pt, fg, bg, owner_glyph, weapon_glyph } =>
+                    make_weapon_special_recharge_animation(*pt, *fg, *bg, *owner_glyph, *weapon_glyph),
+                AnimationRequest::AreaOfEffect { center, fg, bg, glyph, radius } =>
+                    make_aoe_animation(&*map, *center, *fg, *bg, *glyph, *radius),
                 AnimationRequest::AlongRay {
-                    source_x,
-                    source_y,
-                    target_x,
-                    target_y,
+                    source,
+                    target,
                     fg,
                     bg,
                     glyph,
                     until_blocked
                 } => make_along_ray_animation(
                     &*map,
-                    Point {x: *source_x, y: *source_y},
-                    Point {x: *target_x, y: *target_y},
+                    *source,
+                    *target,
                     *fg,
                     *bg,
                     *glyph,
                     *until_blocked
                 ),
-                AnimationRequest::SpinAttack { x, y, fg, glyph }
-                    => make_spin_attack_animation(*x, *y, *fg, *glyph),
-                AnimationRequest::Teleportation {x, y, bg}
-                    => make_teleportation_animation(*x, *y, *bg),
+                AnimationRequest::SpinAttack { pt, fg, glyph }
+                    => make_spin_attack_animation(*pt, *fg, *glyph),
+                AnimationRequest::Teleportation {pt, bg}
+                    => make_teleportation_animation(*pt, *bg),
             })
         }
         animation_builder.requests.clear();
@@ -156,8 +129,7 @@ impl<'a> System<'a> for AnimationInitSystem {
 
 // A melee attack animation. The targeted entity flashes briefly.
 fn make_melee_animation(
-    x: i32,
-    y: i32,
+    pt: Point,
     bg: RGB,
     glyph: rltk::FontCharType,
 ) -> Vec<ParticleRequest> {
@@ -169,8 +141,8 @@ fn make_melee_animation(
     ];
     for (i, color) in color_cycle.iter().enumerate() {
         particles.push(ParticleRequest {
-            x: x,
-            y: y,
+            x: pt.x,
+            y: pt.y,
             fg: *color,
             bg: bg,
             glyph: glyph,
@@ -185,8 +157,7 @@ fn make_melee_animation(
 
 // The weapon special has recharged.
 fn make_weapon_special_recharge_animation(
-    x: i32,
-    y: i32,
+    pt: Point,
     fg: RGB,
     bg: RGB,
     owner_glyph: rltk::FontCharType,
@@ -197,8 +168,8 @@ fn make_weapon_special_recharge_animation(
     let glyph_cycle = [weapon_glyph, owner_glyph, weapon_glyph];
     for (i, (color, glyph)) in color_cycle.iter().zip(glyph_cycle.iter()).enumerate() {
         particles.push(ParticleRequest {
-            x: x,
-            y: y,
+            x: pt.x,
+            y: pt.y,
             fg: *color,
             bg: bg,
             glyph: *glyph,
@@ -211,8 +182,7 @@ fn make_weapon_special_recharge_animation(
 
 // A healing animation. A heart flashes quickly.
 fn make_healing_animation(
-    x: i32,
-    y: i32,
+    pt: Point,
     fg: RGB,
     bg: RGB,
     glyph: rltk::FontCharType,
@@ -222,8 +192,8 @@ fn make_healing_animation(
     let glyph_cycle = [rltk::to_cp437('♥'), glyph, rltk::to_cp437('♥')];
     for (i, (color, glyph)) in color_cycle.iter().zip(glyph_cycle.iter()).enumerate() {
         particles.push(ParticleRequest {
-            x: x,
-            y: y,
+            x: pt.x,
+            y: pt.y,
             fg: *color,
             bg: bg,
             glyph: *glyph,
@@ -237,8 +207,7 @@ fn make_healing_animation(
 // An aoe animation. Color cycles glyphs in a circle around a point.
 fn make_aoe_animation(
     map: &Map,
-    x: i32,
-    y: i32,
+    pt: Point,
     fg: RGB,
     bg: RGB,
     glyph: rltk::FontCharType,
@@ -247,7 +216,7 @@ fn make_aoe_animation(
     let mut particles = Vec::new();
     let fg_color_cycle = [fg, bg, fg];
     let bg_color_cycle = [bg, fg, bg];
-    let blast_tiles = map.get_euclidean_disk_around(Point { x, y }, radius);
+    let blast_tiles = map.get_euclidean_disk_around(pt, radius);
     for (i, (fg, bg)) in fg_color_cycle.iter().zip(bg_color_cycle.iter()).enumerate() {
         for tile in blast_tiles.iter() {
             particles.push(ParticleRequest {
@@ -292,16 +261,15 @@ fn make_along_ray_animation(
 
 // A healing animation. A heart flashes quickly.
 fn make_teleportation_animation(
-    x: i32,
-    y: i32,
+    pt: Point,
     bg: RGB,
 ) -> Vec<ParticleRequest> {
     let mut particles = Vec::new();
     let glyph_cycle = [rltk::to_cp437('░'), rltk::to_cp437(' '), rltk::to_cp437('░')];
     for (i, glyph) in glyph_cycle.iter().enumerate() {
         particles.push(ParticleRequest {
-            x: x,
-            y: y,
+            x: pt.x,
+            y: pt.y,
             fg: rltk::RGB::named(rltk::MEDIUM_PURPLE),
             bg: bg,
             glyph: *glyph,
@@ -314,8 +282,7 @@ fn make_teleportation_animation(
 
 // Spin attack, like in Link to the Past.
 fn make_spin_attack_animation(
-    x: i32,
-    y: i32,
+    pt: Point,
     fg: RGB,
     glyph: rltk::FontCharType,
 ) -> Vec<ParticleRequest> {
@@ -325,8 +292,8 @@ fn make_spin_attack_animation(
     ];
     for (i, dr) in drs.iter().enumerate() {
         particles.push(ParticleRequest {
-            x: x + dr.0,
-            y: y + dr.1,
+            x: pt.x + dr.0,
+            y: pt.y + dr.1,
             fg: fg,
             // TODO: It's difficult at the moment to determine the correct
             // background color for a tile. We default to BLACK here, but in the

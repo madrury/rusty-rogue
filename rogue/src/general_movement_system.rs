@@ -53,13 +53,11 @@ impl<'a> System<'a> for TeleportationSystem {
                 let render = renderables.get(entity);
                 if let Some(render) = render {
                     animation_builder.request(AnimationRequest::Teleportation {
-                        x: old_pos.x,
-                        y: old_pos.y,
+                        pt: old_pos.to_point(),
                         bg: render.bg,
                     });
                     animation_builder.request(AnimationRequest::Teleportation {
-                        x: new_pt.x,
-                        y: new_pt.y,
+                        pt: new_pt,
                         bg: render.bg,
                     })
                 }

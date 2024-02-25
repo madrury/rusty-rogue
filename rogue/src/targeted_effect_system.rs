@@ -196,8 +196,7 @@ impl<'a> System<'a> for TargetedSystem {
                     let render = renderables.get(*target);
                     if let Some(render) = render {
                         animation_builder.request(AnimationRequest::Healing {
-                            x: target_point.x,
-                            y: target_point.y,
+                            pt: target_point,
                             fg: render.fg,
                             bg: render.bg,
                             glyph: render.glyph,
@@ -324,8 +323,7 @@ impl<'a> System<'a> for TargetedSystem {
             };
             if let Some(aoead) = aoe_animation_data {
                 animation_builder.request(AnimationRequest::AreaOfEffect {
-                    x: target_point.x,
-                    y: target_point.y,
+                    center: target_point,
                     fg: aoead.fg,
                     bg: aoead.bg,
                     glyph: aoead.glyph,
@@ -340,10 +338,8 @@ impl<'a> System<'a> for TargetedSystem {
             };
             if let Some(rad) = ray_animation_data {
                 animation_builder.request(AnimationRequest::AlongRay {
-                    source_x: user_point.x,
-                    source_y: user_point.y,
-                    target_x: target_point.x,
-                    target_y: target_point.y,
+                    source: user_point,
+                    target: target_point,
                     fg: rad.fg,
                     bg: rad.bg,
                     glyph: rad.glyph,
