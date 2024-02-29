@@ -7,37 +7,26 @@ use super::{
     MovementRoutingAvoids, MovementRoutingBounds, MonsterBasicAI,
     MonsterAttackSpellcasterAI, MonsterSupportSpellcasterAI,
     SupportSpellcasterKind, Name, Player, Position, Renderable, SetsBgColor,
-    Viewshed, PickUpable, Useable, Castable, SpellCharges, Equippable,
-    EquipmentSlot, Throwable, TargetedWhenThrown, TargetedWhenCast,
-    TargetingKind, Untargeted, Consumable, ProvidesFullHealing,
-    ProvidesFullFood, IncreasesMaxHpWhenUsed, InflictsDamageWhenThrown, InflictsBurningWhenCast, InflictsBurningWhenThrown,
-    InflictsDamageWhenEncroachedUpon, InflictsFreezingWhenCast, InflictsFreezingWhenThrown,
-    BuffsMeleeAttackWhenCast, InflictsDamageWhenCast,
-    BuffsPhysicalDefenseWhenCast, InflictsBurningWhenEncroachedUpon,
-    InflictsFreezingWhenEncroachedUpon, AreaOfEffectAnimationWhenThrown, AreaOfEffectAnimationWhenCast,
-    AlongRayAnimationWhenThrown, AlongRayAnimationWhenCast, MovesToRandomPosition,
-    MoveToPositionWhenCast, SpawnEntityWhenMeleeAttacked,
-    SpawnsEntityInAreaWhenCast, SpawnsEntityInAreaWhenThrown, ChanceToSpawnAdjacentEntity,
+    Viewshed, PickUpable, Useable, Untargeted, Consumable, ProvidesFullHealing,
+    ProvidesFullFood, IncreasesMaxHpWhenUsed, InflictsDamageWhenEncroachedUpon,
+    InflictsBurningWhenEncroachedUpon, InflictsFreezingWhenEncroachedUpon,
+    SpawnEntityWhenMeleeAttacked, ChanceToSpawnAdjacentEntity,
     ChanceToDissipate, SkipRandomDissipationForOneTurn,
-    ChanceToInflictBurningOnAdjacentEntities, MeeleAttackWepon,
-    GrantsMeleeDefenseBonus, ProvidesFireImmunityWhenUsed,
-    ProvidesChillImmunityWhenUsed, ProvidesFullSpellRecharge,
-    DecreasesSpellRechargeWhenUsed, CanNotAct, SimpleMarker, SerializeMe,
-    MarkedBuilder, ElementalDamageKind, InSpellBook, StatusIsImmuneToFire,
-    StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb, BlessingSlot,
-    SpawnEntityWhenKilled, DissipateWhenBurning,
-    InvisibleWhenEncroachingEntityKind, WeaponSpecial, WeaponSpecialKind,
-    UseFgColorMap, FgColorMap, UseBgColorMap, BgColorMap, Bloodied,
-    UseFgColorMapWhenBloodied, MeeleAttackFormation, MAP_WIDTH, random_table
+    ChanceToInflictBurningOnAdjacentEntities, CanNotAct, SimpleMarker,
+    SerializeMe, MarkedBuilder, ElementalDamageKind, InSpellBook,
+    StatusIsImmuneToFire, StatusIsImmuneToChill, BlessingOrbBag, BlessingOrb,
+    BlessingSlot, SpawnEntityWhenKilled, DissipateWhenBurning,
+    InvisibleWhenEncroachingEntityKind, UseFgColorMap, FgColorMap,
+    UseBgColorMap, BgColorMap, MAP_WIDTH, random_table
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
 
+mod food;
 mod potions;
 mod equipment;
 pub mod spells;
 pub mod monsters;
-mod food;
 pub mod hazards;
 pub mod player;
 pub mod magic;
@@ -96,6 +85,8 @@ enum ItemType {
     Dagger,
     Sword,
     Raiper,
+    FireRod,
+    FreezeRod,
     LeatherArmor,
     MagicMissileScroll,
     BlinkScroll,
@@ -118,9 +109,11 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, depth)
             .insert(ItemType::FreezingPotion, depth)
-            .insert(ItemType::Dagger, 3 + depth)
-            .insert(ItemType::Sword, 1 + depth)
-            .insert(ItemType::Raiper, 1 + depth)
+            .insert(ItemType::Dagger, 1+ depth)
+            .insert(ItemType::Sword, depth)
+            .insert(ItemType::Raiper, depth)
+            .insert(ItemType::FireRod, depth)
+            .insert(ItemType::FreezeRod, depth)
             .insert(ItemType::LeatherArmor, 1 + depth)
             .insert(ItemType::BlinkScroll, depth)
             .insert(ItemType::FireblastScroll, depth)
@@ -128,7 +121,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::None, 75)
             // These are avalable at blessing statues.
             // .insert(ItemType::MagicMissileScroll, depth)
-            // .insert(ItemType::FireballScroll, depth)
+            // .insert(ItemType::FireballScroll, 500)
             // .insert(ItemType::IcespikeScroll, depth)
             .roll(&mut rng);
     }
@@ -143,6 +136,8 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         Some(ItemType::Dagger) => equipment::dagger(ecs, x, y),
         Some(ItemType::Sword) => equipment::sword(ecs, x, y),
         Some(ItemType::Raiper) => equipment::rapier(ecs, x, y),
+        Some(ItemType::FireRod) => equipment::rod(ecs, x, y, ElementalDamageKind::Fire),
+        Some(ItemType::FreezeRod) => equipment::rod(ecs, x, y, ElementalDamageKind::Freezing),
         Some(ItemType::LeatherArmor) => equipment::leather_armor(ecs, x, y),
         Some(ItemType::MagicMissileScroll) => spells::magic_missile(ecs, x, y, 10, 5),
         Some(ItemType::BlinkScroll) => spells::blink(ecs, x, y),

@@ -33,7 +33,9 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Healing".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Consumable {})
@@ -65,7 +67,9 @@ pub fn recharging(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Recharging".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Consumable {})
@@ -89,7 +93,7 @@ pub fn recharging(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
 //   - If Thrown: Deals AOE fire damage, and spawns fire entities within the AOE.
 //----------------------------------------------------------------------------
 const FIRE_POTION_AOE_RADIUS: f32 = 2.5;
-const FIRE_POTION_SPAWN_RADIUS: i32 = 1;
+const FIRE_POTION_SPAWN_RADIUS: f32 = 2.5;
 const FIRE_POTION_DAMAGE: i32 = 10;
 const FIRE_POTION_BURNING_TURNS: i32 = 5;
 // TODO: This should be global throughout the game.
@@ -109,12 +113,13 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Fire".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Throwable {})
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::AreaOfEffect {
                 radius: FIRE_POTION_AOE_RADIUS
@@ -127,7 +132,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(InflictsDamageWhenThrown(
             InflictsDamageData {
                 damage: FIRE_POTION_DAMAGE,
-                kind: ElementalDamageKind::Fire
+                element: ElementalDamageKind::Fire
             }
         ))
         .with(InflictsBurningWhenThrown (
@@ -147,7 +152,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         ))
         .with(AreaOfEffectAnimationWhenThrown (
             AreaOfEffectAnimationData {
-                radius: FIRE_POTION_AOE_RADIUS as i32,
+                radius: FIRE_POTION_AOE_RADIUS,
                 fg: RGB::named(rltk::ORANGE),
                 bg: RGB::named(rltk::RED),
                 glyph: rltk::to_cp437('^')
@@ -168,7 +173,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
 //   - If Thrown: Deals AOE chill damage, and spawns chill entities within the AOE.
 //----------------------------------------------------------------------------
 const CHILL_POTION_AOE_RADIUS: f32 = 2.5;
-const CHILL_POTION_SPAWN_RADIUS: i32 = 2;
+const CHILL_POTION_SPAWN_RADIUS: f32 = 2.5;
 const CHILL_POTION_DAMAGE: i32 = 10;
 const CHILL_POTION_FREEZING_TURNS: i32 = 5;
 const CHILL_POTION_SPAWN_SPREAD_CHANCE: i32 = 60;
@@ -186,12 +191,13 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Freezing".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted {verb: "drinks".to_string()})
         .with(Throwable {})
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::AreaOfEffect {
                 radius: CHILL_POTION_AOE_RADIUS
@@ -204,7 +210,7 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(InflictsDamageWhenThrown (
             InflictsDamageData {
                 damage: CHILL_POTION_DAMAGE,
-                kind: ElementalDamageKind::Chill
+                element: ElementalDamageKind::Freezing
             }
         ))
         .with(InflictsFreezingWhenThrown (
@@ -223,7 +229,7 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         ))
         .with(AreaOfEffectAnimationWhenThrown (
             AreaOfEffectAnimationData {
-                radius: CHILL_POTION_AOE_RADIUS as i32,
+                radius: CHILL_POTION_AOE_RADIUS,
                 fg: RGB::named(rltk::WHITE),
                 bg: RGB::named(rltk::LIGHT_BLUE),
                 glyph: rltk::to_cp437('*')
@@ -252,12 +258,13 @@ pub fn teleportation(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Potion of Teleportation".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Untargeted{ verb: "drinks".to_string()})
         .with(Throwable {})
         .with(TargetedWhenThrown {
-            verb: "throws".to_string(),
             range: POTION_THROW_RANGE,
             kind: TargetingKind::Simple
         })

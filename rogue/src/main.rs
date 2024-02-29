@@ -909,7 +909,7 @@ impl GameState for State {
                             range: range,
                             thing: thing,
                             kind: kind,
-                            verb: TargetingVerb::Thrown,
+                            verb: TargetingVerb::Throw,
                             current: None
                         };
                     }
@@ -1091,7 +1091,11 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MonsterAttackSpellcasterAI>();
     gs.ecs.register::<MonsterSupportSpellcasterAI>();
     gs.ecs.register::<SpellCharges>();
+    gs.ecs.register::<RemovedFromSpellBookWhenCast>();
+    gs.ecs.register::<IncresesSpellRechargeRateWhenEquipped>();
     gs.ecs.register::<WeaponSpecial>();
+    gs.ecs.register::<ExpendWeaponSpecialWhenThrown>();
+    gs.ecs.register::<ExpendWeaponSpecialWhenCast>();
     gs.ecs.register::<WantsToMeleeAttack>();
     gs.ecs.register::<WantsToTakeDamage>();
     gs.ecs.register::<WantsToPickupItem>();

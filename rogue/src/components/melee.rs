@@ -4,6 +4,8 @@ use specs::saveload::{ConvertSaveload, Marker};
 use serde::{Serialize, Deserialize};
 use specs::error::NoError;
 
+use crate::ElementalDamageKind;
+
 // Component holding the combat statistics of an entity.
 // TODO: This should probably be broken into two comonents? HealthStats and
 // MeleeStats?
@@ -36,6 +38,7 @@ impl CombatStats {
 pub struct MeeleAttackRequest {
     pub source: Entity,
     pub target: Entity,
+    pub element: ElementalDamageKind,
     pub critical: bool
 }
 
@@ -52,11 +55,12 @@ impl MeeleAttackRequestBuffer {
     pub fn request(&mut self, request: MeeleAttackRequest) {
         self.requests.push(request)
     }
-    pub fn request_many(&mut self, source: Entity, targets: &Vec<Entity>, critical: bool) {
+    pub fn request_many(&mut self, source: Entity, targets: &Vec<Entity>, element: ElementalDamageKind, critical: bool) {
         for target in targets {
             self.request(MeeleAttackRequest {
                 source: source,
                 target: *target,
+                element: element,
                 critical: critical
             })
         }
@@ -79,12 +83,14 @@ pub enum MeeleAttackFormation {
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MeeleAttackWepon {
     pub bonus: i32,
-    pub formation: MeeleAttackFormation
+    pub formation: MeeleAttackFormation,
+    pub element: ElementalDamageKind
 }
 
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum WeaponSpecialKind {
+    AddToSpellBook,
     Dash,
     SpinAttack,
     ThrowWithoutExpending,
@@ -112,4 +118,10 @@ impl WeaponSpecial {
         self.time = 0;
     }
 }
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ExpendWeaponSpecialWhenThrown {}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ExpendWeaponSpecialWhenCast {}
 

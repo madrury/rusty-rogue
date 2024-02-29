@@ -1,5 +1,5 @@
 
-use crate::{map_builders::ColorMaps, StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
+use crate::{StatusIsBurning, StatusIsFrozen, StatusIsImmuneToChill, StatusIsImmuneToFire};
 
 use super::{
     Map, TileType, EntitySpawnKind, Hazard, IsEntityKind, Name, Position,
@@ -171,7 +171,7 @@ pub fn chill(ecs: &mut World, x: i32, y: i32, spread_chance: i32, dissipate_chan
             .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
             .with(InflictsDamageWhenEncroachedUpon {
                 damage: CHILL_ENCROACHMENT_DAMAGE,
-                kind: ElementalDamageKind::Chill
+                kind: ElementalDamageKind::Freezing
             })
             .with(InflictsFreezingWhenEncroachedUpon {
                 turns: CHILL_FROZEN_TURNS

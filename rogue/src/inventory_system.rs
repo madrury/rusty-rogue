@@ -1,8 +1,10 @@
-use super::{
-    GameLog, InBackpack, InSpellBook, Name, Position, WantsToPickupItem, WantsToEquipItem,
-    WantsToRemoveItem, Equipped, Castable, BlessingOrb, BlessingOrbBag
-};
 use specs::prelude::*;
+
+use crate::GameLog;
+use crate::components::*;
+use crate::components::equipment::*;
+use crate::components::magic::*;
+use crate::components::signaling::*;
 
 
 pub struct ItemCollectionSystem {}
@@ -19,34 +21,35 @@ impl<'a> System<'a> for ItemCollectionSystem {
         ReadStorage<'a, Castable>,
         WriteStorage<'a, InBackpack>,
         WriteStorage<'a, InSpellBook>,
-        ReadStorage<'a, BlessingOrb>,
         WriteStorage<'a, BlessingOrbBag>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player, mut log, mut pickups, mut positions, names, castables, mut backpacks, mut spellbooks, orbs, mut orb_bags) = data;
+        let (player, mut log, mut pickups, mut positions, names, castables, mut backpacks, mut spellbooks, mut orb_bags) = data;
         for pickup in pickups.join() {
             positions.remove(pickup.item);
             // Spells go in the spellbook, orbs bump the orb count, everything
             // else goes in a backpack.
-            let castable = castables.get(pickup.item);
-            let is_castable = castable.is_some();
-            let is_orb = orbs.get(pickup.item).is_some();
-            if is_castable {
-                spellbooks
-                    .insert(pickup.item, InSpellBook {
+            match pickup.destination {
+                PickupDestination::Backpack => {
+                    backpacks.insert(pickup.item, InBackpack {owner: pickup.by})
+                        .expect("Unable to insert item in backpack.");
+                },
+                PickupDestination::Spellbook => {
+                    let castable = castables.get(pickup.item)
+                        .expect("Attempted to place spell in spellbook but no castable component.");
+                    spellbooks .insert(pickup.item, InSpellBook {
                         owner: pickup.by,
-                        slot: castable.unwrap().slot
+                        slot: castable.slot
                     }).expect("Unable to insert spell into spellbook.");
-            } else if is_orb {
-                let orb_bag = orb_bags.get_mut(pickup.by)
-                    .expect("Attempting to add to orb count but no orb bag found.");
-                orb_bag.count += 1;
-            } else {
-                backpacks
-                    .insert(pickup.item, InBackpack {owner: pickup.by})
-                    .expect("Unable to insert item in backpack.");
+                },
+                PickupDestination::BlessingOrbBag => {
+                    let orb_bag = orb_bags.get_mut(pickup.by)
+                        .expect("Attempting to add to orb count but no orb bag found.");
+                    orb_bag.count += 1;
+                }
             }
+
             if pickup.by == *player {
                 let name = &names.get(pickup.item);
                 if let Some(name) = name {

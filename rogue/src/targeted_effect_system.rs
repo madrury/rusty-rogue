@@ -1,25 +1,21 @@
 use log::{info, warn};
-use super::{
-    Map, Point, CombatStats, GameLog, AnimationRequestBuffer, AnimationRequest,
-    EntitySpawnRequestBuffer, EntitySpawnRequest, Name, Renderable, Consumable,
-    SpellCharges, Position, WantsToUseTargeted, TargetedWhenThrown,
-    TargetedWhenCast, TargetingKind, ProvidesFullHealing, MovesToRandomPosition,
-    WantsToTakeDamage, WantsToMoveToPosition, WantsToMoveToRandomPosition,
-    StatusIsFrozen, StatusIsBurning,
-    StatusIsImmuneToFire, StatusIsImmuneToChill, StatusIsMeleeAttackBuffed,
-    StatusIsPhysicalDefenseBuffed, WeaponSpecial, WeaponSpecialKind,
-    new_status_with_immunity, new_combat_stats_status
-};
-use crate::components::targeting::*;
-use crate::components::game_effects::*;
-use crate::AlongRayAnimationWhenCast;
-use crate::AlongRayAnimationWhenThrown;
-use crate::AreaOfEffectAnimationWhenCast;
-use crate::AreaOfEffectAnimationWhenThrown;
-use crate::SpawnsEntityInAreaWhenCast;
-use crate::SpawnsEntityInAreaWhenThrown;
-
 use specs::prelude::*;
+
+use crate::{
+    Map, Point, GameLog, AnimationRequestBuffer, AnimationRequest,
+    EntitySpawnRequestBuffer, EntitySpawnRequest, new_status_with_immunity,
+    new_combat_stats_status
+};
+use crate::components::*;
+use crate::components::animation::*;
+use crate::components::game_effects::*;
+use crate::components::magic::*;
+use crate::components::melee::*;
+use crate::components::spawn_despawn::*;
+use crate::components::signaling::*;
+use crate::components::status_effects::*;
+use crate::components::targeting::*;
+
 
 pub struct TargetedSystem {}
 
@@ -38,7 +34,11 @@ pub struct TargetedSystemData<'a> {
         positions: WriteStorage<'a, Position>,
         consumables: ReadStorage<'a, Consumable>,
         spell_charges: WriteStorage<'a, SpellCharges>,
+        single_casts: WriteStorage<'a, RemovedFromSpellBookWhenCast>,
+        in_spellbooks: WriteStorage<'a, InSpellBook>,
         specials: WriteStorage<'a, WeaponSpecial>,
+        expend_special_when_thrown: ReadStorage<'a, ExpendWeaponSpecialWhenThrown>,
+        expend_special_when_cast: ReadStorage<'a, ExpendWeaponSpecialWhenCast>,
         wants_target: WriteStorage<'a, WantsToUseTargeted>,
         targeted_when_thrown: ReadStorage<'a, TargetedWhenThrown>,
         targeted_when_cast: ReadStorage<'a, TargetedWhenCast>,
@@ -87,7 +87,11 @@ impl<'a> System<'a> for TargetedSystem {
             mut positions,
             consumables,
             mut spell_charges,
+            mut single_casts,
+            mut in_spellbooks,
             mut specials,
+            expend_special_when_thrown,
+            expend_special_when_cast,
             targeted_when_thrown,
             targeted_when_cast,
             mut wants_target,
@@ -128,20 +132,21 @@ impl<'a> System<'a> for TargetedSystem {
             // Determine if we a throwing an item or casting a spell.
             let verb = want_target.verb;
 
-            // In the case we are casting a spell, we guard against the case
-            // that we have no spell charges left.
-            let no_charges = spell_charges
+            // In the case we are casting a spell, we check here that the spell
+            // is castable.
+            let has_charges = spell_charges
                 .get(want_target.thing)
-                .map_or(true, |sc| sc.charges <= 0);
-            if verb == TargetingVerb::Cast && no_charges  {
-                warn!("Attempted to cast a spell with no charges.");
+                .map_or(true, |sc| sc.charges > 0);
+            let is_single_cast = single_casts.get(want_target.thing).is_some();
+            if verb == TargetingVerb::Cast && !(has_charges || is_single_cast)  {
+                warn!("Attempted to cast an impossible spell.");
                 continue
             }
 
             // Stuff needed to construct log messages.
             let log_thing_name = names.get(want_target.thing);
             let log_verb = match verb {
-                TargetingVerb::Thrown => "throws",
+                TargetingVerb::Throw => "throws",
                 TargetingVerb::Cast => "casts",
             };
 
@@ -151,7 +156,7 @@ impl<'a> System<'a> for TargetedSystem {
             let user_point = Point {x: user_position.x, y: user_position.y};
             let target_point = want_target.target;
             let targeting_kind = match verb {
-                TargetingVerb::Thrown => targeted_when_thrown.get(want_target.thing).map(|t| t.kind),
+                TargetingVerb::Throw => targeted_when_thrown.get(want_target.thing).map(|t| t.kind),
                 TargetingVerb::Cast => targeted_when_cast.get(want_target.thing).map(|t| t.kind),
             };
             if targeting_kind.is_none() {
@@ -212,19 +217,19 @@ impl<'a> System<'a> for TargetedSystem {
                 // Components: InflictsDamageWhen{Thrown|Cast}
                 let target_stats = combat_stats.get_mut(*target);
                 let damage_data = match verb {
-                    TargetingVerb::Thrown => damage_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Throw => damage_when_thrown.get(want_target.thing).map(|d| &d.0),
                     TargetingVerb::Cast => damage_when_cast.get(want_target.thing).map(|d| &d.0),
                 };
                 if let (Some(dd), Some(_stats)) = (damage_data, target_stats) {
                     WantsToTakeDamage::new_damage(
                         &mut apply_damages,
-                        *target, dd.damage, dd.kind
+                        *target, dd.damage, dd.element
                     );
                 }
 
                 // Components: InflictsFreezingWhen{Thrown|Cast}
                 let freezing_data = match verb {
-                    TargetingVerb::Thrown => freeze_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Throw => freeze_when_thrown.get(want_target.thing).map(|d| &d.0),
                     TargetingVerb::Cast => freeze_when_cast.get(want_target.thing).map(|d| &d.0),
                 };
                 if let Some(fd) = freezing_data {
@@ -239,7 +244,7 @@ impl<'a> System<'a> for TargetedSystem {
 
                 // Components: InflictsBurningWhen{Thrown|Cast}
                 let burning_data = match verb {
-                    TargetingVerb::Thrown => burning_when_thrown.get(want_target.thing).map(|d| &d.0),
+                    TargetingVerb::Throw => burning_when_thrown.get(want_target.thing).map(|d| &d.0),
                     TargetingVerb::Cast => burning_when_cast.get(want_target.thing).map(|d| &d.0),
                 };
                 if let Some(bd) = burning_data {
@@ -282,11 +287,11 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Components: SpawnsEntityInAreaWhen{Thrown|Cast}
             let spawning_data = match verb {
-                TargetingVerb::Thrown => spawns_entity_in_area_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Throw => spawns_entity_in_area_when_thrown.get(want_target.thing).map(|d| &d.0),
                 TargetingVerb::Cast => spawns_entity_in_area_when_cast.get(want_target.thing).map(|d| &d.0),
             };
             if let Some(spawns) = spawning_data {
-                let points = rltk::field_of_view(target_point, spawns.radius, &*map);
+                let points = rltk::field_of_view(target_point, spawns.radius.ceil() as i32, &*map);
                 for pt in points.iter() {
                     spawn_buffer.request(EntitySpawnRequest {
                         x: pt.x,
@@ -314,7 +319,7 @@ impl<'a> System<'a> for TargetedSystem {
             // Component: AreaOfEffectAnimationWhen{Thrown|Cast}
             // let has_aoe_animation = aoe_animations.get(want_target.thing);
             let aoe_animation_data = match verb {
-                TargetingVerb::Thrown => aoe_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Throw => aoe_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
                 TargetingVerb::Cast => aoe_animation_when_cast.get(want_target.thing).map(|d| &d.0),
             };
             if let Some(aoead) = aoe_animation_data {
@@ -330,7 +335,7 @@ impl<'a> System<'a> for TargetedSystem {
 
             // Component: AlongRayAnimationWhen{Thrown|Cast}
             let ray_animation_data = match verb {
-                TargetingVerb::Thrown => along_ray_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
+                TargetingVerb::Throw => along_ray_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
                 TargetingVerb::Cast => along_ray_animation_when_cast.get(want_target.thing).map(|d| &d.0),
             };
             if let Some(rad) = ray_animation_data {
@@ -352,25 +357,41 @@ impl<'a> System<'a> for TargetedSystem {
             // If the thing was single use, clean it up. Weapon specials
             // sometimes give a free throw of a consumable thrown weapon.
             let consumable = consumables.get(want_target.thing).is_some();
-            let freethrow = specials.get(want_target.thing)
-                .map(|s| matches!(s.kind, WeaponSpecialKind::ThrowWithoutExpending) && s.is_charged())
-                .map_or(false, |b| b);
-            if freethrow {
-                let special = specials.get_mut(want_target.thing);
-                special.expect("Failure attempting to clear weapon special charge.").expend();
-            }
-            if consumable && !freethrow {
-                println!("Not free throw.");
-                entities.delete(want_target.thing).expect("Consumable delete failed.");
+            let singlecast = single_casts.get(want_target.thing).is_some();
+            let throwexpend = expend_special_when_thrown.get(want_target.thing).is_some();
+            let castexpend = expend_special_when_cast.get(want_target.thing).is_some();
+
+            match verb {
+                TargetingVerb::Throw => {
+                    let freethrow = specials.get(want_target.thing)
+                        .map(|s| matches!(s.kind, WeaponSpecialKind::ThrowWithoutExpending) && s.is_charged())
+                        .map_or(false, |b| b);
+                    if freethrow && throwexpend {
+                        let special = specials.get_mut(want_target.thing);
+                        special.expect("Failure attempting to clear weapon special charge.").expend();
+                    } else if consumable && !freethrow {
+                        entities.delete(want_target.thing)
+                            .expect("Failed to delete consumed entity when thrown.");
+                    };
+                }
+                TargetingVerb::Cast => {
+                    if singlecast {
+                        in_spellbooks.remove(want_target.thing)
+                            .expect("Failed to remove weapon from spellbook on special resolution.");
+                        single_casts.remove(want_target.thing)
+                            .expect("Failed to single cast compoenent on special resolution.");
+                    }
+                    if castexpend {
+                        let special = specials.get_mut(want_target.thing);
+                        special.expect("Failure attempting to clear weapon special charge.").expend();
+                    }
+                    let sc = spell_charges.get_mut(want_target.thing);
+                    if let Some(sc) = sc { sc.expend_charge() }
+                }
             }
 
-            // If the thing is a spell, we've used up one of the spell charges.
-            let sc = spell_charges.get_mut(want_target.thing);
-            if let Some(sc) = sc {
-                sc.expend_charge()
-            }
+        } // Loop over wants_targets.
 
-        }
         wants_target.clear();
     }
 }

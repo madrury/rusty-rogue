@@ -39,7 +39,7 @@ pub struct IsEntityKind {
 // resolved.
 #[derive(Clone, ConvertSaveload)]
 pub struct SpawnsEntityInAreaData {
-    pub radius: i32,
+    pub radius: f32,
     pub kind: EntitySpawnKind
 }
 #[derive(Component, ConvertSaveload, Clone)]

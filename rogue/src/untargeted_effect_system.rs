@@ -207,7 +207,7 @@ impl<'a> System<'a> for UntargetedSystem {
                     .collect();
                 for sc in spell_charges_for_user {
                     sc.charges = sc.max_charges;
-                    sc.time = sc.regen_time;
+                    sc.ticks = sc.regen_ticks;
                 }
             }
 
@@ -220,8 +220,8 @@ impl<'a> System<'a> for UntargetedSystem {
                     .map(|(_e, _c, _sb, charges)| charges)
                     .collect();
                 for sc in spell_charges_for_user {
-                    sc.regen_time = sc.regen_time * (100 - thing_decreases_recharge.percentage) / 100;
-                    sc.time = i32::min(sc.time, sc.regen_time);
+                    sc.regen_ticks = sc.regen_ticks * (100 - thing_decreases_recharge.percentage) / 100;
+                    sc.ticks = i32::min(sc.ticks, sc.regen_ticks);
                 }
             }
 

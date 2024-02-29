@@ -41,7 +41,7 @@ pub struct DecreasesSpellRechargeWhenUsed {
 #[derive(Clone, ConvertSaveload)]
 pub struct InflictsDamageData {
     pub damage: i32,
-    pub kind: ElementalDamageKind
+    pub element: ElementalDamageKind
 }
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InflictsDamageWhenThrown (pub InflictsDamageData);

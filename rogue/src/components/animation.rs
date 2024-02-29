@@ -38,7 +38,7 @@ pub struct GameAnimationParticle {
 // used as a targeted effect.
 #[derive(Clone, ConvertSaveload)]
 pub struct AreaOfEffectAnimationData {
-    pub radius: i32,
+    pub radius: f32,
     pub fg: RGB,
     pub bg: RGB,
     pub glyph: rltk::FontCharType

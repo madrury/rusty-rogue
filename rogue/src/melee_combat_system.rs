@@ -1,24 +1,23 @@
 use specs::prelude::*;
-use crate::MeeleAttackRequestBuffer;
-
-use super::{
-    Map, Point, TileType, CombatStats, WantsToTakeDamage, Renderable, Position,
-    AnimationRequestBuffer, AnimationRequest, Equipped, MeeleAttackWepon,
-    StatusIsMeleeAttackBuffed, ElementalDamageKind,
-    SpawnEntityWhenMeleeAttacked, EntitySpawnKind, EntitySpawnRequestBuffer,
-    EntitySpawnRequest, Bloodied
+use crate::{
+    AnimationRequestBuffer, AnimationRequest, EntitySpawnRequestBuffer,
+    EntitySpawnRequest, MeeleAttackRequestBuffer, Map, Point, TileType
 };
+use crate::components::*;
+use crate::components::equipment::*;
+use crate::components::melee::*;
+use crate::components::signaling::*;
+use crate::components::spawn_despawn::*;
+use crate::components::status_effects::*;
 
-pub struct MeleeCombatSystem {}
 
 //----------------------------------------------------------------------------
 // A system for processing melee combat.
 //
-// This system scans all entities for a WantsToMeleeAttack component, which
-// signals that the entity has requested to enter melee combat against some
-// target. If the combat is successful, we attaach a SufferDamage component to
-// the target, which is processed by the DamageSystem.
+// Processes the ECS MeeleAttackRequestBuffer.
 //----------------------------------------------------------------------------
+pub struct MeleeCombatSystem {}
+
 // TODO: Move this into a struct instead of a tuple.
 impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
@@ -52,7 +51,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             equipped,
             weapon_attack_bonuses,
             is_melee_buffs,
-            mut damagees,
+            mut damages,
             mut bloodieds,
             spawn_when_melee,
             mut entity_spawn_buffer
@@ -86,12 +85,11 @@ impl<'a> System<'a> for MeleeCombatSystem {
 
             // Actually push the damage :D
             WantsToTakeDamage::new_damage(
-                &mut damagees,
+                &mut damages,
                 attack.target,
                 damage,
-                ElementalDamageKind::Physical
+                attack.element
             );
-
 
             // Animate the damage with a flash
             // TODO: Same here. This should be created after damage is actually created.
@@ -114,7 +112,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 let idx = map.xy_idx(pos.x, pos.y);
                 map.tiles[idx] = TileType::BloodStain;
                 for &e in map.tile_content[idx].iter() {
-                    // TODO: Maybe actually learn how to handle errors man.
                     bloodieds.insert(e, Bloodied {})
                         .expect("Failed to insert Bloodied component.");
                 }

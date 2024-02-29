@@ -5,6 +5,8 @@ use specs::saveload::{ConvertSaveload, Marker};
 use specs::error::NoError;
 use serde::{Serialize, Deserialize};
 
+use crate::ElementalDamageKind;
+
 //------------------------------------------------------------------
 // Components and data structures for the magic system
 //
@@ -40,6 +42,7 @@ pub struct OfferedBlessing {}
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum BlessingSlot {
+    None,
     Movement,
     Assist,
     NonElementalAttack,
@@ -55,14 +58,15 @@ pub struct Castable {
 }
 
 // Tags a spell component as in the spellbook of some other entity. I.e., the
-// referenced entity can cast the spell.
+// referenced entity can cast the spell, and the spell charges regenerate at a
+// base rate of one tick per turn.
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct InSpellBook {
     pub owner: Entity,
     pub slot: BlessingSlot
 }
 
-// Tracks teh number of charges of a spell that are available, and how far we
+// Tracks the number of charges of a spell that are available, and how far we
 // are into recharging a use of that spell.
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct SpellCharges {
@@ -70,31 +74,46 @@ pub struct SpellCharges {
     pub max_charges: i32,
     // The current number of available charges of this spell.
     pub charges: i32,
-    // The number of turns to recharge one use of this spell.
-    pub regen_time: i32,
+    // The number of turns to recharge one use of this spell, assuming the base
+    // recharge rate of one tick per turn.
+    pub regen_ticks: i32,
     // The number of turns we are into recharging another use of this spell. The
     // spell_charge_system is responsible for incrementing this each turn.
-    pub time: i32
+    pub ticks: i32,
+    // Optional element. Used to modify the recharge rate under certain circumstances.
+    pub element: ElementalDamageKind
 }
 impl SpellCharges {
     pub fn expend_charge(&mut self) {
         self.charges = i32::max(0, self.charges - 1);
-        self.time = 0;
+        self.ticks = 0;
     }
     // Returns value indicating if a cast has recharged.
     pub fn tick(&mut self) -> bool {
-        self.time = i32::min(self.time + 1, self.regen_time);
-        if self.time == self.regen_time && self.charges < self.max_charges {
+        self.ticks = i32::min(self.ticks + 1, self.regen_ticks);
+        if self.ticks == self.regen_ticks && self.charges < self.max_charges {
             self.charges += 1;
-            self.time = 0;
+            self.ticks = 0;
             return true
         }
         // We don't want to let the time fill when we're at max charges, since
         // then we could spam spells at max charge each turn., and the spell
         // would recharge the next turn.
         if self.charges == self.max_charges {
-            self.time = 0;
+            self.ticks = 0;
         }
         false
     }
 }
+
+// Component to attach to equippables that doubles the rate of spell recharges
+// for a given element.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct IncresesSpellRechargeRateWhenEquipped {
+    pub element: ElementalDamageKind
+}
+
+// Single cast spells. Useful for weapon specials on caster weapons like rods
+// and staffs.
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct RemovedFromSpellBookWhenCast {}

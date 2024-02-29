@@ -4,6 +4,7 @@ use super::{
     ProvidesFullHealing, ProvidesFullFood, IncreasesMaxHpWhenUsed,
     SimpleMarker, SerializeMe, MarkedBuilder, DissipateWhenBurning, StatusIsImmuneToChill
 };
+use crate::components::*;
 use rltk::{RGB};
 use specs::prelude::*;
 
@@ -19,7 +20,9 @@ pub fn turnip(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Turnip".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Consumable {})
         .with(Untargeted {verb: "eats".to_string()})
@@ -44,7 +47,9 @@ pub fn pomegranate(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             visible_out_of_fov: false
         })
         .with(Name {name: "Pomegranate".to_string()})
-        .with(PickUpable {})
+        .with(PickUpable {
+            destination: PickupDestination::Backpack
+        })
         .with(Useable {})
         .with(Consumable {})
         .with(Untargeted {verb: "eats".to_string()})
