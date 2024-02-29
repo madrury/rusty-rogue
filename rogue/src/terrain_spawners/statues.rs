@@ -4,7 +4,7 @@ use super::{
     StatusIsImmuneToFire
 };
 use crate::map_builders::StatueSpawnData;
-use rltk::RGB;
+use rltk::{RGB, Point};
 use specs::prelude::*;
 
 pub fn spawn_statues_from_table(
@@ -28,7 +28,7 @@ pub fn statue(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
     {
         let mut map = ecs.write_resource::<Map>();
         let adjacent_tiles = map.get_adjacent_tiles(x, y);
-        for (xadj, yadj) in adjacent_tiles {
+        for Point {x: xadj, y: yadj} in adjacent_tiles {
             let idx = map.xy_idx(xadj, yadj);
             if map.is_edge_tile(xadj, yadj) {continue;}
             if map.tiles[idx] == TileType::Wall {

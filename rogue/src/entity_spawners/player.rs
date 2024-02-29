@@ -89,13 +89,13 @@ pub fn get_spawn_position(ecs: &World) -> Option<Point> {
                 None
             }
             Some(maybe) => {
-                let idx = map.xy_idx(maybe.0, maybe.1);
+                let idx = map.xy_idx(maybe.x, maybe.y);
                 let acceptable_distance =
                     INITIAL_DISTANCE_BOUND -  n_tries / N_TIMES_TO_TRY_EACH_DISTANCE;
                 let distance_is_acceptable =
                     distance_to_closest_monster(ecs, maybe) >= acceptable_distance as f32;
                 if distance_is_acceptable && map.ok_to_spawn[idx] && !map.deep_water[idx] {
-                    Some(Point {x: maybe.0, y: maybe.1})
+                    Some(maybe)
                 } else {
                     n_tries += 1;
                     None
@@ -106,11 +106,10 @@ pub fn get_spawn_position(ecs: &World) -> Option<Point> {
     start
 }
 
-fn distance_to_closest_monster(ecs: &World, maybe: (i32, i32)) -> f32 {
-    let maybe_point = Point {x: maybe.0, y: maybe.1};
+fn distance_to_closest_monster(ecs: &World, maybe: Point) -> f32 {
     let monsters = ecs.read_storage::<Monster>();
     let positions = ecs.read_storage::<Position>();
     (&monsters, &positions).join()
-        .map(|(_m, pos)| rltk::DistanceAlg::Pythagoras.distance2d(pos.to_point(), maybe_point))
+        .map(|(_m, pos)| rltk::DistanceAlg::Pythagoras.distance2d(pos.to_point(), maybe))
         .fold(f32::INFINITY, |a, b| a.min(b))
 }

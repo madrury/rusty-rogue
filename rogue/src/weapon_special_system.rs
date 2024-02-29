@@ -71,8 +71,7 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
 
             if let(Some(pos), Some(orender), Some(wrender)) = (ownerposition, ownerrender, weaponrender) {
                 animation_buffer.request(AnimationRequest::WeaponSpecialRecharge {
-                    x: pos.x,
-                    y: pos.y,
+                    pt: pos.to_point(),
                     fg: orender.fg,
                     bg: orender.bg,
                     owner_glyph: orender.glyph,

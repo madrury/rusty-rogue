@@ -365,18 +365,17 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
             );
             if !destination_is_blocked && !dash_targets.is_empty() {
                 meele_buffer.request_many(*player, &dash_targets, weapon_element, false);
+                let target = Point {x: pt.x + dx, y: pt.y + dy};
                 moves.insert(
                     *player,
                     WantsToMoveToPosition {
-                        pt: Point{x: pt.x + dx, y: pt.y + dy},
+                        pt: target,
                         force: false
                     }
                 ).expect("Failed to insert dash meele attack move.");
                 animation_buffer.request(AnimationRequest::AlongRay {
-                    source_x: pt.x,
-                    source_y: pt.y,
-                    target_x: pt.x + dx,
-                    target_y: pt.y + dy,
+                    source: *pt,
+                    target: target,
                     fg: RGB::named(rltk::PURPLE),
                     bg: playerrender.bg,
                     glyph: playerrender.glyph,
@@ -428,15 +427,14 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                         force: false
                     }
                 ).expect("Failed to insert dash meele attack move.");
+                let target = Point {x: searchpt.x - dx, y: searchpt.y - dy};
                 animation_buffer.request(AnimationRequest::AlongRay {
-                    source_x: pt.x,
-                    source_y: pt.y,
-                    target_x: searchpt.x - dx,
-                     target_y: searchpt.y - dy,
-                     fg: RGB::named(rltk::PURPLE),
-                     bg: playerrender.bg,
-                     glyph: playerrender.glyph,
-                     until_blocked: true
+                    source: *pt,
+                    target: target,
+                    fg: RGB::named(rltk::PURPLE),
+                    bg: playerrender.bg,
+                    glyph: playerrender.glyph,
+                    until_blocked: true
                 });
                 return RunState::PlayerTurn
             }
@@ -465,7 +463,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
 
 fn skip_turn(ecs: &mut World) -> RunState {
     let player = ecs.fetch::<Entity>();
-    let ppos = ecs.read_resource::<Point>();
+    let ppt = ecs.read_resource::<Point>();
     let viewsheds = ecs.read_storage::<Viewshed>();
     let renderables = ecs.read_storage::<Renderable>();
     let invisibles = ecs.read_storage::<StatusInvisibleToPlayer>();
@@ -487,7 +485,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
         .next();
     if let Some((_, weapon, render, special)) = ws {
         let combat_stats = ecs.read_storage::<CombatStats>();
-        let adjacent: Vec<Entity> = map.get_l_infinity_circle_around(*ppos, 1)
+        let adjacent: Vec<Entity> = map.get_l_infinity_circle_around(*ppt, 1)
             .iter()
             .map(|pt| map.xy_idx(pt.x, pt.y))
             .map(|idx| get_meele_targets_in_tile(&*map, idx, &combat_stats, &invisibles, true))
@@ -497,7 +495,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
         if !adjacent.is_empty() {
             special.expend();
             animation_buffer.request(AnimationRequest::SpinAttack {
-                x: ppos.x, y: ppos.y, fg: render.fg, glyph: render.glyph
+                pt: *ppt, fg: render.fg, glyph: render.glyph
             });
             return RunState::PlayerTurn
         }

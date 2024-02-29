@@ -162,14 +162,14 @@ impl Map {
         dijkstra_map.map[end_idx] != std::f32::MAX
     }
 
-    pub fn random_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
+    pub fn random_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<Point> {
         for _ in 0..n_tries {
             let x = rng.roll_dice(1, self.width) - 1;
             let y = rng.roll_dice(1, self.height) - 1;
             let idx = self.xy_idx(x, y);
             let tile = self.tiles[idx];
             if tile == TileType::Floor || tile == TileType::BloodStain {
-                return Some((x, y))
+                return Some(Point {x, y})
             }
         }
         return None
@@ -182,11 +182,11 @@ impl Map {
         n_tries: i32,
         rng: &mut RandomNumberGenerator,
         classification: &Vec<bool>
-    ) -> Option<(i32, i32)> {
+    ) -> Option<Point> {
         for _ in 0..n_tries {
             let pt = self.random_point(n_tries, rng);
             if let Some(pt) = pt {
-                let idx = self.xy_idx(pt.0, pt.1);
+                let idx = self.xy_idx(pt.x, pt.y);
                 if classification[idx] {
                     return Some(pt);
                 }
@@ -195,7 +195,7 @@ impl Map {
         return None;
     }
 
-    pub fn random_unblocked_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<(i32, i32)> {
+    pub fn random_unblocked_point(&self, n_tries: i32, rng: &mut RandomNumberGenerator) -> Option<Point> {
         return self.random_point_with_tile_classification(
             n_tries,
             rng,
@@ -204,7 +204,7 @@ impl Map {
         );
     }
 
-    pub fn get_adjacent_tiles(&self, x: i32, y: i32) -> Vec<(i32, i32)> {
+    pub fn get_adjacent_tiles(&self, x: i32, y: i32) -> Vec<Point> {
         let ds = vec![
             (-1, -1),
             (-1,  0),
@@ -216,19 +216,19 @@ impl Map {
             (1,   1),
         ];
         ds.into_iter()
-            .map(|(dx, dy)| (x + dx, y + dy))
-            .filter(|(x, y)| self.within_bounds(*x, *y))
+            .map(|(dx, dy)| Point {x: x + dx, y: y + dy})
+            .filter(|pt| self.within_bounds(pt.x, pt.y))
             .collect()
     }
 
-    pub fn random_adjacent_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
+    pub fn random_adjacent_point(&self, x: i32, y: i32) -> Option<Point> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
-        let adjacent_tiles: Vec<(i32, i32)> = self.get_adjacent_tiles(x, y)
+        let adjacent_tiles: Vec<Point> = self.get_adjacent_tiles(x, y)
             .into_iter()
-            .map(|(x, y)| self.xy_idx(x, y))
+            .map(|pt| self.xy_idx(pt.x, pt.y))
             .filter(|idx| self.tiles[*idx] != TileType::Wall)
-            .map(|idx| self.idx_xy(idx))
+            .map(|idx| Point::from_tuple(self.idx_xy(idx)))
             .collect();
         let n_adjacent_tiles = adjacent_tiles.len() as i32;
         match n_adjacent_tiles {
@@ -240,14 +240,14 @@ impl Map {
         }
     }
 
-    pub fn random_adjacent_unblocked_point(&self, x: i32, y: i32) -> Option<(i32, i32)> {
+    pub fn random_adjacent_unblocked_point(&self, x: i32, y: i32) -> Option<Point> {
         // TODO: This should use the game's internal RNG.
         let mut rng = RandomNumberGenerator::new();
-        let adjacent_unblocked_tiles: Vec<(i32, i32)> = self.get_adjacent_tiles(x, y)
+        let adjacent_unblocked_tiles: Vec<Point> = self.get_adjacent_tiles(x, y)
             .into_iter()
-            .map(|(x, y)| self.xy_idx(x, y))
+            .map(|pt| self.xy_idx(pt.x, pt.y))
             .filter(|idx| !self.blocked[*idx])
-            .map(|idx| self.idx_xy(idx))
+            .map(|idx| Point::from_tuple(self.idx_xy(idx)))
             .collect();
         let n_adjacent_unblocked_tiles = adjacent_unblocked_tiles.len() as i32;
         match n_adjacent_unblocked_tiles {
@@ -259,12 +259,12 @@ impl Map {
         }
     }
 
-    pub fn get_aoe_tiles(&self, pt: Point, radius: f32) -> Vec<Point> {
-        let in_viewshed = rltk::field_of_view(pt, f32::ceil(radius) as i32, self);
-        in_viewshed.into_iter()
-            .filter(|p| rltk::DistanceAlg::Pythagoras.distance2d(*p, pt) < radius)
-            .collect()
-    }
+    // pub fn get_aoe_tiles(&self, pt: Point, radius: f32) -> Vec<Point> {
+    //     let in_viewshed = rltk::field_of_view(pt, f32::ceil(radius) as i32, self);
+    //     in_viewshed.into_iter()
+    //         .filter(|p| rltk::DistanceAlg::Pythagoras.distance2d(*p, pt) < radius)
+    //         .collect()
+    // }
 
     pub fn get_ray_tiles(&self, source: Point, target: Point, take_until_blocked: bool) -> Vec<Point> {
         let mut tiles: Vec<Point> = Bresenham::new(source, target).collect();
@@ -294,6 +294,24 @@ impl Map {
         }
         circle.into_iter().filter(|pt| self.within_bounds(pt.x, pt.y)).collect()
     }
+
+    pub fn get_l_infinity_disk_around(&self, source: Point, radius: f32) -> Vec<Point> {
+        let R = radius.floor() as i32;
+        (0..=R).into_iter()
+            .map(|r| self.get_l_infinity_circle_around(source, r))
+            .flatten()
+            .filter(|pt| self.within_bounds(pt.x, pt.y))
+            .collect()
+    }
+
+    pub fn get_euclidean_disk_around(&self, source: Point, radius: f32) -> Vec<Point> {
+        // euclidean-norm(v) <= linf-norm(v)
+        self.get_l_infinity_disk_around(source, radius).into_iter()
+            .filter(|pt| rltk::DistanceAlg::Pythagoras.distance2d(*pt, source) <= radius)
+            .filter(|pt| self.within_bounds(pt.x, pt.y))
+            .collect()
+    }
+
 }
 
 impl BaseMap for Map {

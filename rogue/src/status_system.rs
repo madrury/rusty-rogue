@@ -1,6 +1,6 @@
 
 use specs::prelude::*;
-use rltk::{RGB, RandomNumberGenerator};
+use rltk::{RGB, Point, RandomNumberGenerator};
 use super::{
     Map, GameLog, Name, RunState, Monster, Hazard, Position, StatusIsFrozen,
     StatusIsBurning, StatusIsImmuneToFire, StatusIsImmuneToChill,
@@ -338,7 +338,7 @@ pub fn get_status_indicators(ecs: &World, entity: &Entity) -> Vec<StatusIndicato
 fn get_adjacent_entities<'a>(map: &'a Map, pos: &Position) -> Vec<&'a Entity> {
     let mut entities: Vec<&Entity> = Vec::new();
     let adjacent_tiles = map.get_adjacent_tiles(pos.x, pos.y);
-    for (x, y) in adjacent_tiles {
+    for Point {x, y} in adjacent_tiles {
         let idx = map.xy_idx(x, y);
         for e in map.tile_content[idx].iter() {
             entities.push(&e);

@@ -116,8 +116,7 @@ impl<'a> System<'a> for UntargetedSystem {
                 let render = renderables.get(entity);
                 if let(Some(pos), Some(render)) = (pos, render) {
                     animation_builder.request(AnimationRequest::Healing {
-                        x: pos.x,
-                        y: pos.y,
+                        pt: pos.to_point(),
                         fg: render.fg,
                         bg: render.bg,
                         glyph: render.glyph,

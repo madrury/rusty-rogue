@@ -215,11 +215,7 @@ impl NoiseMaps {
         let grassgeom = GrassGeometry::random(rng);
         let statuegeom = StatueGeometry::random(rng);
         // Determine the blessing location. Nothing fancy.
-        let blessingloc = map.random_unblocked_point(100, rng);
-        let blessingpt = match blessingloc {
-            None => None,
-            Some(loc) => Some(Point {x: loc.0, y: loc.1}),
-        };
+        let blessingpt = map.random_unblocked_point(100, rng);
         NoiseMaps {
             water_geometry: watergeom,
             grass_geometry: grassgeom,
@@ -318,10 +314,7 @@ impl NoiseMaps {
         let mut water_spawn_table = WaterSpawnTable::new();
         let mut blessing_adjacent_tiles: Vec<Point> = Vec::new();
         if let Some(blessing) = self.blessing {
-            blessing_adjacent_tiles = map.get_adjacent_tiles(blessing.x, blessing.y)
-                .iter()
-                .map(|t| Point::from_tuple(*t))
-                .collect();
+            blessing_adjacent_tiles = map.get_adjacent_tiles(blessing.x, blessing.y);
         }
         for (pt, (vnoise, _)) in self.water.iter() {
             let idx = map.xy_idx(pt.x, pt.y);

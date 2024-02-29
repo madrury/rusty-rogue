@@ -42,23 +42,22 @@ impl<'a> System<'a> for TeleportationSystem {
 
             let old_pos = pos.clone();
 
-            let new_pos = map.random_unblocked_point(10, &mut *rng);
-            if let Some(new_pos) = new_pos {
+            let new_pt = map.random_unblocked_point(10, &mut *rng);
+            if let Some(new_pt) = new_pt {
                 wants_to_move.insert(entity, WantsToMoveToPosition {
-                    pt: Point {x: new_pos.0, y: new_pos.1},
-                    force: true
+                    // TODO: We should be finding a safe position to teleport to
+                    // so this force is not needed.
+                    pt: new_pt, force: true
                 })
                     .expect("Could not insert WantsToMoveToPosition.");
                 let render = renderables.get(entity);
                 if let Some(render) = render {
                     animation_builder.request(AnimationRequest::Teleportation {
-                        x: old_pos.x,
-                        y: old_pos.y,
+                        pt: old_pos.to_point(),
                         bg: render.bg,
                     });
                     animation_builder.request(AnimationRequest::Teleportation {
-                        x: new_pos.0,
-                        y: new_pos.1,
+                        pt: new_pt,
                         bg: render.bg,
                     })
                 }
