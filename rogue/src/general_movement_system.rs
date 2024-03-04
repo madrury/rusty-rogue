@@ -1,7 +1,7 @@
 use super::{
     Map, Point, Position, Viewshed, Renderable, BlocksTile,
     MovementRoutingAvoids, MovementRoutingBounds, WantsToMoveToRandomPosition,
-    WantsToMoveToPosition, AnimationRequestBuffer, AnimationRequest
+    WantsToMoveToPosition, AnimationSequenceBuffer, AnimationBlock
 };
 use specs::prelude::*;
 use rltk::RandomNumberGenerator;
@@ -14,7 +14,7 @@ pub struct TeleportationSystemData<'a> {
     entities: Entities<'a>,
     map: ReadExpect<'a, Map>,
     rng: WriteExpect<'a, RandomNumberGenerator>,
-    animation_builder: WriteExpect<'a, AnimationRequestBuffer>,
+    animation_builder: WriteExpect<'a, AnimationSequenceBuffer>,
     positions: WriteStorage<'a, Position>,
     renderables: ReadStorage<'a, Renderable>,
     wants_to_move: WriteStorage<'a, WantsToMoveToPosition>,
@@ -52,11 +52,11 @@ impl<'a> System<'a> for TeleportationSystem {
                     .expect("Could not insert WantsToMoveToPosition.");
                 let render = renderables.get(entity);
                 if let Some(render) = render {
-                    animation_builder.request(AnimationRequest::Teleportation {
+                    animation_builder.request_block(AnimationBlock::Teleportation {
                         pt: old_pos.to_point(),
                         bg: render.bg,
                     });
-                    animation_builder.request(AnimationRequest::Teleportation {
+                    animation_builder.request_block(AnimationBlock::Teleportation {
                         pt: new_pt,
                         bg: render.bg,
                     })

@@ -1153,11 +1153,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusIsPhysicalDefenseBuffed>();
     gs.ecs.register::<StatusInvisibleToPlayer>();
     gs.ecs.register::<InvisibleWhenEncroachingEntityKind>();
-    gs.ecs.register::<GameAnimationParticle>();
-    gs.ecs.register::<AreaOfEffectAnimationWhenThrown>();
-    gs.ecs.register::<AreaOfEffectAnimationWhenCast>();
-    gs.ecs.register::<AlongRayAnimationWhenThrown>();
-    gs.ecs.register::<AlongRayAnimationWhenCast>();
+    gs.ecs.register::<AnimationParticle>();
+    gs.ecs.register::<AnimationWhenThrown>();
+    gs.ecs.register::<AnimationWhenCast>();
 
     // Placeholder values which we will replace upon map generation.
     gs.ecs.insert(Point::new(0, 0)); // Player position.
@@ -1168,8 +1166,8 @@ fn main() -> rltk::BError {
     // Buffers for accumulating requests for ECS changes throughout a turn.
     // Think like it's a database, we queue operations, then commit the changes
     // in batch.
-    gs.ecs.insert(AnimationRequestBuffer::new());
-    gs.ecs.insert(ParticleRequestBuffer::new());
+    gs.ecs.insert(AnimationSequenceBuffer::new());
+    gs.ecs.insert(AnimationParticleBuffer::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
     gs.ecs.insert(MeeleAttackRequestBuffer::new());
 

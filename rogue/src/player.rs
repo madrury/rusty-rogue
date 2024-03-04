@@ -1,5 +1,5 @@
 use crate::{
-    AnimationRequest, AnimationRequestBuffer, Map, GameLog, RunState, State,
+    AnimationBlock, AnimationSequenceBuffer, Map, GameLog, RunState, State,
     TileType
 };
 use crate::components::*;
@@ -297,7 +297,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
     let mut specials = ecs.write_storage::<WeaponSpecial>();
     let mut moves = ecs.write_storage::<WantsToMoveToPosition>();
     let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
-    let mut animation_buffer = ecs.write_resource::<AnimationRequestBuffer>();
+    let mut animation_buffer = ecs.write_resource::<AnimationSequenceBuffer>();
 
     let destination_idx = map.xy_idx(pt.x + dx, pt.y + dy);
     let destination_is_blocked = map.blocked[destination_idx];
@@ -373,7 +373,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                         force: false
                     }
                 ).expect("Failed to insert dash meele attack move.");
-                animation_buffer.request(AnimationRequest::AlongRay {
+                animation_buffer.request_block(AnimationBlock::AlongRay {
                     source: *pt,
                     target: target,
                     fg: RGB::named(rltk::PURPLE),
@@ -428,7 +428,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                     }
                 ).expect("Failed to insert dash meele attack move.");
                 let target = Point {x: searchpt.x - dx, y: searchpt.y - dy};
-                animation_buffer.request(AnimationRequest::AlongRay {
+                animation_buffer.request_block(AnimationBlock::AlongRay {
                     source: *pt,
                     target: target,
                     fg: RGB::named(rltk::PURPLE),
@@ -473,7 +473,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
     let weapons = ecs.read_storage::<MeeleAttackWepon>();
     let mut specials = ecs.write_storage::<WeaponSpecial>();
     let mut meele_buffer = ecs.write_resource::<MeeleAttackRequestBuffer>();
-    let mut animation_buffer = ecs.write_resource::<AnimationRequestBuffer>();
+    let mut animation_buffer = ecs.write_resource::<AnimationSequenceBuffer>();
     let map = ecs.fetch::<Map>();
 
     // Passing the turn with anjacent monsters starts a spin attack when a
@@ -494,7 +494,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
         meele_buffer.request_many(*player, &adjacent, weapon.element, true);
         if !adjacent.is_empty() {
             special.expend();
-            animation_buffer.request(AnimationRequest::SpinAttack {
+            animation_buffer.request_block(AnimationBlock::SpinAttack {
                 pt: *ppt, fg: render.fg, glyph: render.glyph
             });
             return RunState::PlayerTurn

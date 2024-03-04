@@ -1,7 +1,7 @@
 
 use super::{
-    CombatStats, HungerClock, GameLog, AnimationRequestBuffer,
-    AnimationRequest, Name, Position, Renderable, WantsToUseUntargeted,
+    CombatStats, HungerClock, GameLog, AnimationSequenceBuffer,
+    AnimationBlock, Name, Position, Renderable, WantsToUseUntargeted,
     Consumable, Untargeted, Castable, InSpellBook, SpellCharges,
     ProvidesFullHealing, ProvidesFullFood, ProvidesFullSpellRecharge,
     MovesToRandomPosition, WantsToMoveToRandomPosition,
@@ -21,7 +21,7 @@ pub struct UntargetedSystem {}
 pub struct UntargetedSystemData<'a> {
     entities: Entities<'a>,
     log: WriteExpect<'a, GameLog>,
-    animation_builder: WriteExpect<'a, AnimationRequestBuffer>,
+    animation_builder: WriteExpect<'a, AnimationSequenceBuffer>,
     names: ReadStorage<'a, Name>,
     positions: ReadStorage<'a, Position>,
     renderables: ReadStorage<'a, Renderable>,
@@ -115,7 +115,7 @@ impl<'a> System<'a> for UntargetedSystem {
                 let pos = positions.get(entity);
                 let render = renderables.get(entity);
                 if let(Some(pos), Some(render)) = (pos, render) {
-                    animation_builder.request(AnimationRequest::Healing {
+                    animation_builder.request_block(AnimationBlock::Healing {
                         pt: pos.to_point(),
                         fg: render.fg,
                         bg: render.bg,

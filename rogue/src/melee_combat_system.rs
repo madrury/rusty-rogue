@@ -1,6 +1,6 @@
 use specs::prelude::*;
 use crate::{
-    AnimationRequestBuffer, AnimationRequest, EntitySpawnRequestBuffer,
+    AnimationSequenceBuffer, AnimationBlock, EntitySpawnRequestBuffer,
     EntitySpawnRequest, MeeleAttackRequestBuffer, Map, Point, TileType
 };
 use crate::components::*;
@@ -23,7 +23,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
         Entities<'a>,
         WriteExpect<'a, Map>,
-        WriteExpect<'a, AnimationRequestBuffer>,
+        WriteExpect<'a, AnimationSequenceBuffer>,
         WriteExpect<'a, MeeleAttackRequestBuffer>,
         ReadExpect<'a, Point>,
         ReadStorage<'a, CombatStats>,
@@ -97,8 +97,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
             let targetpos = positions.get(attack.target);
             let targetrender = renderables.get(attack.target);
             if let(Some(pos), Some(render)) = (targetpos, targetrender) {
-                animation_buffer.request(
-                    AnimationRequest::MeleeAttack {
+                animation_buffer.request_block(
+                    AnimationBlock::MeleeAttack {
                         pt: pos.to_point(),
                         bg: render.bg,
                         glyph: render.glyph,
