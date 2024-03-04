@@ -107,7 +107,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::HealthPotion, 4 + depth)
             .insert(ItemType::RechargingPotion, depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
-            .insert(ItemType::FirePotion, depth)
+            .insert(ItemType::FirePotion, 500)
             .insert(ItemType::FreezingPotion, depth)
             .insert(ItemType::Dagger, 1+ depth)
             .insert(ItemType::Sword, depth)
@@ -118,7 +118,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
             .insert(ItemType::BlinkScroll, depth)
             .insert(ItemType::FireblastScroll, 500)
             .insert(ItemType::IceblastScroll, depth)
-            .insert(ItemType::None, 75)
+            .insert(ItemType::None, 0)
             // These are avalable at blessing statues.
             // .insert(ItemType::MagicMissileScroll, depth)
             // .insert(ItemType::FireballScroll, 500)

@@ -1,3 +1,4 @@
+use log::{info};
 use specs::prelude::*;
 use specs_derive::*;
 use specs::saveload::{ConvertSaveload, Marker};
@@ -101,6 +102,7 @@ impl AnimationParticleBuffer {
 // Teloportation:
 //     Dissapear from some place, appear in another place.
 //------------------------------------------------------------------------------
+#[derive(Debug)]
 pub enum AnimationBlock {
     MeleeAttack {
         pt: Point,
@@ -195,6 +197,8 @@ impl AnimationSequence {
         let mut delay: Frames = 0;
         while !self.blocks.is_empty() {
             let block = self.blocks.pop();
+            println!("Popping animation block {block:?}");
+            println!("Current delay {delay:?}");
             let newparticles = block.map(|blk| blk.particalize(map, delay));
             match newparticles {
                 Some((ps, dl)) => {
@@ -252,7 +256,7 @@ impl AnimationComponentData {
     pub fn localize(&self, source: Option<Point>, target: Option<Point>) -> Option<AnimationBlock> {
         match self {
             AnimationComponentData::AreaOfEffect { radius, fg, bg, glyph } => {
-                source.map(|s| AnimationBlock::AreaOfEffect {
+                target.map(|s| AnimationBlock::AreaOfEffect {
                     center: s,
                     radius: *radius,
                     fg: *fg,
@@ -263,7 +267,7 @@ impl AnimationComponentData {
             AnimationComponentData::AlongRay { fg, bg, glyph, until_blocked } => {
                 source.zip(target).map(|(s, t)| AnimationBlock::AlongRay {
                     source: s,
-                    target: s,
+                    target: t,
                     fg: *fg,
                     bg:*bg,
                     glyph: *glyph,
@@ -307,7 +311,7 @@ fn make_melee_animation(
             fg: *color,
             bg: bg,
             glyph: glyph,
-            lifetime: frames(delay) + frames(2),
+            lifetime: frames(2),
             delay: frames(delay) + frames(2 * i as i32),
             displayed: false
         })
@@ -333,7 +337,7 @@ fn make_weapon_special_recharge_animation(
             fg: *color,
             bg: bg,
             glyph: *glyph,
-            lifetime: frames(delay) + frames(4),
+            lifetime: frames(4),
             delay: frames(delay) + frames(4 * i as i32),
             displayed: false
         })
@@ -358,7 +362,7 @@ fn make_healing_animation(
             fg: *color,
             bg: bg,
             glyph: *glyph,
-            lifetime: frames(delay) + frames(4),
+            lifetime: frames(4),
             delay: frames(delay) + frames(4 * i as i32),
             displayed: false
         })
@@ -383,11 +387,11 @@ fn make_aoe_animation(
     for (i, (fg, bg)) in fg_color_cycle.iter().zip(bg_color_cycle.iter()).enumerate() {
         for tile in blast_tiles.iter() {
             particles.push(AnimationParticle {
-                pt: pt,
+                pt: *tile,
                 fg: *fg,
                 bg: *bg,
                 glyph: glyph,
-                lifetime: frames(delay) + frames(2),
+                lifetime: frames(2),
                 delay: frames(delay) + frames(2 * i as i32),
                 displayed: false
             })
@@ -416,12 +420,12 @@ fn make_along_ray_animation(
             fg: fg,
             bg: bg,
             glyph: glyph,
-            lifetime: frames(delay) + frames(4),
+            lifetime: frames(4),
             delay: frames(delay) + frames(3 * i as i32),
             displayed: false
         })
     }
-    (particles, delay + 4 * n_tiles as i32 + 1)
+    (particles, delay + 3 * n_tiles as i32)
 }
 
 // A healing animation. A heart flashes quickly.
@@ -438,7 +442,7 @@ fn make_teleportation_animation(
             fg: rltk::RGB::named(rltk::MEDIUM_PURPLE),
             bg: bg,
             glyph: *glyph,
-            lifetime: frames(delay) + frames(4),
+            lifetime: frames(4),
             delay: frames(delay) + frames(4 * i as i32),
             displayed: false
         })
@@ -470,7 +474,7 @@ fn make_spin_attack_animation(
             // solution to this problem.
             bg: rltk::RGB::named(rltk::BLACK),
             glyph: glyph,
-            lifetime: frames(delay) + frames(4),
+            lifetime: frames(4),
             delay: frames(delay) + frames(2 * i as i32),
             displayed: false
         })

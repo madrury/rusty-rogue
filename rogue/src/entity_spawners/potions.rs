@@ -141,28 +141,28 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 tick_damage: FIRE_POTION_BURNING_TICK_DAMAGE
             }
         ))
-        .with(SpawnsEntityInAreaWhenThrown (
-            SpawnsEntityInAreaData {
-                radius: FIRE_POTION_SPAWN_RADIUS,
-                kind: EntitySpawnKind::Fire {
-                    spread_chance: FIRE_POTION_SPAWN_SPREAD_CHANCE,
-                    dissipate_chance: FIRE_POTION_SPAWN_DISSIPATE_CHANCE,
-                }
-            }
-        ))
+        // .with(SpawnsEntityInAreaWhenThrown (
+        //     SpawnsEntityInAreaData {
+        //         radius: FIRE_POTION_SPAWN_RADIUS,
+        //         kind: EntitySpawnKind::Fire {
+        //             spread_chance: FIRE_POTION_SPAWN_SPREAD_CHANCE,
+        //             dissipate_chance: FIRE_POTION_SPAWN_DISSIPATE_CHANCE,
+        //         }
+        //     }
+        // ))
         .with(AnimationWhenThrown {
                 sequence: vec![
-                    AnimationComponentData::AlongRay {
-                        glyph: rltk::to_cp437('¿'),
-                        fg: RGB::named(rltk::ORANGE),
-                        bg: RGB::named(rltk::BLACK),
-                        until_blocked: true
-                    },
                     AnimationComponentData::AreaOfEffect {
                         radius: FIRE_POTION_AOE_RADIUS,
                         fg: RGB::named(rltk::ORANGE),
                         bg: RGB::named(rltk::RED),
                         glyph: rltk::to_cp437('^')
+                    },
+                    AnimationComponentData::AlongRay {
+                        glyph: rltk::to_cp437('¿'),
+                        fg: RGB::named(rltk::ORANGE),
+                        bg: RGB::named(rltk::BLACK),
+                        until_blocked: true
                     },
                 ]
             }
@@ -227,28 +227,28 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 turns: CHILL_POTION_FREEZING_TURNS
             }
         ))
-        .with(SpawnsEntityInAreaWhenThrown (
-            SpawnsEntityInAreaData {
-                radius: CHILL_POTION_SPAWN_RADIUS,
-                kind: EntitySpawnKind::Chill {
-                    spread_chance: CHILL_POTION_SPAWN_SPREAD_CHANCE,
-                    dissipate_chance: CHILL_POTION_SPAWN_DISSIPATE_CHANCE,
-                }
-            }
-        ))
+        // .with(SpawnsEntityInAreaWhenThrown (
+        //     SpawnsEntityInAreaData {
+        //         radius: CHILL_POTION_SPAWN_RADIUS,
+        //         kind: EntitySpawnKind::Chill {
+        //             spread_chance: CHILL_POTION_SPAWN_SPREAD_CHANCE,
+        //             dissipate_chance: CHILL_POTION_SPAWN_DISSIPATE_CHANCE,
+        //         }
+        //     }
+        // ))
         .with(AnimationWhenThrown {
                 sequence: vec![
-                    AnimationComponentData::AlongRay {
-                        glyph: rltk::to_cp437('¿'),
-                        fg: RGB::named(rltk::LIGHT_BLUE),
-                        bg: RGB::named(rltk::BLACK),
-                        until_blocked: true
-                    },
                     AnimationComponentData::AreaOfEffect {
                         radius: CHILL_POTION_AOE_RADIUS,
                         fg: RGB::named(rltk::WHITE),
                         bg: RGB::named(rltk::LIGHT_BLUE),
                         glyph: rltk::to_cp437('*')
+                    },
+                    AnimationComponentData::AlongRay {
+                        glyph: rltk::to_cp437('¿'),
+                        fg: RGB::named(rltk::LIGHT_BLUE),
+                        bg: RGB::named(rltk::BLACK),
+                        until_blocked: true
                     },
                 ]
             }
