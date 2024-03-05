@@ -1,6 +1,6 @@
 use crate::{
     AnimationRequest, AnimationRequestBuffer, Map, GameLog, RunState, State,
-    TileType
+    TileType, DEBUG_DESCEND_ANYWHERE
 };
 use crate::components::*;
 use crate::components::equipment::*;
@@ -274,7 +274,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::Slash => RunState::ShowHelpMenu{details: None},
             VirtualKeyCode::Escape => RunState::SaveGame,
             VirtualKeyCode::Period => {
-                if try_next_level(&mut gs.ecs) {
+                if DEBUG_DESCEND_ANYWHERE || try_next_level(&mut gs.ecs) {
                     return RunState::NextLevel
                 }
                 return RunState::AwaitingInput

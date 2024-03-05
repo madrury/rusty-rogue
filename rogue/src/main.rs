@@ -88,6 +88,7 @@ const DEBUG_HIGHLIGHT_DEEP_WATER: bool = false;
 const DEBUG_HIGHLIGHT_SHALLOW_WATER: bool = false;
 const DEBUG_HIGHLIGHT_GRASS: bool = false;
 const DEBUG_HIGHLIGHT_BLOOD: bool = false;
+const DEBUG_DESCEND_ANYWHERE: bool = false;
 
 const MAPGEN_FRAME_TIME: f32 = 100.0;
 
