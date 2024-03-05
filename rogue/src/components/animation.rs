@@ -166,9 +166,6 @@ pub enum AnimationBlock {
     },
     Healing {
         pt: Point,
-        fg: RGB,
-        bg: RGB,
-        glyph: rltk::FontCharType,
     },
     WeaponSpecialRecharge {
         pt: Point,
@@ -209,8 +206,8 @@ impl AnimationBlock {
             AnimationBlock::MeleeAttack {pt, bg, glyph} => {
                 particlize_melee_animation(*pt, *bg, *glyph, delay)
             }
-            AnimationBlock::Healing { pt, fg, bg, glyph, } =>
-                particlize_healing_animation(*pt, *fg, *bg, *glyph, delay),
+            AnimationBlock::Healing { pt } =>
+                particlize_healing_animation(*pt, delay),
             AnimationBlock::WeaponSpecialRecharge { pt, fg, bg, owner_glyph, weapon_glyph } =>
                 particlize_weapon_special_recharge_animation(*pt, *fg, *bg, *owner_glyph, *weapon_glyph, delay),
             AnimationBlock::AreaOfEffect { center, fg, bg, glyph, radius } =>
@@ -310,13 +307,14 @@ pub enum AnimationComponentData {
         glyph: rltk::FontCharType,
         until_blocked: bool
     },
+    Healing
 }
 impl AnimationComponentData {
-    pub fn localize(&self, source: Option<Point>, target: Option<Point>) -> Option<AnimationBlock> {
+    pub fn localize_targeted_or_cast(&self, source: Option<Point>, target: Option<Point>) -> Option<AnimationBlock> {
         match self {
             AnimationComponentData::AreaOfEffect { radius, fg, bg, glyph } => {
-                target.map(|s| AnimationBlock::AreaOfEffect {
-                    center: s,
+                target.map(|t| AnimationBlock::AreaOfEffect {
+                    center: t,
                     radius: *radius,
                     fg: *fg,
                     bg: *bg,
@@ -332,9 +330,35 @@ impl AnimationComponentData {
                     glyph: *glyph,
                     until_blocked: *until_blocked
                 })
+            },
+            AnimationComponentData::Healing => {
+                target.map(|t| AnimationBlock::Healing { pt: t })
             }
         }
     }
+    pub fn localize_used(&self, source: Option<Point>) -> Option<AnimationBlock> {
+        match self {
+            AnimationComponentData::AreaOfEffect { radius, fg, bg, glyph } => {
+                source.map(|s| AnimationBlock::AreaOfEffect {
+                    center: s,
+                    radius: *radius,
+                    fg: *fg,
+                    bg: *bg,
+                    glyph: *glyph
+                })
+            },
+            AnimationComponentData::AlongRay {..} => { None }
+            AnimationComponentData::Healing  => {
+                source.map(|s| AnimationBlock::Healing { pt: s })
+            }
+        }
+    }
+}
+
+
+#[derive(Component, ConvertSaveload, Clone)]
+pub struct AnimationWhenUsed {
+    pub sequence: Vec<AnimationComponentData>
 }
 
 #[derive(Component, ConvertSaveload, Clone)]
@@ -403,20 +427,17 @@ fn particlize_weapon_special_recharge_animation(
 
 fn particlize_healing_animation(
     pt: Point,
-    fg: RGB,
-    bg: RGB,
-    glyph: rltk::FontCharType,
     delay: Frames
 ) -> (Vec<AnimationParticle>, Frames) {
     let mut particles = Vec::new();
-    let color_cycle = [rltk::RGB::named(rltk::RED), fg, rltk::RGB::named(rltk::RED)];
-    let glyph_cycle = [rltk::to_cp437('♥'), glyph, rltk::to_cp437('♥')];
-    for (i, (color, glyph)) in color_cycle.iter().zip(glyph_cycle.iter()).enumerate() {
+    let color_cycle_fg = [RGB::named(rltk::RED), RGB::named(rltk::WHITE), RGB::named(rltk::RED)];
+    let color_cycle_bg = [RGB::named(rltk::WHITE), RGB::named(rltk::RED), RGB::named(rltk::WHITE)];
+    for (i, (fg, bg)) in color_cycle_fg.iter().zip(color_cycle_bg.iter()).enumerate() {
         particles.push(AnimationParticle {
             pt: pt,
-            fg: *color,
-            bg: bg,
-            glyph: *glyph,
+            fg: *fg,
+            bg: *bg,
+            glyph: rltk::to_cp437('♥'),
             lifetime: ms(4),
             delay: ms(delay) + ms(4 * i as i32),
             displayed: false

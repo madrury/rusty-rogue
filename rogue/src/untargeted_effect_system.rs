@@ -1,15 +1,16 @@
 
-use super::{
-    CombatStats, HungerClock, GameLog, AnimationSequenceBuffer,
-    AnimationBlock, Name, Position, Renderable, WantsToUseUntargeted,
-    Consumable, Untargeted, Castable, InSpellBook, SpellCharges,
-    ProvidesFullHealing, ProvidesFullFood, ProvidesFullSpellRecharge,
-    MovesToRandomPosition, WantsToMoveToRandomPosition,
-    IncreasesMaxHpWhenUsed, ProvidesFireImmunityWhenUsed,
-    ProvidesChillImmunityWhenUsed, DecreasesSpellRechargeWhenUsed,
-    StatusIsImmuneToFire,
-    StatusIsImmuneToChill, new_status
+use crate::{
+    GameLog, AnimationSequenceBuffer, AnimationBlock,
 };
+use crate::components::*;
+use crate::components::hunger::*;
+use crate::components::animation::*;
+use crate::components::game_effects::*;
+use crate::components::magic::*;
+use crate::components::melee::*;
+use crate::components::signaling::*;
+use crate::components::status_effects::*;
+use crate::components::targeting::*;
 use specs::prelude::*;
 
 
@@ -21,7 +22,8 @@ pub struct UntargetedSystem {}
 pub struct UntargetedSystemData<'a> {
     entities: Entities<'a>,
     log: WriteExpect<'a, GameLog>,
-    animation_builder: WriteExpect<'a, AnimationSequenceBuffer>,
+    animation_buffer: WriteExpect<'a, AnimationSequenceBuffer>,
+    animation_when_used: ReadStorage<'a, AnimationWhenUsed>,
     names: ReadStorage<'a, Name>,
     positions: ReadStorage<'a, Position>,
     renderables: ReadStorage<'a, Renderable>,
@@ -55,7 +57,8 @@ impl<'a> System<'a> for UntargetedSystem {
         let UntargetedSystemData {
             entities,
             mut log,
-            mut animation_builder,
+            mut animation_buffer,
+            animation_when_used,
             names,
             positions,
             renderables,
@@ -81,11 +84,11 @@ impl<'a> System<'a> for UntargetedSystem {
         } = data;
 
         // TODO: Joining on combat stats here is probably incorrect.
-        for (entity, want_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
+        for (user, want_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
 
             // Stuff needed for constructing gamelog messages.
             let thing_name = names.get(want_use.thing);
-            let default_verb = "target".to_string();
+            let default_verb = "use".to_string();
             let verb = untargeteds
                 .get(want_use.thing)
                 .map(|t| t.verb.clone())
@@ -103,7 +106,7 @@ impl<'a> System<'a> for UntargetedSystem {
             let thing_heals = healing.get(want_use.thing);
             if let Some(_) = thing_heals {
                 stats.full_heal();
-                let name = names.get(entity);
+                let name = names.get(user);
                 if let (Some(name), Some(thing_name)) = (name, thing_name) {
                     log.entries.push(format!(
                         "{} {} the {}, and feels great!",
@@ -112,24 +115,14 @@ impl<'a> System<'a> for UntargetedSystem {
                         thing_name.name
                     ));
                 }
-                let pos = positions.get(entity);
-                let render = renderables.get(entity);
-                if let(Some(pos), Some(render)) = (pos, render) {
-                    animation_builder.request_block(AnimationBlock::Healing {
-                        pt: pos.to_point(),
-                        fg: render.fg,
-                        bg: render.bg,
-                        glyph: render.glyph,
-                    })
-                }
             }
 
             // Component: ProvidesFullFood
             let thing_foods = foods.get(want_use.thing);
-            let clock = hunger_clocks.get_mut(entity);
+            let clock = hunger_clocks.get_mut(user);
             if let (Some(_), Some(clock)) = (thing_foods, clock) {
                 clock.satiate();
-                let name = names.get(entity);
+                let name = names.get(user);
                 if let (Some(name), Some(thing_name)) = (name, thing_name) {
                     log.entries.push(format!(
                         "{} {} the {}, and feels full.",
@@ -145,19 +138,10 @@ impl<'a> System<'a> for UntargetedSystem {
             if let Some(provides_immunity) = thing_provides_fire_immunity {
                 new_status::<StatusIsImmuneToFire>(
                     &mut status_fire_immunity,
-                    entity,
+                    user,
                     provides_immunity.turns,
                     true
                 );
-                // let name = names.get(entity);
-                // if let (Some(name), Some(thing_name)) = (name, thing_name) {
-                //     log.entries.push(format!(
-                //         "{} {} the {}, and no longer fears fire.",
-                //         name.name,
-                //         verb,
-                //         thing_name.name
-                //     ));
-                // }
             }
 
             // Component: ProvidesChillImmunityWhenUsed
@@ -165,35 +149,17 @@ impl<'a> System<'a> for UntargetedSystem {
             if let Some(provides_immunity) = thing_provides_chill_immunity {
                 new_status::<StatusIsImmuneToChill>(
                     &mut status_chill_immunity,
-                    entity,
+                    user,
                     provides_immunity.turns,
                     true
                 );
-                // let name = names.get(entity);
-                // if let (Some(name), Some(thing_name)) = (name, thing_name) {
-                //     log.entries.push(format!(
-                //         "{} {} the {}, and no longer fears cold.",
-                //         name.name,
-                //         verb,
-                //         thing_name.name
-                //     ));
-                // }
             }
 
             // Compontnet: MovesToRandomPosition
             let thing_teleports = teleports.get(want_use.thing);
             if let Some(_) = thing_teleports {
-                wants_to_teleport.insert(entity, WantsToMoveToRandomPosition {})
+                wants_to_teleport.insert(user, WantsToMoveToRandomPosition {})
                     .expect("Failed to insert WantsToMoveToRandomPosition");
-                let user_name = names.get(entity);
-                if let (Some(thing_name), Some(user_name)) = (thing_name, user_name) {
-                    log.entries.push(format!(
-                        "You {} the {}, and {} disappears.",
-                        verb,
-                        thing_name.name,
-                        user_name.name
-                    ));
-                }
             }
 
             // Compontnet: ProvidesFullSpellRecharge
@@ -201,7 +167,7 @@ impl<'a> System<'a> for UntargetedSystem {
             if let Some(_) = thing_recharges {
                 let iterspells = (&entities, &castables, &in_spellbooks, &mut spell_charges).join();
                 let spell_charges_for_user: Vec<&mut SpellCharges> = iterspells
-                    .filter(|(_e, _c, spellbook, _sc)| spellbook.owner == entity)
+                    .filter(|(_e, _c, spellbook, _sc)| spellbook.owner == user)
                     .map(|(_e, _c, _sb, charges)| charges)
                     .collect();
                 for sc in spell_charges_for_user {
@@ -215,13 +181,26 @@ impl<'a> System<'a> for UntargetedSystem {
             if let Some(thing_decreases_recharge) = thing_decreases_recharge {
                 let iterspells = (&entities, &castables, &in_spellbooks, &mut spell_charges).join();
                 let spell_charges_for_user: Vec<&mut SpellCharges> = iterspells
-                    .filter(|(_e, _c, spellbook, _sc)| spellbook.owner == entity)
+                    .filter(|(_e, _c, spellbook, _sc)| spellbook.owner == user)
                     .map(|(_e, _c, _sb, charges)| charges)
                     .collect();
                 for sc in spell_charges_for_user {
                     sc.regen_ticks = sc.regen_ticks * (100 - thing_decreases_recharge.percentage) / 100;
                     sc.ticks = i32::min(sc.ticks, sc.regen_ticks);
                 }
+            }
+
+            //----------------------------------------------------------------
+            // Animations.
+            //----------------------------------------------------------------
+            let animation_sequence = animation_when_used.get(want_use.thing).map(|d| &d.sequence);
+            let pt = positions.get(user).map(|pos| pos.to_point());
+            if let Some(aseq) = animation_sequence {
+                let localized: Vec<AnimationBlock> = aseq.iter()
+                    .map(|data| data.localize_used(pt))
+                    .filter_map(|data| data)
+                    .collect();
+                animation_buffer.request_sequence(AnimationSequence::from_blocks(localized));
             }
 
             // If the thing was single use, clean it up.

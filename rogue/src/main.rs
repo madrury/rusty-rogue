@@ -1152,6 +1152,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusInvisibleToPlayer>();
     gs.ecs.register::<InvisibleWhenEncroachingEntityKind>();
     gs.ecs.register::<AnimationParticle>();
+    gs.ecs.register::<AnimationWhenUsed>();
     gs.ecs.register::<AnimationWhenThrown>();
     gs.ecs.register::<AnimationWhenCast>();
 

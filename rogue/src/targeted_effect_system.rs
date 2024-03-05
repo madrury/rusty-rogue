@@ -180,26 +180,6 @@ impl<'a> System<'a> for TargetedSystem {
                 let stats = combat_stats.get_mut(*target);
                 if let (Some(_), Some(stats)) = (thing_heals, stats) {
                     stats.full_heal();
-                    let target_name = names.get(*target);
-                    if let (Some(log_thing_name), Some(target_name)) = (log_thing_name, target_name) {
-                        log.entries.push(format!(
-                            "You {} the {}, healing {}.",
-                            log_verb,
-                            log_thing_name.name,
-                            target_name.name
-                        ));
-                    }
-                    // Todo: This should be included in the animation of the
-                    // targeted effect.
-                    let render = renderables.get(*target);
-                    if let Some(render) = render {
-                        animation_buffer.request_block(AnimationBlock::Healing {
-                            pt: target_point,
-                            fg: render.fg,
-                            bg: render.bg,
-                            glyph: render.glyph,
-                        })
-                    }
                 }
 
                 // Compontnet: MovesToRandomPosition
@@ -278,7 +258,6 @@ impl<'a> System<'a> for TargetedSystem {
                         thing_buffs_defense.turns,
                         true
                     );
-                    // TODO: Add a game message here.
                 }
             }
 
@@ -313,35 +292,17 @@ impl<'a> System<'a> for TargetedSystem {
             //----------------------------------------------------------------
             // Animations.
             //----------------------------------------------------------------
-            // Component: AreaOfEffectAnimationWhen{Thrown|Cast}
-            // let has_aoe_animation = aoe_animations.get(want_target.thing);
             let animation_sequence = match verb {
                 TargetingVerb::Throw => animation_when_thrown.get(want_target.thing).map(|d| &d.sequence),
                 TargetingVerb::Cast => animation_when_cast.get(want_target.thing).map(|d| &d.sequence),
             };
             if let Some(aseq) = animation_sequence {
                 let localized: Vec<AnimationBlock> = aseq.iter()
-                    .map(|data| data.localize(Some(user_point), Some(target_point)))
+                    .map(|data| data.localize_targeted_or_cast(Some(user_point), Some(target_point)))
                     .filter_map(|data| data)
                     .collect();
                 animation_buffer.request_sequence(AnimationSequence::from_blocks(localized));
             }
-
-            // Component: AlongRayAnimationWhen{Thrown|Cast}
-            // let ray_animation_data = match verb {
-            //     TargetingVerb::Throw => along_ray_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
-            //     TargetingVerb::Cast => along_ray_animation_when_cast.get(want_target.thing).map(|d| &d.0),
-            // };
-            // if let Some(rad) = ray_animation_data {
-            //     animation_builder.request(AnimationBlock::AlongRay {
-            //         source: user_point,
-            //         target: target_point,
-            //         fg: rad.fg,
-            //         bg: rad.bg,
-            //         glyph: rad.glyph,
-            //         until_blocked: rad.until_blocked
-            //     })
-            // }
 
             //----------------------------------------------------------------
             // Cleanup and resource expnditure.

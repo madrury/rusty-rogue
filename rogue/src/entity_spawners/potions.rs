@@ -41,6 +41,9 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Consumable {})
         .with(ProvidesFullHealing {})
         .with(IncreasesMaxHpWhenUsed {amount: HEALTH_POTION_MAX_HP_INCREASE})
+        .with(AnimationWhenUsed {
+            sequence: vec![AnimationComponentData::Healing]
+        })
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()

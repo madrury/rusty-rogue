@@ -431,6 +431,7 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
         .with(ProvidesFullHealing {})
         .with(AnimationWhenCast {
             sequence: vec![
+                AnimationComponentData::Healing,
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::RED),
                     bg: RGB::named(rltk::BLACK),

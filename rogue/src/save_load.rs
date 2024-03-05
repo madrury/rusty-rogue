@@ -167,6 +167,7 @@ pub fn save_game(ecs: &mut World) {
             InvisibleWhenEncroachingEntityKind,
             AnimationWhenThrown,
             AnimationWhenCast,
+            AnimationWhenUsed,
             SerializationHelper
         );
     }
@@ -328,6 +329,7 @@ pub fn load_game(ecs: &mut World) {
             InvisibleWhenEncroachingEntityKind,
             AnimationWhenThrown,
             AnimationWhenCast,
+            AnimationWhenUsed,
             SerializationHelper
         );
     }
