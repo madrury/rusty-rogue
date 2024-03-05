@@ -331,7 +331,7 @@ impl State {
         // are occupying deep water or tall grass tiles. The order of operations
         // is:
         //
-        //   EncroachmentSystem sees that the monster should be doing, and
+        //   EncroachmentSystem sees that the monster should be hidden, and
         //   creates the status effect *with timer zero*.
         //   ...Terrain Turn...Player Turn...Monster Turn...
         //   StatusTickSystem sees the timer of zero, the status falls off.
@@ -764,7 +764,6 @@ impl GameState for State {
                 if is_any_animation_alive(&self.ecs) {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
-                    process_entity_spawn_request_buffer(&mut self.ecs);
                     self.run_cleanup_systems();
                     self.run_synchronization_systems();
                     let next_state = self.next_state
@@ -774,13 +773,18 @@ impl GameState for State {
             }
             RunState::PlayerTurn => {
                 self.run_player_turn_systems();
-                self.next_state = Some(RunState::MonsterTurn);
-                newrunstate = RunState::PlayingAnimation;
+                if is_any_animation_alive(&self.ecs) {
+                    self.next_state = Some(RunState::MonsterTurn);
+                    newrunstate = RunState::PlayingAnimation;
+                } else {
+                    process_entity_spawn_request_buffer(&mut self.ecs);
+                    self.run_cleanup_systems();
+                    self.run_synchronization_systems();
+                    newrunstate = RunState::MonsterTurn;
+                }
             }
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
-                // TODO: Blessings should maybe occur in their own turn. This is
-                // kind of awkwardly placed.
                 let get_blessing = is_player_encroaching_blessing_tile(&self.ecs)
                     && does_player_have_sufficient_orbs_for_blessing(&self.ecs);
                 let nextstate = if get_blessing {
@@ -789,13 +793,25 @@ impl GameState for State {
                 } else {
                     RunState::AwaitingInput
                 };
-                self.next_state = Some(nextstate);
-                newrunstate = RunState::PlayingAnimation;
+                if is_any_animation_alive(&self.ecs) {
+                    self.next_state = Some(nextstate);
+                    newrunstate = RunState::PlayingAnimation;
+                } else {
+                    self.run_cleanup_systems();
+                    self.run_synchronization_systems();
+                    newrunstate = nextstate;
+                }
             }
             RunState::MonsterTurn => {
                 self.run_monster_turn_systems();
-                self.next_state = Some(RunState::UpkeepTrun);
-                newrunstate = RunState::PlayingAnimation;
+                if is_any_animation_alive(&self.ecs) {
+                    self.next_state = Some(RunState::UpkeepTrun);
+                    newrunstate = RunState::PlayingAnimation;
+                } else {
+                    self.run_cleanup_systems();
+                    self.run_synchronization_systems();
+                    newrunstate = RunState::UpkeepTrun
+                }
             }
             RunState::UpkeepTrun => {
                 self.run_upkeep_turn_systems();

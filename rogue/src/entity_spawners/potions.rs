@@ -141,15 +141,15 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 tick_damage: FIRE_POTION_BURNING_TICK_DAMAGE
             }
         ))
-        // .with(SpawnsEntityInAreaWhenThrown (
-        //     SpawnsEntityInAreaData {
-        //         radius: FIRE_POTION_SPAWN_RADIUS,
-        //         kind: EntitySpawnKind::Fire {
-        //             spread_chance: FIRE_POTION_SPAWN_SPREAD_CHANCE,
-        //             dissipate_chance: FIRE_POTION_SPAWN_DISSIPATE_CHANCE,
-        //         }
-        //     }
-        // ))
+        .with(SpawnsEntityInAreaWhenThrown (
+            SpawnsEntityInAreaData {
+                radius: FIRE_POTION_SPAWN_RADIUS,
+                kind: EntitySpawnKind::Fire {
+                    spread_chance: FIRE_POTION_SPAWN_SPREAD_CHANCE,
+                    dissipate_chance: FIRE_POTION_SPAWN_DISSIPATE_CHANCE,
+                }
+            }
+        ))
         .with(AnimationWhenThrown {
                 sequence: vec![
                     AnimationComponentData::AreaOfEffect {
@@ -227,15 +227,15 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 turns: CHILL_POTION_FREEZING_TURNS
             }
         ))
-        // .with(SpawnsEntityInAreaWhenThrown (
-        //     SpawnsEntityInAreaData {
-        //         radius: CHILL_POTION_SPAWN_RADIUS,
-        //         kind: EntitySpawnKind::Chill {
-        //             spread_chance: CHILL_POTION_SPAWN_SPREAD_CHANCE,
-        //             dissipate_chance: CHILL_POTION_SPAWN_DISSIPATE_CHANCE,
-        //         }
-        //     }
-        // ))
+        .with(SpawnsEntityInAreaWhenThrown (
+            SpawnsEntityInAreaData {
+                radius: CHILL_POTION_SPAWN_RADIUS,
+                kind: EntitySpawnKind::Chill {
+                    spread_chance: CHILL_POTION_SPAWN_SPREAD_CHANCE,
+                    dissipate_chance: CHILL_POTION_SPAWN_DISSIPATE_CHANCE,
+                }
+            }
+        ))
         .with(AnimationWhenThrown {
                 sequence: vec![
                     AnimationComponentData::AreaOfEffect {

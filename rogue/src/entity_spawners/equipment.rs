@@ -330,16 +330,16 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                     tick_damage: FIREBALL_BURNING_TICK_DAMAGE
                 }
             )).expect("Failed to insert burning status when creating rod.");
-            // let mut spawner = ecs.write_storage::<SpawnsEntityInAreaWhenThrown>();
-            // spawner.insert(entity, SpawnsEntityInAreaWhenThrown (
-            //     SpawnsEntityInAreaData {
-            //         radius: ROD_THROW_AOE_RANGE,
-            //         kind: EntitySpawnKind::Fire {
-            //             spread_chance: FIREBLAST_FIRE_SPREAD_CHANCE,
-            //             dissipate_chance: FIREBLAST_FIRE_DISSIPATE_CHANCE,
-            //         }
-            //     }
-            // )).expect("Failed to insert fire spawner when creating rod.");
+            let mut spawner = ecs.write_storage::<SpawnsEntityInAreaWhenThrown>();
+            spawner.insert(entity, SpawnsEntityInAreaWhenThrown (
+                SpawnsEntityInAreaData {
+                    radius: ROD_THROW_AOE_RANGE,
+                    kind: EntitySpawnKind::Fire {
+                        spread_chance: FIREBLAST_FIRE_SPREAD_CHANCE,
+                        dissipate_chance: FIREBLAST_FIRE_DISSIPATE_CHANCE,
+                    }
+                }
+            )).expect("Failed to insert fire spawner when creating rod.");
         },
         ElementalDamageKind::Freezing => {
             let mut freezing = ecs.write_storage::<InflictsFreezingWhenCast>();
@@ -382,16 +382,16 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                     turns: ICESPIKE_FREEZING_TURNS,
                 }
             )).expect("Failed to insert freezing status when creating rod.");
-            // let mut spawner = ecs.write_storage::<SpawnsEntityInAreaWhenThrown>();
-            // spawner.insert(entity, SpawnsEntityInAreaWhenThrown (
-            //     SpawnsEntityInAreaData {
-            //         radius: ROD_THROW_AOE_RANGE,
-            //         kind: EntitySpawnKind::Chill {
-            //             spread_chance: ICEBLAST_CHILL_SPREAD_CHANCE,
-            //             dissipate_chance: ICEBLAST_CHILL_DISSIPATE_CHANCE,
-            //         }
-            //     }
-            // )).expect("Failed to insert clill spawner when creating rod.");
+            let mut spawner = ecs.write_storage::<SpawnsEntityInAreaWhenThrown>();
+            spawner.insert(entity, SpawnsEntityInAreaWhenThrown (
+                SpawnsEntityInAreaData {
+                    radius: ROD_THROW_AOE_RANGE,
+                    kind: EntitySpawnKind::Chill {
+                        spread_chance: ICEBLAST_CHILL_SPREAD_CHANCE,
+                        dissipate_chance: ICEBLAST_CHILL_DISSIPATE_CHANCE,
+                    }
+                }
+            )).expect("Failed to insert clill spawner when creating rod.");
         },
         _ => panic!("Cannot create rod of element {:?}", element)
     }
