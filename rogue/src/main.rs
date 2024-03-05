@@ -777,7 +777,6 @@ impl GameState for State {
                     self.next_state = Some(RunState::MonsterTurn);
                     newrunstate = RunState::PlayingAnimation;
                 } else {
-                    process_entity_spawn_request_buffer(&mut self.ecs);
                     self.run_cleanup_systems();
                     self.run_synchronization_systems();
                     newrunstate = RunState::MonsterTurn;
