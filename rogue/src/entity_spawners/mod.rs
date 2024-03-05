@@ -104,7 +104,7 @@ fn spawn_random_item(ecs: &mut World, x: i32, y: i32, depth: i32) {
         item = random_table::RandomTable::new()
             .insert(ItemType::Turnip, 8 + depth)
             .insert(ItemType::Pomegranate, depth)
-            .insert(ItemType::HealthPotion, 500)//4 + depth)
+            .insert(ItemType::HealthPotion, 4 + depth)
             .insert(ItemType::RechargingPotion, depth)
             .insert(ItemType::TeleportationPotion, 2 + depth)
             .insert(ItemType::FirePotion, depth)
