@@ -368,7 +368,6 @@ impl State {
         dissipates.run_now(&self.ecs);
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
-        process_entity_spawn_request_buffer(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -397,7 +396,6 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut teleport = TeleportationSystem{};
         teleport.run_now(&self.ecs);
-        process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
@@ -428,7 +426,6 @@ impl State {
         teleport.run_now(&self.ecs);
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
-        process_entity_spawn_request_buffer(&mut self.ecs);
         let mut new_animations = AnimationInitSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
@@ -711,7 +708,7 @@ impl GameState for State {
                 draw_map(&self.ecs.fetch::<Map>(), ctx);
                 self.render_all(ctx);
                 self::draw_ui(&self.ecs, ctx)
-             }
+            }
         }
 
         // The state machine.
@@ -767,6 +764,7 @@ impl GameState for State {
                 if is_any_animation_alive(&self.ecs) {
                     newrunstate = RunState::PlayingAnimation;
                 } else {
+                    process_entity_spawn_request_buffer(&mut self.ecs);
                     self.run_cleanup_systems();
                     self.run_synchronization_systems();
                     let next_state = self.next_state
@@ -776,17 +774,13 @@ impl GameState for State {
             }
             RunState::PlayerTurn => {
                 self.run_player_turn_systems();
-                if is_any_animation_alive(&self.ecs) {
-                    self.next_state = Some(RunState::MonsterTurn);
-                    newrunstate = RunState::PlayingAnimation;
-                } else {
-                    self.run_cleanup_systems();
-                    self.run_synchronization_systems();
-                    newrunstate = RunState::MonsterTurn;
-                }
+                self.next_state = Some(RunState::MonsterTurn);
+                newrunstate = RunState::PlayingAnimation;
             }
             RunState::HazardTurn => {
                 self.run_hazard_turn_systems();
+                // TODO: Blessings should maybe occur in their own turn. This is
+                // kind of awkwardly placed.
                 let get_blessing = is_player_encroaching_blessing_tile(&self.ecs)
                     && does_player_have_sufficient_orbs_for_blessing(&self.ecs);
                 let nextstate = if get_blessing {
@@ -795,25 +789,13 @@ impl GameState for State {
                 } else {
                     RunState::AwaitingInput
                 };
-                if is_any_animation_alive(&self.ecs) {
-                    self.next_state = Some(nextstate);
-                    newrunstate = RunState::PlayingAnimation;
-                } else {
-                    self.run_cleanup_systems();
-                    self.run_synchronization_systems();
-                    newrunstate = nextstate;
-                }
+                self.next_state = Some(nextstate);
+                newrunstate = RunState::PlayingAnimation;
             }
             RunState::MonsterTurn => {
                 self.run_monster_turn_systems();
-                if is_any_animation_alive(&self.ecs) {
-                    self.next_state = Some(RunState::UpkeepTrun);
-                    newrunstate = RunState::PlayingAnimation;
-                } else {
-                    self.run_cleanup_systems();
-                    self.run_synchronization_systems();
-                    newrunstate = RunState::UpkeepTrun
-                }
+                self.next_state = Some(RunState::UpkeepTrun);
+                newrunstate = RunState::PlayingAnimation;
             }
             RunState::UpkeepTrun => {
                 self.run_upkeep_turn_systems();

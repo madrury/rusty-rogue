@@ -40,14 +40,6 @@ pub struct AnimationParticle {
     pub bg: RGB,
     pub glyph: rltk::FontCharType
 }
-impl AnimationParticle {
-    pub fn display(&mut self) {
-        self.displayed = true;
-    }
-    pub fn lag(&mut self, frms: Frames) {
-        self.delay += frames(frms);
-    }
-}
 
 
 //------------------------------------------------------------------------------
@@ -197,8 +189,6 @@ impl AnimationSequence {
         let mut delay: Frames = 0;
         while !self.blocks.is_empty() {
             let block = self.blocks.pop();
-            println!("Popping animation block {block:?}");
-            println!("Current delay {delay:?}");
             let newparticles = block.map(|blk| blk.particalize(map, delay));
             match newparticles {
                 Some((ps, dl)) => {
