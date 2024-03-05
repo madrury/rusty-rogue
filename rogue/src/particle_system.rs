@@ -2,30 +2,9 @@ use super::{AnimationParticle, AnimationParticleBuffer, Position, Renderable};
 use rltk::{Rltk, RGB};
 use specs::prelude::*;
 
-//----------------------------------------------------------------------------
-// Systems for handing particle effects.
-//
-// The code here handles particle effects, the atomic units of a game animation.
-// Each particle is a renderable entity with two additional parameters:
-//
-//    - delay: How long (in ms) until this particle should be rendered.
-//    - lifetime: Once rendered, how long until this particle should be removed.
-//
-// Particles are requested by adding a ParticleRequest object to the
-// ParticleBuilder queue (implemented as a struct wrapping a Vec), which is
-// asseccisble for writing to all game enetities. Once in the queue, a
-// ParticleInitSystem adds ParticleLifetime entities to the ECS. Once a tick,
-// the lifetimes of these particles are updated, and a Particle render system
-// checks the delay and lifetime parameters to see if the particle should be
-// rendered.
-//----------------------------------------------------------------------------
 
 
-//----------------------------------------------------------------------------
-// A system responsible for monitoring the ParticleBuilder contianer and
-// actually adding any requested particles (represented as ParticleLifetime
-// objects) to the ECS.
-//----------------------------------------------------------------------------
+// Empty the AnimationParticleBuffer, create entities and insert into the ECS.
 pub struct ParticleInitSystem {}
 
 impl<'a> System<'a> for ParticleInitSystem {
@@ -51,8 +30,8 @@ impl<'a> System<'a> for ParticleInitSystem {
     }
 }
 
-// A system responsible for actually rendering any particles whose delay and
-// lifetime parameters are in the correct state.
+// Attach Position and Renderable components to particle entities once the
+// rendering conditions have been met.
 pub struct ParticleRenderSystem {}
 
 impl<'a> System<'a> for ParticleRenderSystem {
@@ -89,9 +68,9 @@ impl<'a> System<'a> for ParticleRenderSystem {
     }
 }
 
-// Function responsible for monitoring all particles currently in the ECS, and
-// updating their delay and lifetime parameters according to how much time was
-// spent in the previous game tick. Additionally cleans up expired particles.
+// Monitor all particles currently in the ECS, updatie their delay and lifetime
+// state according to how much time was spent in the previous game frame.
+// Cleans up expired particles when their lifetime is expired..
 pub fn update_particle_lifetimes(ecs: &mut World, ctx: &Rltk) {
     let mut dead_particles: Vec<Entity> = Vec::new();
     {

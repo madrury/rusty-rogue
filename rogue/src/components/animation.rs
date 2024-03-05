@@ -1,4 +1,3 @@
-use log::{info};
 use specs::prelude::*;
 use specs_derive::*;
 use specs::saveload::{ConvertSaveload, Marker};
@@ -8,14 +7,77 @@ use rltk::{RGB, Point};
 
 use crate::Map;
 
-//------------------------------------------------------------------
-// Components and data structures for game animations.
-//------------------------------------------------------------------
+/*
+Components and Data Structures for Game Animations
+--------------------------------------------------
+
+Data structures, components, and functions for modeling game animations are
+included here.
+
+We model animations at varying levels of abstraction, so that entities may
+specify animations at a high level (i.e. "animate an object moving along a ray
+followed by an area of effect"), which is broken down into atomic particles that
+are what's actually rendered.
+
+AnimationParticles
+------------------
+At the lowest level, an animation is assembled from atomic AnimationParticles,
+which are rendered after some delay (ms) for a finite lifetime (ms).
+AnimationParticle is a component encalsulating the rendering information needed,
+when running the animation it is attached to an uninteractable entity only for
+the purposes of rendering.
+
+AnimationBlock
+--------------
+A higher level abstraction of an animation, intended to be the functional pieces
+that are composed into single animation events. For example, throwing a fire
+potion (which then explodes) is represented as:
+
+    AnimationBlock::AlongRay {..} -> AnimationBlock::AreaOfEffect {..}
+
+AnimationBlockes are transformed into a set of AnimationParticles, a process we
+call particalization.
+
+Animation blocks are often created during the running of game systems when some
+event is known to occur. For example, a weapon special recharging creates a
+AnimationDlock::WeaponSpecialRecharge {..} and inserts it into a buffer ECS
+resource for later particalization.
+
+AnimationSequence
+-----------------
+Encapsulates a sequence of animation blocks, as in teh afomentioned example:
+
+    AnimationSequence:
+    [AnimationBlock::AlongRay {..}, AnimationBlock::AreaOfEffect {..}]
+
+This is useful because, when particalizing a *sequence* that is meant to be
+played one after the other, we need to track the total lifetime of the first
+block. It is useful to have an encapsulating object to attach this sequence
+particalization opeartion to.
+
+AnimationComponentData
+----------------------
+The highest level of specifiation, embedded within a component to indicate that
+some action trigers an animation. For example:
+
+    AnimationWhenThrown {
+        sequence: vec![
+            AnimationComponentData::AlongRay {..}.
+            AnimationComponentData::AreaOfEffect {..}.
+        ]
+    }
+
+An AnimationComponentData obejct is *localized* when the indicated action is
+detected, which means we combine the data with the current game state (positions
+of the entities at play) to produce a sequence of AnimationBlocks, whcih are
+inserted into the ECS.
+*/
+
 type Milliseconds = f32;
 type Frames = i32;
 
 const FRAME_TIME_MS: Milliseconds = 16.666666666666668;
-fn frames(frms: Frames) -> Milliseconds {FRAME_TIME_MS * frms as f32}
+fn ms(frms: Frames) -> Milliseconds {FRAME_TIME_MS * frms as f32}
 
 //------------------------------------------------------------------------------
 // An atomic, irreducible piece of a game animation. Rendered for an interval of
@@ -33,8 +95,6 @@ pub struct AnimationParticle {
     // delay_ms has passed after adding the particle to the ECS.
     pub displayed: bool,
     // Rendering data.
-    // TODO: Should we introduce a simpledata structure enacapsulating this
-    // data, which is the same as included in the Renderable component.
     pub pt: Point,
     pub fg: RGB,
     pub bg: RGB,
@@ -45,6 +105,9 @@ pub struct AnimationParticle {
 //------------------------------------------------------------------------------
 // An ECS resource for holding AnimationParticle components that have not yet
 // been attached to new enetities for rendering in the game engine.
+//
+// This buffer processed in ParticleInitSystem, which empties the buffer and
+// inserts renderable entities intot he ECS.
 //------------------------------------------------------------------------------
 pub struct AnimationParticleBuffer {
     requests: Vec<AnimationParticle>,
@@ -144,14 +207,14 @@ impl AnimationBlock {
     pub fn particalize(&self, map: &Map, delay: Frames) -> (Vec<AnimationParticle>, Frames) {
         match self {
             AnimationBlock::MeleeAttack {pt, bg, glyph} => {
-                make_melee_animation(*pt, *bg, *glyph, delay)
+                particlize_melee_animation(*pt, *bg, *glyph, delay)
             }
             AnimationBlock::Healing { pt, fg, bg, glyph, } =>
-                make_healing_animation(*pt, *fg, *bg, *glyph, delay),
+                particlize_healing_animation(*pt, *fg, *bg, *glyph, delay),
             AnimationBlock::WeaponSpecialRecharge { pt, fg, bg, owner_glyph, weapon_glyph } =>
-                make_weapon_special_recharge_animation(*pt, *fg, *bg, *owner_glyph, *weapon_glyph, delay),
+                particlize_weapon_special_recharge_animation(*pt, *fg, *bg, *owner_glyph, *weapon_glyph, delay),
             AnimationBlock::AreaOfEffect { center, fg, bg, glyph, radius } =>
-                make_aoe_animation(&*map, *center, *fg, *bg, *glyph, *radius, delay),
+                particlize_aoe_animation(&*map, *center, *fg, *bg, *glyph, *radius, delay),
             AnimationBlock::AlongRay {
                 source,
                 target,
@@ -159,7 +222,7 @@ impl AnimationBlock {
                 bg,
                 glyph,
                 until_blocked
-            } => make_along_ray_animation(
+            } => particlize_along_ray_animation(
                 &*map,
                 *source,
                 *target,
@@ -170,13 +233,15 @@ impl AnimationBlock {
                 delay
             ),
             AnimationBlock::SpinAttack { pt, fg, glyph }
-                => make_spin_attack_animation(*pt, *fg, *glyph, delay),
+                => particlize_spin_attack_animation(*pt, *fg, *glyph, delay),
             AnimationBlock::Teleportation {pt, bg}
-                => make_teleportation_animation(*pt, *bg, delay),
+                => particlize_teleportation_animation(*pt, *bg, delay),
         }
     }
 }
 
+// Encapsulates a sequence of AnimationBlocks constituting a single event's
+// animation.
 pub struct AnimationSequence {
     pub blocks: Vec<AnimationBlock>
 }
@@ -203,6 +268,8 @@ impl AnimationSequence {
     }
 }
 
+// ECS resource for buffering AnimationSequences. Processed in
+// AnimationParticlizationSystem.
 pub struct AnimationSequenceBuffer {
     requests: Vec<AnimationSequence>,
 }
@@ -227,6 +294,8 @@ impl AnimationSequenceBuffer {
 }
 
 
+// Component level data triggering a game animation when the owner is
+// Thrown|Cast.
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum AnimationComponentData {
     AreaOfEffect {
@@ -279,11 +348,9 @@ pub struct AnimationWhenCast {
 }
 
 //----------------------------------------------------------------------------
-// Animation implementations.
+// Particlization implementations.
 //----------------------------------------------------------------------------
-
-// A melee attack animation. The targeted entity flashes briefly.
-fn make_melee_animation(
+fn particlize_melee_animation(
     pt: Point,
     bg: RGB,
     glyph: rltk::FontCharType,
@@ -301,16 +368,15 @@ fn make_melee_animation(
             fg: *color,
             bg: bg,
             glyph: glyph,
-            lifetime: frames(2),
-            delay: frames(delay) + frames(2 * i as i32),
+            lifetime: ms(2),
+            delay: ms(delay) + ms(2 * i as i32),
             displayed: false
         })
     }
     (particles, delay + 3 * 2)
 }
 
-// The weapon special has recharged.
-fn make_weapon_special_recharge_animation(
+fn particlize_weapon_special_recharge_animation(
     pt: Point,
     fg: RGB,
     bg: RGB,
@@ -327,16 +393,15 @@ fn make_weapon_special_recharge_animation(
             fg: *color,
             bg: bg,
             glyph: *glyph,
-            lifetime: frames(4),
-            delay: frames(delay) + frames(4 * i as i32),
+            lifetime: ms(4),
+            delay: ms(delay) + ms(4 * i as i32),
             displayed: false
         })
     }
     (particles, delay + 3 * 4)
 }
 
-// A healing animation. A heart flashes quickly.
-fn make_healing_animation(
+fn particlize_healing_animation(
     pt: Point,
     fg: RGB,
     bg: RGB,
@@ -352,16 +417,15 @@ fn make_healing_animation(
             fg: *color,
             bg: bg,
             glyph: *glyph,
-            lifetime: frames(4),
-            delay: frames(delay) + frames(4 * i as i32),
+            lifetime: ms(4),
+            delay: ms(delay) + ms(4 * i as i32),
             displayed: false
         })
     }
     (particles, delay + 3 * 4)
 }
 
-// An aoe animation. Color cycles glyphs in a circle around a point.
-fn make_aoe_animation(
+fn particlize_aoe_animation(
     map: &Map,
     pt: Point,
     fg: RGB,
@@ -381,8 +445,8 @@ fn make_aoe_animation(
                 fg: *fg,
                 bg: *bg,
                 glyph: glyph,
-                lifetime: frames(2),
-                delay: frames(delay) + frames(2 * i as i32),
+                lifetime: ms(2),
+                delay: ms(delay) + ms(2 * i as i32),
                 displayed: false
             })
         }
@@ -390,8 +454,7 @@ fn make_aoe_animation(
     (particles, delay + 6 * 2)
 }
 
-// An animation that travels along a ray from source to target.
-fn make_along_ray_animation(
+fn particlize_along_ray_animation(
     map: &Map,
     source: Point,
     target: Point,
@@ -410,16 +473,15 @@ fn make_along_ray_animation(
             fg: fg,
             bg: bg,
             glyph: glyph,
-            lifetime: frames(4),
-            delay: frames(delay) + frames(3 * i as i32),
+            lifetime: ms(4),
+            delay: ms(delay) + ms(3 * i as i32),
             displayed: false
         })
     }
     (particles, delay + 3 * n_tiles as i32)
 }
 
-// A healing animation. A heart flashes quickly.
-fn make_teleportation_animation(
+fn particlize_teleportation_animation(
     pt: Point,
     bg: RGB,
     delay: Frames
@@ -432,16 +494,15 @@ fn make_teleportation_animation(
             fg: rltk::RGB::named(rltk::MEDIUM_PURPLE),
             bg: bg,
             glyph: *glyph,
-            lifetime: frames(4),
-            delay: frames(delay) + frames(4 * i as i32),
+            lifetime: ms(4),
+            delay: ms(delay) + ms(4 * i as i32),
             displayed: false
         })
     }
     (particles, delay + 3 * 4)
 }
 
-// Spin attack, like in Link to the Past.
-fn make_spin_attack_animation(
+fn particlize_spin_attack_animation(
     pt: Point,
     fg: RGB,
     glyph: rltk::FontCharType,
@@ -464,8 +525,8 @@ fn make_spin_attack_animation(
             // solution to this problem.
             bg: rltk::RGB::named(rltk::BLACK),
             glyph: glyph,
-            lifetime: frames(4),
-            delay: frames(delay) + frames(2 * i as i32),
+            lifetime: ms(4),
+            delay: ms(delay) + ms(2 * i as i32),
             displayed: false
         })
     }
