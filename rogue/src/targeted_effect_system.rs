@@ -2,7 +2,7 @@ use log::{info, warn};
 use specs::prelude::*;
 
 use crate::{
-    Map, Point, GameLog, AnimationRequestBuffer, AnimationRequest,
+    Map, Point, GameLog, AnimationSequenceBuffer, AnimationBlock,
     EntitySpawnRequestBuffer, EntitySpawnRequest, new_status_with_immunity,
     new_combat_stats_status
 };
@@ -27,7 +27,7 @@ pub struct TargetedSystemData<'a> {
         entities: Entities<'a>,
         map: ReadExpect<'a, Map>,
         log: WriteExpect<'a, GameLog>,
-        animation_builder: WriteExpect<'a, AnimationRequestBuffer>,
+        animation_buffer: WriteExpect<'a, AnimationSequenceBuffer>,
         spawn_buffer: WriteExpect<'a, EntitySpawnRequestBuffer>,
         names: ReadStorage<'a, Name>,
         renderables: ReadStorage<'a, Renderable>,
@@ -53,10 +53,8 @@ pub struct TargetedSystemData<'a> {
         buff_attack_when_cast: WriteStorage<'a, BuffsMeleeAttackWhenCast>,
         buff_defense_when_cast: WriteStorage<'a, BuffsPhysicalDefenseWhenCast>,
         move_to_position_when_cast: ReadStorage<'a, MoveToPositionWhenCast>,
-        aoe_animation_when_thrown: ReadStorage<'a, AreaOfEffectAnimationWhenThrown>,
-        aoe_animation_when_cast: ReadStorage<'a, AreaOfEffectAnimationWhenCast>,
-        along_ray_animation_when_thrown: ReadStorage<'a, AlongRayAnimationWhenThrown>,
-        along_ray_animation_when_cast: ReadStorage<'a, AlongRayAnimationWhenCast>,
+        animation_when_thrown: ReadStorage<'a, AnimationWhenThrown>,
+        animation_when_cast: ReadStorage<'a, AnimationWhenCast>,
         spawns_entity_in_area_when_thrown: ReadStorage<'a, SpawnsEntityInAreaWhenThrown>,
         spawns_entity_in_area_when_cast: ReadStorage<'a, SpawnsEntityInAreaWhenCast>,
         apply_damages: WriteStorage<'a, WantsToTakeDamage>,
@@ -80,7 +78,7 @@ impl<'a> System<'a> for TargetedSystem {
             entities,
             map,
             mut log,
-            mut animation_builder,
+            mut animation_buffer,
             mut spawn_buffer,
             names,
             renderables,
@@ -106,10 +104,8 @@ impl<'a> System<'a> for TargetedSystem {
             buff_attack_when_cast,
             buff_defense_when_cast,
             move_to_position_when_cast,
-            aoe_animation_when_thrown,
-            aoe_animation_when_cast,
-            along_ray_animation_when_thrown,
-            along_ray_animation_when_cast,
+            animation_when_thrown,
+            animation_when_cast,
             spawns_entity_in_area_when_thrown,
             spawns_entity_in_area_when_cast,
             mut apply_damages,
@@ -184,24 +180,6 @@ impl<'a> System<'a> for TargetedSystem {
                 let stats = combat_stats.get_mut(*target);
                 if let (Some(_), Some(stats)) = (thing_heals, stats) {
                     stats.full_heal();
-                    let target_name = names.get(*target);
-                    if let (Some(log_thing_name), Some(target_name)) = (log_thing_name, target_name) {
-                        log.entries.push(format!(
-                            "You {} the {}, healing {}.",
-                            log_verb,
-                            log_thing_name.name,
-                            target_name.name
-                        ));
-                    }
-                    let render = renderables.get(*target);
-                    if let Some(render) = render {
-                        animation_builder.request(AnimationRequest::Healing {
-                            pt: target_point,
-                            fg: render.fg,
-                            bg: render.bg,
-                            glyph: render.glyph,
-                        })
-                    }
                 }
 
                 // Compontnet: MovesToRandomPosition
@@ -280,7 +258,6 @@ impl<'a> System<'a> for TargetedSystem {
                         thing_buffs_defense.turns,
                         true
                     );
-                    // TODO: Add a game message here.
                 }
             }
 
@@ -315,36 +292,16 @@ impl<'a> System<'a> for TargetedSystem {
             //----------------------------------------------------------------
             // Animations.
             //----------------------------------------------------------------
-            // Component: AreaOfEffectAnimationWhen{Thrown|Cast}
-            // let has_aoe_animation = aoe_animations.get(want_target.thing);
-            let aoe_animation_data = match verb {
-                TargetingVerb::Throw => aoe_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
-                TargetingVerb::Cast => aoe_animation_when_cast.get(want_target.thing).map(|d| &d.0),
+            let animation_sequence = match verb {
+                TargetingVerb::Throw => animation_when_thrown.get(want_target.thing).map(|d| &d.sequence),
+                TargetingVerb::Cast => animation_when_cast.get(want_target.thing).map(|d| &d.sequence),
             };
-            if let Some(aoead) = aoe_animation_data {
-                animation_builder.request(AnimationRequest::AreaOfEffect {
-                    center: target_point,
-                    fg: aoead.fg,
-                    bg: aoead.bg,
-                    glyph: aoead.glyph,
-                    radius: aoead.radius
-                })
-            }
-
-            // Component: AlongRayAnimationWhen{Thrown|Cast}
-            let ray_animation_data = match verb {
-                TargetingVerb::Throw => along_ray_animation_when_thrown.get(want_target.thing).map(|d| &d.0),
-                TargetingVerb::Cast => along_ray_animation_when_cast.get(want_target.thing).map(|d| &d.0),
-            };
-            if let Some(rad) = ray_animation_data {
-                animation_builder.request(AnimationRequest::AlongRay {
-                    source: user_point,
-                    target: target_point,
-                    fg: rad.fg,
-                    bg: rad.bg,
-                    glyph: rad.glyph,
-                    until_blocked: rad.until_blocked
-                })
+            if let Some(aseq) = animation_sequence {
+                let localized: Vec<AnimationBlock> = aseq.iter()
+                    .map(|data| data.localize_targeted_or_cast(Some(user_point), Some(target_point)))
+                    .filter_map(|data| data)
+                    .collect();
+                animation_buffer.request_sequence(AnimationSequence::from_blocks(localized));
             }
 
             //----------------------------------------------------------------

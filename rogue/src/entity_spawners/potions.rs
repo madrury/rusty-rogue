@@ -41,6 +41,9 @@ pub fn health(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
         .with(Consumable {})
         .with(ProvidesFullHealing {})
         .with(IncreasesMaxHpWhenUsed {amount: HEALTH_POTION_MAX_HP_INCREASE})
+        .with(AnimationWhenUsed {
+            sequence: vec![AnimationComponentData::Healing]
+        })
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -150,14 +153,23 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 }
             }
         ))
-        .with(AreaOfEffectAnimationWhenThrown (
-            AreaOfEffectAnimationData {
-                radius: FIRE_POTION_AOE_RADIUS,
-                fg: RGB::named(rltk::ORANGE),
-                bg: RGB::named(rltk::RED),
-                glyph: rltk::to_cp437('^')
+        .with(AnimationWhenThrown {
+                sequence: vec![
+                    AnimationComponentData::AreaOfEffect {
+                        radius: FIRE_POTION_AOE_RADIUS,
+                        fg: RGB::named(rltk::ORANGE),
+                        bg: RGB::named(rltk::RED),
+                        glyph: rltk::to_cp437('^')
+                    },
+                    AnimationComponentData::AlongRay {
+                        glyph: rltk::to_cp437('¿'),
+                        fg: RGB::named(rltk::ORANGE),
+                        bg: RGB::named(rltk::BLACK),
+                        until_blocked: true
+                    },
+                ]
             }
-        ))
+        )
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -227,14 +239,23 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 }
             }
         ))
-        .with(AreaOfEffectAnimationWhenThrown (
-            AreaOfEffectAnimationData {
-                radius: CHILL_POTION_AOE_RADIUS,
-                fg: RGB::named(rltk::WHITE),
-                bg: RGB::named(rltk::LIGHT_BLUE),
-                glyph: rltk::to_cp437('*')
+        .with(AnimationWhenThrown {
+                sequence: vec![
+                    AnimationComponentData::AreaOfEffect {
+                        radius: CHILL_POTION_AOE_RADIUS,
+                        fg: RGB::named(rltk::WHITE),
+                        bg: RGB::named(rltk::LIGHT_BLUE),
+                        glyph: rltk::to_cp437('*')
+                    },
+                    AnimationComponentData::AlongRay {
+                        glyph: rltk::to_cp437('¿'),
+                        fg: RGB::named(rltk::LIGHT_BLUE),
+                        bg: RGB::named(rltk::BLACK),
+                        until_blocked: true
+                    },
+                ]
             }
-        ))
+        )
         .with(StatusIsImmuneToFire {remaining_turns: i32::MAX, render_glyph: false})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()

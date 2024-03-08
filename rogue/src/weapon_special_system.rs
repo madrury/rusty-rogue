@@ -4,7 +4,7 @@ use crate::components::magic::*;
 
 use super::{
     GameLog, Name, Position, WeaponSpecial, Equipped, Renderable,
-    AnimationRequestBuffer, AnimationRequest
+    AnimationSequenceBuffer, AnimationBlock
 };
 
 //----------------------------------------------------------------------------
@@ -15,7 +15,7 @@ pub struct WeaponSpecialTickSystem {}
 #[derive(SystemData)]
 pub struct WeaponSpecialTickSystemData<'a> {
     entities: Entities<'a>,
-    animation_buffer: WriteExpect<'a, AnimationRequestBuffer>,
+    animation_buffer: WriteExpect<'a, AnimationSequenceBuffer>,
     log: WriteExpect<'a, GameLog>,
     names: ReadStorage<'a, Name>,
     positions: WriteStorage<'a, Position>,
@@ -70,7 +70,7 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
             }
 
             if let(Some(pos), Some(orender), Some(wrender)) = (ownerposition, ownerrender, weaponrender) {
-                animation_buffer.request(AnimationRequest::WeaponSpecialRecharge {
+                animation_buffer.request_block(AnimationBlock::WeaponSpecialRecharge {
                     pt: pos.to_point(),
                     fg: orender.fg,
                     bg: orender.bg,

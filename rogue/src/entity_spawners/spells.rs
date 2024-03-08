@@ -63,14 +63,17 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
                 tick_damage: FIREBALL_BURNING_TICK_DAMAGE
             }
         ))
-        .with(AlongRayAnimationWhenCast (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::ORANGE),
-                bg: RGB::named(rltk::RED),
-                glyph: rltk::to_cp437('^'),
-                until_blocked: true
+        .with(AnimationWhenCast {
+                sequence: vec![
+                    AnimationComponentData::AlongRay {
+                        fg: RGB::named(rltk::ORANGE),
+                        bg: RGB::named(rltk::RED),
+                        glyph: rltk::to_cp437('^'),
+                        until_blocked: true
+                    },
+                ]
             }
-        ))
+        )
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -139,14 +142,17 @@ pub fn fireblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 }
             }
         ))
-        .with(AreaOfEffectAnimationWhenCast (
-            AreaOfEffectAnimationData {
-                radius: FIREBLAST_AOE_RADIUS,
-                fg: RGB::named(rltk::ORANGE),
-                bg: RGB::named(rltk::RED),
-                glyph: rltk::to_cp437('^')
-            }
-        ))
+        .with(AnimationWhenCast {
+            sequence: vec![
+                AnimationComponentData::AreaOfEffect {
+                    radius: FIREBLAST_AOE_RADIUS,
+                    fg: RGB::named(rltk::ORANGE),
+                    bg: RGB::named(rltk::RED),
+                    glyph: rltk::to_cp437('^')
+                }
+
+            ]
+        })
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -199,14 +205,16 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
         .with(InflictsFreezingWhenCast (
             InflictsFreezingData { turns: ICESPIKE_FREEZING_TURNS }
         ))
-        .with(AlongRayAnimationWhenCast (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::WHITE),
-                bg: RGB::named(rltk::LIGHT_BLUE),
-                glyph: rltk::to_cp437('*'),
-                until_blocked: true
-            }
-        ))
+        .with(AnimationWhenCast {
+                sequence: vec![
+                    AnimationComponentData::AlongRay {
+                        fg: RGB::named(rltk::WHITE),
+                        bg: RGB::named(rltk::LIGHT_BLUE),
+                        glyph: rltk::to_cp437('*'),
+                        until_blocked: true
+                }
+            ]
+        })
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -274,14 +282,16 @@ pub fn iceblast(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                 }
             }
         ))
-        .with(AreaOfEffectAnimationWhenCast (
-            AreaOfEffectAnimationData {
-                radius: ICEBLAST_AOE_RADIUS,
-                fg: RGB::named(rltk::WHITE),
-                bg: RGB::named(rltk::LIGHT_BLUE),
-                glyph: rltk::to_cp437('*')
-            }
-        ))
+        .with(AnimationWhenCast {
+            sequence: vec![
+                AnimationComponentData::AreaOfEffect {
+                    radius: ICEBLAST_AOE_RADIUS,
+                    fg: RGB::named(rltk::WHITE),
+                    bg: RGB::named(rltk::LIGHT_BLUE),
+                    glyph: rltk::to_cp437('*')
+                }
+            ]
+        })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     Some(entity)
@@ -324,14 +334,16 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
                 element: ElementalDamageKind::Physical
             }
         ))
-        .with(AlongRayAnimationWhenCast (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::SILVER),
-                bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('.'),
-                until_blocked: true
-            }
-        ))
+        .with(AnimationWhenCast {
+            sequence: vec![
+                AnimationComponentData::AlongRay {
+                    fg: RGB::named(rltk::SILVER),
+                    bg: RGB::named(rltk::BLACK),
+                    glyph: rltk::to_cp437('.'),
+                    until_blocked: true
+                }
+            ]
+        })
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -371,14 +383,16 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             kind: TargetingKind::AlongRay {until_blocked: false}
         })
         .with(MoveToPositionWhenCast {})
-        .with(AlongRayAnimationWhenCast (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::PURPLE),
-                bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('@'),
-                until_blocked: false
-            }
-        ))
+        .with(AnimationWhenCast {
+            sequence: vec![
+                AnimationComponentData::AlongRay {
+                    fg: RGB::named(rltk::PURPLE),
+                    bg: RGB::named(rltk::BLACK),
+                    glyph: rltk::to_cp437('@'),
+                    until_blocked: false
+                }
+            ]
+        })
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -415,14 +429,17 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(ProvidesFullHealing {})
-        .with(AlongRayAnimationWhenCast (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('♥'),
-                until_blocked: true
-            }
-        ))
+        .with(AnimationWhenCast {
+            sequence: vec![
+                AnimationComponentData::Healing,
+                AnimationComponentData::AlongRay {
+                    fg: RGB::named(rltk::RED),
+                    bg: RGB::named(rltk::BLACK),
+                    glyph: rltk::to_cp437('♥'),
+                    until_blocked: true
+                }
+            ]
+        })
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -459,14 +476,16 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(BuffsMeleeAttackWhenCast {turns: 10})
-        .with(AlongRayAnimationWhenCast (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('▲'),
-                until_blocked: true
-            }
-        ))
+        .with(AnimationWhenCast {
+            sequence: vec![
+                AnimationComponentData::AlongRay {
+                    fg: RGB::named(rltk::RED),
+                    bg: RGB::named(rltk::BLACK),
+                    glyph: rltk::to_cp437('▲'),
+                    until_blocked: true
+                }
+            ]
+        })
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()
@@ -503,14 +522,16 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
             kind: TargetingKind::AlongRay {until_blocked: true}
         })
         .with(BuffsPhysicalDefenseWhenCast {turns: 10})
-        .with(AlongRayAnimationWhenCast (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::BLUE),
-                bg: RGB::named(rltk::BLACK),
-                glyph: rltk::to_cp437('▲'),
-                until_blocked: true
-            }
-        ))
+        .with(AnimationWhenCast {
+            sequence: vec![
+                AnimationComponentData::AlongRay {
+                    fg: RGB::named(rltk::BLUE),
+                    bg: RGB::named(rltk::BLACK),
+                    glyph: rltk::to_cp437('▲'),
+                    until_blocked: true
+                }
+            ]
+        })
         .with(DissipateWhenBurning {})
         .with(StatusIsImmuneToChill {remaining_turns: i32::MAX, render_glyph: false})
         .marked::<SimpleMarker<SerializeMe>>()

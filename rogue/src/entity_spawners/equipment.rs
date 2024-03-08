@@ -64,14 +64,16 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
                 element: ElementalDamageKind::Physical
             }
         ))
-        .with(AlongRayAnimationWhenThrown (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::SILVER),
-                bg: RGB::named(rltk::BLACK),
-                glyph: DAGGER_GLYPH,
-                until_blocked: true
-            }
-        ))
+        .with(AnimationWhenThrown {
+            sequence: vec![
+                AnimationComponentData::AlongRay {
+                    fg: RGB::named(rltk::SILVER),
+                    bg: RGB::named(rltk::BLACK),
+                    glyph: DAGGER_GLYPH,
+                    until_blocked: true
+                }
+            ]
+        })
         .with(WeaponSpecial {
             regen_time: DAGGER_SPECIAL_REGEN_TURNS,
             time: 0,
@@ -123,14 +125,16 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
                 element: ElementalDamageKind::Physical
             }
         ))
-        .with(AlongRayAnimationWhenThrown (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::SILVER),
-                bg: RGB::named(rltk::BLACK),
-                glyph: SWORD_GLYPH,
-                until_blocked: true
-            }
-        ))
+        .with(AnimationWhenThrown {
+            sequence: vec![
+                AnimationComponentData::AlongRay {
+                    fg: RGB::named(rltk::SILVER),
+                    bg: RGB::named(rltk::BLACK),
+                    glyph: SWORD_GLYPH,
+                    until_blocked: true
+                }
+            ]
+        })
         .with(WeaponSpecial {
             regen_time: SWORD_SPECIAL_REGEN_TURNS,
             time: 0,
@@ -181,14 +185,16 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
                 element: ElementalDamageKind::Physical
             }
         ))
-        .with(AlongRayAnimationWhenThrown (
-            AlongRayAnimationData {
-                fg: RGB::named(rltk::SILVER),
-                bg: RGB::named(rltk::BLACK),
-                glyph: RAPIER_GLYPH,
-                until_blocked: true
-            }
-        ))
+        .with(AnimationWhenThrown {
+            sequence: vec![
+                AnimationComponentData::AlongRay {
+                    fg: RGB::named(rltk::SILVER),
+                    bg: RGB::named(rltk::BLACK),
+                    glyph: RAPIER_GLYPH,
+                    until_blocked: true
+                }
+            ]
+        })
         .with(WeaponSpecial {
             regen_time: RAPIER_SPECIAL_REGEN_TURNS,
             time: 0,
@@ -258,14 +264,6 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                 element
             }
         ))
-        .with(AlongRayAnimationWhenThrown (
-            AlongRayAnimationData {
-                fg: fg,
-                bg: RGB::named(rltk::BLACK),
-                glyph: ROD_GLYPH,
-                until_blocked: true
-            }
-        ))
         .with(WeaponSpecial {
             regen_time: ROD_SPECIAL_REGEN_TURNS,
             time: 0,
@@ -296,15 +294,35 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                     tick_damage: FIREBALL_BURNING_TICK_DAMAGE
                 }
             )).expect("Failed to insert burning component when creating rod.");
-            let mut animation = ecs.write_storage::<AlongRayAnimationWhenCast>();
-            animation.insert(entity, AlongRayAnimationWhenCast (
-                AlongRayAnimationData {
-                    fg: RGB::named(rltk::ORANGE),
-                    bg: RGB::named(rltk::RED),
-                    glyph: rltk::to_cp437('^'),
-                    until_blocked: true
-                }
-            )).expect("Falied to insert animation when creating rod.");
+
+            let mut castanimation = ecs.write_storage::<AnimationWhenCast>();
+            castanimation.insert(entity, AnimationWhenCast {
+                sequence: vec![
+                    AnimationComponentData::AlongRay {
+                        fg: RGB::named(rltk::ORANGE),
+                        bg: RGB::named(rltk::RED),
+                        glyph: rltk::to_cp437('^'),
+                        until_blocked: true
+                    },
+                ]
+            }).expect("Falied to insert cast animation when creating rod.");
+            let mut throwanimation = ecs.write_storage::<AnimationWhenThrown>();
+            throwanimation.insert(entity, AnimationWhenThrown {
+                sequence: vec![
+                    AnimationComponentData::AreaOfEffect {
+                        radius: ROD_THROW_AOE_RANGE,
+                        fg: RGB::named(rltk::ORANGE),
+                        bg: RGB::named(rltk::RED),
+                        glyph: rltk::to_cp437('^')
+                    },
+                    AnimationComponentData::AlongRay {
+                        fg: fg,
+                        bg: RGB::named(rltk::BLACK),
+                        glyph: ROD_GLYPH,
+                        until_blocked: true
+                    },
+                ]
+            }).expect("Falied to insert throw animation when creating rod.");
             let mut burning = ecs.write_storage::<InflictsBurningWhenThrown>();
             burning.insert(entity, InflictsBurningWhenThrown (
                 InflictsBurningData {
@@ -330,15 +348,34 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                     turns: ICESPIKE_FREEZING_TURNS,
                 }
             )).expect("Failed to insert freezing component when creating rod.");
-            let mut animation = ecs.write_storage::<AlongRayAnimationWhenCast>();
-            animation.insert(entity, AlongRayAnimationWhenCast (
-                AlongRayAnimationData {
-                    fg: RGB::named(rltk::WHITE),
-                    bg: RGB::named(rltk::LIGHT_BLUE),
-                    glyph: rltk::to_cp437('*'),
-                    until_blocked: true
-                }
-            )).expect("Falied to insert animation when creating rod.");
+            let mut castanimation = ecs.write_storage::<AnimationWhenCast>();
+            castanimation.insert(entity, AnimationWhenCast {
+                sequence: vec![
+                    AnimationComponentData::AlongRay {
+                        fg: RGB::named(rltk::WHITE),
+                        bg: RGB::named(rltk::LIGHT_BLUE),
+                        glyph: rltk::to_cp437('*'),
+                        until_blocked: true
+                    },
+                ]
+            }).expect("Falied to insert animation when creating rod.");
+            let mut throwanimation = ecs.write_storage::<AnimationWhenThrown>();
+            throwanimation.insert(entity, AnimationWhenThrown {
+                sequence: vec![
+                    AnimationComponentData::AreaOfEffect {
+                        radius: ROD_THROW_AOE_RANGE,
+                        fg: RGB::named(rltk::WHITE),
+                        bg: RGB::named(rltk::LIGHT_BLUE),
+                        glyph: rltk::to_cp437('*')
+                    },
+                    AnimationComponentData::AlongRay {
+                        fg: fg,
+                        bg: RGB::named(rltk::BLACK),
+                        glyph: ROD_GLYPH,
+                        until_blocked: true
+                    },
+                ]
+            }).expect("Falied to insert animation when creating rod.");
             let mut freezing = ecs.write_storage::<InflictsFreezingWhenThrown>();
             freezing.insert(entity, InflictsFreezingWhenThrown (
                 InflictsFreezingData {

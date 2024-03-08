@@ -77,7 +77,7 @@ use gamelog::GameLog;
 //--------------------------------------------------------------------
 // Debug flags.
 //--------------------------------------------------------------------
-const DEBUG_DRAW_ALL_MAP: bool = true;
+const DEBUG_DRAW_ALL_MAP: bool = false;
 const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
@@ -332,7 +332,7 @@ impl State {
         // are occupying deep water or tall grass tiles. The order of operations
         // is:
         //
-        //   EncroachmentSystem sees that the monster should be doing, and
+        //   EncroachmentSystem sees that the monster should be hidden, and
         //   creates the status effect *with timer zero*.
         //   ...Terrain Turn...Player Turn...Monster Turn...
         //   StatusTickSystem sees the timer of zero, the status falls off.
@@ -353,7 +353,7 @@ impl State {
         charges.run_now(&self.ecs);
         let mut encroachment = EncroachmentSystem{};
         encroachment.run_now(&self.ecs);
-        let mut new_animations = AnimationInitSystem{};
+        let mut new_animations = AnimationParticlizationSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
@@ -369,7 +369,6 @@ impl State {
         dissipates.run_now(&self.ecs);
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
-        process_entity_spawn_request_buffer(&mut self.ecs);
         self.ecs.maintain();
     }
 
@@ -398,8 +397,7 @@ impl State {
         dmg.run_now(&self.ecs);
         let mut teleport = TeleportationSystem{};
         teleport.run_now(&self.ecs);
-        process_entity_spawn_request_buffer(&mut self.ecs);
-        let mut new_animations = AnimationInitSystem{};
+        let mut new_animations = AnimationParticlizationSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
@@ -429,8 +427,7 @@ impl State {
         teleport.run_now(&self.ecs);
         let mut spawns = EntitySpawnSystem{};
         spawns.run_now(&self.ecs);
-        process_entity_spawn_request_buffer(&mut self.ecs);
-        let mut new_animations = AnimationInitSystem{};
+        let mut new_animations = AnimationParticlizationSystem{};
         new_animations.run_now(&self.ecs);
         let mut new_particles = ParticleInitSystem{};
         new_particles.run_now(&self.ecs);
@@ -712,7 +709,7 @@ impl GameState for State {
                 draw_map(&self.ecs.fetch::<Map>(), ctx);
                 self.render_all(ctx);
                 self::draw_ui(&self.ecs, ctx)
-             }
+            }
         }
 
         // The state machine.
@@ -1154,11 +1151,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<StatusIsPhysicalDefenseBuffed>();
     gs.ecs.register::<StatusInvisibleToPlayer>();
     gs.ecs.register::<InvisibleWhenEncroachingEntityKind>();
-    gs.ecs.register::<GameAnimationParticle>();
-    gs.ecs.register::<AreaOfEffectAnimationWhenThrown>();
-    gs.ecs.register::<AreaOfEffectAnimationWhenCast>();
-    gs.ecs.register::<AlongRayAnimationWhenThrown>();
-    gs.ecs.register::<AlongRayAnimationWhenCast>();
+    gs.ecs.register::<AnimationParticle>();
+    gs.ecs.register::<AnimationWhenUsed>();
+    gs.ecs.register::<AnimationWhenThrown>();
+    gs.ecs.register::<AnimationWhenCast>();
 
     // Placeholder values which we will replace upon map generation.
     gs.ecs.insert(Point::new(0, 0)); // Player position.
@@ -1169,8 +1165,8 @@ fn main() -> rltk::BError {
     // Buffers for accumulating requests for ECS changes throughout a turn.
     // Think like it's a database, we queue operations, then commit the changes
     // in batch.
-    gs.ecs.insert(AnimationRequestBuffer::new());
-    gs.ecs.insert(ParticleRequestBuffer::new());
+    gs.ecs.insert(AnimationSequenceBuffer::new());
+    gs.ecs.insert(AnimationParticleBuffer::new());
     gs.ecs.insert(EntitySpawnRequestBuffer::new());
     gs.ecs.insert(MeeleAttackRequestBuffer::new());
 

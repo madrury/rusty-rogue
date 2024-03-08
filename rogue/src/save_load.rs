@@ -165,10 +165,9 @@ pub fn save_game(ecs: &mut World) {
             StatusIsPhysicalDefenseBuffed,
             StatusInvisibleToPlayer,
             InvisibleWhenEncroachingEntityKind,
-            AreaOfEffectAnimationWhenThrown,
-            AreaOfEffectAnimationWhenCast,
-            AlongRayAnimationWhenThrown,
-            AlongRayAnimationWhenCast,
+            AnimationWhenThrown,
+            AnimationWhenCast,
+            AnimationWhenUsed,
             SerializationHelper
         );
     }
@@ -328,10 +327,9 @@ pub fn load_game(ecs: &mut World) {
             StatusIsPhysicalDefenseBuffed,
             StatusInvisibleToPlayer,
             InvisibleWhenEncroachingEntityKind,
-            AreaOfEffectAnimationWhenThrown,
-            AreaOfEffectAnimationWhenCast,
-            AlongRayAnimationWhenThrown,
-            AlongRayAnimationWhenCast,
+            AnimationWhenThrown,
+            AnimationWhenCast,
+            AnimationWhenUsed,
             SerializationHelper
         );
     }
