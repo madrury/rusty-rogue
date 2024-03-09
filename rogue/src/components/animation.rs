@@ -11,31 +11,31 @@ use crate::Map;
 Components and Data Structures for Game Animations
 --------------------------------------------------
 
-Data structures, components, and functions for modeling game animations are
-included here.
+Data structures, components, and functions for modeling game animations.
 
 We model animations at varying levels of abstraction, so that entities may
 specify animations at a high level (i.e. "animate an object moving along a ray
-followed by an area of effect"), which is broken down into atomic particles that
-are what's actually rendered.
+followed by an area of effect"). These are broken down into atomic particles by
+game systems, and these particles are what's actually rendered.
 
 AnimationParticles
 ------------------
 At the lowest level, an animation is assembled from atomic AnimationParticles,
 which are rendered after some delay (ms) for a finite lifetime (ms).
-AnimationParticle is a component encalsulating the rendering information needed,
-when running the animation it is attached to an uninteractable entity only for
-the purposes of rendering.
+AnimationParticle is a component encapsulating the information needed to render
+the particle, when running the animation it is attached to an uninteractable
+entity only for the purposes of rendering, which is removed from teh ECS once
+its lifetime has expired.
 
 AnimationBlock
 --------------
-A higher level abstraction of an animation, intended to be the functional pieces
+A higher level abstraction of an animation, intended to be functional pieces
 that are composed into single animation events. For example, throwing a fire
 potion (which then explodes) is represented as:
 
     AnimationBlock::AlongRay {..} -> AnimationBlock::AreaOfEffect {..}
 
-AnimationBlockes are transformed into a set of AnimationParticles, a process we
+AnimationBlocks are transformed into a set of AnimationParticles, a process we
 call particalization.
 
 Animation blocks are often created during the running of game systems when some

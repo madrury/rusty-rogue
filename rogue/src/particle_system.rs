@@ -30,47 +30,10 @@ impl<'a> System<'a> for ParticleInitSystem {
     }
 }
 
-// Attach Position and Renderable components to particle entities once the
-// rendering conditions have been met.
-pub struct ParticleRenderSystem {}
-
-impl<'a> System<'a> for ParticleRenderSystem {
-    #[allow(clippy::type_complexity)]
-    type SystemData = (
-        Entities<'a>,
-        WriteStorage<'a, Position>,
-        WriteStorage<'a, Renderable>,
-        WriteStorage<'a, AnimationParticle>,
-    );
-
-    fn run(&mut self, data: Self::SystemData) {
-        let (entities, mut positions, mut renderables, mut particles) = data;
-        for (entity, p) in (&entities, &mut particles).join() {
-            if p.delay <= 0.0 && !p.displayed {
-                positions
-                    .insert(entity, Position { x: p.pt.x, y: p.pt.y })
-                    .expect("Unable to insert particle position.");
-                renderables
-                    .insert(
-                        entity,
-                        Renderable {
-                            fg: p.fg,
-                            bg: p.bg,
-                            glyph: p.glyph,
-                            order: 0,
-                            visible_out_of_fov: false
-                        },
-                    )
-                    .expect("Unable to insert particle renderable.");
-                p.displayed = true;
-            }
-        }
-    }
-}
-
-// Monitor all particles currently in the ECS, updatie their delay and lifetime
+// Monitor all particles currently in the ECS, update their delay and lifetime
 // state according to how much time was spent in the previous game frame.
-// Cleans up expired particles when their lifetime is expired..
+// When a particle's delay first drops to zero, set the displayed flag.
+// When a particle's lifetime first drops to zero, remove it from teh ECS.
 pub fn update_particle_lifetimes(ecs: &mut World, ctx: &Rltk) {
     let mut dead_particles: Vec<Entity> = Vec::new();
     {
@@ -83,6 +46,9 @@ pub fn update_particle_lifetimes(ecs: &mut World, ctx: &Rltk) {
                 particle.lifetime = f32::max(0.0, particle.lifetime - ctx.frame_time_ms);
             } else {
                 particle.delay = f32::max(0.0, particle.delay - ctx.frame_time_ms);
+                if particle.delay <= 0.0 {
+                    particle.displayed = true
+                }
             }
         }
     }

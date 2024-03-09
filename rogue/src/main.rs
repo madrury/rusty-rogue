@@ -1,4 +1,4 @@
-use rltk::{GameState, Rltk, Point, RGB};
+use rltk::{GameState, Point, Rltk, Tile, RGB};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
 
@@ -77,7 +77,7 @@ use gamelog::GameLog;
 //--------------------------------------------------------------------
 // Debug flags.
 //--------------------------------------------------------------------
-const DEBUG_DRAW_ALL_MAP: bool = false;
+const DEBUG_DRAW_ALL_MAP: bool = true;
 const DEBUG_RENDER_ALL: bool = true;
 const DEBUG_VISUALIZE_MAPGEN: bool = false;
 const DEBUG_HIGHLIGHT_STAIRS: bool = false;
@@ -217,27 +217,42 @@ pub struct State {
 
 impl State {
 
-    // Draw all entities with a Renderable component on the console.
-    fn render_all(&self, ctx: &mut Rltk) {
+    // Renders all entities.
+    //
+    // We render entities in three passes, later passes override the earlier
+    // ones.
+    //
+    // Pass 1: Renderables
+    // Iterate through all entities with a Renderable component, in increasing
+    // renderable.order.
+    //
+    // Pass 2: SetsBgColor
+    // Iterate through all entities with a SetsBgColor component, in increasing
+    // renderable.order.
+    //
+    // Pass 3: AnimationParticle
+    // Iterate through all entities with an AnimationParticle component, and
+    // render according to its information.
+    fn render_entities(&self, ctx: &mut Rltk) {
         let entities = self.ecs.entities();
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
+        let particles = self.ecs.read_storage::<AnimationParticle>();
         let invisibles = self.ecs.read_storage::<StatusInvisibleToPlayer>();
         let fg_colormaps = self.ecs.read_storage::<UseFgColorMap>();
         let bg_colormaps = self.ecs.read_storage::<UseBgColorMap>();
         let sets_bg = self.ecs.read_storage::<SetsBgColor>();
         let map = self.ecs.fetch::<Map>();
         let cmaps = self.ecs.fetch::<ColorMaps>();
-        // First loop through the entities in reverse render order and draw them
-        // all. Later calls to ctx.set overwrite previous writes, we'll use this
-        // to make a second pass and update background colors as needed.
-        let mut render_data = (&entities, &positions, &renderables).join().collect::<Vec<_>>();
+
+        // Pass 1: Renderables
+        let mut render_data = (&entities, &positions, &renderables, !&particles).join().collect::<Vec<_>>();
         render_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
-        for (e, pos, render) in render_data {
+        for (e, pos, render, _) in render_data {
             // Bail out early if the entity is invisible.
             let invisible = invisibles.get(e).is_some();
             if invisible { continue; }
-            // Lookup the colors for the entity. There are two sourced, the
+            // Lookup the colors for the entity. There are two sources, the
             // colormaps or a fallback to a fixed color in the entities
             // Renderable component.
             let idx = map.xy_idx(pos.x, pos.y);
@@ -258,9 +273,8 @@ impl State {
                 ctx.set(pos.x, pos.y, fg.to_greyscale(), bg.to_greyscale(), render.glyph);
             }
         }
-        // Loop through the enetities that override bg colors, and fill in the
-        // backgrounds of their tiles. For example, water should always render
-        // its tile background as blue.
+
+        // Pass 2: SetsBgColor
         let mut bg_data = (&entities, &positions, &renderables, &sets_bg).join().collect::<Vec<_>>();
         bg_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
         for (e, pos, render, _bg) in bg_data {
@@ -282,31 +296,40 @@ impl State {
             }
         }
 
-        // DEBUG FLAGS: Highlight entities of various types according to debug
-        // flags.
+        // Pass 3: AnimationParticle
+        let particle_data = (&entities, &particles).join();
+        for (_e, prt) in particle_data {
+            let idx = map.xy_idx(prt.pt.x, prt.pt.y);
+            if prt.displayed && (map.visible_tiles[idx] || DEBUG_RENDER_ALL) {
+                ctx.set(prt.pt.x, prt.pt.y, prt.fg, prt.bg, prt.glyph);
+            }
+        }
+
+        // DEBUG FLAGS: highlight entities and tiles of various types according
+        // to debug flags.
         if DEBUG_HIGHLIGHT_STAIRS {
-            self.debug_highlight_stairs(ctx);
-        }
-        if DEBUG_HIGHLIGHT_BLOCKED {
-            self.debug_highlight_blocked(ctx);
-        }
-        if DEBUG_HIGHLIGHT_FIRE {
-            self.debug_highlight_fire(ctx);
-        }
-        if DEBUG_HIGHLIGHT_SHALLOW_WATER {
-            self.debug_highlight_shallow_water(ctx);
-        }
-        if DEBUG_HIGHLIGHT_DEEP_WATER {
-            self.debug_highlight_deep_water(ctx);
-        }
-        if DEBUG_HIGHLIGHT_GRASS {
-            self.debug_highlight_grass(ctx);
+            self.debug_highlight_tiletype(ctx, TileType::DownStairs, RGB::named(rltk::PURPLE));
         }
         if DEBUG_HIGHLIGHT_FLOOR {
-            self.debug_highlight_floor(ctx);
+            self.debug_highlight_tiletype(ctx, TileType::Floor, RGB::named(rltk::PURPLE));
+        }
+        if DEBUG_HIGHLIGHT_BLOCKED {
+            self.debug_highlight_array(ctx, &map.blocked, RGB::named(rltk::PURPLE));
+        }
+        if DEBUG_HIGHLIGHT_FIRE {
+            self.debug_highlight_array(ctx, &map.fire, RGB::named(rltk::PURPLE));
+        }
+        if DEBUG_HIGHLIGHT_SHALLOW_WATER {
+            self.debug_highlight_array(ctx, &map.shallow_water, RGB::named(rltk::PURPLE));
+        }
+        if DEBUG_HIGHLIGHT_DEEP_WATER {
+            self.debug_highlight_array(ctx, &map.deep_water, RGB::named(rltk::PURPLE));
+        }
+        if DEBUG_HIGHLIGHT_GRASS {
+            self.debug_highlight_array(ctx, &map.grass, RGB::named(rltk::PURPLE));
         }
         if DEBUG_HIGHLIGHT_BLOOD {
-            self.debug_highlight_blood(ctx);
+            self.debug_highlight_array(ctx, &map.blood, RGB::named(rltk::PURPLE));
         }
     }
 
@@ -443,11 +466,6 @@ impl State {
         self.ecs.maintain();
     }
 
-    fn run_particle_render_systems(&mut self) {
-        let mut particles = ParticleRenderSystem{};
-        particles.run_now(&self.ecs);
-    }
-
     fn generate_map(&mut self, depth: i32) {
         // Build the floor layout, and update the dubug map build animation.
         self.mapgen.reset();
@@ -577,108 +595,31 @@ impl State {
     }
 
     #[allow(dead_code)]
-    fn debug_highlight_stairs(&self, ctx: &mut Rltk) {
+    fn debug_highlight_array(&self, ctx: &mut Rltk, arr: &Vec<bool>, color: RGB) {
         let map = self.ecs.fetch::<Map>();
         for x in 0..map.width {
             for y in 0..map.height {
                 let idx = map.xy_idx(x, y);
-                if map.tiles[idx] == TileType::DownStairs {
-                    ctx.set_bg(x, y, RGB::named(rltk::PINK));
+                if arr[idx] {
+                    ctx.set_bg(x, y, color);
                 }
             }
         }
     }
 
     #[allow(dead_code)]
-    fn debug_highlight_blocked(&self, ctx: &mut Rltk) {
+    fn debug_highlight_tiletype(&self, ctx: &mut Rltk, ttype: TileType, color: RGB) {
         let map = self.ecs.fetch::<Map>();
         for x in 0..map.width {
             for y in 0..map.height {
                 let idx = map.xy_idx(x, y);
-                if map.blocked[idx] {
-                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
+                if map.tiles[idx] == ttype {
+                    ctx.set_bg(x, y, color);
                 }
             }
         }
     }
 
-    #[allow(dead_code)]
-    fn debug_highlight_floor(&self, ctx: &mut Rltk) {
-        let map = self.ecs.fetch::<Map>();
-        for x in 0..map.width {
-            for y in 0..map.height {
-                let idx = map.xy_idx(x, y);
-                if map.tiles[idx] == TileType::Floor {
-                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
-                }
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    fn debug_highlight_fire(&self, ctx: &mut Rltk) {
-        let map = self.ecs.fetch::<Map>();
-        for x in 0..map.width {
-            for y in 0..map.height {
-                let idx = map.xy_idx(x, y);
-                if map.fire[idx] {
-                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
-                }
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    fn debug_highlight_shallow_water(&self, ctx: &mut Rltk) {
-        let map = self.ecs.fetch::<Map>();
-        for x in 0..map.width {
-            for y in 0..map.height {
-                let idx = map.xy_idx(x, y);
-                if map.shallow_water[idx] {
-                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
-                }
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    fn debug_highlight_deep_water(&self, ctx: &mut Rltk) {
-        let map = self.ecs.fetch::<Map>();
-        for x in 0..map.width {
-            for y in 0..map.height {
-                let idx = map.xy_idx(x, y);
-                if map.deep_water[idx] {
-                    ctx.set_bg(x, y, RGB::named(rltk::PURPLE));
-                }
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    fn debug_highlight_grass(&self, ctx: &mut Rltk) {
-        let map = self.ecs.fetch::<Map>();
-        for x in 0..map.width {
-            for y in 0..map.height {
-                let idx = map.xy_idx(x, y);
-                if map.grass[idx] {
-                    ctx.set_bg(x, y, RGB::named(rltk::GREEN));
-                }
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    fn debug_highlight_blood(&self, ctx: &mut Rltk) {
-        let map = self.ecs.fetch::<Map>();
-        for x in 0..map.width {
-            for y in 0..map.height {
-                let idx = map.xy_idx(x, y);
-                if map.blood[idx] {
-                    ctx.set_bg(x, y, RGB::named(rltk::RED));
-                }
-            }
-        }
-    }
 
 }
 
@@ -705,9 +646,8 @@ impl GameState for State {
             // We're playng the game.
             _ => {
                 update_particle_lifetimes(&mut self.ecs, ctx);
-                self.run_particle_render_systems();
                 draw_map(&self.ecs.fetch::<Map>(), ctx);
-                self.render_all(ctx);
+                self.render_entities(ctx);
                 self::draw_ui(&self.ecs, ctx)
             }
         }
