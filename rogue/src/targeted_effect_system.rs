@@ -366,10 +366,7 @@ fn find_targets<'a>(map: &'a Map, user_pos: Point, target_pos: Point, kind: Targ
             }
         }
         TargetingKind::AreaOfEffect {radius} => {
-            let mut blast_tiles = map.get_euclidean_disk_around(target_pos, radius);
-            blast_tiles.retain(
-                |p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1
-            );
+            let blast_tiles = map.get_euclidean_disk_around(target_pos, radius);
             for tile in blast_tiles.iter() {
                 let idx = map.xy_idx(tile.x, tile.y);
                 for target in map.tile_content[idx].iter() {
