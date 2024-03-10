@@ -73,7 +73,6 @@ impl<'a> System<'a> for WeaponSpecialTickSystem {
                 animation_buffer.request_block(AnimationBlock::WeaponSpecialRecharge {
                     pt: pos.to_point(),
                     fg: orender.fg,
-                    bg: orender.bg,
                     owner_glyph: orender.glyph,
                     weapon_glyph: wrender.glyph
                 })

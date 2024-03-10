@@ -377,7 +377,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                     source: *pt,
                     target: target,
                     fg: RGB::named(rltk::PURPLE),
-                    bg: playerrender.bg,
+                    bg: None,
                     glyph: playerrender.glyph,
                     until_blocked: true
                 });
@@ -432,7 +432,7 @@ fn try_move_player(dx: i32, dy: i32, ecs: &mut World) -> RunState {
                     source: *pt,
                     target: target,
                     fg: RGB::named(rltk::PURPLE),
-                    bg: playerrender.bg,
+                    bg: None,
                     glyph: playerrender.glyph,
                     until_blocked: true
                 });

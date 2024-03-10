@@ -54,12 +54,10 @@ impl<'a> System<'a> for TeleportationSystem {
                 if let Some(render) = render {
                     animation_builder.request_block(AnimationBlock::Teleportation {
                         pt: old_pos.to_point(),
-                        bg: render.bg,
                     });
                     animation_builder.request_block(AnimationBlock::Teleportation {
                         pt: new_pt,
-                        bg: render.bg,
-                    })
+                    });
                 }
             }
         }

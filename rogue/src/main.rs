@@ -1,3 +1,5 @@
+use std::f32::consts::E;
+
 use rltk::{GameState, Point, Rltk, Tile, RGB};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, MarkedBuilder, SimpleMarkerAllocator};
@@ -245,6 +247,14 @@ impl State {
         let map = self.ecs.fetch::<Map>();
         let cmaps = self.ecs.fetch::<ColorMaps>();
 
+        // Track the bg color set on each tile. When a transparent background is
+        // required (for say, throwing a weapon, where the bgcolor of the
+        // terrain should show through), it will be deduced from this array.
+        let mut bgcolors: Vec<RGB> = vec![
+            RGB::named(rltk::BLACK);
+            (map.width * map.height) as usize
+        ];
+
         // Pass 1: Renderables
         let mut render_data = (&entities, &positions, &renderables, !&particles).join().collect::<Vec<_>>();
         render_data.sort_by(|&a, &b| b.2.order.cmp(&a.2.order));
@@ -269,8 +279,10 @@ impl State {
             // Draw the glyphs on the console.
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
                 ctx.set(pos.x, pos.y, fg, bg, render.glyph);
+                bgcolors[idx] = bg;
             } else if map.revealed_tiles[idx] && render.visible_out_of_fov {
                 ctx.set(pos.x, pos.y, fg.to_greyscale(), bg.to_greyscale(), render.glyph);
+                bgcolors[idx] = bg.to_greyscale();
             }
         }
 
@@ -291,8 +303,10 @@ impl State {
             let idx = map.xy_idx(pos.x, pos.y);
             if map.visible_tiles[idx] || DEBUG_RENDER_ALL {
                 ctx.set_bg(pos.x, pos.y, bg);
+                bgcolors[idx] = bg;
             } else if map.revealed_tiles[idx] && render.visible_out_of_fov {
                 ctx.set_bg(pos.x, pos.y, bg.to_greyscale());
+                bgcolors[idx] = bg.to_greyscale();
             }
         }
 
@@ -301,7 +315,16 @@ impl State {
         for (_e, prt) in particle_data {
             let idx = map.xy_idx(prt.pt.x, prt.pt.y);
             if prt.displayed && (map.visible_tiles[idx] || DEBUG_RENDER_ALL) {
-                ctx.set(prt.pt.x, prt.pt.y, prt.fg, prt.bg, prt.glyph);
+                // Animations with bg: None indicate a transparent background.
+                // We lookup the actual bg color that we remembered earlier.
+                match prt.bg {
+                    Some(bg) => {
+                        ctx.set(prt.pt.x, prt.pt.y, prt.fg, bg, prt.glyph);
+                    } None => {
+                        ctx.set(prt.pt.x, prt.pt.y, prt.fg, RGB::named(rltk::BLACK), prt.glyph);
+                        ctx.set_bg(prt.pt.x, prt.pt.y, bgcolors[idx]);
+                    }
+                }
             }
         }
 

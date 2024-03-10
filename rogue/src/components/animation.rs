@@ -97,7 +97,8 @@ pub struct AnimationParticle {
     // Rendering data.
     pub pt: Point,
     pub fg: RGB,
-    pub bg: RGB,
+    // A None value indicates a transparent background.
+    pub bg: Option<RGB>,
     pub glyph: rltk::FontCharType
 }
 
@@ -161,7 +162,6 @@ impl AnimationParticleBuffer {
 pub enum AnimationBlock {
     MeleeAttack {
         pt: Point,
-        bg: RGB,
         glyph: rltk::FontCharType,
     },
     Healing {
@@ -170,7 +170,6 @@ pub enum AnimationBlock {
     WeaponSpecialRecharge {
         pt: Point,
         fg: RGB,
-        bg: RGB,
         owner_glyph: rltk::FontCharType,
         weapon_glyph: rltk::FontCharType
     },
@@ -185,7 +184,7 @@ pub enum AnimationBlock {
         source: Point,
         target: Point,
         fg: RGB,
-        bg: RGB,
+        bg: Option<RGB>,
         glyph: rltk::FontCharType,
         until_blocked: bool
     },
@@ -196,20 +195,19 @@ pub enum AnimationBlock {
     },
     Teleportation {
         pt: Point,
-        bg: RGB,
     },
 }
 impl AnimationBlock {
     // Instantiate the atomic AnimationParticle's that constitute an animation block.
     pub fn particalize(&self, map: &Map, delay: Frames) -> (Vec<AnimationParticle>, Frames) {
         match self {
-            AnimationBlock::MeleeAttack {pt, bg, glyph} => {
-                particlize_melee_animation(*pt, *bg, *glyph, delay)
+            AnimationBlock::MeleeAttack {pt, glyph} => {
+                particlize_melee_animation(*pt, *glyph, delay)
             }
             AnimationBlock::Healing { pt } =>
                 particlize_healing_animation(*pt, delay),
-            AnimationBlock::WeaponSpecialRecharge { pt, fg, bg, owner_glyph, weapon_glyph } =>
-                particlize_weapon_special_recharge_animation(*pt, *fg, *bg, *owner_glyph, *weapon_glyph, delay),
+            AnimationBlock::WeaponSpecialRecharge { pt, fg, owner_glyph, weapon_glyph } =>
+                particlize_weapon_special_recharge_animation(*pt, *fg, *owner_glyph, *weapon_glyph, delay),
             AnimationBlock::AreaOfEffect { center, fg, bg, glyph, radius } =>
                 particlize_aoe_animation(&*map, *center, *fg, *bg, *glyph, *radius, delay),
             AnimationBlock::AlongRay {
@@ -231,8 +229,8 @@ impl AnimationBlock {
             ),
             AnimationBlock::SpinAttack { pt, fg, glyph }
                 => particlize_spin_attack_animation(*pt, *fg, *glyph, delay),
-            AnimationBlock::Teleportation {pt, bg}
-                => particlize_teleportation_animation(*pt, *bg, delay),
+            AnimationBlock::Teleportation {pt}
+                => particlize_teleportation_animation(*pt, delay),
         }
     }
 }
@@ -303,7 +301,7 @@ pub enum AnimationComponentData {
     },
     AlongRay {
         fg: RGB,
-        bg: RGB,
+        bg: Option<RGB>,
         glyph: rltk::FontCharType,
         until_blocked: bool
     },
@@ -376,7 +374,6 @@ pub struct AnimationWhenCast {
 //----------------------------------------------------------------------------
 fn particlize_melee_animation(
     pt: Point,
-    bg: RGB,
     glyph: rltk::FontCharType,
     delay: Frames
 ) -> (Vec<AnimationParticle>, Frames) {
@@ -390,7 +387,7 @@ fn particlize_melee_animation(
         particles.push(AnimationParticle {
             pt: pt,
             fg: *color,
-            bg: bg,
+            bg: None,
             glyph: glyph,
             lifetime: ms(2),
             delay: ms(delay) + ms(2 * i as i32),
@@ -403,7 +400,6 @@ fn particlize_melee_animation(
 fn particlize_weapon_special_recharge_animation(
     pt: Point,
     fg: RGB,
-    bg: RGB,
     owner_glyph: rltk::FontCharType,
     weapon_glyph: rltk::FontCharType,
     delay: Frames
@@ -415,7 +411,7 @@ fn particlize_weapon_special_recharge_animation(
         particles.push(AnimationParticle {
             pt: pt,
             fg: *color,
-            bg: bg,
+            bg: None,
             glyph: *glyph,
             lifetime: ms(4),
             delay: ms(delay) + ms(4 * i as i32),
@@ -430,13 +426,12 @@ fn particlize_healing_animation(
     delay: Frames
 ) -> (Vec<AnimationParticle>, Frames) {
     let mut particles = Vec::new();
-    let color_cycle_fg = [RGB::named(rltk::RED), RGB::named(rltk::WHITE), RGB::named(rltk::RED)];
-    let color_cycle_bg = [RGB::named(rltk::WHITE), RGB::named(rltk::RED), RGB::named(rltk::WHITE)];
-    for (i, (fg, bg)) in color_cycle_fg.iter().zip(color_cycle_bg.iter()).enumerate() {
+    let color_cycle = [RGB::named(rltk::RED), RGB::named(rltk::WHITE), RGB::named(rltk::RED)];
+    for (i, fg) in color_cycle.iter().enumerate() {
         particles.push(AnimationParticle {
             pt: pt,
             fg: *fg,
-            bg: *bg,
+            bg: None,
             glyph: rltk::to_cp437('♥'),
             lifetime: ms(4),
             delay: ms(delay) + ms(4 * i as i32),
@@ -464,7 +459,7 @@ fn particlize_aoe_animation(
             particles.push(AnimationParticle {
                 pt: *tile,
                 fg: *fg,
-                bg: *bg,
+                bg: Some(*bg),
                 glyph: glyph,
                 lifetime: ms(2),
                 delay: ms(delay) + ms(2 * i as i32),
@@ -480,7 +475,7 @@ fn particlize_along_ray_animation(
     source: Point,
     target: Point,
     fg: RGB,
-    bg: RGB,
+    bg: Option<RGB>,
     glyph: rltk::FontCharType,
     until_blocked: bool,
     delay: Frames
@@ -504,7 +499,6 @@ fn particlize_along_ray_animation(
 
 fn particlize_teleportation_animation(
     pt: Point,
-    bg: RGB,
     delay: Frames
 ) -> (Vec<AnimationParticle>, Frames) {
     let mut particles = Vec::new();
@@ -513,7 +507,7 @@ fn particlize_teleportation_animation(
         particles.push(AnimationParticle {
             pt: pt,
             fg: rltk::RGB::named(rltk::MEDIUM_PURPLE),
-            bg: bg,
+            bg: None,
             glyph: *glyph,
             lifetime: ms(4),
             delay: ms(delay) + ms(4 * i as i32),
@@ -544,7 +538,7 @@ fn particlize_spin_attack_animation(
             // There are likely other places this is relevent, so an audit would
             // be needed to determine where we are already using a worse
             // solution to this problem.
-            bg: rltk::RGB::named(rltk::BLACK),
+            bg: None,
             glyph: glyph,
             lifetime: ms(4),
             delay: ms(delay) + ms(2 * i as i32),

@@ -67,7 +67,7 @@ pub fn fireball(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
                 sequence: vec![
                     AnimationComponentData::AlongRay {
                         fg: RGB::named(rltk::ORANGE),
-                        bg: RGB::named(rltk::RED),
+                        bg: Some(RGB::named(rltk::RED)),
                         glyph: rltk::to_cp437('^'),
                         until_blocked: true
                     },
@@ -209,7 +209,7 @@ pub fn icespike(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32)
                 sequence: vec![
                     AnimationComponentData::AlongRay {
                         fg: RGB::named(rltk::WHITE),
-                        bg: RGB::named(rltk::LIGHT_BLUE),
+                        bg: Some(RGB::named(rltk::LIGHT_BLUE)),
                         glyph: rltk::to_cp437('*'),
                         until_blocked: true
                 }
@@ -338,8 +338,8 @@ pub fn magic_missile(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges:
             sequence: vec![
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::SILVER),
-                    bg: RGB::named(rltk::BLACK),
-                    glyph: rltk::to_cp437('.'),
+                    bg: None,
+                    glyph: rltk::to_cp437('*'),
                     until_blocked: true
                 }
             ]
@@ -387,7 +387,7 @@ pub fn blink(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
             sequence: vec![
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::PURPLE),
-                    bg: RGB::named(rltk::BLACK),
+                    bg: None,
                     glyph: rltk::to_cp437('@'),
                     until_blocked: false
                 }
@@ -434,7 +434,7 @@ pub fn health(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) -
                 AnimationComponentData::Healing,
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::RED),
-                    bg: RGB::named(rltk::BLACK),
+                    bg: None,
                     glyph: rltk::to_cp437('♥'),
                     until_blocked: true
                 }
@@ -480,7 +480,7 @@ pub fn invigorate(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i3
             sequence: vec![
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::RED),
-                    bg: RGB::named(rltk::BLACK),
+                    bg: None,
                     glyph: rltk::to_cp437('▲'),
                     until_blocked: true
                 }
@@ -526,7 +526,7 @@ pub fn protect(ecs: &mut World, x: i32, y: i32, max_charges: i32, charges: i32) 
             sequence: vec![
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::BLUE),
-                    bg: RGB::named(rltk::BLACK),
+                    bg: None,
                     glyph: rltk::to_cp437('▲'),
                     until_blocked: true
                 }

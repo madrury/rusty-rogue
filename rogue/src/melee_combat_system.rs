@@ -100,7 +100,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 animation_buffer.request_block(
                     AnimationBlock::MeleeAttack {
                         pt: pos.to_point(),
-                        bg: render.bg,
                         glyph: render.glyph,
                     }
                 );

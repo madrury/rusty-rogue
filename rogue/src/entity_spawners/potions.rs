@@ -164,7 +164,7 @@ pub fn fire(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                     AnimationComponentData::AlongRay {
                         glyph: rltk::to_cp437('¿'),
                         fg: RGB::named(rltk::ORANGE),
-                        bg: RGB::named(rltk::BLACK),
+                        bg: None,
                         until_blocked: true
                     },
                 ]
@@ -250,7 +250,7 @@ pub fn freezing(ecs: &mut World, x: i32, y: i32) -> Option<Entity> {
                     AnimationComponentData::AlongRay {
                         glyph: rltk::to_cp437('¿'),
                         fg: RGB::named(rltk::LIGHT_BLUE),
-                        bg: RGB::named(rltk::BLACK),
+                        bg: None,
                         until_blocked: true
                     },
                 ]

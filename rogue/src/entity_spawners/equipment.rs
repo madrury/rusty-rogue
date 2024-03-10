@@ -68,7 +68,7 @@ pub fn dagger(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             sequence: vec![
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::SILVER),
-                    bg: RGB::named(rltk::BLACK),
+                    bg: None,
                     glyph: DAGGER_GLYPH,
                     until_blocked: true
                 }
@@ -129,7 +129,7 @@ pub fn sword(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             sequence: vec![
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::SILVER),
-                    bg: RGB::named(rltk::BLACK),
+                    bg: None,
                     glyph: SWORD_GLYPH,
                     until_blocked: true
                 }
@@ -189,7 +189,7 @@ pub fn rapier(ecs: &mut World, x: i32, y: i32)  -> Option<Entity> {
             sequence: vec![
                 AnimationComponentData::AlongRay {
                     fg: RGB::named(rltk::SILVER),
-                    bg: RGB::named(rltk::BLACK),
+                    bg: None,
                     glyph: RAPIER_GLYPH,
                     until_blocked: true
                 }
@@ -300,7 +300,7 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                 sequence: vec![
                     AnimationComponentData::AlongRay {
                         fg: RGB::named(rltk::ORANGE),
-                        bg: RGB::named(rltk::RED),
+                        bg: Some(RGB::named(rltk::RED)),
                         glyph: rltk::to_cp437('^'),
                         until_blocked: true
                     },
@@ -317,7 +317,7 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                     },
                     AnimationComponentData::AlongRay {
                         fg: fg,
-                        bg: RGB::named(rltk::BLACK),
+                        bg: None,
                         glyph: ROD_GLYPH,
                         until_blocked: true
                     },
@@ -353,7 +353,7 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                 sequence: vec![
                     AnimationComponentData::AlongRay {
                         fg: RGB::named(rltk::WHITE),
-                        bg: RGB::named(rltk::LIGHT_BLUE),
+                        bg: Some(RGB::named(rltk::LIGHT_BLUE)),
                         glyph: rltk::to_cp437('*'),
                         until_blocked: true
                     },
@@ -370,7 +370,7 @@ pub fn rod(ecs: &mut World, x: i32, y: i32, element: ElementalDamageKind)  -> Op
                     },
                     AnimationComponentData::AlongRay {
                         fg: fg,
-                        bg: RGB::named(rltk::BLACK),
+                        bg: None,
                         glyph: ROD_GLYPH,
                         until_blocked: true
                     },
